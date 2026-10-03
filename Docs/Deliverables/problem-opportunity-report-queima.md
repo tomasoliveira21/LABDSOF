@@ -206,3 +206,49 @@ As assunções mais críticas são **A2, A3 e A4**. Se os participantes não usa
 1. **Os estudantes usariam uma aplicação durante a noite** e que informação procurariam primeiro? (inquérito)
 2. **Como chega hoje um pedido de ajuda à equipa certa** e quanto tempo demora? (entrevista ao voluntário da segurança)
 3. **As organizações dos eventos estariam dispostas a configurar e manter o seu evento** numa plataforma partilhada?
+
+---
+
+## Pesquisa com Utilizadores
+
+### Método de pesquisa
+
+Vamos utilizar Google Forms para recolher informação de estudantes que já participaram em eventos académicos, como a Queima das Fitas. O questionário vai ajudar-nos a perceber que informação os estudantes precisam durante o evento, como procuram ajuda atualmente e que problemas recordam de edições anteriores. Também vamos recorrer a pesquisa online, notícias públicas, comunicações oficiais do evento e informação disponível sobre transportes, segurança, filas e gestão de multidões. Sempre que possível, esta informação será complementada com entrevistas ou conversas informais com pessoas que tenham experiência operacional no evento.
+
+### Resultados
+
+TBD.
+
+### Limitações
+
+TBD.
+
+### Decisões de produto resultantes
+
+TBD. As decisões finais de produto serão refinadas depois de recebermos feedback das entrevistas e do questionário aos estudantes.
+
+---
+
+## Visão de produto
+
+### Personas
+
+As principais personas são a equipa do evento e o estudante participante. A equipa do evento inclui o owner, os elementos da organização, as equipas de prevenção, a coordenação de segurança e outros papéis operacionais. Esta equipa utiliza o backoffice antes e durante o evento para configurar o evento, gerir a planta, atualizar informação de transportes e tratar ocorrências. O estudante participante tem normalmente entre 18 e 25 anos, vai ao evento com amigos e utiliza o telemóvel durante a noite. Este utilizador precisa de informação curta, fiável e fácil de aceder, especialmente num contexto em que a bateria, a qualidade da rede, o ruído e o consumo de álcool podem afetar a tomada de decisão.
+
+### Proposta de valor
+
+A plataforma dá aos participantes um local único e fiável para encontrar informação prática sobre o evento e pedir ajuda quando necessário. Ao mesmo tempo, dá à equipa do evento uma visão operacional partilhada, ajudando-a a perceber o que está a acontecer, onde se localizam os problemas e como responder mais rapidamente. O valor do produto não está apenas em publicar informação, mas em manter essa informação ligada à situação real do evento.
+
+### Principais jornadas do utilizador
+
+Um participante abre a aplicação web através de um link ou QR code, seleciona o evento, consulta a planta, encontra entradas, serviços, opções de transporte e informação de segurança, e pode pedir ajuda se acontecer algum problema. A equipa do evento cria ou seleciona um evento no backoffice, carrega ou configura a planta do recinto, adiciona pontos importantes como entradas, palcos, casas de banho, primeiros socorros e paragens de transporte, e atualiza informação durante a noite. Quando um participante envia um pedido de ajuda, a equipa do evento recebe esse pedido com contexto e localização, avalia a sua prioridade e encaminha-o para a equipa operacional adequada.
+
+### Critérios de sucesso
+
+O produto será bem-sucedido se os estudantes conseguirem encontrar rapidamente a informação de que precisam durante o evento, se os pedidos de ajuda forem mais fáceis de submeter e gerir, e se a equipa do evento ganhar uma visão mais clara do que está a acontecer no recinto. O sucesso também deve ser medido pela adoção durante o evento, pela redução da confusão em torno das entradas e dos transportes, por uma resposta operacional mais rápida e pelo feedback positivo de estudantes e equipas do evento.
+
+### Definição do MVP
+
+O MVP deve focar-se no problema central de coordenação. Deve incluir uma aplicação web para participantes com seleção de evento, uma planta clara do recinto, informação essencial do evento, informação de transportes e um fluxo simples para pedidos de ajuda. Deve também incluir um backoffice para a equipa do evento, onde cada equipa pode configurar o seu próprio evento, gerir a planta do recinto, atualizar informação relevante e consultar ocorrências recebidas. Funcionalidades que exijam integrações pesadas, previsão avançada de multidões ou automação completa devem ficar fora da primeira versão, exceto se forem essenciais para validar o produto.
+
+**Fora de âmbito:** a capacidade física das entradas, incluindo o número de portas e o desenho físico do funil de fila. Este é um problema de infraestrutura, não um problema de software.
