@@ -1,5 +1,19 @@
 # LABDSOF
 
+Multi-event coordination platform for large academic festivals (pilot case: Queima das Fitas do Porto). LABDSOF 2026/27, ISEP. Assignment: [`LABDSOF-26-27-Assignment.pdf`](LABDSOF-26-27-Assignment.pdf).
+
+## Documentation
+
+| Area | Document | Language |
+|---|---|---|
+| Problem | [Problem and Opportunity Report](Docs/Deliverables/problem-opportunity-report-queima.md) | PT |
+| Market | [Market and Competitor Analysis](Docs/Deliverables/market-and-competitor-analysis.md) · [Product-specific annex](Docs/Deliverables/market-and-competitor-analysis-product-specific.md) | PT |
+| Research | [Student survey (Google Forms script)](Docs/Research/inquerito-estudantes-google-forms.gs) | PT |
+| Product | [Product Vision](Docs/Product/product-vision.md) · [Personas](Docs/Product/personas.md) · [Main Features and Backlog](Docs/Product/features.md) · [User Workflows](Docs/Product/user-workflows.md) | EN |
+| Process | [Team Roles and Work Process](Docs/Process/team-and-process.md) · [Definition of Ready and Done](Docs/Process/definition-of-ready-and-done.md) | EN |
+| Technical | [Domain Model](Docs/Technical/domain-model.md) · [High-Level Architecture](Docs/Technical/architecture.md) | EN |
+| History | [CHANGELOG](CHANGELOG.md) | EN |
+
 # Contributing Guidelines
 
 These conventions keep the repository history clear and consistent, and make it easy to see when a change was made and who made it. All branches, commits, pull requests and repository documentation are written in **English**.
@@ -102,7 +116,7 @@ A pull request can only be merged after **two reviews**:
 
 ## 7. Pull request template
 
-Save as `.github/pull_request_template.md`:
+Saved as [`.github/pull_request_template.md`](.github/pull_request_template.md):
 
 ```markdown
 ## Summary

@@ -1,7 +1,7 @@
 # Anexo 02a — Análise de mercado específica do produto
 
 > LABDSOF 2026/27 · Sprint A 
-> **O que é este documento:** a análise de mercado **de cada coisa que queremos incluir no projeto**. O documento geral (`02-Analise-Mercado-e-Concorrencia.md`) cobre o mercado todo, fase a fase; este anexo desce ao nível da funcionalidade.
+> **O que é este documento:** a análise de mercado **de cada coisa que queremos incluir no projeto**. O documento geral ([`market-and-competitor-analysis.md`](market-and-competitor-analysis.md)) cobre o mercado todo, fase a fase; este anexo desce ao nível da funcionalidade.
 > **Base:** o que está no repositório em 2026-10-06 (`main`, commit `442ecc3`): `Docs/Deliverables/problem-opportunity-report-queima.md` (problema, visão, MVP, assunções A1–A9) e `Docs/Research/inquerito-estudantes-google-forms.gs` (inquérito a estudantes, perguntas 1–11).
 > **Enunciado, secção Mercado:** concorrentes e alternativas não digitais: utilizadores, features, forças/fraquezas, modelo de negócio, UX, privacidade → proposta de valor.
 >
