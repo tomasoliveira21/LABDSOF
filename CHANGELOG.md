@@ -2,7 +2,43 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] · 2026-10-08 · Sprint 1 presentation artifacts
+## [Unreleased] · 2026-10-08 · Team meeting decisions
+
+**Why:** the team reviewed the gap analysis on 8 October 2026 and took the decisions listed in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md). This change applies them.
+
+### Added
+- `PROJECT-CONTEXT.md` (project context and what is left before the presentation) and `CLAUDE.md` (points to it).
+- `Docs/Meetings/2026-10-08-sprint-1-gap-review.md`: the meeting guide, with the decisions taken.
+- `features.md` §5: community reports (Waze-style) and badges, with the five answers of assignment §5.5; stories US-12 to US-14.
+- `user-workflows.md` W7: report a problem and earn a badge.
+- `product-vision.md` §1: product name candidates.
+
+### Changed
+- `team-and-process.md`:
+  - roles are described, not assigned;
+  - Antônio Guerra added to the team;
+  - GitHub Projects chosen as the board;
+  - sprints renamed A/B/C;
+  - two meetings a week;
+  - process-drift actions agreed.
+- `definition-of-ready-and-done.md`:
+  - removed the estimate, UI sketch and privacy items from the DoR;
+  - DoD Level 3 removed;
+  - new rule: one story = one issue = one PR.
+- `features.md`:
+  - MoSCoW agreed;
+  - AI workflow = help-request triage;
+  - external integration = STCP GTFS if public, otherwise a weather API.
+- `product-vision.md`:
+  - statement and pitch agreed;
+  - success criteria rewritten as SC1–SC11, so they prove the product works (e.g. AI triage ≤ 30 s);
+  - survey metrics moved to "validation of the problem".
+- `personas.md`: success references updated to the new criteria.
+
+### Not changed on purpose
+- `domain-model.md` and `architecture.md`: they are evaluated after the Sprint A presentation. They will need Report/Badge entities and the integration decision.
+
+## 2026-10-08 · Sprint 1 presentation artifacts
 
 **Branch:** `docs/sprint-1-presentation-artifacts` (based on `main` at `e853854`)
 **Why:** a gap analysis against the eight topics of the Sprint 1 presentation (12 October 2026) found that the product side was largely covered, while the process and technical artifacts were missing or incomplete. This change fills those gaps **using only information already in the repository** (the three deliverables, the survey script and the assignment PDF) and flags in each document what is still missing.
