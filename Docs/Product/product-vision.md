@@ -1,7 +1,7 @@
 # Product Vision
 
-> LABDSOF 2026/27 · Sprint 1 · Assignment §5.4 and §7.1.2 (deliverable 4)
-> **Status:** draft for the Sprint 1 review (12 October 2026). Consolidates what is already agreed in the repository and adds the parts that were missing (vision statement, measurable success criteria).
+> LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §5.4 and §7.1.2 (deliverable 4)
+> **Status:** vision statement, pitch and success-criteria rule agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Open: product name, some target numbers.
 > **Source of truth for the problem:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (PT). This document summarises it and links back to it; it does not replace it.
 
 ## Legend
@@ -17,11 +17,24 @@
 
 ## 1. Vision statement
 
-> **[PROPOSED]** For the **organising teams of large academic festivals in Portugal** and the **students who attend them**, who today depend on scattered, static information and on radio and phone calls to get help to the right place, **[product name]** is a **multi-event coordination platform** that connects a shared venue map, live event information and help requests in a single place. Unlike Instagram posts, WhatsApp help lines and single-festival apps, it links participants and the operations team through the same data, opens from a link or QR code without installation, and keeps working on a weak network.
+> For the **organising teams of large academic festivals in Portugal** and the **students who attend them**, who today depend on scattered, static information and on radio and phone calls to get help to the right place, **[product name]** is a **multi-event coordination platform** that connects a shared venue map, live event information and help requests in a single place. Unlike Instagram posts, WhatsApp help lines and single-festival apps, it links participants and the operations team through the same data, opens from a link or QR code without installation, and keeps working on a weak network.
 
-**One-line pitch [PROPOSED]:** *One map, one source of truth, one tap to get help, for every academic festival.*
+**One-line pitch:** *One map, one source of truth, one tap to get help, for every academic festival.*
 
-> ⚠️ **GAP: product name.** The product has no name anywhere in the repository. Needed: a working name for the slides, the repository description and the PWA title.
+Vision statement and pitch **agreed by the team on 8 October 2026**.
+
+### Product name candidates **[DECISION NEEDED]**
+
+| Name | Idea |
+|---|---|
+| **Farol** | "Lighthouse": guides people home and shows where help is. Short, Portuguese, easy to say at night |
+| **Recinto** | "Venue": the map of the venue is the centre of the product |
+| **Malta** | Portuguese slang for "the group of friends": community reports, students for students |
+| **Rumo** | "Heading / direction": find your way in and home |
+| **Ponto** | "Point" or "meeting point": every feature is a point on the map |
+| **SOS Festa** | Says the safety part out loud, but it may sound like an emergency-only app |
+
+Check before choosing: the name is free on the domain and in the app stores, and it does not tie the product to one festival (it is multi-event).
 
 ## 2. Problem in one paragraph
 
@@ -53,25 +66,36 @@ Source: report *Visão de produto > Proposta de valor*; market analysis §3 *Opo
 
 ## 5. Measurable success criteria
 
-The report lists the success criteria qualitatively (*Critérios de sucesso*). The assignment (§5.4) requires them to be **measurable**. The table below turns each one into a metric. The metric ideas come from the market annex §5 (*Como se prova*); the **targets are [PROPOSED]** and must be confirmed by the team.
+**Rule (team decision, 8 October 2026):** a success criterion must **prove that the product works**. It must be measurable on the MVP by a test, a timer or a query, without depending on how fast people react. For example, "the AI triage routes a request in under 30 s" is a success criterion; "the event team responds faster" is not, because it depends on the operators, not on the product.
 
-| # | Success criterion (report) | Metric | How it is measured in the MVP | Target **[PROPOSED]** | Baseline |
-|---|---|---|---|---|---|
-| S1 | Students find the information they need quickly | Task success: "find the nearest first-aid point" and "find the next shuttle home" | Usability test with students on the prototype/MVP | ≥ 80 % complete each task in ≤ 30 s | Survey Q6 (ease of finding information, 1–5): **pending** |
-| S2 | Opening the app is fast, even on a weak network | Time from scanning the QR code to seeing the venue map | Automated test with network throttling (slow 3G profile) | ≤ 5 s (cold), ≤ 1 s from cache | None (new capability) |
-| S3 | Help requests are easier to submit | Time from opening "Ask for help" to request submitted | Usability test | Median ≤ 30 s | Survey Q5 (what students do today): **pending** |
-| S4 | Help requests are located precisely | % of help requests with a location marked on the map | Product analytics | ≥ 80 % | Today: location described by voice or not at all (report, root cause 4, *to confirm*) |
-| S5 | The event team responds faster | Time from request submitted to acknowledged by an operator | Simulation of a night with a synthetic set of requests | Median ≤ 2 min | **Pending**: interview with the security volunteer |
-| S6 | The team has a clear view of what is happening | % of requests with category, location, status and history recorded | Database query | 100 % | Today: no structured history (report, root cause 4) |
-| S7 | Information is trustworthy | % of live information items showing their last-update time | Automated UI test | 100 % | Today: none (static posts) |
-| S8 | Each event's data stays private to its team | Cross-event access attempts that succeed | Automated authorisation tests (report §5, technical risks) | 0 | — |
-| S9 | Students would actually use it (assumption A2/A3) | % answering "Sim, de certeza" or "Provavelmente sim" to survey Q7 | Survey | Validation gate: ≥ 60 %; below 40 % triggers a rethink | **Pending** |
+| # | Success criterion | Metric | How it is measured | Target |
+|---|---|---|---|---|
+| SC1 | The app opens fast, even on a weak network | Time from scanning the QR code to seeing the venue map | Automated test with network throttling (slow 3G profile) | ≤ 5 s cold, ≤ 1 s from cache **[PROPOSED]** |
+| SC2 | A help request reaches the event team at once | Time from "submit" on the phone to the request appearing in the backoffice, without reloading | Automated end-to-end test | p95 ≤ 5 s **[PROPOSED]** |
+| SC3 | **The AI triage routes a request fast** | Time from submission to a stored suggestion of category, priority and response team | Timer in the triage worker; load test with the evaluation set | **≤ 30 s** (team decision) |
+| SC4 | The AI triage is correct where it matters | Urgent cases under-prioritised; category accuracy | Evaluation set, compared with the non-AI fallback | 0 urgent cases under-prioritised; category accuracy ≥ 80 % **[PROPOSED]** |
+| SC5 | No request is lost when the AI fails | % of requests shown to the operator when the AI is off or slow | Automated test with the AI stopped | 100 %, with the fallback after 30 s |
+| SC6 | Live updates reach participants | Time from publishing an announcement to it appearing on an open participant app | Automated end-to-end test | ≤ 10 s **[PROPOSED]** |
+| SC7 | Information shows how fresh it is | % of information items showing their last-update time | Automated UI test | 100 % |
+| SC8 | Each event's data stays private to its team | Cross-event access attempts that succeed | Automated authorisation tests (report §5, technical risks) | 0 |
+| SC9 | Every change to a request is recorded | % of request changes with an audit record (who, when, from, to) | Database query after the test suite | 100 % |
+| SC10 | The app works without network | Map and information shown from cache after the network is cut | Automated offline test (degraded mode, assignment §6.8) | Passes, with "data from HH:MM" |
+| SC11 | Asking for help is quick | Time from opening "Ask for help" to request submitted | Usability test with students | Median ≤ 30 s **[PROPOSED]** |
 
-Outcomes the MVP cannot measure directly (they need a real event): adoption during the event, less confusion at entrances and transport, positive feedback from event teams (report, *Critérios de sucesso*). They stay as long-term outcomes.
+### Validation of the problem (not success criteria)
 
-> ⚠️ **GAP: baselines.** S1, S3, S5 and S9 have no baseline because the survey results and the interview with the security volunteer are still "TBD" (report, *Pesquisa com Utilizadores*). Needed: survey results (target of 100+ answers, report §4) and interview notes, then fill the *Baseline* column and confirm or adjust the targets.
+These measure whether the product is worth building, not whether it works. They come from the user research:
+
+| # | Question | Metric | Target |
+|---|---|---|---|
+| V1 | Would students use it? (assumptions A2, A3) | % answering "Sim, de certeza" or "Provavelmente sim" to survey Q7 | ≥ 60 %; below 40 % triggers a rethink |
+| V2 | Is finding information a real problem? | Survey Q6, ease of finding information (1–5) | Average ≤ 3 confirms the problem |
+
+Outcomes the MVP cannot measure (they need a real event): adoption during the event, faster response by the team, less confusion at entrances and transport, positive feedback from event teams (report, *Critérios de sucesso*). They stay as long-term outcomes.
+
+> ⚠️ **GAP: targets marked [PROPOSED].** Only SC3 (30 s) was set by the team. Needed: confirm the other numbers.
 >
-> ⚠️ **GAP: team agreement on targets.** Every target above is a proposal. Needed: the team confirms or changes them, and records the decision (Jira or a decision log).
+> ⚠️ **GAP: survey results.** V1 and V2 need the survey results (target of 100+ answers, report §4).
 
 ## 6. MVP boundary
 

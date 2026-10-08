@@ -1,7 +1,7 @@
 # Main Features and Initial Backlog
 
-> LABDSOF 2026/27 · Sprint 1 · Assignment §7.1.2 (deliverables 4 *MVP definition* and 5 *Product Backlog*)
-> **Status:** draft. The feature list comes from the components C1–C11 already identified in the repository (annex §1). Priorities, user stories and acceptance criteria are **[PROPOSED]**.
+> LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §7.1.2 (deliverables 4 *MVP definition* and 5 *Product Backlog*)
+> **Status:** feature list, MoSCoW, AI workflow (§4), engagement mechanism (§5) and external integration (§3) **agreed in the team meeting of 8 October 2026** ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). The features come from components C1–C11 (annex §1). User stories and acceptance criteria are still **[PROPOSED]**.
 > **Sources:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (*Definição do MVP*, §5 risks) · [`market-and-competitor-analysis-product-specific.md`](../Deliverables/market-and-competitor-analysis-product-specific.md) (§1, §2) · assignment PDF (§5.5, §5.6, §6).
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
@@ -17,7 +17,7 @@
 
 ## 2. Feature list and priority
 
-MoSCoW **[PROPOSED]**, based on the report's mitigation for scope risk: *"priorizar no MVP os pedidos de ajuda, a planta e a informação de transportes"* (report §5, execution risks). *Rank* is the build order within the Must-haves.
+MoSCoW **agreed by the team** (8 October 2026), based on the report's mitigation for scope risk: *"priorizar no MVP os pedidos de ajuda, a planta e a informação de transportes"* (report §5, execution risks). *Rank* is the build order within the Must-haves.
 
 | ID | Feature | Component (annex §1) | MoSCoW | Rank | Persona | Notes |
 |---|---|---|---|---|---|---|
@@ -29,70 +29,106 @@ MoSCoW **[PROPOSED]**, based on the report's mitigation for scope risk: *"priori
 | F6 | Transport information, including event shuttles and temporary stops | C5 | Must | 6 | P1, P3 | Event-specific transport entered by the team; link to Google Maps for regular lines (annex C5) |
 | F7 | Live announcements from the team, with last-update time | C4 | Must | 7 | P1, P3 | |
 | F8 | Weak-network and degraded mode: cached map and information, "data from HH:MM" | C10 | Must | 8 | P1 | Also covers assignment §6.8 |
-| F9 | AI-assisted workflow with non-AI fallback | C9 | Must (assignment §5.6) | 9 | P2 or P1 | **[DECISION NEEDED]**: which workflow, see §4 |
-| F10 | Ethical engagement mechanism | — | Must (assignment §5.5) | 10 | P1 | **[DECISION NEEDED]**: see §5. Not mentioned anywhere in the repository before this document |
+| F9 | AI help-request triage with non-AI fallback | C9 | Must (assignment §5.6) | 9 | P2 | Suggests category and priority; the operator decides. See §4 |
+| F10 | Community reports on the map and badges (ethical engagement) | — | Must (assignment §5.5) | 10 | P1, P3 | Waze-style reports (queues, WC out of service, …) and badges for events attended and confirmed reports. See §5 |
 | F11 | Entrance status per gate, updated manually by the team | C8 | Could | — | P1, P3 | Only if survey Q8 shows demand (annex C8) |
 | F12 | Link to the ticket on the ticketing partner's site | C11 | Won't (this release) | — | P1 | Ticketing is a partner, not part of the MVP (annex C11) |
 
 **Out of scope** (report *Fora de âmbito*; annex §1): physical capacity of entrances, heavy integrations, advanced crowd prediction, full automation, own ticketing.
 
-> ⚠️ **GAP: team agreement on priorities.** The MoSCoW and rank are proposals. Needed: the team confirms them in backlog refinement and records them in Jira (assignment §8.2).
-
 ## 3. Assignment requirements covered by the features
 
 | Assignment requirement | How the product meets it | Status |
 |---|---|---|
-| §5.5 Ethical engagement design | F10 | **[DECISION NEEDED]** |
-| §5.6 At least one AI-assisted workflow, with evaluation and baseline or fallback | F9 | **[DECISION NEEDED]** |
+| §5.5 Ethical engagement design | F10: community reports and badges | Decided (§5) |
+| §5.6 At least one AI-assisted workflow, with evaluation and baseline or fallback | F9: help-request triage | Decided (§4) |
 | §6.1 Client application | F2 (PWA) and backoffice | Defined |
 | §6.3 At least one asynchronous workflow | Help request → triage → notification of the event team (see [`architecture.md`](../Technical/architecture.md)) | **[PROPOSED]** |
-| §6.5 Integration with at least one external system or realistic simulator | Transport data (F6): STCP GTFS feed or a simulator | **[DECISION NEEDED]** |
+| §6.5 Integration with at least one external system or realistic simulator | **STCP GTFS feed** (F6) if it is public and usable; **otherwise a weather API** (e.g. IPMA open data) for weather for the event nights | Decided as a rule; GTFS check pending |
 | §6.6 Authentication and authorisation | Team members authenticated with per-event roles (F1); participants anonymous (to confirm) | **[PROPOSED]**; mocked authentication is allowed for the MVP (assignment footnote 1) |
 | §6.8 At least one degraded-mode scenario | F8 (network), plus AI unavailable (F9 fallback) and transport source unavailable (F6) | **[PROPOSED]** |
 
-## 4. AI-assisted workflow **[DECISION NEEDED]**
+## 4. AI-assisted workflow: help-request triage (decided)
 
-The repository lists two candidates (annex C9). One must be chosen: the assignment requires at least one meaningful AI-assisted workflow with an evaluation and a non-AI baseline or fallback (§5.6), and a *Responsible AI Opportunity Assessment* is a Sprint 1 deliverable (§7.1.2, item 6).
+**Decision (8 October 2026): Option A, help-request triage.** It is part of the core journey (help requests are the top MVP priority), its fallback already exists in the product, and it is easy to evaluate with a synthetic dataset. Option B (participant Q&A assistant) was rejected: a wrong transport answer at night is a higher safety risk, and a chat interface would need justification (assignment §5.6).
 
-| | **Option A · Help-request triage** | **Option B · Participant Q&A assistant** |
+| | Help-request triage |
+|---|---|
+| What the AI does | Reads the participant's category and optional text, then suggests a **category, a priority and the response team** (medical, security, PCR). The operator accepts or changes the suggestion |
+| User need | Requests arrive without category or priority (root cause 4); assumption A4 |
+| Non-AI fallback | Category chosen by the participant; requests in order of arrival, marked "not triaged" (annex C9) |
+| Human control | The AI only suggests. It never lowers a priority, and it never overwrites an operator's decision (domain model I4) |
+| Speed target | Suggestion within **30 s** of submission; after that, the fallback applies (success criterion SC3 in [`product-vision.md`](product-vision.md#5-measurable-success-criteria)) |
+| Market | Raven Controls does this for professional control rooms (annex C9); nobody does it for academic events |
+
+**The evaluation must include (assignment §5.6.1):**
+- intended purpose;
+- representative inputs: short help-request texts in European Portuguese, in informal language;
+- difficult or adverse cases: typos, slang, mixed languages, empty text, and text that tries to change the instructions (prompt injection);
+- expected outputs: category, priority and response team;
+- acceptance criteria and quality measures: accuracy per category, and how often an urgent case is under-prioritised;
+- latency, cost and known limitations.
+
+> ⚠️ **GAP: Responsible AI assessment.** Needed: (1) the *Responsible AI Opportunity Assessment* document (proposed workflow, expected value, risks, evaluation approach, fallback; Sprint 1 item 6); (2) the origin, scope and limits of the evaluation dataset (assignment §5.6.1).
+
+## 5. Ethical engagement mechanism: community reports and badges (decided)
+
+**Decision (8 October 2026):** participants earn **badges** for the events they attend and for useful **reports** they place on the map, in the style of Waze. Reports keep the information fresh for everyone (root cause 2) and show the team problems sooner. Badges give participants a reason to report.
+
+### 5.1 What can be reported **[PROPOSED]**
+
+Each report is a type, a point on the venue map and a time. It is not a help request: anything urgent or about a person goes through *Ask for help* or 112.
+
+| Report type | Example | Who uses it |
 |---|---|---|
-| What the AI does | Suggests category and priority for each help request from the participant's text and category; the operator accepts or changes it | Answers participants' questions about the event, only from information the team uploaded, with source and time |
-| User need (repository) | Requests arrive without category or priority (root cause 4); assumption A4 | Information is hard to find (survey Q6, Q8 option "Assistente") |
-| Assignment fit | "Classification and routing" is listed explicitly (§5.6) | "Retrieval over verified community information" is listed (§5.6); a chat interface must be justified (§5.6) |
-| Non-AI fallback | Category chosen by the participant, requests in order of arrival (annex C9) | FAQ page and search over event information (annex C9) |
-| Evaluation | Synthetic set of help-request texts with expected category/priority; compare with the fallback | Set of questions with expected answers from event data; compare with search |
-| Main risk | Wrongly lowering a priority. Mitigation: AI never lowers a priority without a person (annex C9) | A wrong transport answer at night can put someone at risk (annex C9) |
-| Market | Raven Controls already does it for professional control rooms (annex C9) | 42Chat FestivalBot already does it (annex C9) |
+| Queue at an entrance | "Gate 2: long queue (> 15 min)" · short / medium / long | Participants choose a gate; the team sees where the pressure is (related to F11) |
+| WC problem | Out of service, no water, very long queue | Team sends cleaning or maintenance; participants go to another WC |
+| Water point / bar out of water | "No water at bar 3" | Team restocks (alcohol and heat risk) |
+| Crowded area | "Very crowded in front of the main stage" | Team, as an early crowd-pressure signal |
+| Hazard | Broken glass, spill, dark area, broken fence | Team sends staff |
+| Transport problem | "Shuttle stop moved", "shuttle full", "shuttle not passing" | Participants waiting at the stop; team updates F6 |
+| Wrong information | A map point or announcement that is no longer true | Team corrects the information |
 
-**Recommendation [PROPOSED]: Option A.** It addresses the core journey (help requests, the top MVP priority), its fallback is trivial and already part of the product, and it is easy to evaluate with a synthetic dataset. Option B carries a higher safety risk and needs justification for a conversational interface.
+How a report behaves **[PROPOSED]**:
+- It appears on other participants' maps once it is **confirmed**, by the team or by other participants ("3 people confirmed in the last 10 min").
+- It **expires** after a set time for its type (e.g. 30 min for queues).
+- Participants can tap "still there" or "not there anymore".
 
-**If Option A is chosen, the evaluation must include (assignment §5.6.1):** intended purpose; representative inputs (short help-request texts in European Portuguese, informal language); difficult or adverse cases (typos, slang, mixed languages, empty text, text that tries to change the instructions, i.e. prompt injection); expected outputs (category, priority); acceptance criteria; quality measures (accuracy per category, how often an urgent case is under-prioritised); latency; cost; known limitations.
+### 5.2 Badges **[PROPOSED]**
 
-> ⚠️ **GAP: AI workflow not chosen and no Responsible AI assessment.** Needed: (1) team decision between A and B; (2) the *Responsible AI Opportunity Assessment* document (proposed workflow, expected value, risks, evaluation approach, fallback); (3) the origin, scope and limits of the evaluation dataset (assignment §5.6.1).
+| Badge | Earned for |
+|---|---|
+| Event badge | Opening an event during its dates, for example by scanning the QR code at the venue (e.g. "Queima 2027") |
+| First report | First report confirmed by the team or by others |
+| Reporter | 5 / 20 / 50 confirmed reports |
+| Good eye | A report the team marked as useful |
 
-## 5. Ethical engagement mechanism **[DECISION NEEDED]**
+**There are no badges for help requests**: emergencies must never be gamified.
 
-The assignment requires at least one mechanism that encourages constructive participation, and the team must explain five things about it (§5.5). Nothing about this exists in the repository yet. Options that fit the product:
+### 5.3 The five questions of assignment §5.5 **[PROPOSED]**
 
-| Option | Behaviour encouraged | Fit with the repository |
-|---|---|---|
-| **E1 · Confirm or flag information** | Participants confirm that an item is still correct or flag that it is wrong (e.g. "this shuttle stop is closed"). The team sees flags in the backoffice; the item shows "confirmed N min ago" | Directly addresses root cause 2 (static information) and the risk that out-of-date information makes things worse (report §5) |
-| E2 · "Got home safe" group check | Members of a group confirm they got home | Addresses the return-home risk (report §2, consequences), but needs group data and contact between users: privacy cost |
-| E3 · Team progress indicators | Operators see open requests, response times and requests resolved per night | Useful for P2, but encourages the team, not the community |
+1. **Behaviour encouraged:** participants report what they see at the venue, which keeps information accurate for everyone.
+2. **Why it helps the community:** other participants avoid queues and broken services; the team learns about problems before they become incidents.
+3. **Misuse prevention:**
+   - only confirmed reports count for badges, so false reports earn nothing;
+   - reports are rate-limited per device;
+   - reports expire;
+   - the team can hide reports and block a device;
+   - reports never change official information automatically.
+4. **Exclusion or exposure:**
+   - no public leaderboard and no public profile, and badges are private by default;
+   - nothing shows who made a report;
+   - attendance badges show neither which nights you were there nor where you were;
+   - participants who don't report lose no information.
+5. **Control and opt-out:** reporting and badges are optional; badges can be turned off and deleted at any time.
 
-**Recommendation [PROPOSED]: E1**, with draft answers to the five questions in §5.5:
-
-1. *Behaviour encouraged:* participants help keep event information accurate.
-2. *Why it helps:* other participants get fresher information, and the team learns about problems sooner.
-3. *Misuse prevention:* rate limit per device; flags only alert the team, they never change information automatically; the team can ignore or hide flags.
-4. *Exclusion or exposure:* anonymous; no rankings or public profiles; nothing shown about who flagged.
-5. *Control and opt-out:* entirely optional; participants who never flag lose nothing.
-
-> ⚠️ **GAP: engagement mechanism not chosen.** Needed: team decision, then a short section answering the five questions of §5.5.
+> ⚠️ **GAP: identity for badges.** Badges that span several events need a persistent participant identity: an anonymous device profile or an optional account. This depends on domain question DM-1 ([`domain-model.md`](../Technical/domain-model.md) §6). Losing the device loses the badges unless there is an account.
+>
+> ⚠️ **GAP: report types and confirmation rule.** The list in §5.1, the number of confirmations and the expiry times are proposals. Needed: the team agrees on them; ideally the interview with the security volunteer confirms which reports the team actually wants.
 
 ## 6. Initial backlog: user stories **[PROPOSED]**
 
-Draft stories for the Must-haves, written to be copied into Jira. Acceptance criteria use *Given / When / Then*. Estimates and sprint allocation are not included.
+Draft stories for the Must-haves, written to be copied into GitHub Projects. Acceptance criteria use *Given / When / Then*. Estimates and sprint allocation are not included.
 
 ### F1 · Multi-event and permissions
 
@@ -150,4 +186,21 @@ Draft stories for the Must-haves, written to be copied into Jira. Acceptance cri
 **US-11** · As a **participant**, I want the map and the last information to work when the network drops, so that I'm not left without information.
 - Given I opened the event once with network, when I lose connection, then I still see the map and information with "data from HH:MM".
 
-> ⚠️ **GAP: backlog not in a project-management tool.** The assignment requires Jira or an equivalent tool for the backlog, sprints and decisions (§8.2), and an *initial release plan* and *sprint objectives* (§7.1.2, item 5). Needed: stories in Jira with estimates, sprint goals for Sprints 2 and 3, and the release plan. Stories for F9 and F10 depend on the decisions in §4 and §5.
+### F9 · AI help-request triage
+
+**US-12** · As an **incident operator**, I want each new help request to arrive with a suggested category, priority and response team, so that I can route it faster.
+- Given a help request is submitted, when the AI is available, then a suggestion is shown within 30 s, marked as a suggestion.
+- Given the AI does not answer within 30 s, then the request is shown with the participant's category, marked "not triaged", in order of arrival.
+- Given I already set a priority, when a suggestion arrives, then my priority is not changed.
+
+### F10 · Community reports and badges
+
+**US-13** · As a **participant**, I want to report a problem on the map (e.g. a long queue at a gate), so that other people and the team know about it.
+- Given I choose a report type and a point on the map, when I submit, then the team sees it in the backoffice straight away.
+- Given my report is confirmed by the team or by other participants, then it appears on other participants' maps with its time, and disappears when it expires.
+
+**US-14** · As a **participant**, I want to earn badges for the events I attend and for my confirmed reports, so that my contribution is recognised.
+- Given my report is confirmed, then my report count goes up and I receive the next badge when I reach it.
+- Given I turn badges off, then my badges are deleted and no new ones are earned.
+
+> ⚠️ **GAP: backlog not on the board.** Needed: stories on the **GitHub Projects** board as issues (one story = one issue = one PR), sprint goals for Sprints B and C, and the initial release plan (§7.1.2, item 5).

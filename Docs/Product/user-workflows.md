@@ -15,6 +15,7 @@
 | W4 | Admin sets up an event | P3 | Second journey | 3 |
 | W5 | Team publishes a live update | P3 → P1 | Second journey ("atualiza informação durante a noite") | 4 |
 | W6 | Participant loses the network | P1 | Risks: congested network, offline mode (report §5) | Required by assignment §6.8 |
+| W7 | Participant reports a problem and earns a badge | P1 → P3 | Engagement mechanism ([`features.md` §5](features.md#5-ethical-engagement-mechanism-community-reports-and-badges-decided)) | Required by assignment §5.5 |
 
 For the 5–7 minute presentation, **W2 + W3 tell the whole story**: a participant asks for help, and the event team sees it on the map, prioritises it and routes it.
 
@@ -40,7 +41,7 @@ flowchart TD
 
 ## W2 · Participant asks for help (core journey)
 
-Source: report, third journey: *"Quando um participante envia um pedido de ajuda, a equipa do evento recebe esse pedido com contexto e localização, avalia a sua prioridade e encaminha-o para a equipa operacional adequada."* The AI step assumes **Option A (triage)** from [`features.md` §4](features.md#4-ai-assisted-workflow-decision-needed), which is still a **[DECISION NEEDED]**.
+Source: report, third journey: *"Quando um participante envia um pedido de ajuda, a equipa do evento recebe esse pedido com contexto e localização, avalia a sua prioridade e encaminha-o para a equipa operacional adequada."* The AI step is the **help-request triage** chosen by the team ([`features.md` §4](features.md#4-ai-assisted-workflow-help-request-triage-decided)); the suggestion must arrive within 30 s (SC3), otherwise the fallback applies.
 
 ```mermaid
 sequenceDiagram
@@ -160,3 +161,20 @@ flowchart TD
 **[PROPOSED]:** help requests are **not** queued silently while offline, because a request that looks sent but is not is worse than an honest failure ("fail safely", assignment §6.8).
 
 > ⚠️ **GAP: degraded-mode scenario to demonstrate.** The assignment requires the presentation to show what happens when a dependency is unavailable (§6.8). Needed: the team picks which scenario to demo (network loss, AI unavailable, transport source unavailable) and when.
+
+## W7 · Participant reports a problem and earns a badge **[PROPOSED]**
+
+Source: engagement mechanism decided by the team on 8 October 2026 ([`features.md` §5](features.md#5-ethical-engagement-mechanism-community-reports-and-badges-decided)).
+
+```mermaid
+flowchart TD
+    A["Participant taps Report"] --> B["Chooses type: queue, WC, water, crowd, hazard, transport, wrong info"]
+    B --> C["Marks the point on the venue map"]
+    C --> D["Report sent: team sees it in the backoffice at once"]
+    D --> E{"Confirmed by the team or by other participants?"}
+    E -- Yes --> F["Shown on everyone's map with its time, until it expires"]
+    F --> G["Reporter's count goes up; badge when a level is reached"]
+    E -- No --> H["Expires; no badge; team can hide it"]
+```
+
+Urgent situations about a person are **not** reports: the app sends the participant to *Ask for help* (W2) or 112.

@@ -29,7 +29,7 @@ Journeys W1–W6 are described in [`user-workflows.md`](user-workflows.md).
 | **What she does today (hypothesis)** | Looks for information on Instagram, the event site and WhatsApp groups; looks for a security guard or staff member when she needs help. *To validate with survey Q4 and Q5* |
 | **Barriers to adoption (hypothesis)** | Installing another app, battery use, sharing her location, weak network, not trusting that the information is up to date. *To validate with survey Q9* |
 | **Location sharing (hypothesis)** | Prefers to mark where she is on the venue map rather than share GPS. *To validate with survey Q10* |
-| **What success looks like** | Opens the link from the QR code on her ticket or at the venue (annex §7), sees the map in seconds, finds the next shuttle, and can ask for help for a friend in under 30 s (success criteria S1–S3) |
+| **What success looks like** | Opens the link from the QR code on her ticket or at the venue (annex §7), sees the map in seconds, finds the next shuttle, and can ask for help for a friend in under 30 s (success criteria SC1, SC11) |
 | **Design implications** | No installation; large tap targets; short text; works from cache; "Call 112" first in emergencies; never asks for more data than needed (report §5, risks) |
 
 ## P2 · Miguel, the incident operator
@@ -42,7 +42,7 @@ Journeys W1–W6 are described in [`user-workflows.md`](user-workflows.md).
 | **Frustrations (hypothesis)** | Requests arrive by radio and phone, with no structured history, no priority and no precise location. *Report root cause 4, explicitly marked as a hypothesis to confirm in the interview with the security volunteer* |
 | **What he needs from the product** | A live list and a map of open requests; category, location and status on every request; a suggested priority he can accept or change; a record of who did what |
 | **Constraints** | Must not depend on the product alone: radio stays as the backup channel. The product does not replace 112 (report §5, regulatory risks) |
-| **What success looks like** | Acknowledges a new request in under 2 minutes and knows its exact location on the map (S4, S5) |
+| **What success looks like** | Sees each new request within seconds, with its exact location on the map and an AI-suggested priority and team within 30 s (SC2, SC3) |
 
 > ⚠️ **GAP:** almost everything about P2 is a hypothesis until the **interview with the security volunteer** happens (report §4). Needed: interview notes on how a request reaches the team today, which channels are used, how long it takes, and who decides the priority. Then update the *Frustrations* and *Constraints* rows.
 

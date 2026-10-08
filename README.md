@@ -12,6 +12,8 @@ Multi-event coordination platform for large academic festivals (pilot case: Quei
 | Product | [Product Vision](Docs/Product/product-vision.md) · [Personas](Docs/Product/personas.md) · [Main Features and Backlog](Docs/Product/features.md) · [User Workflows](Docs/Product/user-workflows.md) | EN |
 | Process | [Team Roles and Work Process](Docs/Process/team-and-process.md) · [Definition of Ready and Done](Docs/Process/definition-of-ready-and-done.md) | EN |
 | Technical | [Domain Model](Docs/Technical/domain-model.md) · [High-Level Architecture](Docs/Technical/architecture.md) | EN |
+| Meetings | [2026-10-08 Sprint A gap review and decisions](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) | EN |
+| Context | [Project context and open items](PROJECT-CONTEXT.md) | EN |
 | History | [CHANGELOG](CHANGELOG.md) | EN |
 
 # Contributing Guidelines

@@ -117,7 +117,7 @@ Each service owns its data; no service reads another service's database. The Inc
 
 ## 6. The asynchronous workflow: help-request triage
 
-Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). Assumes AI Option A ([`features.md` §4](../Product/features.md#4-ai-assisted-workflow-decision-needed)). End-to-end flow: [`user-workflows.md`, W2](../Product/user-workflows.md#w2--participant-asks-for-help-core-journey).
+Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). Assumes AI Option A ([`features.md` §4](../Product/features.md#4-ai-assisted-workflow-help-request-triage-decided)). End-to-end flow: [`user-workflows.md`, W2](../Product/user-workflows.md#w2--participant-asks-for-help-core-journey).
 
 | Concern (assignment §6.3) | How it is handled **[PROPOSED]** |
 |---|---|
