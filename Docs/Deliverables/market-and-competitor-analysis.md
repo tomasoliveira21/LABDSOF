@@ -1,7 +1,7 @@
 # Análise de Mercado e Concorrência (geral)
 
 > LABDSOF 2026/27 · Sprint A
-> **O que é este documento:** a visão **geral** do mercado de gestão de eventos académicos em Portugal, fase a fase, com tudo o que existe hoje. A análise **específica** das funcionalidades que queremos incluir no projeto está no anexo `02a-Anexo-Mercado-Especifico-do-Produto.md`.
+> **O que é este documento:** a visão **geral** do mercado de gestão de eventos académicos em Portugal, fase a fase, com tudo o que existe hoje. A análise **específica** das funcionalidades que queremos incluir no projeto está no anexo [`market-and-competitor-analysis-product-specific.md`](market-and-competitor-analysis-product-specific.md) (anexo 02a).
 > **Alinhado com o repositório** (`Docs/Deliverables/problem-opportunity-report-queima.md`, commit `442ecc3`, 2026-10-03): plataforma **multi-evento** de coordenação para eventos académicos de grande escala, com aplicação web para o participante e backoffice para a equipa de cada evento. Caso-piloto: Queima das Fitas do Porto.
 > **Mercado-alvo:** Portugal. As referências internacionais servem só de comparação.
 >
