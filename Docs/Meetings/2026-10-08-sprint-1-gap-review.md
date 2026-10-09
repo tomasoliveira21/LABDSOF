@@ -2,7 +2,7 @@
 
 > **Date:** 2026-10-08 · **Goal:** close the open decisions before the Sprint 1 presentation on **12 October 2026** (5–7 min).
 > **How to use:** go through the sections in order. For each item, read *Done* and *Missing*, decide, write the decision and the owner in the **Decision** line, and tick the box. Anything not decided today goes to **§10 Parking lot**.
-> **Background:** full analysis in [`PROJECT-CONTEXT.md`](../../PROJECT-CONTEXT.md) §4 · gap list G1–G23 and decisions DN-1–DN-8 in [`CHANGELOG.md`](../../CHANGELOG.md).
+> **Background:** gap list and decisions in [`CHANGELOG.md`](../../CHANGELOG.md).
 
 **Attendees:** ______________________ · **Note-taker:** __________
 
@@ -25,15 +25,32 @@
 | DoR | Removed: estimate/fits in sprint, UI sketch, privacy-impact note | `definition-of-ready-and-done.md` |
 | DoD | **1 user story = 1 issue = 1 PR**; removed "every PR for the story merged" from Level 2; Level 3 removed | `definition-of-ready-and-done.md` |
 | Architecture & domain model | **Not part of this presentation**; they will be evaluated later | — |
-| Topic owners | Product vision: **Tomás** · Personas: **Tiago** · Main features: **Bruno** · Workflows: **Antônio**. The owner closes the open items of the topic and presents it | `PROJECT-CONTEXT.md` §4 |
+| Topic owners | Product vision: **Tomás** · Personas: **Tiago** · Main features: **Bruno** · Workflows: **Antônio**. The owner closes the open items of the topic and presents it | §9 |
+
+### Follow-up decisions (9 October 2026, main-features owner)
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Product name | **Farol** | `product-vision.md` §1 |
+| Login | **Mandatory for every user**, participants included; the anonymous link/QR feature is removed (DM-1 → account). All documents updated to match | `features.md` §2, all docs |
+| Attendance | An event counts as attended when the logged-in participant scans the event QR code **at the venue during the event dates**: new feature **F16 Event check-in** (Should) | `features.md` §2, §6.3; `user-workflows.md` W8 |
+| Offline mode | **F11 weak-network mode moves from Must to Could** | `features.md` §2 |
+| New features | Login/logout (Must) · personal account management (Must) · event management and event role management (Must) · report confirmation/unconfirmation by the responsible team (Must) · friends (Could) · chat between friends (Won't) | `features.md` §2 |
+| Badges | Linked to the account. Three tracks (event attendance: Should; report history and reports per event: Must), six tiers: Wood 1–2 · Bronze 3–9 · Silver 10–49 · Gold 50–99 · Platinum 100–499 · Diamond 500+ | `features.md` §6.3 |
+| Response teams | Medical · Security · PCR · Logistics | `features.md` §4 |
+| Degraded mode (§6.8) | Two scenarios: **D1 AI unavailable** and **D2 transport source unavailable**. Not shown in the presentation | `features.md` §3.1 |
+| External integration | **STCP GTFS** (being validated); weather API only as plan B | `features.md` §3 |
+| Backlog | User stories rewritten (US-01 to US-23), to validate, then loaded into GitHub Projects | `features.md` §7 |
+| Presentation | Bruno opens with a cover slide (name + team); Tomás presents slide 1 (problem and vision). Main-features slides: `Docs/Presentation/Farol_First_Presentation.pptx` (speaker notes in Portuguese) | §9 |
+| Project context file | Dropped; references removed. The README is the documentation index | `README.md`, `CLAUDE.md` |
 
 ## Status at a glance
 
 | # | Topic | Status | Blocking item for the presentation |
 |---|---|---|---|
-| 1 | Product vision | 🟢 | Product name |
+| 1 | Product vision | 🟢 | — (name decided: Farol) |
 | 2 | Personas | 🟡 | No research data yet (survey, interview) |
-| 3 | Main features | 🟡 | AI workflow and engagement mechanism not chosen |
+| 3 | Main features | 🟢 | AI workflow details (features §5.2); user stories to validate |
 | 4 | Workflows | 🟢 | Degraded-mode demo scenario |
 | 5 | DoR / DoD | 🟡 | Not agreed by the team |
 | 6 | Team roles & process | 🔴 | **No roles assigned, no Jira board** |
@@ -180,7 +197,7 @@ Choose what the team already knows. Speed matters more than novelty with three s
 
 | # | Question | Options | Decision |
 |---|---|---|---|
-| DM-1 | Is the participant anonymous or do they have an account? | (a) anonymous device token · (b) optional phone number · (c) account | |
+| DM-1 | Is the participant anonymous or do they have an account? | (a) anonymous device token · (b) optional phone number · (c) account | **(c) account, login mandatory** (9 Oct) |
 | DM-2 | Is a help request the same thing as an incident? | (a) one entity (as modelled) · (b) an incident groups several requests | |
 | DM-3 | Can operators create requests (reported by radio)? | yes / no | |
 | DM-4 | Help categories and response teams | Keep the proposal until the interview | |
@@ -211,7 +228,7 @@ Suggestion for the MVP: **(a)** for DM-1, DM-2 and DM-5; **no** for DM-3. These 
 
 **Missing:** confirmed statuses and response teams (interview) · the degraded-mode scenario to demo.
 
-- [ ] Degraded-mode scenario to demo: network loss (W6) / AI unavailable / transport source down · **Decision:** ______
+- [x] Degraded-mode scenario: **AI unavailable (D1) and transport source down (D2)**; not shown in the presentation · **Decision:** 9 Oct, `features.md` §3.1
 
 ---
 

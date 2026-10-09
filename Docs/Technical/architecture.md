@@ -95,7 +95,7 @@ Not drawn, to keep the diagram readable: every container sends structured logs, 
 
 | Container | Responsibility | Owns (see [`domain-model.md`](domain-model.md)) | Independently deployable |
 |---|---|---|---|
-| **Participant web app** | Event selection, map, information, transport, help request, offline cache | Nothing (cache only) | Yes (static files) |
+| **Participant web app** | Login, event selection, map, information, transport, help request, offline cache | Nothing (cache only) | Yes (static files) |
 | **Backoffice web app** | Event configuration (P3); live request list and map (P2) | Nothing | Yes (static files) |
 | **API gateway** | Single entry point, TLS, routing, rate limiting per device and IP (abuse of help requests) | Nothing | Yes |
 | **Event service** | Events, memberships and roles, venue maps and points of interest, transport (including the external transport adapter), announcements. Serves the participant's read API, which must be cacheable (D2) | Event, Membership, TeamMember, ResponseTeam, VenueMap, PointOfInterest, TransportOption, Announcement | **Yes** |
@@ -117,7 +117,7 @@ Each service owns its data; no service reads another service's database. The Inc
 
 ## 6. The asynchronous workflow: help-request triage
 
-Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). Assumes AI Option A ([`features.md` §4](../Product/features.md#4-ai-assisted-workflow-help-request-triage-decided)). End-to-end flow: [`user-workflows.md`, W2](../Product/user-workflows.md#w2--participant-asks-for-help-core-journey).
+Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). Assumes AI Option A ([`features.md` §5](../Product/features.md#5-ai-assisted-workflow-help-request-triage)). End-to-end flow: [`user-workflows.md`, W2](../Product/user-workflows.md#w2--participant-asks-for-help-core-journey).
 
 | Concern (assignment §6.3) | How it is handled **[PROPOSED]** |
 |---|---|
@@ -131,8 +131,8 @@ Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). Assumes AI O
 
 | Integration | Purpose | Handling of unavailable, late, incomplete or invalid data (assignment §6.5) |
 |---|---|---|
-| **Transport data** (STCP GTFS feed or a realistic simulator) **[DECISION NEEDED]** | Real-time and scheduled transport for F6 | Data validated on import; on failure, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected |
-| **AI model provider** | Triage suggestions (F9) | Timeout, then fallback (§6); the suggestion is never shown as a fact (assignment §5.6.2) |
+| **Transport data** (STCP GTFS feed or a realistic simulator) **[DECISION NEEDED]** | Real-time and scheduled transport for F9 | Data validated on import; on failure, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected |
+| **AI model provider** | Triage suggestions (F8) | Timeout, then fallback (§6); the suggestion is never shown as a fact (assignment §5.6.2) |
 
 > ⚠️ **GAP: transport source.** The annex notes that STCP real-time data reached Google Maps in June 2026 but it is not known whether the event shuttles are included (annex C5, *[H: verificar no GTFS]*). Needed: check whether the STCP GTFS feed is openly available and usable; otherwise decide to build a simulator.
 
@@ -142,7 +142,7 @@ Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). Assumes AI O
 |---|---|---|
 | Team members | Authenticated through an identity provider; token carries the user ID. **Mocked in the MVP** is allowed | Assignment §6.6, footnote 1 |
 | Authorisation | Role checked **per event** on every request (invariant I1); enforced in each service, not only in the gateway | Report §5; domain model I1 |
-| Participants | Anonymous device token, no account **(depends on open question DM-1)** | Report: "sem instalação obrigatória" |
+| Participants | **Account with mandatory login** (decided 9 October 2026, DM-1); mocked authentication allowed for the MVP (assignment §6.6, footnote 1) | [`features.md`](../Product/features.md) F1, F2 |
 | Service to service | Services only accept calls from the gateway or the internal network; broker credentials per service | Assignment §6.6 |
 | Audit | Every change to a help request recorded (StatusChange) | Domain model I5; assignment §6.6 |
 | Abuse | Rate limit on help requests per device and IP in the gateway | **[PROPOSED]** |
@@ -162,7 +162,7 @@ The assignment requires at least one degraded-mode scenario to be implemented an
 | **Incident service** | Participant app shows "Help requests are temporarily unavailable: call 112 or go to the nearest first aid"; event information still works because it comes from the Event service | D7 |
 | **Message broker** | Requests are still saved (outbox); triage and live updates resume when the broker returns; backoffice falls back to periodic refresh | D6 |
 
-> ⚠️ **GAP:** the team has to choose which scenario to demonstrate in the presentation (see [`user-workflows.md`, W6](../Product/user-workflows.md#w6--participant-loses-the-network-degraded-mode)).
+**Decided (9 October 2026):** the §6.8 scenarios are **AI service unavailable (D1)** and **transport source unavailable (D2)**, specified in [`features.md` §3.1](../Product/features.md#31-degraded-mode-scenarios-decided-9-october-2026). Network loss (offline mode, F11) is a Could.
 
 ## 10. Deployment view
 
@@ -227,7 +227,7 @@ The repository says nothing about technology. Each line below needs a decision a
 | ADR-003 | Database technology and data ownership per service |
 | ADR-004 | Message broker and delivery guarantees |
 | ADR-005 | AI workflow (Option A or B), provider and fallback |
-| ADR-006 | Participant identity: anonymous token or account (domain model DM-1) |
+| ADR-006 | Participant identity: account with mandatory login (decided 9 October 2026, domain model DM-1); record the decision and the mocked-auth choice |
 | ADR-007 | Venue map representation (image coordinates or geospatial) |
 | ADR-008 | Transport data source: STCP GTFS or simulator |
 

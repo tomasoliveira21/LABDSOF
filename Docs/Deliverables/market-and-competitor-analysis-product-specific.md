@@ -30,7 +30,7 @@
 | # | Componente | Estado no repositório | Origem |
 |---|---|---|---|
 | **C1** | Plataforma multi-evento: cada evento com owner, equipa e permissões próprias | **MVP** | Relatório, "Visão do produto" e "Definição do MVP" |
-| **C2** | Aplicação web do participante (PWA), aberta por link ou QR, sem instalação obrigatória | **MVP** | Relatório; inquérito, perguntas 7 e 9 |
+| **C2** | Aplicação web do participante (PWA), aberta por link ou QR, sem instalação obrigatória, com login obrigatório (decidido a 9 de outubro de 2026) | **MVP** | Relatório; inquérito, perguntas 7 e 9 |
 | **C3** | Planta do recinto carregada e configurada pela equipa (entradas, palcos, WC, primeiros socorros, paragens) | **MVP** | Relatório, "Oportunidade"; inquérito, pergunta 8 |
 | **C4** | Informação essencial do evento, atualizada durante a noite pela equipa (avisos) | **MVP** | Relatório, causa raiz 2; inquérito, pergunta 8 |
 | **C5** | Informação de transportes e regresso a casa | **MVP** | Relatório; inquérito, perguntas 3 e 8 |

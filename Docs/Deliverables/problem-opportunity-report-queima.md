@@ -179,7 +179,7 @@ As assunções mais críticas são **A2, A3 e A4**. Se os participantes não usa
 
 **Mercado e adoção**
 - O uso concentra-se em poucos dias por ano por evento, com pouca retenção. A plataforma multi-evento atenua isto, porque o mesmo utilizador volta noutros eventos.
-- Convencer os estudantes a usar mais uma aplicação. Mitigação: acesso por link ou QR, sem instalação obrigatória.
+- Convencer os estudantes a usar mais uma aplicação. Mitigação: acesso por link ou QR, sem instalação obrigatória, com uma única conta para todos os eventos (login obrigatório, decidido a 9 de outubro de 2026).
 - O fornecedor da app atual de cada federação pode copiar as funcionalidades.
 - As direções académicas mudam todos os anos, o que torna incerta a continuidade de cada evento na plataforma.
 

@@ -118,7 +118,7 @@ Hoje, cada fase do evento é tratada por uma ferramenta diferente, e a informaç
 
 | Face | O que faz | O que ganha por estar ligada à outra |
 |---|---|---|
-| **Aplicação web do participante** (link ou QR, sem instalar) | Escolhe o evento; vê a planta, a informação essencial e os transportes; pede ajuda | O pedido chega à equipa com contexto e local na planta |
+| **Aplicação web do participante** (link ou QR, sem instalar, com login) | Escolhe o evento; vê a planta, a informação essencial e os transportes; pede ajuda | O pedido chega à equipa com contexto e local na planta |
 | **Backoffice da equipa do evento** | Configura o evento (planta, pontos, transportes); atualiza informação durante a noite; recebe, prioriza e encaminha ocorrências | O que a equipa atualiza aparece logo ao participante; cada equipa só vê o seu evento |
 
 **Porque é diferente das alternativas:**

@@ -6,12 +6,12 @@
 
 ## 1. Team
 
-| Member | GitHub | Contributions so far (from commits) |
-|---|---|---|
-| Tomás Oliveira | `tomasoliveira21` | Repository owner; initial commit; Product Vision and User Research sections of the report (#17); merged PR #19 |
-| Tiago Teixeira | `tteixeira30` | Problem and Opportunity Report (#11); student survey script (#11); merged PR #18 and #21; added the assignment PDF |
-| Bruno de Abreu Lopes | — | Contributing guidelines (README); market and competitor analysis; merged PR #20 |
-| Antônio Guerra | — | — |
+| Member | GitHub | Student Number | Contributions so far (from commits) |
+|---|---|---|---|
+| Tomás Oliveira | `tomasoliveira21` | 1230213 | Repository owner; initial commit; Product Vision and User Research sections of the report (#17); merged PR #19 |
+| Tiago Teixeira | `tteixeira30` | 1240493 | Problem and Opportunity Report (#11); student survey script (#11); merged PR #18 and #21; added the assignment PDF |
+| Bruno de Abreu Lopes | `BrunoLopes1190` | 1240441 | Contributing guidelines (README); market and competitor analysis; merged PR #20 |
+| Antônio Guerra | `AntonioGuerra1190409` | 1190409 |  — |
 
 ## 2. Roles
 

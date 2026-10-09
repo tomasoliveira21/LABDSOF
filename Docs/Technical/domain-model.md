@@ -123,6 +123,7 @@ classDiagram
 | Entity | Description | Source in the repository |
 |---|---|---|
 | **Event** | One academic festival edition (e.g. Queima das Fitas do Porto 2027). Root of everything else. Status: `Draft → Published → Live → Closed` **[PROPOSED]** | Report, *Visão do produto*: "uma única aplicação que reúne vários eventos" |
+| **UserAccount** | Every person who uses the product, participant or team member, logs in with an account (decided 9 October 2026, DM-1). Badges, reports and help requests point to it. Mocked authentication is allowed for the MVP | [`features.md`](../Product/features.md) F1, F2 |
 | **TeamMember** | A person who uses the backoffice. Can belong to several events | Report: "cada evento tem um owner e uma equipa" |
 | **Membership** | Links a team member to an event with a **Role**: `Owner`, `Admin`, `Operator` **[PROPOSED]**. Permissions are always evaluated per event | Report: "cada equipa só vê e altera o seu próprio evento" |
 | **ResponseTeam** | A group that requests are routed to: medical, security, PCR **[PROPOSED list]** | Report, journeys: "encaminha-o para a equipa operacional adequada"; stakeholder map (PCR, security, INEM) |
@@ -169,7 +170,7 @@ classDiagram
 
 | # | Question | Options | Impact |
 |---|---|---|---|
-| DM-1 | Is the participant anonymous, or do they create an account? | (a) Fully anonymous, identified by a random device token; (b) optional phone number for call-back; (c) account | Privacy (RGPD), abuse prevention (fake requests), how the operator contacts the person. The survey and report say "sem instalação obrigatória" but nothing about accounts |
+| DM-1 | Is the participant anonymous, or do they create an account? | (a) Fully anonymous, identified by a random device token; (b) optional phone number for call-back; (c) account | Privacy (RGPD), abuse prevention (fake requests), how the operator contacts the person. The survey and report say "sem instalação obrigatória" but nothing about accounts. **Decided 9 October 2026: (c) account. Login is mandatory for every user; badges are linked to the account** ([`features.md`](../Product/features.md) §6.3). |
 | DM-2 | Is "help request" (participant side) the same entity as "incident" (team side)? | (a) One entity, HelpRequest, with a lifecycle (as modelled); (b) a team can create an Incident that groups several requests | (b) is useful for duplicates and team-reported incidents, but adds complexity |
 | DM-3 | Can operators create a request themselves (e.g. reported by radio)? | Yes / no | If yes, `HelpRequest` needs a `channel` attribute (App, Radio, Phone) |
 | DM-4 | Which help categories and response teams? | The lists above are proposals | Depends on the interview with the security volunteer |
