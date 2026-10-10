@@ -1,7 +1,7 @@
 # Product Vision
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §5.4 and §7.1.2 (deliverable 4)
-> **Status:** vision statement, pitch and success-criteria rule agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Open: product name, some target numbers.
+> **Status:** vision statement, pitch and success-criteria rule agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Product name **Farol** decided on 9 October 2026. Open: some target numbers.
 > **Source of truth for the problem:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (PT). This document summarises it and links back to it; it does not replace it.
 
 ## Legend
@@ -17,13 +17,15 @@
 
 ## 1. Vision statement
 
-> For the **organising teams of large academic festivals in Portugal** and the **students who attend them**, who today depend on scattered, static information and on radio and phone calls to get help to the right place, **[product name]** is a **multi-event coordination platform** that connects a shared venue map, live event information and help requests in a single place. Unlike Instagram posts, WhatsApp help lines and single-festival apps, it links participants and the operations team through the same data, opens from a link or QR code without installation, and keeps working on a weak network.
+> For the **organising teams of large academic festivals in Portugal** and the **students who attend them**, who today depend on scattered, static information and on radio and phone calls to get help to the right place, **Farol** is a **multi-event coordination platform** that connects a shared venue map, live event information and help requests in a single place. Unlike Instagram posts, WhatsApp help lines and single-festival apps, it links participants and the operations team through the same data, opens from a link or QR code without installation, with one account for every event.
 
 **One-line pitch:** *One map, one source of truth, one tap to get help, for every academic festival.*
 
-Vision statement and pitch **agreed by the team on 8 October 2026**.
+Vision statement and pitch **agreed by the team on 8 October 2026**. Updated on 9 October 2026: login is mandatory ("one account for every event"), and "keeps working on a weak network" was removed because offline mode (F11) is now a Could.
 
-### Product name candidates **[DECISION NEEDED]**
+### Product name: **Farol** (decided 9 October 2026)
+
+Chosen from the candidates below. Still to check: the name is free on the domain and in the app stores.
 
 | Name | Idea |
 |---|---|
@@ -70,7 +72,7 @@ Source: report *Visão de produto > Proposta de valor*; market analysis §3 *Opo
 
 | # | Success criterion | Metric | How it is measured | Target |
 |---|---|---|---|---|
-| SC1 | The app opens fast, even on a weak network | Time from scanning the QR code to seeing the venue map | Automated test with network throttling (slow 3G profile) | ≤ 5 s cold, ≤ 1 s from cache **[PROPOSED]** |
+| SC1 | The app opens fast, even on a weak network | Time from scanning the QR code to seeing the venue map, participant already logged in | Automated test with network throttling (slow 3G profile) | ≤ 5 s cold, ≤ 1 s from cache **[PROPOSED]** |
 | SC2 | A help request reaches the event team at once | Time from "submit" on the phone to the request appearing in the backoffice, without reloading | Automated end-to-end test | p95 ≤ 5 s **[PROPOSED]** |
 | SC3 | **The AI triage routes a request fast** | Time from submission to a stored suggestion of category, priority and response team | Timer in the triage worker; load test with the evaluation set | **≤ 30 s** (team decision) |
 | SC4 | The AI triage is correct where it matters | Urgent cases under-prioritised; category accuracy | Evaluation set, compared with the non-AI fallback | 0 urgent cases under-prioritised; category accuracy ≥ 80 % **[PROPOSED]** |
@@ -79,7 +81,7 @@ Source: report *Visão de produto > Proposta de valor*; market analysis §3 *Opo
 | SC7 | Information shows how fresh it is | % of information items showing their last-update time | Automated UI test | 100 % |
 | SC8 | Each event's data stays private to its team | Cross-event access attempts that succeed | Automated authorisation tests (report §5, technical risks) | 0 |
 | SC9 | Every change to a request is recorded | % of request changes with an audit record (who, when, from, to) | Database query after the test suite | 100 % |
-| SC10 | The app works without network | Map and information shown from cache after the network is cut | Automated offline test (degraded mode, assignment §6.8) | Passes, with "data from HH:MM" |
+| SC10 | The app works without network | Map and information shown from cache after the network is cut | Automated offline test. Only if F11 (Could) is built; not a §6.8 scenario | Passes, with "data from HH:MM" |
 | SC11 | Asking for help is quick | Time from opening "Ask for help" to request submitted | Usability test with students | Median ≤ 30 s **[PROPOSED]** |
 
 ### Validation of the problem (not success criteria)
@@ -101,7 +103,7 @@ Outcomes the MVP cannot measure (they need a real event): adoption during the ev
 
 | In the MVP | Out of the MVP |
 |---|---|
-| Participant web app: event selection, venue map, essential information, transport information, simple help-request flow | Physical capacity of entrances (number of gates, queue funnel design): infrastructure, not software |
+| Participant web app, behind login: event selection, venue map, essential information, transport information, simple help-request flow | Physical capacity of entrances (number of gates, queue funnel design): infrastructure, not software |
 | Backoffice: each team configures its own event, manages the venue map, updates information, handles incoming help requests | Heavy integrations with operators |
 | Multi-event with per-event permissions | Advanced crowd prediction, full automation |
 | Weak-network support with "last updated" times | Own ticketing (link to the ticketing partner at most) |

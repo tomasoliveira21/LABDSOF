@@ -1,3 +1,3 @@
 # CLAUDE.md
 
-Project context (what the product is, repo map, conventions, current gap analysis) lives in [`PROJECT-CONTEXT.md`](PROJECT-CONTEXT.md). Read it first and keep it updated when the project state changes.
+The product (Farol, a multi-event coordination platform for academic festivals) and the documentation index are in [`README.md`](README.md). Read it first. Team decisions are recorded in [`Docs/Meetings/`](Docs/Meetings/) and in [`CHANGELOG.md`](CHANGELOG.md); keep both up to date when the project state changes.

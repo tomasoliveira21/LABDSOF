@@ -2,12 +2,31 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-09 · Main features review (Bruno Lopes)
+
+**Why:** the main-features owner closed the open items of the topic before the presentation of 12 October 2026. Decisions listed in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions*).
+
+### Added
+- `Docs/Presentation/Farol_First_Presentation.pptx`: cover (name + team) and two main-features slides, speaker notes in Portuguese.
+- `features.md`: login/logout, personal account management, event management, event role and response-team management, report confirmation, event check-in, friends (Could), chat (Won't); response teams (§4); degraded-mode scenarios D1 and D2 (§3.1); AI items still to define (§5.2); badge tracks and tiers (§6.3).
+- `user-workflows.md` W8: check-in at the venue.
+- `domain-model.md`: `UserAccount` entity.
+
+### Changed
+- Product name: **Farol**.
+- Login is mandatory for every user (DM-1 → account): `features.md`, `user-workflows.md`, `personas.md`, `product-vision.md`, `architecture.md`, `domain-model.md`, report and market analysis updated.
+- `features.md`: feature list renumbered F1–F20; F11 (offline mode) moved to Could; user stories rewritten as US-01 to US-24 (to validate).
+- `product-vision.md`: vision statement no longer promises weak-network operation (F11 is a Could).
+
+### Removed
+- The anonymous participant web app feature (former F2).
+- The separate project-context file and all references to it; `CLAUDE.md` now points to the README.
+
 ## [Unreleased] · 2026-10-08 · Team meeting decisions
 
 **Why:** the team reviewed the gap analysis on 8 October 2026 and took the decisions listed in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md). This change applies them.
 
 ### Added
-- `PROJECT-CONTEXT.md` (project context and what is left before the presentation) and `CLAUDE.md` (points to it).
 - `Docs/Meetings/2026-10-08-sprint-1-gap-review.md`: the meeting guide, with the decisions taken.
 - `features.md` §5: community reports (Waze-style) and badges, with the five answers of assignment §5.5; stories US-12 to US-14.
 - `user-workflows.md` W7: report a problem and earn a badge.

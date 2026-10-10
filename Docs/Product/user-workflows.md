@@ -14,8 +14,9 @@
 | W1 | Participant finds information | P1 | First journey | 2 |
 | W4 | Admin sets up an event | P3 | Second journey | 3 |
 | W5 | Team publishes a live update | P3 → P1 | Second journey ("atualiza informação durante a noite") | 4 |
-| W6 | Participant loses the network | P1 | Risks: congested network, offline mode (report §5) | Required by assignment §6.8 |
-| W7 | Participant reports a problem and earns a badge | P1 → P3 | Engagement mechanism ([`features.md` §5](features.md#5-ethical-engagement-mechanism-community-reports-and-badges-decided)) | Required by assignment §5.5 |
+| W6 | Participant loses the network | P1 | Risks: congested network, offline mode (report §5) | Could (F11). Assignment §6.8 is covered by scenarios D1 and D2 ([`features.md` §3.1](features.md#31-degraded-mode-scenarios-decided-9-october-2026)) |
+| W7 | Participant reports a problem and earns a badge | P1 → P3 | Engagement mechanism ([`features.md` §6](features.md#6-ethical-engagement-mechanism-community-reports-and-badges)) | Required by assignment §5.5 |
+| W8 | Participant checks in at the venue | P1 | Attendance badges (F15, F16) | Should |
 
 For the 5–7 minute presentation, **W2 + W3 tell the whole story**: a participant asks for help, and the event team sees it on the map, prioritises it and routes it.
 
@@ -27,7 +28,9 @@ Source: report, first journey: *"abre a aplicação web através de um link ou Q
 
 ```mermaid
 flowchart TD
-    A["Scans QR code or opens link"] --> B{"Link already points to an event?"}
+    A["Scans QR code or opens link"] --> L{"Logged in?"}
+    L -- No --> M["Logs in, or creates an account (F1, F2)"] --> B
+    L -- Yes --> B{"Link already points to an event?"}
     B -- Yes --> D["Event home: map + latest announcements"]
     B -- No --> C["Chooses the event from the list"] --> D
     D --> E["Map: entrances, stages, WC, first aid, stops"]
@@ -37,15 +40,15 @@ flowchart TD
     F --> H
 ```
 
-**[PROPOSED] details:** an event-specific QR code skips the selection step; the last-update time on every item comes from the risk "information that is out of date can make things worse" (report §5).
+**Login is mandatory** (decided 9 October 2026): the participant logs in once and stays logged in on the device; one account works for every event. **[PROPOSED] details:** an event-specific QR code skips the selection step; the last-update time on every item comes from the risk "information that is out of date can make things worse" (report §5).
 
 ## W2 · Participant asks for help (core journey)
 
-Source: report, third journey: *"Quando um participante envia um pedido de ajuda, a equipa do evento recebe esse pedido com contexto e localização, avalia a sua prioridade e encaminha-o para a equipa operacional adequada."* The AI step is the **help-request triage** chosen by the team ([`features.md` §4](features.md#4-ai-assisted-workflow-help-request-triage-decided)); the suggestion must arrive within 30 s (SC3), otherwise the fallback applies.
+Source: report, third journey: *"Quando um participante envia um pedido de ajuda, a equipa do evento recebe esse pedido com contexto e localização, avalia a sua prioridade e encaminha-o para a equipa operacional adequada."* The AI step is the **help-request triage** chosen by the team ([`features.md` §5](features.md#5-ai-assisted-workflow-help-request-triage)); the suggestion must arrive within 30 s (SC3), otherwise the fallback applies.
 
 ```mermaid
 sequenceDiagram
-    actor P as Participant (Rita)
+    actor P as Participant (Rita, logged in)
     participant App as Participant web app
     participant Inc as Incident service
     participant AI as AI triage
@@ -102,11 +105,11 @@ stateDiagram-v2
 Steps:
 1. A new request appears on the operator's list and on the venue map, with category, location, time and, if available, the AI suggestion.
 2. The operator acknowledges it and confirms or changes the priority.
-3. The operator routes it to a response team (medical, security, PCR) or handles it directly.
+3. The operator routes it to a response team (Medical, Security or PCR; [`features.md` §4](features.md#4-response-teams-decided-9-october-2026)) or handles it directly.
 4. Every change is recorded with who and when (audit, assignment §6.6).
 5. The response team, or the operator, closes it as resolved.
 
-> ⚠️ **GAP:** the statuses, the list of response teams and who closes a request are assumptions. Needed: the interview with the security volunteer (report §4) to confirm how requests are handled today and which teams exist.
+> ⚠️ **GAP:** the response teams are decided (features §4); the statuses and who closes a request are still assumptions. Needed: the interview with the security volunteer (report §4) to confirm how requests are handled today and which teams exist.
 
 ## W4 · Admin sets up an event
 
@@ -114,12 +117,12 @@ Source: report, second journey: *"cria ou seleciona um evento no backoffice, car
 
 ```mermaid
 flowchart TD
-    A["Admin signs in to the backoffice"] --> B["Creates event: name, dates, nights"]
+    A["Admin logs in to the backoffice"] --> B["Creates event: name, dates, nights"]
     B --> C["Uploads venue map: image or PDF"]
     C --> D["Places points of interest: entrances, stages, WC, first aid, stops"]
     D --> E["Adds transport: shuttles, temporary stops, schedules"]
     E --> F["Invites team members with a role: admin, operator"]
-    F --> G["Defines response teams: medical, security, PCR"]
+    F --> G["Puts members in response teams: Medical, Security, PCR, Logistics"]
     G --> H["Publishes the event: QR code and link generated"]
 ```
 
@@ -143,7 +146,7 @@ sequenceDiagram
     App-->>P: Banner with the message and "updated at HH:MM"
 ```
 
-## W6 · Participant loses the network (degraded mode)
+## W6 · Participant loses the network (F11, Could)
 
 Source: report §5, technical risks (*"Rede móvel congestionada no recinto: exige cache, modo offline e mensagens curtas"*); assumption A8; assignment §6.8.
 
@@ -160,21 +163,39 @@ flowchart TD
 
 **[PROPOSED]:** help requests are **not** queued silently while offline, because a request that looks sent but is not is worse than an honest failure ("fail safely", assignment §6.8).
 
-> ⚠️ **GAP: degraded-mode scenario to demonstrate.** The assignment requires the presentation to show what happens when a dependency is unavailable (§6.8). Needed: the team picks which scenario to demo (network loss, AI unavailable, transport source unavailable) and when.
+**Decided (9 October 2026):** network loss is **not** one of the degraded-mode scenarios of assignment §6.8, and F11 is a Could. The §6.8 scenarios are **D1 AI triage unavailable** and **D2 transport source unavailable** ([`features.md` §3.1](features.md#31-degraded-mode-scenarios-decided-9-october-2026)).
 
-## W7 · Participant reports a problem and earns a badge **[PROPOSED]**
+## W7 · Participant reports a problem and earns a badge
 
-Source: engagement mechanism decided by the team on 8 October 2026 ([`features.md` §5](features.md#5-ethical-engagement-mechanism-community-reports-and-badges-decided)).
+Source: engagement mechanism decided by the team on 8 October and detailed on 9 October 2026 ([`features.md` §6](features.md#6-ethical-engagement-mechanism-community-reports-and-badges)). The participant is logged in; badges belong to the account.
 
 ```mermaid
 flowchart TD
     A["Participant taps Report"] --> B["Chooses type: queue, WC, water, crowd, hazard, transport, wrong info"]
     B --> C["Marks the point on the venue map"]
     C --> D["Report sent: team sees it in the backoffice at once"]
-    D --> E{"Confirmed by the team or by other participants?"}
+    D --> E{"Confirmed by the responsible team?"}
     E -- Yes --> F["Shown on everyone's map with its time, until it expires"]
-    F --> G["Reporter's count goes up; badge when a level is reached"]
+    F --> G["Reporter's count goes up; badge tier when a level is reached (Wood 1 … Diamond 500+)"]
     E -- No --> H["Expires; no badge; team can hide it"]
+    F --> I{"Team unconfirms it later?"}
+    I -- Yes --> J["Removed from the map; count goes down; tier recalculated"]
 ```
 
 Urgent situations about a person are **not** reports: the app sends the participant to *Ask for help* (W2) or 112.
+
+## W8 · Participant checks in at the venue (F16, Should)
+
+Source: attendance badges decided on 9 October 2026 ([`features.md` §6.3](features.md#63-badges-decided)).
+
+```mermaid
+flowchart TD
+    A["Participant, logged in, scans the QR code at the venue entrance"] --> B{"Event running today?"}
+    B -- No --> C["Event opens; no check-in recorded"]
+    B -- Yes --> D{"Already checked in to this event?"}
+    D -- Yes --> E["Nothing changes"]
+    D -- No --> F["'Checked in': event counts as attended"]
+    F --> G["Event attendance badge moves up a tier when a level is reached"]
+```
+
+Opening the event at home or from a link never counts as attendance.

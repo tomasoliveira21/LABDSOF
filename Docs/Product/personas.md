@@ -29,8 +29,8 @@ Journeys W1–W6 are described in [`user-workflows.md`](user-workflows.md).
 | **What she does today (hypothesis)** | Looks for information on Instagram, the event site and WhatsApp groups; looks for a security guard or staff member when she needs help. *To validate with survey Q4 and Q5* |
 | **Barriers to adoption (hypothesis)** | Installing another app, battery use, sharing her location, weak network, not trusting that the information is up to date. *To validate with survey Q9* |
 | **Location sharing (hypothesis)** | Prefers to mark where she is on the venue map rather than share GPS. *To validate with survey Q10* |
-| **What success looks like** | Opens the link from the QR code on her ticket or at the venue (annex §7), sees the map in seconds, finds the next shuttle, and can ask for help for a friend in under 30 s (success criteria SC1, SC11) |
-| **Design implications** | No installation; large tap targets; short text; works from cache; "Call 112" first in emergencies; never asks for more data than needed (report §5, risks) |
+| **What success looks like** | Opens the link from the QR code on her ticket or at the venue (annex §7), already logged in from the first time, sees the map in seconds, finds the next shuttle, and can ask for help for a friend in under 30 s (success criteria SC1, SC11) |
+| **Design implications** | No installation; one account for every event, logged in once and kept logged in on the phone (login is mandatory, decided 9 October 2026); large tap targets; short text; works from cache; "Call 112" first in emergencies; never asks for more data than needed (report §5, risks) |
 
 ## P2 · Miguel, the incident operator
 
