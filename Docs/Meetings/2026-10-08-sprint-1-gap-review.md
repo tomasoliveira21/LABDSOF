@@ -44,6 +44,13 @@
 | Presentation | Bruno opens with a cover slide (name + team); Tomás presents slide 1 (problem and vision). Main-features slides: `Docs/Presentation/Farol_First_Presentation.pptx` (speaker notes in Portuguese) | §9 |
 | Project context file | Dropped; references removed. The README is the documentation index | `README.md`, `CLAUDE.md` |
 
+### Follow-up (10 October 2026, personas owner)
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Presentation | Personas slide added after the cover (one slide, P1–P4 + how each is validated; speaker notes in Portuguese). Presented as **proto-personas**, since the survey and interviews have no results yet | `Docs/Presentation/Farol_First_Presentation.pptx` |
+| Platform admin **[PROPOSED, to confirm with the group]** | New persona **P4 · Daniel**, from the Farol team: creates events for verified organisations, names their Owner, transfers it and suspends events; never sees event data. Proposed: only the platform admin creates events in the MVP (PE-5) | `personas.md`, `features.md` F3/F4 + US-25, `user-workflows.md` W4, `product-vision.md` §3; list in `CHANGELOG.md` |
+
 ## Status at a glance
 
 | # | Topic | Status | Blocking item for the presentation |

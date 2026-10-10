@@ -2,6 +2,31 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-10 · Personas slide and platform admin (Tiago Teixeira, #26)
+
+**Why:** the personas owner prepared the topic's slide for the presentation of 12 October 2026 (presentation plan, meeting §9). While doing it, a gap showed up: Farol hosts many festivals (Queima do Porto, Braga, Coimbra, Lisboa, …) and each organisation manages only its own event, but nobody was defined to create events, name their Owner, or step in when the Owner leaves (board terms are annual). The `Owner`/`Admin`/`Operator` roles exist only inside an event.
+
+> ⚠️ **To confirm with the group.** Everything marked **[PROPOSED]** below changes topics owned by other members (features: Bruno; workflows: Antônio; vision: Tomás). Nothing here is agreed yet. If the group rejects P4, revert the items listed under *Proposed* and remove the fourth card from the slide.
+
+### Added
+- `Docs/Presentation/Farol_First_Presentation.pptx`: personas slide "Who we design for" after the cover. Four cards (Rita, Miguel, Sofia, Daniel), each with goal, pain and success, taken from `personas.md`. A band states that they are proto-personas and names what validates each one: student survey (Rita), security-volunteer interview (Miguel), organiser conversation (Sofia). Speaker notes in Portuguese (~70 s).
+
+### Proposed (to confirm with the group)
+- `personas.md`: new persona **P4 · Daniel, the platform admin**, an internal user from the Farol team. He creates events for verified organisations, names their first Owner, transfers the Owner role and suspends events. He **never sees** an event's help requests, reports or participants. Sofia (P3) now states that she manages only her own event. New open item **PE-5**.
+- `features.md`:
+  - F3: only the platform admin creates events; the Owner edits, publishes and closes them.
+  - F4: new platform-wide role `PlatformAdmin`, outside every event.
+  - New story **US-25** (platform admin creates an event and names its Owner). US-03 no longer includes "create". Stories are not renumbered.
+- `user-workflows.md` W4: starts with the organisation's request, verification and creation by the platform admin; persona column is now P4 → P3.
+- `product-vision.md` §3: new row *Platform team (internal)*.
+- **Decision for the group:** events created by the platform admin only (proposed for the MVP, simpler and blocks fake events) or requested by organisations and approved by him.
+
+### Changed
+- `Docs/Presentation/Farol_First_Presentation.pptx`: deck sections are now *Cover*, *Personas* and *Main features*. The problem-and-vision slide (Tomás) still goes between the cover and the personas slide.
+
+### Not changed on purpose
+- `domain-model.md`: the `PlatformAdmin` role (global, outside `Membership`) is not modelled yet. The domain model is evaluated after the presentation (decision of 8 October); add it then if P4 is accepted.
+
 ## [Unreleased] · 2026-10-09 · Main features review (Bruno Lopes)
 
 **Why:** the main-features owner closed the open items of the topic before the presentation of 12 October 2026. Decisions listed in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions*).

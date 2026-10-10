@@ -2,7 +2,7 @@
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §7.1.2 (deliverables 4 *MVP definition* and 5 *Product Backlog*)
 > **Product name:** **Farol** (decided 9 October 2026).
-> **Status:** feature list and MoSCoW revised on **9 October 2026** (owner of the topic: Bruno Lopes) on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: the AI workflow details (§5.2), report types and expiry (§6.1). User stories (§7) are **[PROPOSED]**, to validate with the team.
+> **Status:** feature list and MoSCoW revised on **9 October 2026** (owner of the topic: Bruno Lopes) on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: the AI workflow details (§5.2), report types and expiry (§6.1). **[PROPOSED] 10 October 2026** (personas owner): a platform admin (persona P4) creates events and names their Owner (F3, F4, US-25), to confirm with the team. User stories (§7) are **[PROPOSED]**, to validate with the team.
 > **Sources:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (*Definição do MVP*, §5 risks) · [`market-and-competitor-analysis-product-specific.md`](../Deliverables/market-and-competitor-analysis-product-specific.md) (§1, §2) · assignment PDF (§5.5, §5.6, §6).
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
@@ -24,8 +24,8 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 |---|---|---|---|---|---|---|
 | F1 | Login and logout | — | Must | 1 | P1, P2, P3 | **Login is mandatory for every user**, participants included. Mocked authentication is allowed for the MVP (assignment §6.6, footnote 1) |
 | F2 | Personal account management | — | Must | 2 | P1, P2, P3 | Profile, password, consent, badge visibility, delete account (deletes badges and personal data) |
-| F3 | Event management | C1 | Must | 3 | P3 | Create, edit, publish and close events. Every other feature is scoped by event; isolation between events is a top technical risk (report §5) |
-| F4 | Event role and response-team management | C1 | Must | 4 | P3 | Invite members, assign, change and revoke roles (`Owner`, `Admin`, `Operator`); put operators in response teams (§4) |
+| F3 | Event management | C1 | Must | 3 | P4, P3 | Create, edit, publish and close events. Every other feature is scoped by event; isolation between events is a top technical risk (report §5). **[PROPOSED] 10 Oct:** only the platform admin (P4) creates an event, for a verified organisation, and names its first Owner; the Owner edits, publishes and closes it |
+| F4 | Event role and response-team management | C1 | Must | 4 | P3, P4 | Invite members, assign, change and revoke roles (`Owner`, `Admin`, `Operator`); put operators in response teams (§4). **[PROPOSED] 10 Oct:** one platform-wide role, `PlatformAdmin`, outside every event: transfers the Owner role and suspends events, but never sees an event's help requests, reports or participants |
 | F5 | Venue map with points of interest | C3 | Must | 5 | P1, P3 | Map uploaded as an image or PDF; points placed on it (entrances, stages, WC, first aid, transport stops) |
 | F6 | Help request | C6 | Must | 6 | P1 | Category and location marked on the map; "Call 112" shown first for emergencies; location shared only with the request |
 | F7 | Incident backoffice | C7 | Must | 7 | P2 | Receive, prioritise, route to a response team and close help requests; live list and map; full status history |
@@ -227,8 +227,15 @@ Rewritten on 9 October 2026 to match the feature list above. **To validate with 
 
 ### F3 · Event management
 
-**US-03** · As an **event owner**, I want to create, edit, publish and close an event, so that participants can find it only while it is relevant.
-- Given I create an event with a name and dates, then it is saved as a draft that participants cannot see.
+**US-25** **[PROPOSED]** · As a **platform admin**, I want to create an event for a verified organisation and name its first Owner, so that only real organisers run events on Farol.
+- Given an organisation asks for a new event, when I confirm the requester represents it and create the event with a name and dates, then it is saved as a draft that participants cannot see, and the named user becomes its Owner.
+- Given a user who is not a platform admin, when they try to create an event, then the action is refused.
+- Given the Owner of an event leaves the organisation, when the organisation asks, then I transfer the Owner role, and the change is recorded with my name and the time.
+- Given an event is abandoned or misused, when I suspend it, then participants can no longer open it.
+- Given I am a platform admin, when I open an event, then I see only its name, dates, organisation, owners and status, never its help requests, reports or participants.
+
+**US-03** · As an **event owner**, I want to edit, publish and close my event, so that participants can find it only while it is relevant.
+- Given the platform admin created my event (US-25), then I see it as a draft that participants cannot see, and I can edit it.
 - Given I publish the event, then participants can open it and its QR code and link are generated.
 - Given I close the event, then participants can no longer send help requests or reports to it.
 

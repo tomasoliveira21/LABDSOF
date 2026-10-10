@@ -51,6 +51,7 @@ Source: report §2 *Problem Statement* and §4 *Problem Evidence*.
 | **Event team** (primary) | Event owner (e.g. FAP) and its team: organisation, PCR, security coordination | Backoffice | Report §1 |
 | **Participants** (primary) | Students aged 18–25, mostly in groups, on their phone at night | Participant web app (PWA) | Report §1 |
 | **Operational partners** (secondary) | STCP, Metro do Porto, PSP, Civil Protection: source or destination of information | Not in the MVP | Report §1 |
+| **Platform team** (internal) **[PROPOSED]** | The Farol team: creates events for verified organisations and names their Owner; never sees an event's operational data | Backoffice, platform area | Multi-event scope; [`personas.md`](personas.md) P4 |
 
 Both primary users carry **the same weight** (unanimous team decision, report §1). Detailed personas: [`personas.md`](personas.md).
 
