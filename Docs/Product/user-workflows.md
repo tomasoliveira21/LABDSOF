@@ -12,7 +12,7 @@
 | **W2** | **Participant asks for help** | P1 → P2 | Third journey (help request) | **1, the core journey** (links both sides of the product) |
 | W3 | Operator handles a help request | P2 | Third journey | 1 (continuation of W2) |
 | W1 | Participant finds information | P1 | First journey | 2 |
-| W4 | Admin sets up an event | P3 | Second journey | 3 |
+| W4 | Admin sets up an event | P4 → P3 | Second journey | 3 |
 | W5 | Team publishes a live update | P3 → P1 | Second journey ("atualiza informação durante a noite") | 4 |
 | W6 | Participant loses the network | P1 | Risks: congested network, offline mode (report §5) | Could (F11). Assignment §6.8 is covered by scenarios D1 and D2 ([`features.md` §3.1](features.md#31-degraded-mode-scenarios-decided-9-october-2026)) |
 | W7 | Participant reports a problem and earns a badge | P1 → P3 | Engagement mechanism ([`features.md` §6](features.md#6-ethical-engagement-mechanism-community-reports-and-badges)) | Required by assignment §5.5 |
@@ -117,7 +117,10 @@ Source: report, second journey: *"cria ou seleciona um evento no backoffice, car
 
 ```mermaid
 flowchart TD
-    A["Admin logs in to the backoffice"] --> B["Creates event: name, dates, nights"]
+    R["Organisation asks Farol for an event"] --> V["Platform admin (Daniel) verifies the requester"]
+    V --> N["Platform admin creates the event as a draft and names its Owner"]
+    N --> A["Owner (Sofia) logs in to the backoffice"]
+    A --> B["Completes the event: dates, nights"]
     B --> C["Uploads venue map: image or PDF"]
     C --> D["Places points of interest: entrances, stages, WC, first aid, stops"]
     D --> E["Adds transport: shuttles, temporary stops, schedules"]
@@ -127,6 +130,8 @@ flowchart TD
 ```
 
 **[PROPOSED]:** the steps *invite team members*, *define response teams* and *publish with QR code* are not in the report but are needed for per-event permissions (report, *Visão do produto*) and for routing (W3).
+
+**[PROPOSED] 10 October 2026:** the first three steps (request, verification, creation by the platform admin, persona P4) are not in the report either. Farol hosts many festivals, so an event can only be created for a verified organisation, and its Owner manages only that event (F3, US-25). The platform admin never sees the event's help requests or reports. To confirm with the team (personas PE-5).
 
 ## W5 · Team publishes a live update
 
