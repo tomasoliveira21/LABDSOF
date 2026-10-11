@@ -11,7 +11,7 @@
 | Topic | Decision | Applied in |
 |---|---|---|
 | Roles | Roles are identified and described, **not assigned to members** | `team-and-process.md` §2 |
-| Team | **Antônio Guerra** added to the member list | `team-and-process.md` §1 |
+| Team | **António Guerra** added to the member list | `team-and-process.md` §1 |
 | Project tool | **GitHub Projects** | `team-and-process.md` §3 |
 | Sprints | Named **A, B, C**. B: 2 Nov – 6 Dec 2026 · C: 7 Dec 2026 – 3 Jan 2027 | `team-and-process.md` §3 |
 | Meetings | **Twice a week**: planning during the class, stand-up at the weekend | `team-and-process.md` §3 |
@@ -25,7 +25,7 @@
 | DoR | Removed: estimate/fits in sprint, UI sketch, privacy-impact note | `definition-of-ready-and-done.md` |
 | DoD | **1 user story = 1 issue = 1 PR**; removed "every PR for the story merged" from Level 2; Level 3 removed | `definition-of-ready-and-done.md` |
 | Architecture & domain model | **Not part of this presentation**; they will be evaluated later | — |
-| Topic owners | Product vision: **Tomás** · Personas: **Tiago** · Main features: **Bruno** · Workflows: **Antônio**. The owner closes the open items of the topic and presents it | §9 |
+| Topic owners | Product vision: **Tomás** · Personas: **Tiago** · Main features: **Bruno** · Workflows: **António**. The owner closes the open items of the topic and presents it | §9 |
 
 ### Follow-up decisions (9 October 2026, main-features owner)
 
@@ -50,6 +50,12 @@
 |---|---|---|
 | Presentation | Personas slide added after the cover (one slide, P1–P4 + how each is validated; speaker notes in Portuguese). Presented as **proto-personas**, since the survey and interviews have no results yet | `Docs/Presentation/Farol_First_Presentation.pptx` |
 | Platform admin **[PROPOSED, to confirm with the group]** | New persona **P4 · Daniel**, from the Farol team: creates events for verified organisations, names their Owner, transfers it and suspends events; never sees event data. Proposed: only the platform admin creates events in the MVP (PE-5) | `personas.md`, `features.md` F3/F4 + US-25, `user-workflows.md` W4, `product-vision.md` §3; list in `CHANGELOG.md` |
+
+### Follow-up (11 October 2026, workflows owner)
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Workflows slide | One slide, about 60 s, since the talk lasts at most 6 min: **"Help for people, reports for places"**, with W2 + W3 (ask for help) and W7 (report a problem) as two rows. Chosen over a W2 + W3-only version. Placed after the main-features slides, as in the plan (§9) | `Farol_First_Presentation.pptx`; `CHANGELOG.md` |
 
 ## Status at a glance
 
@@ -236,6 +242,7 @@ Suggestion for the MVP: **(a)** for DM-1, DM-2 and DM-5; **no** for DM-3. These 
 **Missing:** confirmed statuses and response teams (interview) · the degraded-mode scenario to demo.
 
 - [x] Degraded-mode scenario: **AI unavailable (D1) and transport source down (D2)**; not shown in the presentation · **Decision:** 9 Oct, `features.md` §3.1
+- [x] Workflows slide: W2 + W3 plus W7 (help requests vs reports), one slide · **Decision:** 11 Oct, follow-up above
 
 ---
 
@@ -246,7 +253,7 @@ Suggestion for the MVP: **(a)** for DM-1, DM-2 and DM-5; **no** for DM-3. These 
 | 1 | Problem and vision (+ name, pitch) | product-vision §1–2 | Tomás Oliveira |
 | 2 | Personas P1–P3 | personas | Tiago Teixeira |
 | 3 | Main features + AI + engagement | features §2, §4, §5 | Bruno de Abreu Lopes |
-| 4 | Core workflow W2 + W3, plus W7 (reports) | user-workflows | Antônio Guerra |
+| 4 | Core workflow W2 + W3, plus W7 (reports) | user-workflows | António Guerra |
 | 5 | DoR / DoD | definition-of-ready-and-done | |
 | 6 | Team roles and process | team-and-process | |
 
