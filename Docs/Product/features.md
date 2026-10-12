@@ -3,7 +3,7 @@
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §7.1.2 (deliverables 4 *MVP definition* and 5 *Product Backlog*)
 > **Product name:** **Farol** (decided 9 October 2026).
 > **Status:** feature list and MoSCoW revised on **9 October 2026** (owner of the topic: Bruno Lopes) on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: the AI workflow details (§5.2), report types and expiry (§6.1). **[PROPOSED] 10 October 2026** (personas owner): a platform admin (persona P4) creates events and names their Owner (F3, F4, US-25), to confirm with the team. User stories (§7) are **[PROPOSED]**, to validate with the team.
-> **Sources:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (*Definição do MVP*, §5 risks) · [`market-and-competitor-analysis-product-specific.md`](../Deliverables/market-and-competitor-analysis-product-specific.md) (§1, §2) · assignment PDF (§5.5, §5.6, §6).
+> **Sources:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (*MVP definition*, §5 risks) · [`market-and-competitor-analysis-product-specific.md`](../Deliverables/market-and-competitor-analysis-product-specific.md) (§1, §2) · assignment PDF (§5.5, §5.6, §6).
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
 ## 1. How the product solves the problem
@@ -18,7 +18,7 @@
 
 ## 2. Feature list and priority
 
-MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitigation: *"priorizar no MVP os pedidos de ajuda, a planta e a informação de transportes"* (report §5, execution risks). *Rank* is the build order within the Must-haves.
+MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitigation: *"prioritise help requests, the map and transport information in the MVP"* (report §5, execution risks). *Rank* is the build order within the Must-haves.
 
 | ID | Feature | Component (annex §1) | MoSCoW | Rank | Persona | Notes |
 |---|---|---|---|---|---|---|

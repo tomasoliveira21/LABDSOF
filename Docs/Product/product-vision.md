@@ -63,7 +63,7 @@ Both primary users carry **the same weight** (unanimous team decision, report §
 | **Event team** | A shared operational picture: what is happening, where, and how to respond faster; one configuration reused across nights and events | Help requests arriving by radio and phone with no structured history, priority or precise location |
 | **Both** | The information the team updates appears straight away to participants, with the time of the last update | Static information that is out of date as soon as the night starts |
 
-Source: report *Visão de produto > Proposta de valor*; market analysis §3 *Oportunidade de diferenciação*.
+Source: report *Product vision > Value proposition*; market analysis §3 *Differentiation opportunity*.
 
 **Why it is different** (market analysis §3 and annex §5): no alternative found in Portugal covers the map, transport, help requests and incident handling together (annex §3, matrix). The difference lies in the **combination** (two faces linked by the map), the **segment** (Portuguese academic event teams) and the **delivery** (multi-event, no installation, weak-network ready).
 
@@ -91,10 +91,10 @@ These measure whether the product is worth building, not whether it works. They 
 
 | # | Question | Metric | Target |
 |---|---|---|---|
-| V1 | Would students use it? (assumptions A2, A3) | % answering "Sim, de certeza" or "Provavelmente sim" to survey Q7 | ≥ 60 %; below 40 % triggers a rethink |
+| V1 | Would students use it? (assumptions A2, A3) | % answering "Sim, de certeza" (yes, definitely) or "Provavelmente sim" (probably yes) to survey Q7 | ≥ 60 %; below 40 % triggers a rethink |
 | V2 | Is finding information a real problem? | Survey Q6, ease of finding information (1–5) | Average ≤ 3 confirms the problem |
 
-Outcomes the MVP cannot measure (they need a real event): adoption during the event, faster response by the team, less confusion at entrances and transport, positive feedback from event teams (report, *Critérios de sucesso*). They stay as long-term outcomes.
+Outcomes the MVP cannot measure (they need a real event): adoption during the event, faster response by the team, less confusion at entrances and transport, positive feedback from event teams (report, *Success criteria*). They stay as long-term outcomes.
 
 > ⚠️ **GAP: targets marked [PROPOSED].** Only SC3 (30 s) was set by the team. Needed: confirm the other numbers.
 >
@@ -109,7 +109,7 @@ Outcomes the MVP cannot measure (they need a real event): adoption during the ev
 | Multi-event with per-event permissions | Advanced crowd prediction, full automation |
 | Weak-network support with "last updated" times | Own ticketing (link to the ticketing partner at most) |
 
-Source: report *Definição do MVP* and *Fora de âmbito*; annex §1. Feature-level detail and priorities: [`features.md`](features.md).
+Source: report *MVP definition* and *Out of scope*; annex §1. Feature-level detail and priorities: [`features.md`](features.md).
 
 ## 7. Key risks (summary)
 
@@ -124,4 +124,4 @@ The three critical assumptions are **A2** (participants use the app during the n
 | Public evidence (press, operators, FAP) | Done (E1–E7) | Problem | Report §4 |
 | Market and competitor analysis | Done | Differentiation | [`market-and-competitor-analysis.md`](../Deliverables/market-and-competitor-analysis.md) |
 
-> ⚠️ **GAP: research findings.** The report sections *Resultados*, *Limitações* and *Decisões de produto resultantes* are all "TBD". These are a Sprint 1 deliverable (assignment §7.1.2, item 3). Needed: survey results (even preliminary, with *n*), interview notes, and at least one product decision that changed because of them.
+> ⚠️ **GAP: research findings.** The report sections *Results*, *Limitations* and *Resulting product decisions* are all "TBD". These are a Sprint 1 deliverable (assignment §7.1.2, item 3). Needed: survey results (even preliminary, with *n*), interview notes, and at least one product decision that changed because of them.

@@ -10,7 +10,7 @@ What shapes the design, and where it comes from:
 
 | # | Driver | Source |
 |---|---|---|
-| D1 | **Isolation between events**: one team must never see or change another event's data | Report, *Permissões por evento*; §5 technical risks |
+| D1 | **Isolation between events**: one team must never see or change another event's data | Report, *Per-event permissions*; §5 technical risks |
 | D2 | **Read peaks**: tens of thousands of participant requests within minutes (e.g. end of a concert) | Report §5 technical risks |
 | D3 | **Weak or congested network** at the venue: cache, offline mode, short messages | Report §5; assumption A8; annex C10 |
 | D4 | **Freshness**: every piece of information shows when it was last updated | Report §5; annex C4 |

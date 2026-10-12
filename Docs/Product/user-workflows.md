@@ -1,7 +1,7 @@
 # Main User Workflows
 
 > LABDSOF 2026/27 · Sprint 1 · Assignment §5.4 and §7.1.2 (deliverable 4, *Principal user journeys*)
-> **Status:** draft. The three journeys in the report (*Principais jornadas do utilizador*) are expanded here into step-by-step flows with diagrams. Steps that are not in the report are marked **[PROPOSED]**.
+> **Status:** draft. The three journeys in the report (*Main user journeys*) are expanded here into step-by-step flows with diagrams. Steps that are not in the report are marked **[PROPOSED]**.
 > **Personas:** [`personas.md`](personas.md) · **Features:** [`features.md`](features.md) · **Domain terms:** [`domain-model.md`](../Technical/domain-model.md)
 > Diagrams use Mermaid, which GitHub renders directly.
 
@@ -13,7 +13,7 @@
 | W3 | Operator handles a help request | P2 | Third journey | 1 (continuation of W2) |
 | W1 | Participant finds information | P1 | First journey | 2 |
 | W4 | Admin sets up an event | P4 → P3 | Second journey | 3 |
-| W5 | Team publishes a live update | P3 → P1 | Second journey ("atualiza informação durante a noite") | 4 |
+| W5 | Team publishes a live update | P3 → P1 | Second journey ("updates information during the night") | 4 |
 | W6 | Participant loses the network | P1 | Risks: congested network, offline mode (report §5) | Could (F11). Assignment §6.8 is covered by scenarios D1 and D2 ([`features.md` §3.1](features.md#31-degraded-mode-scenarios-decided-9-october-2026)) |
 | W7 | Participant reports a problem and earns a badge | P1 → P3 | Engagement mechanism ([`features.md` §6](features.md#6-ethical-engagement-mechanism-community-reports-and-badges)) | Required by assignment §5.5 |
 | W8 | Participant checks in at the venue | P1 | Attendance badges (F15, F16) | Should |
@@ -24,7 +24,7 @@ For the 5–7 minute presentation, **W2 + W3 tell the whole story**: a participa
 
 ## W1 · Participant finds information
 
-Source: report, first journey: *"abre a aplicação web através de um link ou QR code, seleciona o evento, consulta a planta, encontra entradas, serviços, opções de transporte e informação de segurança"*.
+Source: report, first journey: *"opens the web application through a link or QR code, selects the event, checks the map, finds entrances, services, transport options and safety information"*.
 
 ```mermaid
 flowchart TD
@@ -44,7 +44,7 @@ flowchart TD
 
 ## W2 · Participant asks for help (core journey)
 
-Source: report, third journey: *"Quando um participante envia um pedido de ajuda, a equipa do evento recebe esse pedido com contexto e localização, avalia a sua prioridade e encaminha-o para a equipa operacional adequada."* The AI step is the **help-request triage** chosen by the team ([`features.md` §5](features.md#5-ai-assisted-workflow-help-request-triage)); the suggestion must arrive within 30 s (SC3), otherwise the fallback applies.
+Source: report, third journey: *"When a participant sends a help request, the event team receives it with context and location, assesses its priority and routes it to the right operational team."* The AI step is the **help-request triage** chosen by the team ([`features.md` §5](features.md#5-ai-assisted-workflow-help-request-triage)); the suggestion must arrive within 30 s (SC3), otherwise the fallback applies.
 
 ```mermaid
 sequenceDiagram
@@ -113,7 +113,7 @@ Steps:
 
 ## W4 · Admin sets up an event
 
-Source: report, second journey: *"cria ou seleciona um evento no backoffice, carrega ou configura a planta do recinto, adiciona pontos importantes como entradas, palcos, casas de banho, primeiros socorros e paragens de transporte"*.
+Source: report, second journey: *"creates or selects an event in the backoffice, uploads or configures the venue map, adds key points such as entrances, stages, toilets, first aid and transport stops"*.
 
 ```mermaid
 flowchart TD
@@ -129,13 +129,13 @@ flowchart TD
     G --> H["Publishes the event: QR code and link generated"]
 ```
 
-**[PROPOSED]:** the steps *invite team members*, *define response teams* and *publish with QR code* are not in the report but are needed for per-event permissions (report, *Visão do produto*) and for routing (W3).
+**[PROPOSED]:** the steps *invite team members*, *define response teams* and *publish with QR code* are not in the report but are needed for per-event permissions (report, *Product vision*) and for routing (W3).
 
 **[PROPOSED] 10 October 2026:** the first three steps (request, verification, creation by the platform admin, persona P4) are not in the report either. Farol hosts many festivals, so an event can only be created for a verified organisation, and its Owner manages only that event (F3, US-25). The platform admin never sees the event's help requests or reports. To confirm with the team (personas PE-5).
 
 ## W5 · Team publishes a live update
 
-Source: report, *"atualiza informação durante a noite"*; root cause 2.
+Source: report, *"updates information during the night"*; root cause 2.
 
 ```mermaid
 sequenceDiagram

@@ -6,14 +6,14 @@
 
 ## 1. Bounded contexts
 
-The product has two halves that change for different reasons and are used by different people (report, *Visão do produto*; market analysis §3), so the model is split into two contexts. They map to the two backend services in [`architecture.md`](architecture.md).
+The product has two halves that change for different reasons and are used by different people (report, *Product vision*; market analysis §3), so the model is split into two contexts. They map to the two backend services in [`architecture.md`](architecture.md).
 
 | Context | Purpose | Main users | Entities |
 |---|---|---|---|
 | **Event Configuration** | Everything the event team sets up and publishes: the event, its team, the venue map, points of interest, transport and announcements | P3 (admin) writes, P1 (participant) reads | Event, Membership, TeamMember, ResponseTeam, VenueMap, PointOfInterest, TransportOption, Announcement |
 | **Incident Management** | Help requests from participants and their handling by the team | P1 creates, P2 (operator) handles | HelpRequest, TriageSuggestion, StatusChange |
 
-**Event** is the boundary between tenants: every entity belongs to exactly one event, and nothing is shared between events (report, *Permissões por evento*). The Incident Management context refers to the event, to response teams and to points of interest **by ID only**.
+**Event** is the boundary between tenants: every entity belongs to exactly one event, and nothing is shared between events (report, *Per-event permissions*). The Incident Management context refers to the event, to response teams and to points of interest **by ID only**.
 
 ## 2. Class diagram
 
@@ -122,14 +122,14 @@ classDiagram
 
 | Entity | Description | Source in the repository |
 |---|---|---|
-| **Event** | One academic festival edition (e.g. Queima das Fitas do Porto 2027). Root of everything else. Status: `Draft → Published → Live → Closed` **[PROPOSED]** | Report, *Visão do produto*: "uma única aplicação que reúne vários eventos" |
+| **Event** | One academic festival edition (e.g. Queima das Fitas do Porto 2027). Root of everything else. Status: `Draft → Published → Live → Closed` **[PROPOSED]** | Report, *Product vision*: "a single application that brings together several events" |
 | **UserAccount** | Every person who uses the product, participant or team member, logs in with an account (decided 9 October 2026, DM-1). Badges, reports and help requests point to it. Mocked authentication is allowed for the MVP | [`features.md`](../Product/features.md) F1, F2 |
-| **TeamMember** | A person who uses the backoffice. Can belong to several events | Report: "cada evento tem um owner e uma equipa" |
-| **Membership** | Links a team member to an event with a **Role**: `Owner`, `Admin`, `Operator` **[PROPOSED]**. Permissions are always evaluated per event | Report: "cada equipa só vê e altera o seu próprio evento" |
-| **ResponseTeam** | A group that requests are routed to: medical, security, PCR **[PROPOSED list]** | Report, journeys: "encaminha-o para a equipa operacional adequada"; stakeholder map (PCR, security, INEM) |
-| **VenueMap** | The venue plan uploaded as an image or PDF. Versioned, so that old help requests keep pointing at the map they were made on | Report, *Oportunidade*; assumption A5 |
-| **PointOfInterest** | A place on the map: `Entrance`, `Stage`, `WC`, `FirstAid`, `TransportStop`, `InfoPoint` **[PROPOSED list]**. Position in coordinates relative to the map image (0–1), not GPS | Report, journeys: "entradas, palcos, casas de banho, primeiros socorros e paragens"; annex C3 |
-| **TransportOption** | An event shuttle, reinforced line or temporary stop. `source` is `Manual` (entered by the team) or `External` (read from a transport feed); `lastUpdated` is always shown | Annex C5; assumption A6; report §5 ("indicação clara de quando cada dado foi atualizado") |
+| **TeamMember** | A person who uses the backoffice. Can belong to several events | Report: "each event has an owner and a team" |
+| **Membership** | Links a team member to an event with a **Role**: `Owner`, `Admin`, `Operator` **[PROPOSED]**. Permissions are always evaluated per event | Report: "each team only sees and changes its own event" |
+| **ResponseTeam** | A group that requests are routed to: medical, security, PCR **[PROPOSED list]** | Report, journeys: "routes it to the right operational team"; stakeholder map (PCR, security, INEM) |
+| **VenueMap** | The venue plan uploaded as an image or PDF. Versioned, so that old help requests keep pointing at the map they were made on | Report, *Opportunity*; assumption A5 |
+| **PointOfInterest** | A place on the map: `Entrance`, `Stage`, `WC`, `FirstAid`, `TransportStop`, `InfoPoint` **[PROPOSED list]**. Position in coordinates relative to the map image (0–1), not GPS | Report, journeys: "entrances, stages, toilets, first aid and transport stops"; annex C3 |
+| **TransportOption** | An event shuttle, reinforced line or temporary stop. `source` is `Manual` (entered by the team) or `External` (read from a transport feed); `lastUpdated` is always shown | Annex C5; assumption A6; report §5 ("a clear indication of when each piece of data was updated") |
 | **Announcement** | A message the team publishes during the night, with severity and an optional expiry | Report, root cause 2; annex C4 |
 
 ### Incident Management
@@ -170,7 +170,7 @@ classDiagram
 
 | # | Question | Options | Impact |
 |---|---|---|---|
-| DM-1 | Is the participant anonymous, or do they create an account? | (a) Fully anonymous, identified by a random device token; (b) optional phone number for call-back; (c) account | Privacy (RGPD), abuse prevention (fake requests), how the operator contacts the person. The survey and report say "sem instalação obrigatória" but nothing about accounts. **Decided 9 October 2026: (c) account. Login is mandatory for every user; badges are linked to the account** ([`features.md`](../Product/features.md) §6.3). |
+| DM-1 | Is the participant anonymous, or do they create an account? | (a) Fully anonymous, identified by a random device token; (b) optional phone number for call-back; (c) account | Privacy (RGPD), abuse prevention (fake requests), how the operator contacts the person. The survey and report say "no mandatory installation" but nothing about accounts. **Decided 9 October 2026: (c) account. Login is mandatory for every user; badges are linked to the account** ([`features.md`](../Product/features.md) §6.3). |
 | DM-2 | Is "help request" (participant side) the same entity as "incident" (team side)? | (a) One entity, HelpRequest, with a lifecycle (as modelled); (b) a team can create an Incident that groups several requests | (b) is useful for duplicates and team-reported incidents, but adds complexity |
 | DM-3 | Can operators create a request themselves (e.g. reported by radio)? | Yes / no | If yes, `HelpRequest` needs a `channel` attribute (App, Radio, Phone) |
 | DM-4 | Which help categories and response teams? | The lists above are proposals | Depends on the interview with the security volunteer |
