@@ -2,11 +2,24 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-11 · User workflows slide (António Guerra)
+
+**Why:** the workflows owner prepared the topic's slide for the presentation of 12 October 2026 (presentation plan, meeting §9). The talk lasts at most **6 minutes**, and the deck already takes about 3 min 05 s by its speaker-note timings, before the problem-and-vision slide is added. So the topic gets **one slide of about 60 s**.
+
+### Added
+- `Docs/Presentation/Farol_First_Presentation.pptx`: section *User workflows (António Guerra)*, after *Main features*, as in the presentation plan. It has one slide, "Help for people, reports for places".
+  - Two four-step rows: W2 + W3 (ask for help: 112 first, AI suggestion, the operator routes, the participant follows the status) and W7 (report a problem: the responsible team confirms it, everyone sees it until it expires, it counts toward badges), as listed in the meeting plan.
+  - Speaker notes in Portuguese (~60 s).
+  - Chosen over a W2 + W3-only version (swimlanes plus the request statuses), because this one also covers the engagement journey.
+
+### Not changed on purpose
+- `user-workflows.md`: the journeys on the slide (W2, W3, W7) are already described there.
+
 ## [Unreleased] · 2026-10-10 · Personas slide and platform admin (Tiago Teixeira, #26)
 
 **Why:** the personas owner prepared the topic's slide for the presentation of 12 October 2026 (presentation plan, meeting §9). While doing it, a gap showed up: Farol hosts many festivals (Queima do Porto, Braga, Coimbra, Lisboa, …) and each organisation manages only its own event, but nobody was defined to create events, name their Owner, or step in when the Owner leaves (board terms are annual). The `Owner`/`Admin`/`Operator` roles exist only inside an event.
 
-> ⚠️ **To confirm with the group.** Everything marked **[PROPOSED]** below changes topics owned by other members (features: Bruno; workflows: Antônio; vision: Tomás). Nothing here is agreed yet. If the group rejects P4, revert the items listed under *Proposed* and remove the fourth card from the slide.
+> ⚠️ **To confirm with the group.** Everything marked **[PROPOSED]** below changes topics owned by other members (features: Bruno; workflows: António; vision: Tomás). Nothing here is agreed yet. If the group rejects P4, revert the items listed under *Proposed* and remove the fourth card from the slide.
 
 ### Added
 - `Docs/Presentation/Farol_First_Presentation.pptx`: personas slide "Who we design for" after the cover. Four cards (Rita, Miguel, Sofia, Daniel), each with goal, pain and success, taken from `personas.md`. A band states that they are proto-personas and names what validates each one: student survey (Rita), security-volunteer interview (Miguel), organiser conversation (Sofia). Speaker notes in Portuguese (~70 s).
@@ -60,7 +73,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `team-and-process.md`:
   - roles are described, not assigned;
-  - Antônio Guerra added to the team;
+  - António Guerra added to the team;
   - GitHub Projects chosen as the board;
   - sprints renamed A/B/C;
   - two meetings a week;
