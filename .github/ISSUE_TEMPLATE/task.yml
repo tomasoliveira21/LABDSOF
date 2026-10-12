@@ -1,0 +1,41 @@
+name: Task
+description: Technical, documentation or maintenance work that is not a user story (docs, ci, chore, refactor, test).
+labels: ["task"]
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What is true when this task is done?
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: Same as the branch prefix (README §2)
+      options:
+        - docs
+        - ci
+        - chore
+        - refactor
+        - test
+        - bugfix
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What to change, as a checklist.
+      placeholder: |
+        - [ ] …
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Other issues or decisions this needs. Write "None" if there are none.
+    validations:
+      required: true

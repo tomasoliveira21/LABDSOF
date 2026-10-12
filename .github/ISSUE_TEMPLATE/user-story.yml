@@ -1,0 +1,77 @@
+name: User story
+description: A backlog item that delivers value to a persona. Follows the Definition of Ready and Done.
+title: "US-XX: "
+labels: ["user story"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One user story = one issue = one pull request. If it needs more than one PR, split it.
+        Rules: [Definition of Ready and Done](https://github.com/tomasoliveira21/LABDSOF/blob/main/Docs/Process/definition-of-ready-and-done.md) · Stories: [features.md §7](https://github.com/tomasoliveira21/LABDSOF/blob/main/Docs/Product/features.md)
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      description: As a … I want … so that …
+      placeholder: As a participant, I want to …, so that …
+    validations:
+      required: true
+  - type: dropdown
+    id: persona
+    attributes:
+      label: Persona
+      description: Who it serves (see Docs/Product/personas.md)
+      options:
+        - P1 · Rita (participant)
+        - P2 · Miguel (operator)
+        - P3 · Sofia (event admin)
+        - P4 · Daniel (platform admin)
+        - Technical goal (no persona)
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Given / When / Then, one per line. Each one must be testable.
+      placeholder: |
+        - Given …, when …, then …
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Other stories, external data or decisions this needs. Write "None" if there are none.
+    validations:
+      required: true
+  - type: textarea
+    id: ai-fallback
+    attributes:
+      label: AI fallback
+      description: Only if the story uses AI. What happens when the AI is unavailable or wrong (assignment §5.6.2)?
+  - type: checkboxes
+    id: dor
+    attributes:
+      label: Definition of Ready
+      description: The item moves to "Ready" on the board only when every box is ticked.
+      options:
+        - label: Written as a user story or as a task with a clear outcome
+        - label: Names the persona or the technical goal
+        - label: Acceptance criteria in Given / When / Then that can be tested
+        - label: Dependencies identified, and none of them blocks it
+        - label: On the GitHub Projects board
+        - label: If it uses AI, the fallback is described
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of Done (story level)
+      description: Leave as is. Tick these in the issue once the PR is merged, before moving the item to "Done".
+      value: |
+        - [ ] All acceptance criteria pass
+        - [ ] Automated tests cover the acceptance criteria
+        - [ ] Authorisation tested where the story touches event data (another event's user cannot read or change it)
+        - [ ] Structured logs with a correlation ID for the new behaviour
+        - [ ] Deployed to the shared environment through the pipeline
+        - [ ] Accepted by the Product Owner
+        - [ ] Closed by the PR (`Closes #<issue>`)
