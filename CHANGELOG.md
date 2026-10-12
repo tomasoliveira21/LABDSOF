@@ -2,6 +2,30 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-12 · Status slide, English docs and process setup (Bruno Lopes)
+
+**Why:** the teacher asked by email for the state of four topics: DoR/DoD, team roles and work process, domain model and high-level architecture. Preparing that status showed what still kept the process topics from green: the DoR and DoD were not in the tool, the conventions kept drifting, and the language rule was undecided. The team decided on 12 October 2026 that **all documentation is in English and stays that way**.
+
+### Added
+
+- `Docs/Presentation/Farol_First_Presentation.pptx`: section *Status overview*, at the end, with one slide, "Process and technical status". One card per topic with a green/yellow/red status, what is done and what comes next; speaker notes in Portuguese (~45 s).
+  - 🟢 DoR / DoD: agreed on 8 October and now in the issue forms and the PR template; the board columns are still to create.
+  - 🟡 Team roles and process: roles, GitHub Flow, sprints and meetings defined; the board, branch protection and squash-only merging are still to turn on.
+  - 🟡 Domain model: DM-1 decided; DM-2 to DM-5 open; Report, Badge and PlatformAdmin not modelled.
+  - 🟡 Architecture: work has started (views and the triage flow exist), but services vs monolith, technology stack, ADRs, API outline and walking skeleton are not decided yet.
+- `.github/ISSUE_TEMPLATE/user-story.yml`: issue form with the DoR as required fields plus a checklist, and the story-level DoD pre-filled as a checklist.
+- `.github/ISSUE_TEMPLATE/task.yml` (work that is not a story) and `config.yml` (blank issues disabled).
+- `.github/workflows/conventions.yml`: the **Conventions** check fails a PR whose branch name, title or `Closes #<issue>` line does not follow README §2 and §4.
+
+### Changed
+
+- **Translated to English:** the Problem and Opportunity Report, the Market and Competitor Analysis and its product-specific annex. Content unchanged.
+- `Docs/Research/inquerito-estudantes-google-forms.gs`: comments in English; the survey questions stay in Portuguese, for Portuguese students.
+- Quotes from the report in `features.md`, `product-vision.md`, `user-workflows.md`, `domain-model.md` and `architecture.md` now use the English text and section names.
+- `README.md`: language rule recorded, with two exceptions (survey questions, speaker notes); documentation index marks every document as EN; branch protection includes the Conventions check.
+- `team-and-process.md`: language decision recorded; process health check updated (merge commits up to PR #30, the `feat/` branch, the new check and issue forms).
+- `definition-of-ready-and-done.md`: the "Open items" gap is replaced by *In the tool*, which says where each rule lives and what is left to set up on the board.
+
 ## [Unreleased] · 2026-10-11 · User workflows slide (António Guerra)
 
 **Why:** the workflows owner prepared the topic's slide for the presentation of 12 October 2026 (presentation plan, meeting §9). The talk lasts at most **6 minutes**, and the deck already takes about 3 min 05 s by its speaker-note timings, before the problem-and-vision slide is added. So the topic gets **one slide of about 60 s**.
