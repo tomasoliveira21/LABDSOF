@@ -9,10 +9,11 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Added
 
 - `Docs/Presentation/Farol_First_Presentation.pptx`: section *Status overview*, at the end, with one slide, "Process and technical status". One card per topic with a green/yellow/red status, what is done and what comes next; speaker notes in Portuguese (~45 s).
-  - 🟢 DoR / DoD: agreed on 8 October and now in the issue forms and the PR template; the board columns are still to create.
+  - 🟢 DoR / DoD: agreed on 8 October and now in the issue forms and the PR template.
   - 🟡 Team roles and process: roles, GitHub Flow, sprints and meetings defined; the board, branch protection and squash-only merging are still to turn on.
   - 🟡 Domain model: DM-1 decided; DM-2 to DM-5 open; Report, Badge and PlatformAdmin not modelled.
-  - 🟡 Architecture: work has started (views and the triage flow exist), but services vs monolith, technology stack, ADRs, API outline and walking skeleton are not decided yet.
+  - 🟡 Architecture: work has started (views and the triage flow exist), but services vs modular monolith, technology stack, ADRs, API outline and walking skeleton are not decided yet.
+- Deck review: the personas slide shows Sofia's success as "event configured and published"; the main-features slide no longer mentions 112 (the "Ask for help" item and its speaker notes).
 - `.github/ISSUE_TEMPLATE/user-story.yml`: issue form with the DoR as required fields plus a checklist, and the story-level DoD pre-filled as a checklist.
 - `.github/ISSUE_TEMPLATE/task.yml` (work that is not a story) and `config.yml` (blank issues disabled).
 - `.github/workflows/conventions.yml`: the **Conventions** check fails a PR whose branch name, title or `Closes #<issue>` line does not follow README §2 and §4.
