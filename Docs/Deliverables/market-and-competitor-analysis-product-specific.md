@@ -122,13 +122,12 @@ Each profile answers: who already does this, with which strengths and weaknesses
 |---|---|---|---|---|---|---|
 | **FAP's WhatsApp/QR line** | Participant → operator | Familiar, no installation | Exposes the number; data at Meta | Already exists | No category, place or status | — |
 | **Finding a security guard, volunteer or the medical post** | Participant | In person | Good | Human | Only serves those who see them and can reach them | — |
-| **112** | Citizen → emergency | Phone call | — | Official | Does not know the venue; not for "my friend is not well" | — |
 | **Appmiral SOS** | Participant → festival security | Button in the app | Real-time location | "Hundreds of alerts" handled (M1) | Native app; no version for volunteer teams | No |
 | **SafeZone** | Student → campus security | Three buttons: emergency, first aid, help | Location **only at the moment of the alert** (M22) | Good reference practice | Campus only | No |
 | **Raven Eye** | Public → control room | WhatsApp + QR | Number exposed | Integrates with the control room (M13) | Enterprise; no PT | Yes, in the control room |
 | **AlertCops** (Spain) | Citizen → police | App | Mandatory identification (M27) | Official | Does not accept anonymity | No |
 
-**What we learned:** the help button **exists** in festival and campus apps. Three patterns to follow: (1) entry without installation, like Raven Eye; (2) location only at the moment of the request, like SafeZone; (3) make clear it does not replace 112, as the report already says. What is new is the participant **marking the place on the map** instead of relying on GPS. Survey question 10 measures the acceptance of this.
+**What we learned:** the help button **exists** in festival and campus apps. Three patterns to follow: (1) entry without installation, like Raven Eye; (2) location only at the moment of the request, like SafeZone; (3) make clear it is not an emergency service, as the report already says. What is new is the participant **marking the place on the map** instead of relying on GPS. Survey question 10 measures the acceptance of this.
 
 ### C7 — Incident backoffice
 
@@ -249,7 +248,7 @@ Legend: ✅ confirmed in the source · ◐ partial · ❌ not found in the sourc
 | C3 Map | Yes | Map uploaded by the team and used by both sides | Percentage of requests with a marked place |
 | C4 Alerts | Yes | Time of the last update on every piece of information | Percentage of content with a visible time |
 | C5 Transport | Yes, for regular lines | The event's shuttles and stops; link to Google Maps for the rest | Comparison with the official announcements |
-| C6 Help request | Yes, in native apps | No installation; place on the map; "Call 112" first | Time until the request is submitted |
+| C6 Help request | Yes, in native apps | No installation; place on the map | Time until the request is submitted |
 | C7 Incidents | Yes, in professional control rooms | For academic teams, in PT, connected to the participant | Time between request and routing |
 | C8 Wait time | Rare | Manual version per gate | Only if the survey shows demand |
 | C9 AI | Yes | Published evaluation and fallback | Accuracy against the non-AI alternative |

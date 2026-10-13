@@ -25,24 +25,22 @@ What shapes the design, and where it comes from:
 ```mermaid
 flowchart LR
     P(["Participant<br/>(P1)"])
-    O(["Incident operator<br/>(P2)"])
+    O(["Control-room operator<br/>(P2)"])
+    R(["Responder in the field<br/>(P5)"])
     A(["Event admin<br/>(P3)"])
     SYS["Event coordination platform<br/>[product name TBD]"]
     TR["Transport data<br/>STCP GTFS feed or simulator"]
     LLM["AI model provider<br/>(LLM API)"]
     IDP["Identity provider<br/>(mocked in the MVP)"]
-    EM["Emergency services 112<br/>(outside the system)"]
 
     P -- "reads event info, asks for help" --> SYS
-    O -- "handles help requests" --> SYS
+    O -- "triages help requests, confirms reports" --> SYS
+    R -- "gets dispatched requests, updates status" --> SYS
     A -- "configures event, publishes updates" --> SYS
     SYS -- "reads schedules and real-time data" --> TR
     SYS -- "asks for triage suggestions" --> LLM
     SYS -- "authenticates team members" --> IDP
-    P -. "called directly, never through the app" .-> EM
 ```
-
-The app never replaces 112: it shows "Call 112" first and lets the phone make the call (report §5).
 
 ## 3. Container view
 
@@ -156,10 +154,10 @@ The assignment requires at least one degraded-mode scenario to be implemented an
 
 | Unavailable | What the user sees **[PROPOSED]** | Driver |
 |---|---|---|
-| **Network** (participant) | Map and information from cache, labelled "data from HH:MM"; help request cannot be sent, so the app shows the nearest first aid and "Call 112" (W6) | D3 |
+| **Network** (participant) | Map and information from cache, labelled "data from HH:MM"; help request cannot be sent, so the app shows the nearest first aid (W6) | D3 |
 | **AI service** | Requests go to the operator untriaged, with the participant's category, in order of arrival | D6 |
 | **Transport data provider** | Last known data with its time and a warning | D4 |
-| **Incident service** | Participant app shows "Help requests are temporarily unavailable: call 112 or go to the nearest first aid"; event information still works because it comes from the Event service | D7 |
+| **Incident service** | Participant app shows "Help requests are temporarily unavailable: go to the nearest first aid or find a staff member"; event information still works because it comes from the Event service | D7 |
 | **Message broker** | Requests are still saved (outbox); triage and live updates resume when the broker returns; backoffice falls back to periodic refresh | D6 |
 
 **Decided (9 October 2026):** the §6.8 scenarios are **AI service unavailable (D1)** and **transport source unavailable (D2)**, specified in [`features.md` §3.1](../Product/features.md#31-degraded-mode-scenarios-decided-9-october-2026). Network loss (offline mode, F11) is a Could.

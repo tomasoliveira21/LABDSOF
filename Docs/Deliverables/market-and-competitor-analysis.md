@@ -128,7 +128,7 @@ Today, each phase of the event is handled by a different tool, and the informati
 3. **The map as the common reference.** The participant finds their way with it and the team places requests on it. In the Portuguese alternatives, the map is an image on social media.
 4. **No installation and ready for a weak network.** Appmiral, Woov and SafeZone require a native app.
 5. **Information that changes during the night**, with the time of the last update. The status quo is static.
-6. **Local:** European Portuguese, the event's special transport, "Call 112" first in emergencies.
+6. **Local:** European Portuguese and the event's special transport.
 7. **AI with a non-AI alternative.** It is not a differentiator in itself (Raven and 42Chat already use it); what counts is that it is evaluated and has a fallback, as the assignment requires.
 
 **Risks to manage:**

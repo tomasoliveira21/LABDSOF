@@ -196,7 +196,7 @@ The most critical assumptions are **A2, A3 and A4**. If participants do not use 
 
 **Regulatory and ethical**
 - GDPR: location and help requests (especially health-related ones) are sensitive data. Explicit consent, minimisation and short retention apply.
-- A help button creates an expectation of response. The application must make clear that it does not replace 112.
+- A help button creates an expectation of response. The application must make clear that it is not an emergency service.
 - AI-generated content cannot be presented as verified fact, as the assignment requires (5.6.2).
 
 ---

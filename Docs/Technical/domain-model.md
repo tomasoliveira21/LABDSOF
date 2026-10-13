@@ -11,7 +11,7 @@ The product has two halves that change for different reasons and are used by dif
 | Context | Purpose | Main users | Entities |
 |---|---|---|---|
 | **Event Configuration** | Everything the event team sets up and publishes: the event, its team, the venue map, points of interest, transport and announcements | P3 (admin) writes, P1 (participant) reads | Event, Membership, TeamMember, ResponseTeam, VenueMap, PointOfInterest, TransportOption, Announcement |
-| **Incident Management** | Help requests from participants and their handling by the team | P1 creates, P2 (operator) handles | HelpRequest, TriageSuggestion, StatusChange |
+| **Incident Management** | Help requests from participants and their handling by the team | P1 creates, P2 (operator) decides, P5 (responder) acts | HelpRequest, TriageSuggestion, StatusChange |
 
 **Event** is the boundary between tenants: every entity belongs to exactly one event, and nothing is shared between events (report, *Per-event permissions*). The Incident Management context refers to the event, to response teams and to points of interest **by ID only**.
 
@@ -84,6 +84,7 @@ classDiagram
             +Priority priority
             +RequestStatus status
             +ResponseTeamId assignedTeam
+            +UserId acceptedBy
             +datetime submittedAt
         }
         class TriageSuggestion {
@@ -125,7 +126,7 @@ classDiagram
 | **Event** | One academic festival edition (e.g. Queima das Fitas do Porto 2027). Root of everything else. Status: `Draft → Published → Live → Closed` **[PROPOSED]** | Report, *Product vision*: "a single application that brings together several events" |
 | **UserAccount** | Every person who uses the product, participant or team member, logs in with an account (decided 9 October 2026, DM-1). Badges, reports and help requests point to it. Mocked authentication is allowed for the MVP | [`features.md`](../Product/features.md) F1, F2 |
 | **TeamMember** | A person who uses the backoffice. Can belong to several events | Report: "each event has an owner and a team" |
-| **Membership** | Links a team member to an event with a **Role**: `Owner`, `Admin`, `Operator` **[PROPOSED]**. Permissions are always evaluated per event | Report: "each team only sees and changes its own event" |
+| **Membership** | Links a team member to an event with a **Role**: `Owner`, `Admin`, `Operator`, `Responder` **[PROPOSED]**. `Responder` (12 October 2026) is a response-team member in the field who sees only what is dispatched to their team ([`personas.md`](../Product/personas.md) P5). Permissions are always evaluated per event | Report: "each team only sees and changes its own event" |
 | **ResponseTeam** | A group that requests are routed to: medical, security, PCR **[PROPOSED list]** | Report, journeys: "routes it to the right operational team"; stakeholder map (PCR, security, INEM) |
 | **VenueMap** | The venue plan uploaded as an image or PDF. Versioned, so that old help requests keep pointing at the map they were made on | Report, *Opportunity*; assumption A5 |
 | **PointOfInterest** | A place on the map: `Entrance`, `Stage`, `WC`, `FirstAid`, `TransportStop`, `InfoPoint` **[PROPOSED list]**. Position in coordinates relative to the map image (0–1), not GPS | Report, journeys: "entrances, stages, toilets, first aid and transport stops"; annex C3 |

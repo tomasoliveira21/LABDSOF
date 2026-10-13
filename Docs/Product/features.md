@@ -25,16 +25,16 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F1 | Login and logout | — | Must | 1 | P1, P2, P3 | **Login is mandatory for every user**, participants included. Mocked authentication is allowed for the MVP (assignment §6.6, footnote 1) |
 | F2 | Personal account management | — | Must | 2 | P1, P2, P3 | Profile, password, consent, badge visibility, delete account (deletes badges and personal data) |
 | F3 | Event management | C1 | Must | 3 | P4, P3 | Create, edit, publish and close events. Every other feature is scoped by event; isolation between events is a top technical risk (report §5). **[PROPOSED] 10 Oct:** only the platform admin (P4) creates an event, for a verified organisation, and names its first Owner; the Owner edits, publishes and closes it |
-| F4 | Event role and response-team management | C1 | Must | 4 | P3, P4 | Invite members, assign, change and revoke roles (`Owner`, `Admin`, `Operator`); put operators in response teams (§4). **[PROPOSED] 10 Oct:** one platform-wide role, `PlatformAdmin`, outside every event: transfers the Owner role and suspends events, but never sees an event's help requests, reports or participants |
+| F4 | Event role and response-team management | C1 | Must | 4 | P3, P4 | Invite members, assign, change and revoke roles (`Owner`, `Admin`, `Operator`, `Responder` **[PROPOSED]**); put operators and responders in response teams (§4). **[PROPOSED] 10 Oct:** one platform-wide role, `PlatformAdmin`, outside every event: transfers the Owner role and suspends events, but never sees an event's help requests, reports or participants |
 | F5 | Venue map with points of interest | C3 | Must | 5 | P1, P3 | Map uploaded as an image or PDF; points placed on it (entrances, stages, WC, first aid, transport stops) |
-| F6 | Help request | C6 | Must | 6 | P1 | Category and location marked on the map; "Call 112" shown first for emergencies; location shared only with the request |
-| F7 | Incident backoffice | C7 | Must | 7 | P2 | Receive, prioritise, route to a response team and close help requests; live list and map; full status history |
+| F6 | Help request | C6 | Must | 6 | P1 | Category and location marked on the map; location shared only with the request |
+| F7 | Incident backoffice | C7 | Must | 7 | P2, P5 | Receive, prioritise, route to a response team and close help requests; live list and map; full status history. **[PROPOSED] 12 Oct:** responders get what is dispatched to their team on the phone and update its status (§4.1) |
 | F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Suggests category, priority and response team; the operator decides. Kept separate from F7 on purpose (see note below). See §5 |
 | F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **STCP GTFS feed** for regular lines (being validated; weather API as plan B, §3) plus event shuttles and temporary stops entered by the team |
 | F10 | Live announcements, with last-update time | C4 | Must | 10 | P1, P3 | |
 | F11 | Weak-network mode: cached map and information, "data from HH:MM" | C10 | Could | — | P1 | Not one of the §6.8 degraded-mode scenarios (§3.1). Moved from Must to Could on 9 October 2026 |
 | F12 | Community reports on the map | — | Must (assignment §5.5) | 11 | P1 | Waze-style reports (queues, WC out of service, …). See §6 |
-| F13 | Report confirmation and unconfirmation by the responsible team | — | Must | 12 | P2, P3 | Only the responsible team confirms a report; a confirmation can be withdrawn. See §6.2 |
+| F13 | Report confirmation and unconfirmation by the responsible team | — | Must | 12 | P2, P5 | Only the responsible team confirms a report; a confirmation can be withdrawn. See §6.2 |
 | F14 | Badges for confirmed reports (all-time and per event) | — | Must | 13 | P1 | Two of the three badge tracks. See §6.3 |
 | F15 | Badges for event attendance | — | Should | — | P1 | Third badge track. See §6.3 |
 | F16 | Event check-in at the venue | — | Should | — | P1, P3 | The logged-in participant scans the event's QR code **at the venue, during the event dates**; this is what counts as "attended" for F15. See §6.3 |
@@ -94,7 +94,7 @@ Two scenarios, no more. Both are demoed by switching off one dependency while th
 
 ## 4. Response teams (decided, 9 October 2026)
 
-Every event has these four response teams. The admin puts operators in them (F4). Help requests are routed to a team (F7, F8); community reports are confirmed by the team responsible for their type (F13).
+Every event has these four response teams. The admin puts operators and responders in them (F4, §4.1). Help requests are routed to a team (F7, F8); community reports are confirmed by the team responsible for their type (F13).
 
 | Response team | Handles help requests about | Confirms reports about |
 |---|---|---|
@@ -104,6 +104,21 @@ Every event has these four response teams. The admin puts operators in them (F4)
 | **Logistics** | — (does not receive help requests) | WC problems, hazards (glass, spills, dark areas, broken fences), transport problems, wrong information |
 
 The event **Admin** can confirm any report and handle any request. Each help category maps to a default team; the operator or the AI suggestion can change it. The help categories follow the domain model (`Health`, `Safety`, `LostPerson`, `Theft`, `Other`) and still need to be checked against the interview with the security volunteer (DM-4).
+
+### 4.1 Who receives what, and who acts **[PROPOSED] 12 October 2026**
+
+Teacher feedback on the presentation: it was not clear who receives the reports and how they are handled. Each response team has two kinds of members, one that **decides** and one that **acts** (personas P2 and P5):
+
+| Role | Where | What they receive | What they do |
+|---|---|---|---|
+| **Operator** (P2) | Control room, laptop | **Every new help request** of the event (one shared queue) and **the reports of the types their team is responsible for** (§6.1) | Decides. Help request: sets priority and team, then dispatches it or handles it from the control room. Report: confirms or rejects it, asks a responder to check it on site, or sends one to fix it |
+| **Responder** (P5) | In the field, phone | **Only what an operator dispatches** to their team | Acts: accepts ("on my way"), goes to the point on the map, marks it resolved. For a report: answers "true / not true", or fixes the problem |
+| **Admin** | Anywhere | Everything in the event | Can do what an operator does, for any team |
+
+- **Help requests** always pass through the control room first, because they need a decision: priority, team, whether someone must go.
+- **Reports** go straight to the operators of the responsible team, because the report type already says who is responsible.
+
+Both journeys as BPMN: [`user-workflows.md`, *Complete journeys*](user-workflows.md#complete-journeys-bpmn).
 
 ## 5. AI-assisted workflow: help-request triage
 
@@ -144,7 +159,7 @@ This is the list the team works through before the AI work starts. Owner: AI lea
 
 ### 6.1 What can be reported
 
-Each report is a type, a point on the venue map and a time. It is not a help request: anything urgent or about a person goes through *Ask for help* or 112.
+Each report is a type, a point on the venue map and a time. It is not a help request: anything urgent or about a person goes through *Ask for help*.
 
 | Report type | Example | Confirmed by (§4) | Expires after |
 |---|---|---|---|
@@ -158,12 +173,15 @@ Each report is a type, a point on the venue map and a time. It is not a help req
 
 ### 6.2 How a report behaves
 
-1. A participant places a report on the map. The responsible team sees it **in the backoffice at once**.
-2. **Only the responsible team (or an Admin) confirms it.** Other participants see it only once it is confirmed. They can tap *"still there"* or *"not there anymore"*: this helps the team decide, but it does not confirm the report and does not count for badges. **[PROPOSED]**
+1. A participant places a report on the map. It goes straight to the **operators of the team responsible for its type** (§6.1, §4.1), who see it **in the backoffice at once**. Its status is *Pending*.
+2. **Only an operator of the responsible team (or an Admin) confirms or rejects it.** If it cannot be checked from the control room, the operator asks a responder of that team to check it on site **[PROPOSED]**. Other participants see it only once it is confirmed. They can tap *"still there"* or *"not there anymore"*: this helps the team decide, but it does not confirm the report and does not count for badges. **[PROPOSED]**
 3. A confirmed report counts for the reporter's badges and appears on everyone's map with its time.
 4. The team can **unconfirm** a report (e.g. confirmed by mistake, or found to be false). It disappears from the map, **no longer counts** for badges, and the reporter's badge levels are recalculated, so a badge can go down a tier.
 5. A report **expires** after the time set for its type (§6.1). An expired confirmed report still counts for badges; it is only removed from the map.
 6. A report never changes official information (map, announcements, transport) automatically. The team does that.
+7. **[PROPOSED] 12 Oct:** if the problem needs action (a broken WC, broken glass), the operator sends a responder of the team, who fixes it and marks the report *Resolved*: it leaves the map and still counts for badges. A report nobody confirms is removed when it expires and earns nothing.
+
+Report statuses **[PROPOSED]**: `Pending → Confirmed | Rejected | Expired`, then `Confirmed → Resolved | Expired | Unconfirmed`.
 
 ### 6.3 Badges (decided)
 
@@ -246,6 +264,7 @@ Rewritten on 9 October 2026 to match the feature list above. **To validate with 
 
 **US-05** · As an **event owner or admin**, I want to invite people, give them a role and put them in a response team, so that each person can only do what their job requires.
 - Given I invite a user as *Operator* in the *Medical* team, then they see event X's help requests but cannot change its configuration.
+- Given I invite a user as *Responder* in the *Medical* team, then they see only the requests and reports dispatched to that team. **[PROPOSED]**
 - Given I change or revoke a member's role, then the change applies at their next action and is recorded with my name and the time.
 - Given I am an *Operator*, when I try to change the event's roles, then the action is refused.
 
@@ -261,9 +280,8 @@ Rewritten on 9 October 2026 to match the feature list above. **To validate with 
 ### F6 · Help request
 
 **US-08** · As a **participant**, I want to ask for help by choosing a category and marking where I am on the map, so that the team can reach me.
-- Given I open *Ask for help*, then "Call 112" is shown first for emergencies.
 - Given I choose a category and mark a location, when I submit, then I see a confirmation and the status of my request.
-- Given I have no network, when I submit, then the app tells me the request was not sent and shows the nearest first-aid point and "Call 112".
+- Given I have no network, when I submit, then the app tells me the request was not sent and shows the nearest first-aid point.
 
 ### F7 · Incident backoffice
 
@@ -273,7 +291,13 @@ Rewritten on 9 October 2026 to match the feature list above. **To validate with 
 
 **US-10** · As an **incident operator**, I want to set the priority, route a request to a response team and close it, so that the right people deal with it.
 - Given I change the status, priority or team of a request, then the change is recorded with my name and the time.
-- Given I route a request to the *Medical* team, then the members of that team see it in their list.
+- Given I route a request to the *Medical* team, then its responders get an alert on their phone with the point on the map.
+
+**US-26** **[PROPOSED]** · As a **responder**, I want to get the requests dispatched to my team on my phone and update their status, so that the control room and the participant know help is on the way.
+- Given a request is dispatched to my team, then I get an alert with its category and its point on the venue map.
+- Given I accept it, then its status becomes *On the way* and the participant sees "Help is on the way".
+- Given another responder of my team already accepted it, then I see that and cannot accept it too.
+- Given I mark it resolved, then the participant and the control room see it closed.
 
 ### F8 · AI help-request triage
 
@@ -317,10 +341,12 @@ Rewritten on 9 October 2026 to match the feature list above. **To validate with 
 
 ### F13 · Report confirmation
 
-**US-19** · As a **member of the responsible team**, I want to confirm or unconfirm a report, so that only true information is shown and rewarded.
+**US-19** · As an **operator of the responsible team**, I want to confirm or unconfirm a report, so that only true information is shown and rewarded.
 - Given a report of a type my team is responsible for, when I confirm it, then it appears on participants' maps and counts for the reporter's badges.
 - Given a confirmed report, when I unconfirm it, then it disappears from the map, stops counting, and the reporter's badge levels are recalculated.
 - Given a report of a type my team is not responsible for, then I cannot confirm it (an Admin can).
+- Given I cannot check a report from the control room, when I ask a responder of my team to check it, then they get it on their phone and their answer comes back to me. **[PROPOSED]**
+- Given a confirmed report needs action, when I send it to a responder and they mark it resolved, then it leaves the map and still counts for badges. **[PROPOSED]**
 
 ### F14 · Badges for confirmed reports
 
