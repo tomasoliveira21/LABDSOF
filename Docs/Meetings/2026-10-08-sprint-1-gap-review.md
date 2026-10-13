@@ -57,6 +57,16 @@
 |---|---|---|
 | Workflows slide | One slide, about 60 s, since the talk lasts at most 6 min: **"Help for people, reports for places"**, with W2 + W3 (ask for help) and W7 (report a problem) as two rows. Chosen over a W2 + W3-only version. Placed after the main-features slides, as in the plan (§9) | `Farol_First_Presentation.pptx`; `CHANGELOG.md` |
 
+### Follow-up (12 October 2026, status overview)
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Language | **All documentation in English, and it stays that way.** The three deliverables were translated. Exceptions: survey questions and presentation speaker notes (Portuguese audience) | `README.md`, `team-and-process.md` §3–4 |
+| Roles | Confirmed: roles are identified and described; each member takes a role at a specific moment. No fixed assignment | `team-and-process.md` §2 |
+| DoR / DoD in the tool | Issue forms (user story, task) and the PR template; board columns *Ready* and *Done* linked to the rules | `definition-of-ready-and-done.md` |
+| Process drift | A **Conventions** check on every PR (branch name, PR title, linked issue) | `.github/workflows/conventions.yml` |
+| Status slide | One slide with green/yellow/red for DoR/DoD, roles and process, domain model and architecture, at the end of the deck | `Farol_First_Presentation.pptx` |
+
 ## Status at a glance
 
 | # | Topic | Status | Blocking item for the presentation |

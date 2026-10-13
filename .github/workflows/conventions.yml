@@ -1,0 +1,33 @@
+# Checks the README conventions on every pull request (README §2 and §4).
+name: Conventions
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  conventions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Branch name, PR title and linked issue
+        env:
+          BRANCH: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          fail=0
+          if ! [[ "$BRANCH" =~ ^(feature|bugfix|refactor|test|docs|ci|chore)/[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "::error::Branch '$BRANCH' must be <prefix>/<short-description>, lowercase kebab-case, with prefix feature, bugfix, refactor, test, docs, ci or chore (README §2)."
+            fail=1
+          fi
+          if ! [[ "$TITLE" =~ ^(Feature|Bugfix|Refactor|Test|Docs|CI|Chore):\ [A-Z] ]]; then
+            echo "::error::PR title '$TITLE' must be '<Prefix>: <Description>', e.g. 'Docs: Add conventions to global report' (README §4)."
+            fail=1
+          fi
+          if ! grep -qiE '(closes|fixes|resolves) #[0-9]+' <<< "$BODY"; then
+            echo "::error::PR description must reference its issue with 'Closes #<issue>' (README §4)."
+            fail=1
+          fi
+          exit $fail

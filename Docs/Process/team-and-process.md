@@ -39,7 +39,7 @@ Defined in the README; summarised here for the presentation.
 | Code review | Two reviews: GitHub Copilot (automatic) and one team member; review within 1 working day; blocking comments start with `blocking:` | README §5 |
 | Branch protection | No direct pushes, Copilot review, 1 approval, stale approvals dismissed, conversations resolved, CI must pass, branch up to date | README §6 |
 | Definition of Ready / Done | See [`definition-of-ready-and-done.md`](definition-of-ready-and-done.md). One user story = one issue = one PR | — |
-| Language | All branches, commits, PRs and repository documentation in **English** | README (introduction) |
+| Language | All branches, commits, PRs and repository documentation in **English**. Exceptions: survey questions and presentation speaker notes, which are for a Portuguese audience (decided 12 October 2026) | README (introduction) |
 
 ### Sprints and meetings
 
@@ -72,7 +72,8 @@ The team meets **twice a week**:
 | Check | Finding | Action (agreed 8 October 2026) |
 |---|---|---|
 | Branch protection on `main` | Every item in README §6 is an unticked checkbox. The history also shows commits made directly on `main` without a PR (`5ef2c4a` and `3a4ba04` on 24 September, `e853854` "Project Assignment" on 8 October), so "no direct pushes" is not enforced | Tomás (repo owner) turns the rules on in the repository settings, then ticks the boxes in README §6 |
-| Merge method | README §4 requires **squash merge**, but PRs #18 to #21 were merged with merge commits | Tomás restricts the repository to squash merging (Settings → General → Pull Requests) |
+| Merge method | README §4 requires **squash merge**, but PRs #18 to #21, #23, #25, #27 and #30 were merged with merge commits | Tomás restricts the repository to squash merging (Settings → General → Pull Requests) |
 | PR template | README §7 says to save it as `.github/pull_request_template.md`, but the file did not exist | Created in PR #21 |
-| Commit message format | Several commits on `main` have no issue number or prefix (`3a4ba04`, `5159ff4`, `5ef2c4a`, `e853854`, and the commits of PR #21) | Agreed: every PR has an issue, and PR titles follow `<Prefix>: <Description>`. With squash merging, the PR title becomes the commit on `main` |
-| Documentation language | The README requires English, but the three deliverables in `Docs/Deliverables/` are in Portuguese | **[DECISION NEEDED]** Either translate them or change the rule to allow Portuguese deliverables |
+| Issue templates | The DoR and the story-level DoD were not in the tool | Since 12 October 2026: issue forms in `.github/ISSUE_TEMPLATE/` (user story and task) |
+| Commit message format | Several commits on `main` have no issue number or prefix (`3a4ba04`, `5159ff4`, `5ef2c4a`, `e853854`, and the commits of PR #21; later `58fb4e0`). Branch `feat/UpdateProductVisionPP` (PR #30) uses a prefix that does not exist | Agreed: every PR has an issue, and PR titles follow `<Prefix>: <Description>`. With squash merging, the PR title becomes the commit on `main`. Since 12 October 2026 the **Conventions** workflow (`.github/workflows/conventions.yml`) checks the branch name, the PR title and the `Closes #<issue>` line on every PR |
+| Documentation language | The README requires English, but the three deliverables in `Docs/Deliverables/` are in Portuguese | **Decided 12 October 2026:** all documentation is in English and stays that way. The three deliverables were translated |

@@ -1,7 +1,7 @@
 # Main User Workflows
 
 > LABDSOF 2026/27 · Sprint 1 · Assignment §5.4 and §7.1.2 (deliverable 4, *Principal user journeys*)
-> **Status:** draft. The three journeys in the report (*Principais jornadas do utilizador*) are expanded here into step-by-step flows with diagrams. Steps that are not in the report are marked **[PROPOSED]**.
+> **Status:** draft. The three journeys in the report (*Main user journeys*) are expanded here into step-by-step flows with diagrams. Steps that are not in the report are marked **[PROPOSED]**.
 > **Personas:** [`personas.md`](personas.md) · **Features:** [`features.md`](features.md) · **Domain terms:** [`domain-model.md`](../Technical/domain-model.md)
 > Diagrams use Mermaid, which GitHub renders directly.
 
@@ -9,22 +9,45 @@
 
 | ID | Journey | Persona | Source in the report | Demo priority |
 |---|---|---|---|---|
-| **W2** | **Participant asks for help** | P1 → P2 | Third journey (help request) | **1, the core journey** (links both sides of the product) |
-| W3 | Operator handles a help request | P2 | Third journey | 1 (continuation of W2) |
+| **W2** | **Participant asks for help** | P1 → P2 → P5 | Third journey (help request) | **1, the core journey** (links both sides of the product) |
+| W3 | Operator handles a help request | P2 → P5 | Third journey | 1 (continuation of W2) |
 | W1 | Participant finds information | P1 | First journey | 2 |
 | W4 | Admin sets up an event | P4 → P3 | Second journey | 3 |
-| W5 | Team publishes a live update | P3 → P1 | Second journey ("atualiza informação durante a noite") | 4 |
+| W5 | Team publishes a live update | P3 → P1 | Second journey ("updates information during the night") | 4 |
 | W6 | Participant loses the network | P1 | Risks: congested network, offline mode (report §5) | Could (F11). Assignment §6.8 is covered by scenarios D1 and D2 ([`features.md` §3.1](features.md#31-degraded-mode-scenarios-decided-9-october-2026)) |
-| W7 | Participant reports a problem and earns a badge | P1 → P3 | Engagement mechanism ([`features.md` §6](features.md#6-ethical-engagement-mechanism-community-reports-and-badges)) | Required by assignment §5.5 |
+| W7 | Participant reports a problem and earns a badge | P1 → P2 → P5 | Engagement mechanism ([`features.md` §6](features.md#6-ethical-engagement-mechanism-community-reports-and-badges)) | Required by assignment §5.5 |
 | W8 | Participant checks in at the venue | P1 | Attendance badges (F15, F16) | Should |
 
 For the 5–7 minute presentation, **W2 + W3 tell the whole story**: a participant asks for help, and the event team sees it on the map, prioritises it and routes it.
+
+## Complete journeys (BPMN)
+
+Added after the presentation of 12 October 2026 (teacher feedback): one BPMN diagram per core journey, from the participant's first tap to the end, with one lane per actor. The Mermaid diagrams in W1–W8 stay as the step-by-step detail. Who receives what is in [`features.md` §4.1](features.md#41-who-receives-what-and-who-acts-proposed-12-october-2026).
+
+### Help request, end to end (W2 + W3)
+
+![Help request journey in BPMN](bpmn/help-request-journey.svg)
+
+- The request reaches the control room **at once**. The AI suggestion runs in parallel and never holds it back (scenario D1).
+- The **operator decides** (priority, team, whether someone must go); the **responder acts** (accepts, goes to the point, resolves).
+- The participant sees two changes: *On the way* and *Resolved*.
+- Not drawn, to keep it readable: the participant cancels, duplicates (see W3).
+
+### Community report, end to end (W7)
+
+![Community report journey in BPMN](bpmn/report-journey.svg)
+
+- A report skips the shared queue: its **type** says which team is responsible ([`features.md` §6.1](features.md#61-what-can-be-reported)), so it goes straight to that team's operators.
+- The **operator decides**: confirms or rejects, if needed after a responder checks on site. A **responder acts** when the problem needs fixing.
+- Not drawn: the team unconfirms a report later (see W7).
+
+**Files:** [`bpmn/`](bpmn/) has each diagram as `.bpmn` (BPMN 2.0; open and edit it in [bpmn.io](https://demo.bpmn.io) or Camunda Modeler) and as `.svg` (for reading here). After editing a `.bpmn`, export the SVG again. These diagrams are for the documentation, not the slides: they are too detailed to read on a projector.
 
 ---
 
 ## W1 · Participant finds information
 
-Source: report, first journey: *"abre a aplicação web através de um link ou QR code, seleciona o evento, consulta a planta, encontra entradas, serviços, opções de transporte e informação de segurança"*.
+Source: report, first journey: *"opens the web application through a link or QR code, selects the event, checks the map, finds entrances, services, transport options and safety information"*.
 
 ```mermaid
 flowchart TD
@@ -44,7 +67,7 @@ flowchart TD
 
 ## W2 · Participant asks for help (core journey)
 
-Source: report, third journey: *"Quando um participante envia um pedido de ajuda, a equipa do evento recebe esse pedido com contexto e localização, avalia a sua prioridade e encaminha-o para a equipa operacional adequada."* The AI step is the **help-request triage** chosen by the team ([`features.md` §5](features.md#5-ai-assisted-workflow-help-request-triage)); the suggestion must arrive within 30 s (SC3), otherwise the fallback applies.
+Source: report, third journey: *"When a participant sends a help request, the event team receives it with context and location, assesses its priority and routes it to the right operational team."* The AI step is the **help-request triage** chosen by the team ([`features.md` §5](features.md#5-ai-assisted-workflow-help-request-triage)); the suggestion must arrive within 30 s (SC3), otherwise the fallback applies.
 
 ```mermaid
 sequenceDiagram
@@ -54,9 +77,9 @@ sequenceDiagram
     participant AI as AI triage
     participant BO as Backoffice
     actor O as Operator (Miguel)
+    actor R as Responder (Inês)
 
     P->>App: Taps "Ask for help"
-    App-->>P: Shows "Call 112" first for emergencies
     P->>App: Chooses category, marks location on map, optional short text
     App->>Inc: Submit help request
     Inc-->>App: Request received, status Submitted
@@ -69,14 +92,17 @@ sequenceDiagram
     end
     Inc-)BO: New request for this event
     BO-->>O: Request appears on list and map
-    O->>BO: Acknowledges, sets priority, routes to response team
-    BO->>Inc: Status update
-    Inc-->>App: Status changed
-    App-->>P: "Help is on the way" (status update)
+    O->>BO: Acknowledges, sets priority, dispatches to a response team
+    BO->>Inc: Status Dispatched
+    Inc-)R: Alert on the phone, with the point on the map
+    R->>Inc: Accepts
+    Inc-->>App: Status On the way
+    App-->>P: "Help is on the way"
+    R->>Inc: Marks it resolved after helping
+    Inc-->>App: Status Resolved
 ```
 
 **Rules from the repository:**
-- "Call 112" comes first; the app does not replace emergency services (report §5, regulatory risks; annex C6).
 - Location is marked on the map by the participant and shared only with the request (annex C6, SafeZone pattern; survey Q10 tests acceptance).
 - The AI only **suggests**; it never lowers a priority without a person (annex C9).
 
@@ -94,7 +120,8 @@ stateDiagram-v2
     Triaged --> Acknowledged: operator accepts or changes suggestion
     Acknowledged --> Dispatched: routed to a response team
     Acknowledged --> Resolved: handled without dispatch
-    Dispatched --> Resolved: response team closes it
+    Dispatched --> OnTheWay: a responder accepts it
+    OnTheWay --> Resolved: the responder closes it
     Submitted --> Cancelled: participant cancels
     Acknowledged --> Duplicate: merged with another request
     Resolved --> [*]
@@ -105,15 +132,15 @@ stateDiagram-v2
 Steps:
 1. A new request appears on the operator's list and on the venue map, with category, location, time and, if available, the AI suggestion.
 2. The operator acknowledges it and confirms or changes the priority.
-3. The operator routes it to a response team (Medical, Security or PCR; [`features.md` §4](features.md#4-response-teams-decided-9-october-2026)) or handles it directly.
+3. The operator routes it to a response team (Medical, Security or PCR; [`features.md` §4](features.md#4-response-teams-decided-9-october-2026)) or handles it directly. **[PROPOSED] 12 Oct:** the team's responders get an alert on their phone; the first one who accepts it sets it *On the way*.
 4. Every change is recorded with who and when (audit, assignment §6.6).
-5. The response team, or the operator, closes it as resolved.
+5. The responder who accepted it closes it as resolved, or the operator, if it was handled from the control room.
 
 > ⚠️ **GAP:** the response teams are decided (features §4); the statuses and who closes a request are still assumptions. Needed: the interview with the security volunteer (report §4) to confirm how requests are handled today and which teams exist.
 
 ## W4 · Admin sets up an event
 
-Source: report, second journey: *"cria ou seleciona um evento no backoffice, carrega ou configura a planta do recinto, adiciona pontos importantes como entradas, palcos, casas de banho, primeiros socorros e paragens de transporte"*.
+Source: report, second journey: *"creates or selects an event in the backoffice, uploads or configures the venue map, adds key points such as entrances, stages, toilets, first aid and transport stops"*.
 
 ```mermaid
 flowchart TD
@@ -129,13 +156,13 @@ flowchart TD
     G --> H["Publishes the event: QR code and link generated"]
 ```
 
-**[PROPOSED]:** the steps *invite team members*, *define response teams* and *publish with QR code* are not in the report but are needed for per-event permissions (report, *Visão do produto*) and for routing (W3).
+**[PROPOSED]:** the steps *invite team members*, *define response teams* and *publish with QR code* are not in the report but are needed for per-event permissions (report, *Product vision*) and for routing (W3).
 
 **[PROPOSED] 10 October 2026:** the first three steps (request, verification, creation by the platform admin, persona P4) are not in the report either. Farol hosts many festivals, so an event can only be created for a verified organisation, and its Owner manages only that event (F3, US-25). The platform admin never sees the event's help requests or reports. To confirm with the team (personas PE-5).
 
 ## W5 · Team publishes a live update
 
-Source: report, *"atualiza informação durante a noite"*; root cause 2.
+Source: report, *"updates information during the night"*; root cause 2.
 
 ```mermaid
 sequenceDiagram
@@ -161,9 +188,9 @@ flowchart TD
     B -- Yes --> C["Fresh data, saved to the device cache"]
     B -- No --> D{"Event cached on this device?"}
     D -- Yes --> E["Map and information from cache, labelled 'data from HH:MM'"]
-    D -- No --> F["Message: no connection, look for staff or call 112"]
+    D -- No --> F["Message: no connection, look for staff or go to the nearest first aid"]
     E --> G{"Participant asks for help?"}
-    G -- Yes --> H["Request cannot be sent: show nearest first aid on the cached map and 'Call 112'"]
+    G -- Yes --> H["Request cannot be sent: show nearest first aid on the cached map"]
 ```
 
 **[PROPOSED]:** help requests are **not** queued silently while offline, because a request that looks sent but is not is worse than an honest failure ("fail safely", assignment §6.8).
@@ -178,16 +205,20 @@ Source: engagement mechanism decided by the team on 8 October and detailed on 9 
 flowchart TD
     A["Participant taps Report"] --> B["Chooses type: queue, WC, water, crowd, hazard, transport, wrong info"]
     B --> C["Marks the point on the venue map"]
-    C --> D["Report sent: team sees it in the backoffice at once"]
-    D --> E{"Confirmed by the responsible team?"}
+    C --> D["Sent to the operators of the team responsible for its type (Pending)"]
+    D --> K{"Operator can check it from the control room?"}
+    K -- No --> L["A responder of the team checks it on site"] --> E
+    K -- Yes --> E{"Operator confirms it?"}
     E -- Yes --> F["Shown on everyone's map with its time, until it expires"]
     F --> G["Reporter's count goes up; badge tier when a level is reached (Wood 1 … Diamond 500+)"]
-    E -- No --> H["Expires; no badge; team can hide it"]
+    F --> M{"Does the team need to act?"}
+    M -- Yes --> N["A responder fixes it and marks it Resolved: off the map, still counts"]
+    E -- No --> H["Rejected, or expires unconfirmed: no badge"]
     F --> I{"Team unconfirms it later?"}
     I -- Yes --> J["Removed from the map; count goes down; tier recalculated"]
 ```
 
-Urgent situations about a person are **not** reports: the app sends the participant to *Ask for help* (W2) or 112.
+Urgent situations about a person are **not** reports: the app sends the participant to *Ask for help* (W2).
 
 ## W8 · Participant checks in at the venue (F16, Should)
 

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Farol · community report journey (W7). Source of truth: Docs/Product/user-workflows.md. Edit in bpmn.io or Camunda Modeler and export the SVG again. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_report-journey" targetNamespace="https://github.com/farol/bpmn">
+  <bpmn:collaboration id="Collaboration_report-journey">
+    <bpmn:participant id="Participant_1" name="Community report, end to end (W7)" processRef="Process_report-journey" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_report-journey" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_P" name="Participant (Rita, P1)">
+        <bpmn:flowNodeRef>Start_Report</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Type</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_Urgent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_UseHelp</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Help</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Mark</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_F" name="Farol (system)">
+        <bpmn:flowNodeRef>Task_Route</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Show</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Expire</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Expired</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Remove</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Fixed</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_O" name="Team operator (Miguel, P2)">
+        <bpmn:flowNodeRef>Task_SeeReport</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_Check</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_True</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Reject</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Rejected</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Confirm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_Fix</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_R" name="Responder in the field (Inês, P5)">
+        <bpmn:flowNodeRef>Task_CheckSite</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Fix</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_MarkFixed</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_Report" name="Sees a problem at the venue"><bpmn:outgoing>Flow_1</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:userTask id="Task_Type" name="Taps Report and chooses the type"><bpmn:incoming>Flow_1</bpmn:incoming><bpmn:outgoing>Flow_2</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_Urgent" name="Urgent, or about a person?"><bpmn:incoming>Flow_2</bpmn:incoming><bpmn:outgoing>Flow_3</bpmn:outgoing><bpmn:outgoing>Flow_5</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_UseHelp" name="Uses Ask for help instead"><bpmn:incoming>Flow_3</bpmn:incoming><bpmn:outgoing>Flow_4</bpmn:outgoing></bpmn:userTask>
+    <bpmn:endEvent id="End_Help" name="Help request journey"><bpmn:incoming>Flow_4</bpmn:incoming></bpmn:endEvent>
+    <bpmn:userTask id="Task_Mark" name="Marks the point on the map and sends"><bpmn:incoming>Flow_5</bpmn:incoming><bpmn:outgoing>Flow_6</bpmn:outgoing></bpmn:userTask>
+    <bpmn:serviceTask id="Task_Route" name="Sends it to the team responsible for its type"><bpmn:incoming>Flow_6</bpmn:incoming><bpmn:outgoing>Flow_7</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:userTask id="Task_SeeReport" name="Sees the report in the backoffice at once"><bpmn:incoming>Flow_7</bpmn:incoming><bpmn:outgoing>Flow_8</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_Check" name="Can it be checked from the control room?"><bpmn:incoming>Flow_8</bpmn:incoming><bpmn:outgoing>Flow_9</bpmn:outgoing><bpmn:outgoing>Flow_10</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_CheckSite" name="Checks it on site and answers"><bpmn:incoming>Flow_10</bpmn:incoming><bpmn:outgoing>Flow_11</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_True" name="Is it true?"><bpmn:incoming>Flow_9</bpmn:incoming><bpmn:incoming>Flow_11</bpmn:incoming><bpmn:outgoing>Flow_12</bpmn:outgoing><bpmn:outgoing>Flow_14</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_Reject" name="Rejects it"><bpmn:incoming>Flow_12</bpmn:incoming><bpmn:outgoing>Flow_13</bpmn:outgoing></bpmn:userTask>
+    <bpmn:endEvent id="End_Rejected" name="Hidden, no badge"><bpmn:incoming>Flow_13</bpmn:incoming></bpmn:endEvent>
+    <bpmn:userTask id="Task_Confirm" name="Confirms it"><bpmn:incoming>Flow_14</bpmn:incoming><bpmn:outgoing>Flow_15</bpmn:outgoing></bpmn:userTask>
+    <bpmn:serviceTask id="Task_Show" name="Shows it on every map with its time; badge count goes up"><bpmn:incoming>Flow_15</bpmn:incoming><bpmn:outgoing>Flow_16</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gw_Fix" name="Does the team need to act?"><bpmn:incoming>Flow_16</bpmn:incoming><bpmn:outgoing>Flow_17</bpmn:outgoing><bpmn:outgoing>Flow_19</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_Expire" name="Removes it when the time for its type ends"><bpmn:incoming>Flow_17</bpmn:incoming><bpmn:outgoing>Flow_18</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:endEvent id="End_Expired" name="Report expired"><bpmn:incoming>Flow_18</bpmn:incoming></bpmn:endEvent>
+    <bpmn:userTask id="Task_Fix" name="Fixes the problem"><bpmn:incoming>Flow_19</bpmn:incoming><bpmn:outgoing>Flow_20</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_MarkFixed" name="Marks the report resolved"><bpmn:incoming>Flow_20</bpmn:incoming><bpmn:outgoing>Flow_21</bpmn:outgoing></bpmn:userTask>
+    <bpmn:serviceTask id="Task_Remove" name="Removes it from the map (Resolved)"><bpmn:incoming>Flow_21</bpmn:incoming><bpmn:outgoing>Flow_22</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:endEvent id="End_Fixed" name="Problem fixed"><bpmn:incoming>Flow_22</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_Report" targetRef="Task_Type" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_Type" targetRef="Gw_Urgent" />
+    <bpmn:sequenceFlow id="Flow_3" name="Yes" sourceRef="Gw_Urgent" targetRef="Task_UseHelp" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_UseHelp" targetRef="End_Help" />
+    <bpmn:sequenceFlow id="Flow_5" name="No" sourceRef="Gw_Urgent" targetRef="Task_Mark" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_Mark" targetRef="Task_Route" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Task_Route" targetRef="Task_SeeReport" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_SeeReport" targetRef="Gw_Check" />
+    <bpmn:sequenceFlow id="Flow_9" name="Yes" sourceRef="Gw_Check" targetRef="Gw_True" />
+    <bpmn:sequenceFlow id="Flow_10" name="No" sourceRef="Gw_Check" targetRef="Task_CheckSite" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="Task_CheckSite" targetRef="Gw_True" />
+    <bpmn:sequenceFlow id="Flow_12" name="No" sourceRef="Gw_True" targetRef="Task_Reject" />
+    <bpmn:sequenceFlow id="Flow_13" sourceRef="Task_Reject" targetRef="End_Rejected" />
+    <bpmn:sequenceFlow id="Flow_14" name="Yes" sourceRef="Gw_True" targetRef="Task_Confirm" />
+    <bpmn:sequenceFlow id="Flow_15" sourceRef="Task_Confirm" targetRef="Task_Show" />
+    <bpmn:sequenceFlow id="Flow_16" sourceRef="Task_Show" targetRef="Gw_Fix" />
+    <bpmn:sequenceFlow id="Flow_17" name="No" sourceRef="Gw_Fix" targetRef="Task_Expire" />
+    <bpmn:sequenceFlow id="Flow_18" sourceRef="Task_Expire" targetRef="End_Expired" />
+    <bpmn:sequenceFlow id="Flow_19" name="Yes" sourceRef="Gw_Fix" targetRef="Task_Fix" />
+    <bpmn:sequenceFlow id="Flow_20" sourceRef="Task_Fix" targetRef="Task_MarkFixed" />
+    <bpmn:sequenceFlow id="Flow_21" sourceRef="Task_MarkFixed" targetRef="Task_Remove" />
+    <bpmn:sequenceFlow id="Flow_22" sourceRef="Task_Remove" targetRef="End_Fixed" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Collaboration_report-journey">
+      <bpmndi:BPMNShape id="Participant_1_di" bpmnElement="Participant_1" isHorizontal="true"><dc:Bounds x="-60" y="0" width="2544" height="840" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_P_di" bpmnElement="Lane_P" isHorizontal="true"><dc:Bounds x="-30" y="0" width="2514" height="230" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_F_di" bpmnElement="Lane_F" isHorizontal="true"><dc:Bounds x="-30" y="230" width="2514" height="230" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_O_di" bpmnElement="Lane_O" isHorizontal="true"><dc:Bounds x="-30" y="460" width="2514" height="230" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_R_di" bpmnElement="Lane_R" isHorizontal="true"><dc:Bounds x="-30" y="690" width="2514" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Report_di" bpmnElement="Start_Report"><dc:Bounds x="121" y="97" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Type_di" bpmnElement="Task_Type"><dc:Bounds x="225" y="79" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Urgent_di" bpmnElement="Gw_Urgent" isMarkerVisible="true"><dc:Bounds x="416" y="92" width="46" height="46" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_UseHelp_di" bpmnElement="Task_UseHelp"><dc:Bounds x="525" y="31" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Help_di" bpmnElement="End_Help"><dc:Bounds x="721" y="49" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Mark_di" bpmnElement="Task_Mark"><dc:Bounds x="525" y="127" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Route_di" bpmnElement="Task_Route"><dc:Bounds x="675" y="309" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SeeReport_di" bpmnElement="Task_SeeReport"><dc:Bounds x="825" y="539" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Check_di" bpmnElement="Gw_Check" isMarkerVisible="true"><dc:Bounds x="1016" y="552" width="46" height="46" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CheckSite_di" bpmnElement="Task_CheckSite"><dc:Bounds x="1125" y="729" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_True_di" bpmnElement="Gw_True" isMarkerVisible="true"><dc:Bounds x="1316" y="552" width="46" height="46" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Reject_di" bpmnElement="Task_Reject"><dc:Bounds x="1425" y="587" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Rejected_di" bpmnElement="End_Rejected"><dc:Bounds x="1621" y="605" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Confirm_di" bpmnElement="Task_Confirm"><dc:Bounds x="1425" y="491" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Show_di" bpmnElement="Task_Show"><dc:Bounds x="1575" y="309" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Fix_di" bpmnElement="Gw_Fix" isMarkerVisible="true"><dc:Bounds x="1766" y="552" width="46" height="46" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Expire_di" bpmnElement="Task_Expire"><dc:Bounds x="1875" y="261" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Expired_di" bpmnElement="End_Expired"><dc:Bounds x="2071" y="279" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Fix_di" bpmnElement="Task_Fix"><dc:Bounds x="1875" y="729" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_MarkFixed_di" bpmnElement="Task_MarkFixed"><dc:Bounds x="2025" y="729" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Remove_di" bpmnElement="Task_Remove"><dc:Bounds x="2175" y="357" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Fixed_di" bpmnElement="End_Fixed"><dc:Bounds x="2371" y="375" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1"><di:waypoint x="157" y="115" /><di:waypoint x="225" y="115" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2"><di:waypoint x="353" y="115" /><di:waypoint x="416" y="115" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3"><di:waypoint x="462" y="115" /><di:waypoint x="493.5" y="115" /><di:waypoint x="493.5" y="67" /><di:waypoint x="525" y="67" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4"><di:waypoint x="653" y="67" /><di:waypoint x="721" y="67" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5"><di:waypoint x="462" y="115" /><di:waypoint x="493.5" y="115" /><di:waypoint x="493.5" y="163" /><di:waypoint x="525" y="163" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6"><di:waypoint x="589" y="199" /><di:waypoint x="589" y="345" /><di:waypoint x="675" y="345" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7"><di:waypoint x="739" y="381" /><di:waypoint x="739" y="575" /><di:waypoint x="825" y="575" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8"><di:waypoint x="953" y="575" /><di:waypoint x="1016" y="575" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9"><di:waypoint x="1062" y="575" /><di:waypoint x="1316" y="575" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10"><di:waypoint x="1039" y="598" /><di:waypoint x="1039" y="765" /><di:waypoint x="1125" y="765" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11"><di:waypoint x="1253" y="765" /><di:waypoint x="1339" y="765" /><di:waypoint x="1339" y="598" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_di" bpmnElement="Flow_12"><di:waypoint x="1362" y="575" /><di:waypoint x="1393.5" y="575" /><di:waypoint x="1393.5" y="623" /><di:waypoint x="1425" y="623" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13_di" bpmnElement="Flow_13"><di:waypoint x="1553" y="623" /><di:waypoint x="1621" y="623" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14_di" bpmnElement="Flow_14"><di:waypoint x="1362" y="575" /><di:waypoint x="1393.5" y="575" /><di:waypoint x="1393.5" y="527" /><di:waypoint x="1425" y="527" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15_di" bpmnElement="Flow_15"><di:waypoint x="1489" y="491" /><di:waypoint x="1489" y="345" /><di:waypoint x="1575" y="345" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16_di" bpmnElement="Flow_16"><di:waypoint x="1639" y="381" /><di:waypoint x="1639" y="575" /><di:waypoint x="1766" y="575" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_17_di" bpmnElement="Flow_17"><di:waypoint x="1789" y="552" /><di:waypoint x="1789" y="297" /><di:waypoint x="1875" y="297" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18_di" bpmnElement="Flow_18"><di:waypoint x="2003" y="297" /><di:waypoint x="2071" y="297" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_19_di" bpmnElement="Flow_19"><di:waypoint x="1789" y="598" /><di:waypoint x="1789" y="765" /><di:waypoint x="1875" y="765" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_20_di" bpmnElement="Flow_20"><di:waypoint x="2003" y="765" /><di:waypoint x="2025" y="765" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_21_di" bpmnElement="Flow_21"><di:waypoint x="2153" y="765" /><di:waypoint x="2239" y="765" /><di:waypoint x="2239" y="429" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_22_di" bpmnElement="Flow_22"><di:waypoint x="2303" y="393" /><di:waypoint x="2371" y="393" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

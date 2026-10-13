@@ -1,254 +1,254 @@
 # Problem and Opportunity Report
 
-**Projeto:** Plataforma de coordenação para eventos académicos de grande escala
-**Caso-piloto:** Queima das Fitas do Porto (Queimódromo, 8 noites, maio)
-**Unidade curricular:** LABDSOF 2026/27, Sprint 1
-**Direção do enunciado:** 4.3 *Local Event Coordination Platform*, aplicada a um evento com multidões e cortes de trânsito
-**Versão:** revista com o questionário de alinhamento do grupo e as decisões do Tiago (outubro de 2026)
+**Project:** Coordination platform for large-scale academic events
+**Pilot case:** Queima das Fitas do Porto (Queimódromo, 8 nights, May)
+**Course:** LABDSOF 2026/27, Sprint 1
+**Assignment direction:** 4.3 *Local Event Coordination Platform*, applied to an event with crowds and road closures
+**Version:** revised with the group's alignment questionnaire and Tiago's decisions (October 2026)
 
 ---
 
-## Visão do produto (contexto)
+## Product vision (context)
 
-Propomos uma **plataforma construída de raiz** para coordenar eventos académicos de grande escala. É uma única aplicação que reúne **vários eventos** (a Queima do Porto, a de Coimbra, uma semana académica). Cada evento tem um **owner e uma equipa** que o configuram e operam de forma independente.
+We propose a **platform built from scratch** to coordinate large-scale academic events. It is a single application that brings together **several events** (Queima do Porto, Coimbra's Queima, an academic week). Each event has an **owner and a team** that configure and run it independently.
 
-- **Para o participante:** uma aplicação web (PWA) onde escolhe o evento e encontra a informação e a ajuda de que precisa durante a noite.
-- **Para cada equipa de evento:** um backoffice onde configura o seu evento (por exemplo, a planta do recinto e os transportes) e recebe e trata as ocorrências.
-- **Permissões por evento:** cada equipa só vê e altera o seu próprio evento.
+- **For the participant:** a web application (PWA) where they choose the event and find the information and help they need during the night.
+- **For each event team:** a backoffice where they configure their event (for example, the venue map and transport) and receive and handle incidents.
+- **Per-event permissions:** each team only sees and changes its own event.
 
-**Fora de âmbito:** a capacidade física das entradas (quantas portas existem e como está desenhado o funil). Isso resolve-se com infraestrutura, não com software.
+**Out of scope:** the physical capacity of the entrances (how many gates there are and how the queue funnel is designed). That is solved with infrastructure, not software.
 
 ---
 
 ## 1. Target Community
 
-### Comunidade
+### Community
 
-Comunidade académica que organiza e participa em grandes festas estudantis em Portugal: Queimas das Fitas, semanas académicas e eventos semelhantes. No **caso-piloto**, a Queima das Fitas do Porto, são cerca de **250 mil entradas em 8 noites**, numa academia com mais de 80 mil estudantes.
+The academic community that organises and attends large student festivals in Portugal: Queimas das Fitas, academic weeks and similar events. In the **pilot case**, Queima das Fitas do Porto, there are about **250 thousand entries over 8 nights**, in an academic community of more than 80 thousand students.
 
-A plataforma não é feita para um único evento. Cada evento entra na plataforma com a sua própria equipa, por isso a comunidade cresce evento a evento, sem ser preciso redesenhar o produto.
+The platform is not built for a single event. Each event joins the platform with its own team, so the community grows event by event without the product having to be redesigned.
 
-### Utilizadores
+### Users
 
-| Grupo | Perfil | Contexto de uso |
+| Group | Profile | Context of use |
 |---|---|---|
-| **Equipa do evento** (utilizador principal) | Owner do evento (por exemplo a FAP) e a sua equipa: organização, comissão de Prevenção de Comportamentos de Risco (PCR), coordenação de segurança | Antes do evento, configura-o. Durante o evento, está na sala de controlo e no terreno, precisa de visão do recinto e de responder depressa. |
-| **Participantes** (utilizador principal) | Estudantes de 18 a 25 anos, sobretudo em grupo | De noite, com o telemóvel em mão, bateria limitada, rede congestionada e muitas vezes sob efeito de álcool. Precisam de informação curta e imediata: onde está cada coisa, que transporte apanhar, onde pedir ajuda. |
-| **Parceiros operacionais** (utilizadores secundários) | STCP, Metro do Porto, PSP, Proteção Civil | São fonte ou destino de informação: horários reforçados, cortes de trânsito, incidentes. |
+| **Event team** (primary user) | The event owner (for example FAP) and its team: organisation, the Risk Behaviour Prevention committee (PCR), security coordination | Before the event, they configure it. During the event, they are in the control room and on the ground, need an overview of the venue and must respond quickly. |
+| **Participants** (primary user) | Students aged 18 to 25, mostly in groups | At night, phone in hand, limited battery, congested network and often under the influence of alcohol. They need short, immediate information: where everything is, which transport to take, where to ask for help. |
+| **Operational partners** (secondary users) | STCP, Metro do Porto, PSP, Civil Protection | They are a source or destination of information: reinforced timetables, road closures, incidents. |
 
-Os dois utilizadores principais têm **o mesmo peso**, por escolha unânime do grupo. Cada um tem a sua interface: o backoffice para a equipa do evento e a aplicação web para o participante.
+The two primary users have **the same weight**, by unanimous choice of the group. Each has its own interface: the backoffice for the event team and the web application for the participant.
 
-### Porquê este grupo
+### Why this group
 
-- O problema concentra-se em eventos previsíveis, recorrentes e de grande escala, onde uma falha tem consequências de segurança.
-- A organização de cada evento tem simultaneamente a necessidade, o orçamento (35% do orçamento da Queima do Porto em 2026 foi para segurança) e o canal até aos estudantes (bilhética, pulseiras, redes sociais).
-- O formato repete-se em várias cidades e todos os anos, o que justifica uma plataforma multi-evento em vez de uma solução feita à medida de um só evento.
+- The problem is concentrated in predictable, recurring, large-scale events, where a failure has safety consequences.
+- Each event's organisation has the need, the budget (35% of Queima do Porto's 2026 budget went to security) and the channel to the students (ticketing, wristbands, social media) all at once.
+- The format repeats in several cities and every year, which justifies a multi-event platform instead of a solution built for a single event.
 
 ---
 
 ## 2. Problem Statement
 
-### Formulação
+### Statement
 
-> **A organização de festas académicas de grande escala e os seus participantes** enfrentam **informação operacional fragmentada e desatualizada** **quando** dezenas de milhares de pessoas circulam por noite entre o recinto, as entradas e os transportes, **o que causa** respostas lentas a incidentes, filas longas e mal distribuídas, e participantes sem saber para onde ir, como voltar ou a quem pedir ajuda.
+> **The organisers of large-scale academic festivals and their participants** face **fragmented and outdated operational information** **when** tens of thousands of people move each night between the venue, the entrances and transport, **which causes** slow responses to incidents, long and badly distributed queues, and participants who do not know where to go, how to get home or whom to ask for help.
 
-Do ponto de vista do participante:
+From the participant's point of view:
 
-> **Estudantes que vão à Queima** não têm acesso a informação fiável e em tempo real **quando** estão no recinto ou à volta dele de madrugada, **o que leva** a esperas longas e a decisões arriscadas (separar-se do grupo, voltar a pé, conduzir).
+> **Students who go to the Queima** have no access to reliable, real-time information **when** they are in or around the venue in the early hours, **which leads** to long waits and risky decisions (splitting from the group, walking home, driving).
 
-### Causa raiz
+### Root causes
 
-1. **Não existe uma fonte única de informação operacional.** Organização, PCR, segurança, PSP, transportes e Câmara comunicam cada um pelo seu canal: rádio, site, Instagram, comunicados, a plataforma de trânsito do município. Ninguém tem a visão completa.
-2. **A comunicação é estática.** Horários, cortes de trânsito e regras são publicados antes do evento. O que muda durante a noite (uma porta congestionada, um vaivém atrasado, uma zona a evitar) não chega ao participante.
-3. **Não há uma referência espacial do recinto partilhada.** Quando existe, a planta é uma imagem publicada nas redes sociais, que não se atualiza e não serve para indicar onde está cada coisa nem onde aconteceu uma ocorrência.
-4. **A coordenação de ocorrências depende de rádio e telefone.** Isto não deixa histórico estruturado nem permite priorizar e encaminhar com rapidez. É uma hipótese a confirmar na entrevista ao voluntário da segurança.
-5. **Processos lentos feitos na própria porta.** Em 2023, o caos na entrada foi causado pela troca do bilhete pela pulseira no momento de entrar.
+1. **There is no single source of operational information.** Organisation, PCR, security, PSP, transport operators and the City Council each communicate through their own channel: radio, website, Instagram, press releases, the municipality's traffic platform. Nobody has the full picture.
+2. **Communication is static.** Timetables, road closures and rules are published before the event. What changes during the night (a congested gate, a late shuttle, an area to avoid) does not reach the participant.
+3. **There is no shared spatial reference of the venue.** When there is one, the map is an image posted on social media that is not updated and cannot be used to show where each thing is or where an incident happened.
+4. **Incident coordination depends on radio and phone.** This leaves no structured history and does not allow fast prioritisation and routing. It is a hypothesis to confirm in the interview with the security volunteer.
+5. **Slow processes carried out at the gate itself.** In 2023, the chaos at the entrance was caused by exchanging the ticket for the wristband at the moment of entry.
 
-### Oportunidade
+### Opportunity
 
-Cada **equipa de configuração do evento pode carregar a planta do recinto** na plataforma. A planta passa a ser a referência comum: o participante orienta-se por ela, e a equipa usa-a para situar pedidos de ajuda e informação. O mesmo modelo aplica-se a qualquer evento, porque é cada equipa que carrega e mantém a sua planta.
+Each **event configuration team can upload the venue map** to the platform. The map becomes the common reference: the participant finds their way with it, and the team uses it to place help requests and information. The same model applies to any event, because each team uploads and maintains its own map.
 
-### O que é e o que não é o problema
+### What the problem is and is not
 
-| É o problema | Não é o problema |
+| It is the problem | It is not the problem |
 |---|---|
-| Processos de acesso lentos e mal distribuídos entre portas | Falta de capacidade física das entradas (é infraestrutura, fica fora de âmbito) |
-| Informação dispersa e desatualizada durante o evento | Falta de segurança: o investimento já é recorde (mais de 500 efetivos por noite, mais de 100 câmaras) |
-| Coordenação de ocorrências sem visão comum | Comportamentos de risco em si (álcool, violência). São culturais. O produto pode encurtar o tempo de resposta, mas não elimina a causa. |
-| | "Não haver app": a FAP já tem uma, mas ela não cobre a operação do evento |
+| Slow and badly distributed access processes across gates | Lack of physical capacity at the entrances (infrastructure, out of scope) |
+| Scattered and outdated information during the event | Lack of security: investment is already at a record (more than 500 staff per night, more than 100 cameras) |
+| Incident coordination without a shared view | Risk behaviours themselves (alcohol, violence). They are cultural. The product can shorten the response time, but it does not remove the cause. |
+| | "There is no app": FAP already has one, but it does not cover event operations |
 
-### Consequências de não resolver
+### Consequences of not solving it
 
-- Episódios de esmagamento e ataques de pânico nas filas, como os de 2022 e 2023.
-- Mais tempo até a assistência chegar a quem precisa.
-- Perda de reputação para a organização, com queixas públicas e cobertura negativa na imprensa.
-- Regressos de madrugada sem informação, com mais risco de condução sob o efeito do álcool e de deslocações inseguras.
+- Crushing episodes and panic attacks in the queues, as in 2022 and 2023.
+- Longer time until assistance reaches those who need it.
+- Loss of reputation for the organisation, with public complaints and negative press coverage.
+- Journeys home in the early hours without information, with a higher risk of drink-driving and unsafe travel.
 
 ---
 
 ## 3. Stakeholder Map
 
-| Stakeholder | Papel | Interesse | Influência | Posição |
+| Stakeholder | Role | Interest | Influence | Position |
 |---|---|---|---|---|
-| Federação académica (FAP) | Organizador, cliente e decisor | Alto | Alta | A favor |
-| Comissão PCR e equipas de apoio | Utilizador operacional | Alto | Média | A favor |
-| Estudantes participantes | Utilizadores finais | Médio | Baixa individualmente, alta coletivamente (redes sociais, queixas) | Neutros. Adotam se for útil e imediato. |
-| Segurança privada | Execução no terreno | Médio | Média | Neutra |
-| PSP e Proteção Civil | Ordem pública e emergência | Alto | Alta | Neutras ou céticas (têm sistemas e protocolos próprios) |
-| INEM e bombeiros | Resposta médica | Alto | Média | Neutros |
-| STCP e Metro do Porto | Transporte | Médio | Média | A favor, se não exigir integração pesada |
-| Câmara Municipal (Porto e Matosinhos) | Licenciamento e trânsito | Médio | Alta | Neutra (já tem plataforma de trânsito própria) |
-| Fornecedor da app atual da federação | Concorrente ou parceiro | Alto | Média | Contra, se se sentir substituído |
-| Bilhética (BOL, FNAC) | Parceiro necessário para validar acessos | Médio | Alta | Neutra |
-| Instituições de ensino (ISEP, universidades) | Influenciadores institucionais, canal de comunicação com os estudantes | Médio (bem-estar e segurança dos alunos) | Média | A favor |
-| Associações de estudantes de cada faculdade | Co-organizadoras (cortejo, barracas) e canal direto para os estudantes | Alto | Média | A favor, se tiverem voz na configuração |
-| Patrocinadores e concessionários | Financiam o evento | Baixo | Média | A favor, pela visibilidade |
-| CNPD (proteção de dados) | Regulador | Baixo, sobe se houver dados de localização | Alta | Neutra, mas é uma restrição |
-| Pais e famílias | Influenciadores | Alto na segurança | Baixa | A favor |
+| Academic federation (FAP) | Organiser, customer and decision-maker | High | High | For |
+| PCR committee and support teams | Operational user | High | Medium | For |
+| Student participants | End users | Medium | Low individually, high collectively (social media, complaints) | Neutral. They adopt it if it is useful and immediate. |
+| Private security | Execution on the ground | Medium | Medium | Neutral |
+| PSP and Civil Protection | Public order and emergency | High | High | Neutral or sceptical (they have their own systems and protocols) |
+| INEM and fire brigades | Medical response | High | Medium | Neutral |
+| STCP and Metro do Porto | Transport | Medium | Medium | For, if it does not require heavy integration |
+| City Councils (Porto and Matosinhos) | Licensing and traffic | Medium | High | Neutral (they already have their own traffic platform) |
+| Supplier of the federation's current app | Competitor or partner | High | Medium | Against, if it feels replaced |
+| Ticketing (BOL, FNAC) | Partner needed to validate access | Medium | High | Neutral |
+| Education institutions (ISEP, universities) | Institutional influencers, communication channel with students | Medium (student wellbeing and safety) | Medium | For |
+| Each faculty's student associations | Co-organisers (parade, stalls) and direct channel to students | High | Medium | For, if they have a say in the configuration |
+| Sponsors and concessionaires | Fund the event | Low | Medium | For, for the visibility |
+| CNPD (data protection) | Regulator | Low, rises if there is location data | High | Neutral, but a constraint |
+| Parents and families | Influencers | High on safety | Low | For |
 
-### Matriz influência × interesse
+### Influence × interest matrix
 
-- **Gerir de perto** (influência alta, interesse alto): FAP, PSP e Proteção Civil.
-- **Manter satisfeitos** (influência alta, interesse médio ou baixo): Câmara, bilhética, CNPD.
-- **Manter informados** (influência baixa ou média, interesse alto): PCR, INEM, famílias, fornecedor da app atual, associações de estudantes de cada faculdade.
-- **Envolver como canal:** instituições de ensino (divulgação e inquéritos).
-- **Monitorizar:** patrocinadores, concessionários.
+- **Manage closely** (high influence, high interest): FAP, PSP and Civil Protection.
+- **Keep satisfied** (high influence, medium or low interest): City Council, ticketing, CNPD.
+- **Keep informed** (low or medium influence, high interest): PCR, INEM, families, current app supplier, each faculty's student associations.
+- **Involve as a channel:** education institutions (outreach and surveys).
+- **Monitor:** sponsors, concessionaires.
 
-### Conflitos de interesse
+### Conflicts of interest
 
-1. **Plataforma nova vs. fornecedor atual (o mais crítico, segundo o grupo).** O fornecedor da app da federação pode ver o produto como ameaça e não colaborar na integração. Mitigação: entrar como módulo complementar, por link ou QR, sem exigir alterações à app existente.
-2. **Transparência vs. reputação.** Mostrar tempos de fila reais ajuda o participante, mas expõe falhas da organização.
-3. **Monitorização vs. privacidade.** Densidade e localização ajudam a operação, mas exigem minimização de dados e consentimento (RGPD).
-4. **Receita vs. segurança.** Mostrar a lotação em tempo real pode pressionar a organização a limitar entradas, o que reduz receita.
-5. **Mandatos anuais.** As direções académicas mudam todos os anos, o que põe em risco a continuidade da adoção.
+1. **New platform vs. current supplier (the most critical, according to the group).** The supplier of the federation's app may see the product as a threat and not cooperate on integration. Mitigation: come in as a complementary module, through a link or QR code, without requiring changes to the existing app.
+2. **Transparency vs. reputation.** Showing real queue times helps the participant, but exposes the organisation's failures.
+3. **Monitoring vs. privacy.** Density and location help operations, but require data minimisation and consent (GDPR).
+4. **Revenue vs. safety.** Showing real-time occupancy may pressure the organisation to limit entries, which reduces revenue.
+5. **Yearly mandates.** Student association boards change every year, which puts continued adoption at risk.
 
 ---
 
 ## 4. Problem Evidence
 
-### Evidência forte (factos públicos verificáveis)
+### Strong evidence (verifiable public facts)
 
-| # | Evidência | Fonte |
+| # | Evidence | Source |
 |---|---|---|
-| E1 | Cerca de 250 mil participantes previstos em 8 dias (2025 e 2026) | [Jornal da Maia](https://www.jornaldamaia.pt/queima-das-fitas-do-porto-2025-reforca-seguranca-e-prevencao/), [Observador](https://observador.pt/2026/04/30/queima-das-fitas-do-porto-arranca-com-maior-investimento-em-seguranca-de-sempre-diz-fap/) |
-| E2 | A segurança absorve 35% do orçamento: mais de 500 efetivos por dia, 12 torres de vigia, mais de 100 câmaras, PCR com 90 pessoas | [JN](https://www.jn.pt/pais/artigo/organizacao-investe-35-das-verbas-para-garantir-seguranca-na-queima-do-porto/18077018), [Rádio Festival](https://radiofestival.com.pt/noticia/2541955/queima-do-porto-2026-seguranca-recebe-investimento-recorde-e-absorve-35-do-orcamento) |
-| E3 | 2022 e 2023: filas de mais de 500 m, esperas de mais de 3h, relatos de esmagamento e ataques de pânico, queixas por "falta de informação e sinalética" | [Renascença](https://rr.pt/noticia/pais/2022/05/05/filas-para-a-queima-das-fitas-do-porto-achei-que-ia-colapsar-a-ser-esmagada-e-quase-a-sufocar/283010/), [Público](https://www.publico.pt/2023/05/08/p3/noticia/primeira-noite-caotica-queima-fitas-porto-voltou-normal-2048919) |
-| E4 | A causa identificada em 2023 foi a troca do bilhete pela pulseira à entrada. A organização alterou o recinto depois das queixas. | [JN](https://www.jn.pt/pais/artigo/horas-na-fila-e-nao-entraram-troca-de-bilhete-por-pulseira-gera-confusao-no-queimodromo/16310596), [Notícias ao Minuto](https://www.noticiasaominuto.com/pais/2315392/alteracoes-no-queimodromo-do-porto-apos-queixas-na-queima-das-fitas) |
-| E5 | Operação especial de transportes (vaivém a cada 15 min ou menos, reforço de metro e autocarro) e cortes de trânsito, comunicados por canais separados | [Andante](https://andante.pt/noticias/operacoes-especiais-queima-fitas-2025/), [STCP](https://www.stcp.pt/pt/noticias/stcp-com-servico-dedicado-para-a-queima-das-fitas-do-porto/) |
-| E6 | A app FAP existe e cobre bilhetes, descontos e desporto, mas não a operação do evento | [FAP](https://www.fap.pt/noticias/app-fap-fap-no-teu-bolso) |
-| E7 | A estimativa de densidade de multidões a partir de uma app de festival teve correlação acima de 0,8 com a medição em vídeo (viabilidade técnica) | [arXiv 1306.3133](https://arxiv.org/pdf/1306.3133) |
+| E1 | About 250 thousand participants expected over 8 days (2025 and 2026) | [Jornal da Maia](https://www.jornaldamaia.pt/queima-das-fitas-do-porto-2025-reforca-seguranca-e-prevencao/), [Observador](https://observador.pt/2026/04/30/queima-das-fitas-do-porto-arranca-com-maior-investimento-em-seguranca-de-sempre-diz-fap/) |
+| E2 | Security takes 35% of the budget: more than 500 staff per day, 12 watchtowers, more than 100 cameras, PCR with 90 people | [JN](https://www.jn.pt/pais/artigo/organizacao-investe-35-das-verbas-para-garantir-seguranca-na-queima-do-porto/18077018), [Rádio Festival](https://radiofestival.com.pt/noticia/2541955/queima-do-porto-2026-seguranca-recebe-investimento-recorde-e-absorve-35-do-orcamento) |
+| E3 | 2022 and 2023: queues of more than 500 m, waits of more than 3 h, reports of crushing and panic attacks, complaints about "lack of information and signage" | [Renascença](https://rr.pt/noticia/pais/2022/05/05/filas-para-a-queima-das-fitas-do-porto-achei-que-ia-colapsar-a-ser-esmagada-e-quase-a-sufocar/283010/), [Público](https://www.publico.pt/2023/05/08/p3/noticia/primeira-noite-caotica-queima-fitas-porto-voltou-normal-2048919) |
+| E4 | The cause identified in 2023 was exchanging the ticket for the wristband at the entrance. The organisation changed the venue after the complaints. | [JN](https://www.jn.pt/pais/artigo/horas-na-fila-e-nao-entraram-troca-de-bilhete-por-pulseira-gera-confusao-no-queimodromo/16310596), [Notícias ao Minuto](https://www.noticiasaominuto.com/pais/2315392/alteracoes-no-queimodromo-do-porto-apos-queixas-na-queima-das-fitas) |
+| E5 | Special transport operation (shuttle every 15 min or less, extra metro and bus services) and road closures, announced through separate channels | [Andante](https://andante.pt/noticias/operacoes-especiais-queima-fitas-2025/), [STCP](https://www.stcp.pt/pt/noticias/stcp-com-servico-dedicado-para-a-queima-das-fitas-do-porto/) |
+| E6 | The FAP app exists and covers tickets, discounts and sport, but not event operations | [FAP](https://www.fap.pt/noticias/app-fap-fap-no-teu-bolso) |
+| E7 | Crowd density estimated from a festival app correlated above 0.8 with video measurement (technical feasibility) | [arXiv 1306.3133](https://arxiv.org/pdf/1306.3133) |
 
-### Evidência média ou fraca
+### Medium or weak evidence
 
-- Incidentes graves em 2026: uma queixa de violação no Queimódromo do Porto e duas em Coimbra. Mostram a necessidade de canais de pedido de ajuda rápidos, mas não provam que uma app teria evitado nada.
-- Taxas de adoção de apps de eventos entre 55% e 65% com promoção. Os números vêm de blogs de fornecedores (Cvent, Lineupr), que têm interesse comercial.
-- A ideia de que "os estudantes querem informação em tempo real" é senso comum e ainda não foi validada.
+- Serious incidents in 2026: one rape complaint at the Queimódromo do Porto and two in Coimbra. They show the need for fast help-request channels, but do not prove that an app would have prevented anything.
+- Event app adoption rates between 55% and 65% with promotion. The figures come from vendor blogs (Cvent, Lineupr), which have a commercial interest.
+- The idea that "students want real-time information" is common sense and has not been validated yet.
 
-### Lacunas e plano de validação primária
+### Gaps and primary validation plan
 
-O grupo decidiu avançar com dois métodos de validação:
+The group decided to go ahead with two validation methods:
 
-| Lacuna | Método |
+| Gap | Method |
 |---|---|
-| Que informação os estudantes procuram durante a noite, se a falta de informação continua a ser um problema e se usariam uma aplicação para isso | **Inquérito online a estudantes** (meta: 100 ou mais respostas) |
-| Como a segurança coordena hoje as ocorrências, que canais usa e onde estão os atrasos | **Entrevista a um voluntário da segurança** da Queima |
+| What information students look for during the night, whether the lack of information is still a problem and whether they would use an application for it | **Online student survey** (target: 100 or more answers) |
+| How security coordinates incidents today, which channels it uses and where the delays are | **Interview with a security volunteer** at the Queima |
 
-**Limitação assumida:** o grupo não tem acesso direto à organização (FAP) nem aos seus dados internos de filas e incidentes. A visão da operação vem da entrevista ao voluntário e dos dados públicos. Seguindo o enunciado, nenhum dado de pesquisa com utilizadores neste relatório foi inventado. As limitações ficam documentadas.
+**Accepted limitation:** the group has no direct access to the organisation (FAP) or to its internal queue and incident data. The view of operations comes from the volunteer interview and from public data. As the assignment requires, no user-research data in this report was invented. The limitations are documented.
 
 ---
 
 ## 5. Assumptions and Risks
 
-### Assunções críticas
+### Critical assumptions
 
-| # | Assunção | Risco | Facilidade de validação |
+| # | Assumption | Risk | Ease of validation |
 |---|---|---|---|
-| A1 | As organizações aceitam configurar e manter o seu evento na plataforma (planta, transportes, equipa) | Alto | Média (entrevista e conversa com organizações) |
-| A2 | Os participantes consultam a aplicação durante a noite, mesmo em condições adversas (álcool, bateria, ruído) | Alto | Média (inquérito e protótipo) |
-| A3 | Os participantes adotam uma aplicação comum a vários eventos, acedida por link ou QR, em vez de uma app por evento | Alto | Fácil (inquérito) |
-| A4 | Pedidos de ajuda feitos pela aplicação chegam à equipa certa mais depressa do que pelos canais atuais | Alto | Média (entrevista ao voluntário e simulação) |
-| A5 | Cada organização tem uma planta do recinto utilizável (imagem ou PDF) | Médio | Fácil |
-| A6 | A informação em tempo real (transportes, filas) pode ser introduzida ou estimada pela equipa do evento, sem integração direta com os operadores | Médio | Média |
-| A7 | As funcionalidades com IA são mais úteis do que uma alternativa sem IA e não induzem os utilizadores em erro | Médio | Fácil (dataset simulado e comparação com uma alternativa sem IA) |
-| A8 | A rede móvel aguenta o pico, ou a aplicação funciona em modo degradado ou offline | Médio | Fácil (testes e relatos) |
-| A9 | O mesmo produto serve eventos diferentes apenas com configuração, sem desenvolvimento à medida | Médio | Média |
+| A1 | Organisations accept configuring and maintaining their event on the platform (map, transport, team) | High | Medium (interview and conversation with organisations) |
+| A2 | Participants check the application during the night, even in adverse conditions (alcohol, battery, noise) | High | Medium (survey and prototype) |
+| A3 | Participants adopt one application shared by several events, opened through a link or QR code, instead of one app per event | High | Easy (survey) |
+| A4 | Help requests made through the application reach the right team faster than through the current channels | High | Medium (volunteer interview and simulation) |
+| A5 | Each organisation has a usable venue map (image or PDF) | Medium | Easy |
+| A6 | Real-time information (transport, queues) can be entered or estimated by the event team, without direct integration with the operators | Medium | Medium |
+| A7 | AI features are more useful than a non-AI alternative and do not mislead users | Medium | Easy (simulated dataset and comparison with a non-AI alternative) |
+| A8 | The mobile network holds up at peak, or the application works in degraded or offline mode | Medium | Easy (tests and reports) |
+| A9 | The same product serves different events through configuration alone, without custom development | Medium | Medium |
 
-As assunções mais críticas são **A2, A3 e A4**. Se os participantes não usarem a aplicação durante a noite, ou se os pedidos de ajuda não ficarem mais rápidos, o produto perde a razão de existir. O inquérito valida A2 e A3; a entrevista ao voluntário da segurança valida A4.
+The most critical assumptions are **A2, A3 and A4**. If participants do not use the application during the night, or if help requests do not get faster, the product loses its reason to exist. The survey validates A2 and A3; the interview with the security volunteer validates A4.
 
-### Riscos
+### Risks
 
-**Mercado e adoção**
-- O uso concentra-se em poucos dias por ano por evento, com pouca retenção. A plataforma multi-evento atenua isto, porque o mesmo utilizador volta noutros eventos.
-- Convencer os estudantes a usar mais uma aplicação. Mitigação: acesso por link ou QR, sem instalação obrigatória, com uma única conta para todos os eventos (login obrigatório, decidido a 9 de outubro de 2026).
-- O fornecedor da app atual de cada federação pode copiar as funcionalidades.
-- As direções académicas mudam todos os anos, o que torna incerta a continuidade de cada evento na plataforma.
+**Market and adoption**
+- Use is concentrated in a few days a year per event, with little retention. The multi-event platform softens this, because the same user comes back for other events.
+- Convincing students to use yet another application. Mitigation: access through a link or QR code, no mandatory installation, with a single account for all events (mandatory login, decided on 9 October 2026).
+- The supplier of each federation's current app may copy the features.
+- Student association boards change every year, which makes each event's continuity on the platform uncertain.
 
-**Técnicos**
-- **Permissões entre eventos:** um erro no sistema de autorizações pode expor dados ou ocorrências de um evento à equipa de outro. Exige testes automáticos dedicados a este isolamento.
-- Picos de carga de dezenas de milhares de pedidos em minutos, por exemplo no fim de um concerto.
-- Rede móvel congestionada no recinto: exige cache, modo offline e mensagens curtas.
-- Informação desatualizada ou errada pode piorar a situação (por exemplo, um transporte que já não passa). Exige indicação clara de quando cada dado foi atualizado.
-- A localização do telemóvel dentro de um recinto cheio é imprecisa. O participante deve poder indicar a localização na planta.
+**Technical**
+- **Permissions across events:** a bug in the authorisation system can expose one event's data or incidents to another event's team. This requires automated tests dedicated to this isolation.
+- Load peaks of tens of thousands of requests within minutes, for example at the end of a concert.
+- Congested mobile network at the venue: requires caching, offline mode and short messages.
+- Outdated or wrong information can make things worse (for example, a transport that no longer runs). Requires a clear indication of when each piece of data was updated.
+- Phone location inside a crowded venue is inaccurate. The participant must be able to mark their location on the map.
 
-**Execução**
-- **Âmbito grande para 3 sprints.** Mitigação: priorizar no MVP os pedidos de ajuda, a planta e a informação de transportes. O resto entra por ordem de valor.
-- Acesso limitado à organização real durante o semestre. Mitiga-se com a entrevista ao voluntário, dados públicos e simulação, documentando a limitação.
+**Execution**
+- **Large scope for 3 sprints.** Mitigation: prioritise help requests, the map and transport information in the MVP. The rest comes in by order of value.
+- Limited access to the real organisation during the semester. Mitigated with the volunteer interview, public data and simulation, documenting the limitation.
 
-**Regulatórios e éticos**
-- RGPD: a localização e os pedidos de ajuda (sobretudo de saúde) são dados sensíveis. Aplicam-se consentimento explícito, minimização e retenção curta.
-- Um botão de pedido de ajuda cria expectativa de resposta. A aplicação tem de deixar claro que não substitui o 112.
-- Conteúdo gerado por IA não pode ser apresentado como facto verificado, como exige o enunciado (5.6.2).
-
----
-
-## 3 perguntas-chave antes da fase de solução
-
-1. **Os estudantes usariam uma aplicação durante a noite** e que informação procurariam primeiro? (inquérito)
-2. **Como chega hoje um pedido de ajuda à equipa certa** e quanto tempo demora? (entrevista ao voluntário da segurança)
-3. **As organizações dos eventos estariam dispostas a configurar e manter o seu evento** numa plataforma partilhada?
+**Regulatory and ethical**
+- GDPR: location and help requests (especially health-related ones) are sensitive data. Explicit consent, minimisation and short retention apply.
+- A help button creates an expectation of response. The application must make clear that it is not an emergency service.
+- AI-generated content cannot be presented as verified fact, as the assignment requires (5.6.2).
 
 ---
 
-## Pesquisa com Utilizadores
+## 3 key questions before the solution phase
 
-### Método de pesquisa
+1. **Would students use an application during the night**, and what information would they look for first? (survey)
+2. **How does a help request reach the right team today**, and how long does it take? (interview with the security volunteer)
+3. **Would event organisations be willing to configure and maintain their event** on a shared platform?
 
-Vamos utilizar Google Forms para recolher informação de estudantes que já participaram em eventos académicos, como a Queima das Fitas. O questionário vai ajudar-nos a perceber que informação os estudantes precisam durante o evento, como procuram ajuda atualmente e que problemas recordam de edições anteriores. Também vamos recorrer a pesquisa online, notícias públicas, comunicações oficiais do evento e informação disponível sobre transportes, segurança, filas e gestão de multidões. Sempre que possível, esta informação será complementada com entrevistas ou conversas informais com pessoas que tenham experiência operacional no evento.
+---
 
-### Resultados
+## User Research
+
+### Research method
+
+We will use Google Forms to collect information from students who have attended academic events such as the Queima das Fitas. The questionnaire will help us understand what information students need during the event, how they currently look for help and which problems they remember from previous editions. We will also use online research, public news, official event communications and available information on transport, security, queues and crowd management. Whenever possible, this information will be complemented with interviews or informal conversations with people who have operational experience at the event.
+
+### Results
 
 TBD.
 
-### Limitações
+### Limitations
 
 TBD.
 
-### Decisões de produto resultantes
+### Resulting product decisions
 
-TBD. As decisões finais de produto serão refinadas depois de recebermos feedback das entrevistas e do questionário aos estudantes.
+TBD. The final product decisions will be refined after we receive feedback from the interviews and the student questionnaire.
 
 ---
 
-## Visão de produto
+## Product vision
 
 ### Personas
 
-As principais personas são a equipa do evento e o estudante participante. A equipa do evento inclui o owner, os elementos da organização, as equipas de prevenção, a coordenação de segurança e outros papéis operacionais. Esta equipa utiliza o backoffice antes e durante o evento para configurar o evento, gerir a planta, atualizar informação de transportes e tratar ocorrências. O estudante participante tem normalmente entre 18 e 25 anos, vai ao evento com amigos e utiliza o telemóvel durante a noite. Este utilizador precisa de informação curta, fiável e fácil de aceder, especialmente num contexto em que a bateria, a qualidade da rede, o ruído e o consumo de álcool podem afetar a tomada de decisão.
+The main personas are the event team and the student participant. The event team includes the owner, the organisation members, the prevention teams, security coordination and other operational roles. This team uses the backoffice before and during the event to configure the event, manage the map, update transport information and handle incidents. The student participant is usually between 18 and 25 years old, goes to the event with friends and uses their phone during the night. This user needs short, reliable and easy-to-reach information, especially in a context where battery, network quality, noise and alcohol consumption can affect decision-making.
 
-### Proposta de valor
+### Value proposition
 
-A plataforma dá aos participantes um local único e fiável para encontrar informação prática sobre o evento e pedir ajuda quando necessário. Ao mesmo tempo, dá à equipa do evento uma visão operacional partilhada, ajudando-a a perceber o que está a acontecer, onde se localizam os problemas e como responder mais rapidamente. O valor do produto não está apenas em publicar informação, mas em manter essa informação ligada à situação real do evento.
+The platform gives participants a single, reliable place to find practical information about the event and to ask for help when needed. At the same time, it gives the event team a shared operational view, helping it understand what is happening, where problems are and how to respond faster. The product's value is not only in publishing information, but in keeping that information tied to the real situation at the event.
 
-### Principais jornadas do utilizador
+### Main user journeys
 
-Um participante abre a aplicação web através de um link ou QR code, seleciona o evento, consulta a planta, encontra entradas, serviços, opções de transporte e informação de segurança, e pode pedir ajuda se acontecer algum problema. A equipa do evento cria ou seleciona um evento no backoffice, carrega ou configura a planta do recinto, adiciona pontos importantes como entradas, palcos, casas de banho, primeiros socorros e paragens de transporte, e atualiza informação durante a noite. Quando um participante envia um pedido de ajuda, a equipa do evento recebe esse pedido com contexto e localização, avalia a sua prioridade e encaminha-o para a equipa operacional adequada.
+A participant opens the web application through a link or QR code, selects the event, checks the map, finds entrances, services, transport options and safety information, and can ask for help if something goes wrong. The event team creates or selects an event in the backoffice, uploads or configures the venue map, adds key points such as entrances, stages, toilets, first aid and transport stops, and updates information during the night. When a participant sends a help request, the event team receives it with context and location, assesses its priority and routes it to the right operational team.
 
-### Critérios de sucesso
+### Success criteria
 
-O produto será bem-sucedido se os estudantes conseguirem encontrar rapidamente a informação de que precisam durante o evento, se os pedidos de ajuda forem mais fáceis de submeter e gerir, e se a equipa do evento ganhar uma visão mais clara do que está a acontecer no recinto. O sucesso também deve ser medido pela adoção durante o evento, pela redução da confusão em torno das entradas e dos transportes, por uma resposta operacional mais rápida e pelo feedback positivo de estudantes e equipas do evento.
+The product will be successful if students can quickly find the information they need during the event, if help requests are easier to submit and manage, and if the event team gains a clearer view of what is happening at the venue. Success should also be measured by adoption during the event, by less confusion around entrances and transport, by a faster operational response and by positive feedback from students and event teams.
 
-### Definição do MVP
+### MVP definition
 
-O MVP deve focar-se no problema central de coordenação. Deve incluir uma aplicação web para participantes com seleção de evento, uma planta clara do recinto, informação essencial do evento, informação de transportes e um fluxo simples para pedidos de ajuda. Deve também incluir um backoffice para a equipa do evento, onde cada equipa pode configurar o seu próprio evento, gerir a planta do recinto, atualizar informação relevante e consultar ocorrências recebidas. Funcionalidades que exijam integrações pesadas, previsão avançada de multidões ou automação completa devem ficar fora da primeira versão, exceto se forem essenciais para validar o produto.
+The MVP should focus on the core coordination problem. It should include a web application for participants with event selection, a clear venue map, essential event information, transport information and a simple help-request flow. It should also include a backoffice for the event team, where each team can configure its own event, manage the venue map, update relevant information and view incoming incidents. Features that require heavy integrations, advanced crowd prediction or full automation should stay out of the first version, unless they are essential to validate the product.
 
-**Fora de âmbito:** a capacidade física das entradas, incluindo o número de portas e o desenho físico do funil de fila. Este é um problema de infraestrutura, não um problema de software.
+**Out of scope:** the physical capacity of the entrances, including the number of gates and the physical design of the queue funnel. This is an infrastructure problem, not a software problem.

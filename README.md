@@ -6,18 +6,18 @@ Multi-event coordination platform for large academic festivals (pilot case: Quei
 
 | Area | Document | Language |
 |---|---|---|
-| Problem | [Problem and Opportunity Report](Docs/Deliverables/problem-opportunity-report-queima.md) | PT |
-| Market | [Market and Competitor Analysis](Docs/Deliverables/market-and-competitor-analysis.md) · [Product-specific annex](Docs/Deliverables/market-and-competitor-analysis-product-specific.md) | PT |
-| Research | [Student survey (Google Forms script)](Docs/Research/inquerito-estudantes-google-forms.gs) | PT |
+| Problem | [Problem and Opportunity Report](Docs/Deliverables/problem-opportunity-report-queima.md) | EN |
+| Market | [Market and Competitor Analysis](Docs/Deliverables/market-and-competitor-analysis.md) · [Product-specific annex](Docs/Deliverables/market-and-competitor-analysis-product-specific.md) | EN |
+| Research | [Student survey (Google Forms script)](Docs/Research/inquerito-estudantes-google-forms.gs) | EN (questions in PT) |
 | Product | [Product Vision](Docs/Product/product-vision.md) · [Personas](Docs/Product/personas.md) · [Main Features and Backlog](Docs/Product/features.md) · [User Workflows](Docs/Product/user-workflows.md) | EN |
 | Process | [Team Roles and Work Process](Docs/Process/team-and-process.md) · [Definition of Ready and Done](Docs/Process/definition-of-ready-and-done.md) | EN |
 | Technical | [Domain Model](Docs/Technical/domain-model.md) · [High-Level Architecture](Docs/Technical/architecture.md) | EN |
-| Meetings | [2026-10-08 Sprint A gap review and decisions](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) | EN |
+| Meetings | [2026-10-08 Sprint A gap review and decisions](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md) | EN |
 | History | [CHANGELOG](CHANGELOG.md) | EN |
 
 # Contributing Guidelines
 
-These conventions keep the repository history clear and consistent, and make it easy to see when a change was made and who made it. All branches, commits, pull requests and repository documentation are written in **English**.
+These conventions keep the repository history clear and consistent, and make it easy to see when a change was made and who made it. All branches, commits, pull requests and repository documentation are written in **English** (team decision of 12 October 2026). The only exceptions are texts meant for a Portuguese audience: the survey questions and the presentation speaker notes.
 
 ## 1. Workflow
 
@@ -111,7 +111,7 @@ A pull request can only be merged after **two reviews**:
 - [ ] At least **1 approval** from another team member (authors do not approve their own PRs)
 - [ ] Stale approvals are dismissed when new commits are pushed
 - [ ] All review conversations must be resolved
-- [ ] CI pipeline must pass
+- [ ] CI pipeline must pass, including the **Conventions** check (branch name, PR title, linked issue)
 - [ ] Branch must be up to date with `main` before merging
 - [ ] Head branch is deleted automatically after merge
 

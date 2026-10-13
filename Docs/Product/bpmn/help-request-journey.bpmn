@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Farol · help request journey (W2 + W3). Source of truth: Docs/Product/user-workflows.md. Edit in bpmn.io or Camunda Modeler and export the SVG again. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_help-request-journey" targetNamespace="https://github.com/farol/bpmn">
+  <bpmn:collaboration id="Collaboration_help-request-journey">
+    <bpmn:participant id="Participant_1" name="Help request, end to end (W2 + W3)" processRef="Process_help-request-journey" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_help-request-journey" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_P" name="Participant (Rita, P1)">
+        <bpmn:flowNodeRef>Start_Help</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OpenHelp</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Send</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SeeStatus</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Sent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SeeOnTheWay</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Informed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Helped</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_F" name="Farol (system)">
+        <bpmn:flowNodeRef>Task_Save</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_Split</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AI</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_AIOk</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AddSuggestion</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_NotTriaged</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Triage</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OnTheWay</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_Notify</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Resolved</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_O" name="Control-room operator (Miguel, P2)">
+        <bpmn:flowNodeRef>Task_SeeRequest</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Decide</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_OnSite</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Dispatch</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Remote</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_R" name="Responder in the field (Inês, P5)">
+        <bpmn:flowNodeRef>Task_Accept</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Help</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Resolve</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_Help" name="Needs help"><bpmn:outgoing>Flow_1</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:userTask id="Task_OpenHelp" name="Opens Ask for help and chooses a category"><bpmn:incoming>Flow_1</bpmn:incoming><bpmn:outgoing>Flow_2</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_Send" name="Marks the place on the map and sends"><bpmn:incoming>Flow_2</bpmn:incoming><bpmn:outgoing>Flow_3</bpmn:outgoing></bpmn:userTask>
+    <bpmn:serviceTask id="Task_Save" name="Saves the request (Submitted)"><bpmn:incoming>Flow_3</bpmn:incoming><bpmn:outgoing>Flow_4</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:parallelGateway id="Gw_Split" name=""><bpmn:incoming>Flow_4</bpmn:incoming><bpmn:outgoing>Flow_5</bpmn:outgoing><bpmn:outgoing>Flow_7</bpmn:outgoing><bpmn:outgoing>Flow_13</bpmn:outgoing></bpmn:parallelGateway>
+    <bpmn:userTask id="Task_SeeStatus" name="Sees the confirmation and the live status"><bpmn:incoming>Flow_5</bpmn:incoming><bpmn:outgoing>Flow_6</bpmn:outgoing></bpmn:userTask>
+    <bpmn:endEvent id="End_Sent" name="Request sent"><bpmn:incoming>Flow_6</bpmn:incoming></bpmn:endEvent>
+    <bpmn:serviceTask id="Task_AI" name="AI suggests category, priority and team"><bpmn:incoming>Flow_7</bpmn:incoming><bpmn:outgoing>Flow_8</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gw_AIOk" name="Valid answer within 30 s?"><bpmn:incoming>Flow_8</bpmn:incoming><bpmn:outgoing>Flow_9</bpmn:outgoing><bpmn:outgoing>Flow_10</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_AddSuggestion" name="Shows the suggestion to the operator"><bpmn:incoming>Flow_9</bpmn:incoming><bpmn:outgoing>Flow_11</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_NotTriaged" name="Marks it &quot;Not triaged&quot; (D1)"><bpmn:incoming>Flow_10</bpmn:incoming><bpmn:outgoing>Flow_12</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:endEvent id="End_Triage" name="Triage finished"><bpmn:incoming>Flow_11</bpmn:incoming><bpmn:incoming>Flow_12</bpmn:incoming></bpmn:endEvent>
+    <bpmn:userTask id="Task_SeeRequest" name="Sees the request on the list and the map at once"><bpmn:incoming>Flow_13</bpmn:incoming><bpmn:outgoing>Flow_14</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_Decide" name="Checks the suggestion, sets priority and team"><bpmn:incoming>Flow_14</bpmn:incoming><bpmn:outgoing>Flow_15</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gw_OnSite" name="Someone needed on site?"><bpmn:incoming>Flow_15</bpmn:incoming><bpmn:outgoing>Flow_16</bpmn:outgoing><bpmn:outgoing>Flow_17</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_Dispatch" name="Dispatches it to the response team"><bpmn:incoming>Flow_16</bpmn:incoming><bpmn:outgoing>Flow_18</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_Remote" name="Handles it from the control room and closes it"><bpmn:incoming>Flow_17</bpmn:incoming><bpmn:outgoing>Flow_26</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_Accept" name="Gets the alert on the phone and accepts"><bpmn:incoming>Flow_18</bpmn:incoming><bpmn:outgoing>Flow_19</bpmn:outgoing></bpmn:userTask>
+    <bpmn:serviceTask id="Task_OnTheWay" name="Sets the status On the way"><bpmn:incoming>Flow_19</bpmn:incoming><bpmn:outgoing>Flow_20</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:parallelGateway id="Gw_Notify" name=""><bpmn:incoming>Flow_20</bpmn:incoming><bpmn:outgoing>Flow_21</bpmn:outgoing><bpmn:outgoing>Flow_23</bpmn:outgoing></bpmn:parallelGateway>
+    <bpmn:userTask id="Task_SeeOnTheWay" name="Sees &quot;Help is on the way&quot;"><bpmn:incoming>Flow_21</bpmn:incoming><bpmn:outgoing>Flow_22</bpmn:outgoing></bpmn:userTask>
+    <bpmn:endEvent id="End_Informed" name="Knows help is coming"><bpmn:incoming>Flow_22</bpmn:incoming></bpmn:endEvent>
+    <bpmn:userTask id="Task_Help" name="Goes to the marked place and helps"><bpmn:incoming>Flow_23</bpmn:incoming><bpmn:outgoing>Flow_24</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_Resolve" name="Marks the request resolved"><bpmn:incoming>Flow_24</bpmn:incoming><bpmn:outgoing>Flow_25</bpmn:outgoing></bpmn:userTask>
+    <bpmn:serviceTask id="Task_Resolved" name="Sets the status Resolved and tells the participant"><bpmn:incoming>Flow_25</bpmn:incoming><bpmn:incoming>Flow_26</bpmn:incoming><bpmn:outgoing>Flow_27</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:endEvent id="End_Helped" name="Participant helped"><bpmn:incoming>Flow_27</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_Help" targetRef="Task_OpenHelp" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_OpenHelp" targetRef="Task_Send" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_Send" targetRef="Task_Save" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_Save" targetRef="Gw_Split" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Gw_Split" targetRef="Task_SeeStatus" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_SeeStatus" targetRef="End_Sent" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Gw_Split" targetRef="Task_AI" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_AI" targetRef="Gw_AIOk" />
+    <bpmn:sequenceFlow id="Flow_9" name="Yes" sourceRef="Gw_AIOk" targetRef="Task_AddSuggestion" />
+    <bpmn:sequenceFlow id="Flow_10" name="No" sourceRef="Gw_AIOk" targetRef="Task_NotTriaged" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="Task_AddSuggestion" targetRef="End_Triage" />
+    <bpmn:sequenceFlow id="Flow_12" sourceRef="Task_NotTriaged" targetRef="End_Triage" />
+    <bpmn:sequenceFlow id="Flow_13" sourceRef="Gw_Split" targetRef="Task_SeeRequest" />
+    <bpmn:sequenceFlow id="Flow_14" sourceRef="Task_SeeRequest" targetRef="Task_Decide" />
+    <bpmn:sequenceFlow id="Flow_15" sourceRef="Task_Decide" targetRef="Gw_OnSite" />
+    <bpmn:sequenceFlow id="Flow_16" name="Yes" sourceRef="Gw_OnSite" targetRef="Task_Dispatch" />
+    <bpmn:sequenceFlow id="Flow_17" name="No" sourceRef="Gw_OnSite" targetRef="Task_Remote" />
+    <bpmn:sequenceFlow id="Flow_18" sourceRef="Task_Dispatch" targetRef="Task_Accept" />
+    <bpmn:sequenceFlow id="Flow_19" sourceRef="Task_Accept" targetRef="Task_OnTheWay" />
+    <bpmn:sequenceFlow id="Flow_20" sourceRef="Task_OnTheWay" targetRef="Gw_Notify" />
+    <bpmn:sequenceFlow id="Flow_21" sourceRef="Gw_Notify" targetRef="Task_SeeOnTheWay" />
+    <bpmn:sequenceFlow id="Flow_22" sourceRef="Task_SeeOnTheWay" targetRef="End_Informed" />
+    <bpmn:sequenceFlow id="Flow_23" sourceRef="Gw_Notify" targetRef="Task_Help" />
+    <bpmn:sequenceFlow id="Flow_24" sourceRef="Task_Help" targetRef="Task_Resolve" />
+    <bpmn:sequenceFlow id="Flow_25" sourceRef="Task_Resolve" targetRef="Task_Resolved" />
+    <bpmn:sequenceFlow id="Flow_26" sourceRef="Task_Remote" targetRef="Task_Resolved" />
+    <bpmn:sequenceFlow id="Flow_27" sourceRef="Task_Resolved" targetRef="End_Helped" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Collaboration_help-request-journey">
+      <bpmndi:BPMNShape id="Participant_1_di" bpmnElement="Participant_1" isHorizontal="true"><dc:Bounds x="-60" y="0" width="2544" height="760" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_P_di" bpmnElement="Lane_P" isHorizontal="true"><dc:Bounds x="-30" y="0" width="2514" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_F_di" bpmnElement="Lane_F" isHorizontal="true"><dc:Bounds x="-30" y="150" width="2514" height="230" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_O_di" bpmnElement="Lane_O" isHorizontal="true"><dc:Bounds x="-30" y="380" width="2514" height="230" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_R_di" bpmnElement="Lane_R" isHorizontal="true"><dc:Bounds x="-30" y="610" width="2514" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Help_di" bpmnElement="Start_Help"><dc:Bounds x="121" y="57" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OpenHelp_di" bpmnElement="Task_OpenHelp"><dc:Bounds x="225" y="39" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Send_di" bpmnElement="Task_Send"><dc:Bounds x="375" y="39" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Save_di" bpmnElement="Task_Save"><dc:Bounds x="525" y="229" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Split_di" bpmnElement="Gw_Split"><dc:Bounds x="716" y="242" width="46" height="46" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SeeStatus_di" bpmnElement="Task_SeeStatus"><dc:Bounds x="825" y="39" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Sent_di" bpmnElement="End_Sent"><dc:Bounds x="1021" y="57" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AI_di" bpmnElement="Task_AI"><dc:Bounds x="825" y="229" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_AIOk_di" bpmnElement="Gw_AIOk" isMarkerVisible="true"><dc:Bounds x="1016" y="242" width="46" height="46" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AddSuggestion_di" bpmnElement="Task_AddSuggestion"><dc:Bounds x="1125" y="181" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotTriaged_di" bpmnElement="Task_NotTriaged"><dc:Bounds x="1125" y="277" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Triage_di" bpmnElement="End_Triage"><dc:Bounds x="1321" y="247" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SeeRequest_di" bpmnElement="Task_SeeRequest"><dc:Bounds x="825" y="459" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Decide_di" bpmnElement="Task_Decide"><dc:Bounds x="975" y="459" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_OnSite_di" bpmnElement="Gw_OnSite" isMarkerVisible="true"><dc:Bounds x="1166" y="472" width="46" height="46" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Dispatch_di" bpmnElement="Task_Dispatch"><dc:Bounds x="1275" y="507" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Remote_di" bpmnElement="Task_Remote"><dc:Bounds x="1425" y="411" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Accept_di" bpmnElement="Task_Accept"><dc:Bounds x="1425" y="649" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OnTheWay_di" bpmnElement="Task_OnTheWay"><dc:Bounds x="1575" y="229" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Notify_di" bpmnElement="Gw_Notify"><dc:Bounds x="1766" y="242" width="46" height="46" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SeeOnTheWay_di" bpmnElement="Task_SeeOnTheWay"><dc:Bounds x="1875" y="39" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Informed_di" bpmnElement="End_Informed"><dc:Bounds x="2071" y="57" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Help_di" bpmnElement="Task_Help"><dc:Bounds x="1875" y="649" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Resolve_di" bpmnElement="Task_Resolve"><dc:Bounds x="2025" y="649" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Resolved_di" bpmnElement="Task_Resolved"><dc:Bounds x="2175" y="229" width="128" height="72" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Helped_di" bpmnElement="End_Helped"><dc:Bounds x="2371" y="57" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1"><di:waypoint x="157" y="75" /><di:waypoint x="225" y="75" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2"><di:waypoint x="353" y="75" /><di:waypoint x="375" y="75" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3"><di:waypoint x="439" y="111" /><di:waypoint x="439" y="265" /><di:waypoint x="525" y="265" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4"><di:waypoint x="653" y="265" /><di:waypoint x="716" y="265" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5"><di:waypoint x="739" y="242" /><di:waypoint x="739" y="75" /><di:waypoint x="825" y="75" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6"><di:waypoint x="953" y="75" /><di:waypoint x="1021" y="75" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7"><di:waypoint x="762" y="265" /><di:waypoint x="825" y="265" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8"><di:waypoint x="953" y="265" /><di:waypoint x="1016" y="265" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9"><di:waypoint x="1062" y="265" /><di:waypoint x="1093.5" y="265" /><di:waypoint x="1093.5" y="217" /><di:waypoint x="1125" y="217" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10"><di:waypoint x="1062" y="265" /><di:waypoint x="1093.5" y="265" /><di:waypoint x="1093.5" y="313" /><di:waypoint x="1125" y="313" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11"><di:waypoint x="1253" y="217" /><di:waypoint x="1287" y="217" /><di:waypoint x="1287" y="265" /><di:waypoint x="1321" y="265" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_di" bpmnElement="Flow_12"><di:waypoint x="1253" y="313" /><di:waypoint x="1287" y="313" /><di:waypoint x="1287" y="265" /><di:waypoint x="1321" y="265" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13_di" bpmnElement="Flow_13"><di:waypoint x="739" y="288" /><di:waypoint x="739" y="495" /><di:waypoint x="825" y="495" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14_di" bpmnElement="Flow_14"><di:waypoint x="953" y="495" /><di:waypoint x="975" y="495" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15_di" bpmnElement="Flow_15"><di:waypoint x="1103" y="495" /><di:waypoint x="1166" y="495" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16_di" bpmnElement="Flow_16"><di:waypoint x="1212" y="495" /><di:waypoint x="1243.5" y="495" /><di:waypoint x="1243.5" y="543" /><di:waypoint x="1275" y="543" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_17_di" bpmnElement="Flow_17"><di:waypoint x="1212" y="495" /><di:waypoint x="1318.5" y="495" /><di:waypoint x="1318.5" y="447" /><di:waypoint x="1425" y="447" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18_di" bpmnElement="Flow_18"><di:waypoint x="1339" y="579" /><di:waypoint x="1339" y="685" /><di:waypoint x="1425" y="685" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_19_di" bpmnElement="Flow_19"><di:waypoint x="1553" y="685" /><di:waypoint x="1639" y="685" /><di:waypoint x="1639" y="301" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_20_di" bpmnElement="Flow_20"><di:waypoint x="1703" y="265" /><di:waypoint x="1766" y="265" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_21_di" bpmnElement="Flow_21"><di:waypoint x="1789" y="242" /><di:waypoint x="1789" y="75" /><di:waypoint x="1875" y="75" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_22_di" bpmnElement="Flow_22"><di:waypoint x="2003" y="75" /><di:waypoint x="2071" y="75" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_23_di" bpmnElement="Flow_23"><di:waypoint x="1789" y="288" /><di:waypoint x="1789" y="685" /><di:waypoint x="1875" y="685" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_24_di" bpmnElement="Flow_24"><di:waypoint x="2003" y="685" /><di:waypoint x="2025" y="685" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_25_di" bpmnElement="Flow_25"><di:waypoint x="2153" y="685" /><di:waypoint x="2239" y="685" /><di:waypoint x="2239" y="301" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_26_di" bpmnElement="Flow_26"><di:waypoint x="1553" y="447" /><di:waypoint x="2239" y="447" /><di:waypoint x="2239" y="301" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_27_di" bpmnElement="Flow_27"><di:waypoint x="2239" y="229" /><di:waypoint x="2239" y="75" /><di:waypoint x="2371" y="75" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
