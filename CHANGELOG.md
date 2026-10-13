@@ -2,6 +2,29 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-13 · Presentation feedback: BPMN journeys, report handling, no 112 (Bruno Lopes)
+
+**Why:** after the first presentation on 12 October 2026, the teacher asked for BPMN diagrams of the main journeys, for no mention of 112, and, as the only feedback on the talk itself, for a clearer explanation of who receives the reports and how they are handled. The feedback is recorded in [`2026-10-12-sprint-1-presentation-feedback.md`](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md).
+
+### Added
+- `Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md`: the six feedback items (T1–T6), the decisions and the open actions.
+- `Docs/Product/bpmn/`: two BPMN 2.0 diagrams with one lane per actor (participant, Farol, operator, responder), each as `.bpmn` (editable in bpmn.io or Camunda Modeler) and `.svg`:
+  - `help-request-journey`: W2 + W3 end to end. The AI triage runs in parallel and never holds the request back; the operator dispatches it or handles it remotely; the responder accepts it, goes to the place and resolves it.
+  - `report-journey`: W7 end to end. The report goes to the team responsible for its type; the operator confirms or rejects it, if needed after a responder checks it on site; a responder fixes it when action is needed; otherwise it expires.
+- `user-workflows.md`: section *Complete journeys (BPMN)* with both diagrams.
+
+### Proposed (to confirm with the group, PE-6)
+- `personas.md`: the incident operator is split into **P2 · Miguel, the control-room operator** (decides) and new **P5 · Inês, the responder** (in the field, acts).
+- `features.md`: new §4.1 *Who receives what, and who acts*. New role `Responder` (F4) and story **US-26**. F7 and F13 list P5. US-05, US-10 and US-19 updated. §6.2 says who confirms a report, adds the on-site check and the *Resolved* status, and lists the report statuses.
+- `user-workflows.md`: W2 sequence and W3 lifecycle with the responder (new status `OnTheWay`); W7 flow with the operator, the on-site check and the fix.
+- `domain-model.md`: role `Responder`; `HelpRequest.acceptedBy`. `architecture.md` §2 and `product-vision.md` §3: responder added.
+
+### Removed
+- Every mention of **112**, as the teacher asked: `features.md` (F6, §6.1, US-08), `user-workflows.md` (W2, W6, W7), `personas.md` (P1, P2), `architecture.md` (system context, degraded modes), the report (§5: the app must make clear it is not an emergency service) and both market analyses (the 112 row and the "Call 112 first" items).
+
+### Not changed on purpose
+- `Docs/Presentation/Farol_First_Presentation.pptx`: it stays as presented. The BPMN diagrams are not for slides (too detailed to read on a projector).
+
 ## [Unreleased] · 2026-10-12 · Status slide, English docs and process setup (Bruno Lopes)
 
 **Why:** the teacher asked by email for the state of four topics: DoR/DoD, team roles and work process, domain model and high-level architecture. Preparing that status showed what still kept the process topics from green: the DoR and DoD were not in the tool, the conventions kept drifting, and the language rule was undecided. The team decided on 12 October 2026 that **all documentation is in English and stays that way**.
