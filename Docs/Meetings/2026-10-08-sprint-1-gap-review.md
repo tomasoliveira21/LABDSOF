@@ -51,6 +51,18 @@
 | Presentation | Personas slide added after the cover (one slide, P1–P4 + how each is validated; speaker notes in Portuguese). Presented as **proto-personas**, since the survey and interviews have no results yet | `Docs/Presentation/Farol_First_Presentation.pptx` |
 | Platform admin **[PROPOSED, to confirm with the group]** | New persona **P4 · Daniel**, from the Farol team: creates events for verified organisations, names their Owner, transfers it and suspends events; never sees event data. Proposed: only the platform admin creates events in the MVP (PE-5) | `personas.md`, `features.md` F3/F4 + US-25, `user-workflows.md` W4, `product-vision.md` §3; list in `CHANGELOG.md` |
 
+### Follow-up decisions (11 October 2026, team)
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Backend | **Spring Boot** (Java) | `architecture.md` §12 |
+| Frontend | **React** | `architecture.md` §12 |
+| Deployment target | **Microsoft Azure**, on an **Azure for Students** subscription. Azure services and budget still open; **Tiago** looks into them | `architecture.md` §10, §12 |
+| Architectural style | **Microservices or modular monolith**, chosen after a documented evaluation of both (ADR-001). A monolith without enforced module boundaries is ruled out | `architecture.md` §11 |
+| Architecture views | **C4 model**, all four levels (context, container, component, code) | `architecture-decisions-guide.md` §B |
+| CI/CD | Full pipeline (build, tests, analysis, images, deployment) in scope; tool and stages still open | `architecture-decisions-guide.md` §H |
+| Working document | Open architecture questions, options and background in `architecture-decisions-guide.md` (Portuguese, study document) | `README.md` |
+
 ## Status at a glance
 
 | # | Topic | Status | Blocking item for the presentation |

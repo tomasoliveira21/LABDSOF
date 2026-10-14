@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-11 · Technology decisions and architecture decisions guide (Bruno Lopes)
+
+**Why:** the team chose the main technologies, so the next step is preparing the high-level architecture and its ADRs. Decisions listed in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions, 11 October 2026*).
+
+### Decided
+- Backend **Spring Boot**, frontend **React**, deployment on **Azure** (Azure for Students; Azure details owned by Tiago).
+- Architectural style: **microservices or modular monolith**, chosen after a documented evaluation (ADR-001); a monolith without enforced boundaries is ruled out.
+- Architecture views follow the **C4 model**, all four levels. A full **CI/CD** pipeline is in scope.
+
+### Added
+- `Docs/Technical/architecture-decisions-guide.md` (Portuguese, working document): background (C4, microservices vs modular monolith, messaging, data, Kubernetes and Azure Container Apps, Azure for Students, Spring, React, CI/CD, observability, identity), open questions with options per area (A–K), and practice questions for the individual evaluation (assignment §10).
+
+### Changed
+- `architecture.md`: status line, §10 (deployment target gap closed), §11 and §12 updated with the decisions above.
+- `README.md`: guide added to the documentation index.
+
 ## [Unreleased] · 2026-10-10 · Personas slide and platform admin (Tiago Teixeira, #26)
 
 **Why:** the personas owner prepared the topic's slide for the presentation of 12 October 2026 (presentation plan, meeting §9). While doing it, a gap showed up: Farol hosts many festivals (Queima do Porto, Braga, Coimbra, Lisboa, …) and each organisation manages only its own event, but nobody was defined to create events, name their Owner, or step in when the Owner leaves (board terms are annual). The `Owner`/`Admin`/`Operator` roles exist only inside an event.

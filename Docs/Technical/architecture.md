@@ -1,7 +1,7 @@
 # High-Level System Architecture
 
 > LABDSOF 2026/27 · Sprint 1 · Assignment §6 (Common Technical Requirements) and §7.1.2 (deliverable 7, *Technical Design*)
-> **Status:** **[PROPOSED]** first version. No architecture existed in the repository. This document turns the constraints that are already in the repository (report §5 risks, annex C10, MVP definition) and the assignment's technical requirements into a logical architecture. **No technology has been chosen**: technology choices are listed as decisions for the team (§12).
+> **Status:** **[PROPOSED]** first version. No architecture existed in the repository. This document turns the constraints that are already in the repository (report §5 risks, annex C10, MVP definition) and the assignment's technical requirements into a logical architecture. **Decided on 11 October 2026:** Spring Boot backend, React frontend, deployment on Azure (Azure for Students), C4 model for the views. The other technology choices are open (§12); questions and options in [`architecture-decisions-guide.md`](architecture-decisions-guide.md).
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
 ## 1. Architecture drivers
@@ -186,7 +186,7 @@ flowchart LR
 
 **[PROPOSED]:** every container is built by the CI pipeline and started with one compose file for the MVP (assignment §8.4: reproducible builds, environment configuration, secrets outside the repository, deployment instructions, rollback). Orchestration (e.g. Kubernetes) only if justified (assignment §8.4).
 
-> ⚠️ **GAP: target environment.** Needed: where the MVP will be deployed (university infrastructure, a cloud free tier, a team member's machine) and how the teaching staff will access it (assignment §12).
+**Decided (11 October 2026):** the MVP is deployed on **Microsoft Azure**, on an **Azure for Students** subscription. Still open: which Azure services (e.g. Container Apps instead of a single VM), how the credit is spent, and how the teaching staff will access the deployment (assignment §12). See [`architecture-decisions-guide.md`](architecture-decisions-guide.md) §G.
 
 ## 11. Why separate services, and the alternative
 
@@ -199,16 +199,17 @@ flowchart LR
 | The triage worker can fail or be slow without affecting anything else (D6) | |
 | Meets assignment §6.2 directly | |
 
-**Alternative:** a **modular monolith** with the same two modules and a background job for triage. The assignment accepts it only "when the team presents convincing evidence that independently deployable services would introduce unnecessary complexity", with module boundaries that stay explicit and enforceable (§6.2). **[DECISION NEEDED]**, to record as ADR-001.
+**Alternative:** a **modular monolith** with the same two modules and a background job for triage. The assignment accepts it only "when the team presents convincing evidence that independently deployable services would introduce unnecessary complexity", with module boundaries that stay explicit and enforceable (§6.2). **[DECISION NEEDED]**, to record as ADR-001. **Decided (11 October 2026):** the choice is between these two options, after a documented evaluation of both; a monolith without enforced module boundaries is ruled out.
 
 ## 12. Technology choices **[DECISION NEEDED]**
 
-The repository says nothing about technology. Each line below needs a decision and an ADR (assignment §7.1.2, item 8). The options are examples, not recommendations.
+Each line below needs a decision and an ADR (assignment §7.1.2, item 8). The options are examples, not recommendations.
 
 | Decision | Examples of options | Constraint from the assignment or repository |
 |---|---|---|
-| Backend language and framework | .NET, Java/Spring, Node.js, Python | Team skills; justify the choice |
-| Frontend (PWA and backoffice) | React, Angular, Vue, Svelte | Must work as a PWA with offline cache (D3) |
+| Backend language and framework | **Decided: Java + Spring Boot** (11 October 2026) | Team skills; justify the choice |
+| Frontend (PWA and backoffice) | **Decided: React** (11 October 2026) | Must work as a PWA with offline cache (D3) |
+| Cloud and deployment platform | **Decided: Microsoft Azure** (Azure for Students). Open: Container Apps, AKS, App Service, VM | Containers (§8.4); orchestration only if justified; limited credit |
 | Database | PostgreSQL, MongoDB, … | **One** database technology unless justified (§6.4) |
 | Message broker | RabbitMQ, Redis Streams, Kafka, cloud queue | Retries, dead-letter queue, at-least-once delivery (§6.3) |
 | Real-time push | WebSocket, Server-Sent Events | Weak network (D3) |
