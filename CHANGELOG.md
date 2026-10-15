@@ -2,6 +2,18 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-15 · Consolidated domain model and Porto Digital bus source
+
+**Why:** consolidate current product decisions, consider the architecture-decisions-guide branch without merging it, and represent the project owner's selected bus-context API.
+
+### Changed
+- `Docs/Technical/domain-model.md`: one consolidated conceptual class diagram covering accounts, event permissions, reports, field dispatch, badges, check-in and transport; a high-level entity/responsibility table and a short notation guide below it. The introduction names the services without tying the document to a branch.
+- Domain ownership follows the guide's proposed Auth & Users, Events, Reports, Transports and Badges split, preserving its pending-validation status.
+- Porto Digital FIWARE appears as an external source in the same diagram, with bus observations and geographic coordinates separate from venue-map positions. The endpoint does not supply schedules/ETAs.
+
+### Added
+- `Docs/Meetings/2026-10-15-domain-model-transport-source.md`: project-owner source choice and technical review notes, without claiming a team meeting or approval of the architecture proposals.
+
 ## [Unreleased] · 2026-10-13 · Presentation feedback: BPMN journeys, report handling, no 112 (Bruno Lopes)
 
 **Why:** after the first presentation on 12 October 2026, the teacher asked for BPMN diagrams of the main journeys, for no mention of 112, and, as the only feedback on the talk itself, for a clearer explanation of who receives the reports and how they are handled. The feedback is recorded in [`2026-10-12-sprint-1-presentation-feedback.md`](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md).
