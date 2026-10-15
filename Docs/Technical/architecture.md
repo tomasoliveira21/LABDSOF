@@ -1,7 +1,7 @@
 # High-Level System Architecture
 
-> LABDSOF 2026/27 · Sprint 1 · Assignment §6 (Common Technical Requirements) and §7.1.2 (deliverable 7, *Technical Design*)
-> **Status:** **[PROPOSED]** first version. No architecture existed in the repository. This document turns the constraints that are already in the repository (report §5 risks, annex C10, MVP definition) and the assignment's technical requirements into a logical architecture. **Decided on 11 October 2026:** Spring Boot backend, React frontend, deployment on Azure (Azure for Students), C4 model for the views. The other technology choices are open (§12); questions and options in [`architecture-decisions-guide.md`](architecture-decisions-guide.md).
+> LABDSOF 2026/27 · Sprint A · Assignment §6 (Common Technical Requirements) and §7.1.2 (deliverable 7, *Technical Design*)
+> **Status (15 October 2026):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PENDING]** wait for the professor's answer or for an investigation; the owner is in that document. The final diagrams are drawn in draw.io; the Mermaid diagrams below are working sketches.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
 ## 1. Architecture drivers
@@ -12,7 +12,7 @@ What shapes the design, and where it comes from:
 |---|---|---|
 | D1 | **Isolation between events**: one team must never see or change another event's data | Report, *Permissões por evento*; §5 technical risks |
 | D2 | **Read peaks**: tens of thousands of participant requests within minutes (e.g. end of a concert) | Report §5 technical risks |
-| D3 | **Weak or congested network** at the venue: cache, offline mode, short messages | Report §5; assumption A8; annex C10 |
+| D3 | **Weak or congested network** at the venue: short messages, data with its update time | Report §5; assumption A8; annex C10 |
 | D4 | **Freshness**: every piece of information shows when it was last updated | Report §5; annex C4 |
 | D5 | **Sensitive data**: location and help requests (possibly health) need consent, minimisation, short retention | Report §5 regulatory risks |
 | D6 | **AI with fallback**: the main workflow must keep working when the AI is unavailable | Assignment §5.6.2; annex C9 |
@@ -27,209 +27,185 @@ flowchart LR
     P(["Participant<br/>(P1)"])
     O(["Incident operator<br/>(P2)"])
     A(["Event admin<br/>(P3)"])
-    SYS["Event coordination platform<br/>[product name TBD]"]
-    TR["Transport data<br/>STCP GTFS feed or simulator"]
-    LLM["AI model provider<br/>(LLM API)"]
-    IDP["Identity provider<br/>(mocked in the MVP)"]
-    EM["Emergency services 112<br/>(outside the system)"]
+    PA(["Platform admin<br/>(P4, to confirm in the domain model)"])
+    SYS["Farol"]
+    TR["Transport data<br/>[PENDING: Porto Digital FIWARE or STCP GTFS]"]
+    LLM["AI model provider<br/>[PENDING]"]
+    IDP["Identity provider<br/>[PENDING: only if external]"]
 
-    P -- "reads event info, asks for help" --> SYS
+    P -- "uses the mobile app" --> SYS
     O -- "handles help requests" --> SYS
-    A -- "configures event, publishes updates" --> SYS
-    SYS -- "reads schedules and real-time data" --> TR
+    A -- "manages the event (web app)" --> SYS
+    PA -- "creates events, names Owners" --> SYS
+    SYS -- "reads transport data" --> TR
     SYS -- "asks for triage suggestions" --> LLM
-    SYS -- "authenticates team members" --> IDP
-    P -. "called directly, never through the app" .-> EM
+    SYS -. "authenticates users" .-> IDP
 ```
 
-The app never replaces 112: it shows "Call 112" first and lets the phone make the call (report §5).
+The emergency number 112 is not in the diagram: the system does not talk to it. The app shows "Call 112" first and lets the phone make the call (report §5).
 
 ## 3. Container view
+
+Final state (Sprint C). In Sprints A and B the five services may run as **one modular monolith** with the same modules; this depends on the professor's answer (§11).
 
 ```mermaid
 flowchart LR
     subgraph Clients
         direction TB
-        PWA["Participant web app<br/>(PWA, offline cache)"]
-        BO["Backoffice web app"]
+        MOB["Mobile app<br/>(React Native)<br/>participants, operators"]
+        WEB["Web app<br/>(React)<br/>event management"]
     end
 
-    GW["API gateway<br/>TLS, routing,<br/>rate limiting"]
+    GW["API gateway<br/>[PENDING: C6]"]
 
-    subgraph Backend["Backend services"]
+    subgraph Backend["Backend services (Spring Boot)"]
         direction TB
-        EVS["Event service<br/>(Event Configuration)"]
-        INC["Incident service<br/>(Incident Management)"]
-        TRI["Triage worker<br/>(AI, asynchronous)"]
+        AU["Auth & Users"]
+        EV["Events"]
+        RE["Reports"]
+        TS["Transports"]
+        BA["Badges"]
     end
 
-    MQ[("Message broker")]
+    MQ[("RabbitMQ")]
+    DBS[("PostgreSQL<br/>one database per service")]
+    TR["Transport data"]
+    LLM["AI model provider"]
 
-    DB1[("Event DB / schema")]
-    FS[("File storage:<br/>venue maps")]
-    DB2[("Incident DB / schema")]
-
-    subgraph External["External systems"]
-        direction TB
-        TR["Transport data<br/>(STCP feed or simulator)"]
-        LLM["AI model provider"]
-    end
-
-    PWA --> GW
-    BO --> GW
-    GW --> EVS
-    GW --> INC
-    EVS --> DB1
-    EVS --> FS
-    INC --> DB2
-    EVS -- "poll / import" --> TR
-    INC <-- "help-request events" --> MQ
-    MQ <-- "triage jobs and results" --> TRI
-    EVS -- "announcements" --> MQ
-    TRI --> LLM
+    MOB --> GW
+    WEB --> GW
+    GW --> AU & EV & RE & TS & BA
+    AU & EV & RE & TS & BA <-- "domain events [AMQP]" --> MQ
+    AU & EV & RE & TS & BA --> DBS
+    TS -- "scheduled poll" --> TR
+    RE -- "triage" --> LLM
 ```
 
-Not drawn, to keep the diagram readable: every container sends structured logs, metrics and health checks to the observability stack and its operational dashboard (assignment §6.7), and the Event and Incident services push live updates to the clients through the gateway (WebSocket or Server-Sent Events, §5).
+Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING]**). Clients get live updates by **polling** (no push in the MVP).
 
 ## 4. Responsibilities and data ownership
 
-| Container | Responsibility | Owns (see [`domain-model.md`](domain-model.md)) | Independently deployable |
-|---|---|---|---|
-| **Participant web app** | Login, event selection, map, information, transport, help request, offline cache | Nothing (cache only) | Yes (static files) |
-| **Backoffice web app** | Event configuration (P3); live request list and map (P2) | Nothing | Yes (static files) |
-| **API gateway** | Single entry point, TLS, routing, rate limiting per device and IP (abuse of help requests) | Nothing | Yes |
-| **Event service** | Events, memberships and roles, venue maps and points of interest, transport (including the external transport adapter), announcements. Serves the participant's read API, which must be cacheable (D2) | Event, Membership, TeamMember, ResponseTeam, VenueMap, PointOfInterest, TransportOption, Announcement | **Yes** |
-| **Incident service** | Help requests, their lifecycle and audit; pushes live updates to the backoffice and status to the participant; applies the non-AI fallback | HelpRequest, TriageSuggestion, StatusChange | **Yes** |
-| **Triage worker** | Consumes new requests, asks the AI for category and priority, publishes the suggestion. Holds no business data | Nothing | **Yes** |
+| Service | Responsibility (features) | Owns (see [`domain-model.md`](domain-model.md)) |
+|---|---|---|
+| **Auth & Users** | Authentication, authorisation, accounts, roles per event, friends (F1, F2, roles of F4, F18) | UserAccount, Membership, TeamMember; friendships |
+| **Events** | Events, venue map and points of interest, response teams, announcements, check-in, entries (F3, teams of F4, F5, F10, F16, F17) | Event, VenueMap, PointOfInterest, ResponseTeam, Announcement; check-ins |
+| **Reports** | Community reports and their confirmation, help requests, incident backoffice, AI triage with fallback (F6, F7, F8, F12, F13) | HelpRequest, TriageSuggestion, StatusChange; community reports |
+| **Transports** | External transport integration and event shuttles (F9) | TransportOption |
+| **Badges** | Badges (F14, F15) | Badges |
 
-Each service owns its data; no service reads another service's database. The Incident service gets the event's response teams and points of interest through the Event service's API or by caching them from events **[PROPOSED]**.
+Entities in lower case are not in the domain model yet; Tomás and Guerra add them, together with the platform admin (P4).
+
+**Rules:**
+- Each service owns its data and its database; no service reads another service's database.
+- Services talk **only through events**. Each service keeps a local copy of what it needs from another (e.g. Reports keeps the response teams from Events; every service keeps the roles per event from Auth & Users). The cost is eventual consistency.
+- Each service is its own Maven project in `backend/<service>/` and depends only on the others' contracts (OpenAPI and events). Inside, it follows a **hexagonal layout**: `domain`, `application`, `adapters/in`, `adapters/out`.
+- APIs are **contract-first**: hand-written OpenAPI in `backend/<service>/contracts/openapi.yaml`, paths under `/api/v1`, server and client code generated ([`spec-driven-development.md`](../Process/spec-driven-development.md)).
 
 ## 5. Communication
 
 | From → To | Style | Why |
 |---|---|---|
-| Clients → Gateway → services | Synchronous (HTTP/REST) | Request–response by nature |
-| Incident service → Triage worker | **Asynchronous** (message broker) | The participant gets a confirmation immediately; triage may take seconds or fail (D6) |
-| Triage worker → Incident service | Asynchronous | Same reason; the suggestion arrives when ready |
-| Event service → clients (announcements) | Asynchronous push (WebSocket or Server-Sent Events) **[PROPOSED]** | Live updates without reloading (US-10) |
-| Incident service → backoffice / participant | Asynchronous push | New requests appear without reloading (US-06); participant sees status |
-| Event service → transport data | Scheduled poll or import | The external source may be slow or down; never called inside a participant's request |
+| Apps → services | Synchronous (HTTP/REST) | Request–response by nature |
+| Apps (live lists, request status, announcements) | **Polling** | Enough for the MVP; no push infrastructure |
+| Service → service | **Asynchronous only** (RabbitMQ, Spring AMQP, *topic* exchanges) | A service that is down does not stop the others |
+| Transports → transport data | Scheduled poll | The external source may be slow or down; never called inside a user's request |
 
 ## 6. The asynchronous workflow: help-request triage
 
-Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). Assumes AI Option A ([`features.md` §5](../Product/features.md#5-ai-assisted-workflow-help-request-triage)). End-to-end flow: [`user-workflows.md`, W2](../Product/user-workflows.md#w2--participant-asks-for-help-core-journey).
+Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end flow: [`user-workflows.md`, W2](../Product/user-workflows.md#w2--participant-asks-for-help-core-journey).
 
-| Concern (assignment §6.3) | How it is handled **[PROPOSED]** |
+| Concern (assignment §6.3) | How it is handled |
 |---|---|
-| **Retries** | The triage worker retries the AI call with backoff, up to a limit; after that the message goes to a dead-letter queue |
-| **Duplicate events** | Messages carry the `requestId`; the worker and the Incident service process each `requestId` once (idempotent consumer) |
-| **Failures** | If no suggestion arrives within a time limit, the request stays in the operator's list with the participant's category, in order of arrival (non-AI fallback), marked "not triaged" |
+| **Lost messages** | Reports saves the request and the outgoing event in the same transaction (**outbox table**); a polling job publishes pending events to RabbitMQ |
+| **Duplicate events** | Consumers are idempotent: each keeps a table of processed `message_id`s |
+| **Retries** | Retry with backoff, then the **dead-letter exchange**. Number of attempts and backoff **[PENDING]** (Tiago) |
+| **Failures** | If no suggestion arrives in time, the request stays in the operator's list with the participant's category, in order of arrival (non-AI fallback), marked "not triaged" |
 | **Eventual consistency** | The backoffice shows "awaiting triage" until the suggestion arrives; the operator can act before it does |
-| **Lost messages** | The Incident service saves the request and the outgoing event in the same transaction (outbox pattern), so a request is never saved without its event, or the reverse |
 
 ## 7. External integration
 
 | Integration | Purpose | Handling of unavailable, late, incomplete or invalid data (assignment §6.5) |
 |---|---|---|
-| **Transport data** (STCP GTFS feed or a realistic simulator) **[DECISION NEEDED]** | Real-time and scheduled transport for F9 | Data validated on import; on failure, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected |
-| **AI model provider** | Triage suggestions (F8) | Timeout, then fallback (§6); the suggestion is never shown as a fact (assignment §5.6.2) |
-
-> ⚠️ **GAP: transport source.** The annex notes that STCP real-time data reached Google Maps in June 2026 but it is not known whether the event shuttles are included (annex C5, *[H: verificar no GTFS]*). Needed: check whether the STCP GTFS feed is openly available and usable; otherwise decide to build a simulator.
+| **Transport data** **[PENDING]**: Porto Digital urban platform (FIWARE NGSI v2, live bus data), if the professor accepts it; otherwise STCP GTFS | Transport for F9 | Data validated on import; on failure, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected |
+| **AI model provider** **[PENDING]** (Tomás; local Ollama is an option) | Triage suggestions (F8) | Timeout, then fallback (§6); the suggestion is never shown as a fact (assignment §5.6.2) |
 
 ## 8. Security, authentication and authorisation
 
-| Concern | Approach **[PROPOSED]** | Source |
-|---|---|---|
-| Team members | Authenticated through an identity provider; token carries the user ID. **Mocked in the MVP** is allowed | Assignment §6.6, footnote 1 |
-| Authorisation | Role checked **per event** on every request (invariant I1); enforced in each service, not only in the gateway | Report §5; domain model I1 |
-| Participants | **Account with mandatory login** (decided 9 October 2026, DM-1); mocked authentication allowed for the MVP (assignment §6.6, footnote 1) | [`features.md`](../Product/features.md) F1, F2 |
-| Service to service | Services only accept calls from the gateway or the internal network; broker credentials per service | Assignment §6.6 |
-| Audit | Every change to a help request recorded (StatusChange) | Domain model I5; assignment §6.6 |
-| Abuse | Rate limit on help requests per device and IP in the gateway | **[PROPOSED]** |
-| Isolation tests | Automated tests that try to access event Y as a member of event X | Report §5: "exige testes automáticos dedicados a este isolamento" |
+Owner: **Guerra** (identity provider, token validation, service-to-service authentication, secrets, Security & Privacy assessment).
 
-> ⚠️ **GAP: Security and Privacy Assessment.** A Sprint 1 deliverable (assignment §7.1.2, item 9: threat model, sensitive data, access control, data minimisation, retention) does not exist. This section and the domain model §5 are starting points.
+| Concern | Decided |
+|---|---|
+| Accounts | **Login mandatory for every user**, participants included (9 October 2026, DM-1) |
+| Authorisation | Role checked **per event** (invariant I1); authN and authZ live in Auth & Users |
+| Isolation between events | `event_id` on every event-scoped table, filtered by the application; each service has an integration test proving that a member of event X cannot read or change event Y |
+| Audit | Every change to a help request recorded (StatusChange, domain model I5) |
+| Rate limiting of help requests | **[PENDING]** with the gateway decision (Guerra) |
+
+> ⚠️ **GAP: Security and Privacy Assessment.** Sprint A deliverable (assignment §7.1.2, item 9). Owner: Guerra.
 
 ## 9. Degraded modes
 
-The assignment requires at least one degraded-mode scenario to be implemented and demonstrated (§6.8). Candidates, all derived from the drivers:
+**Decided (9 October 2026):** the §6.8 scenarios are **AI unavailable (D1)** and **transport source unavailable (D2)** ([`features.md` §3.1](../Product/features.md#31-degraded-mode-scenarios-decided-9-october-2026)). How they are demonstrated: **[PENDING]** (Tiago).
 
-| Unavailable | What the user sees **[PROPOSED]** | Driver |
-|---|---|---|
-| **Network** (participant) | Map and information from cache, labelled "data from HH:MM"; help request cannot be sent, so the app shows the nearest first aid and "Call 112" (W6) | D3 |
-| **AI service** | Requests go to the operator untriaged, with the participant's category, in order of arrival | D6 |
-| **Transport data provider** | Last known data with its time and a warning | D4 |
-| **Incident service** | Participant app shows "Help requests are temporarily unavailable: call 112 or go to the nearest first aid"; event information still works because it comes from the Event service | D7 |
-| **Message broker** | Requests are still saved (outbox); triage and live updates resume when the broker returns; backoffice falls back to periodic refresh | D6 |
-
-**Decided (9 October 2026):** the §6.8 scenarios are **AI service unavailable (D1)** and **transport source unavailable (D2)**, specified in [`features.md` §3.1](../Product/features.md#31-degraded-mode-scenarios-decided-9-october-2026). Network loss (offline mode, F11) is a Could.
+| Unavailable | What the user sees |
+|---|---|
+| **AI provider** | Requests go to the operator untriaged, with the participant's category, in order of arrival |
+| **Transport source** | Last known data with its time and a warning |
+| **Another service** | The other services keep working (events only between services, local copies) |
+| **RabbitMQ** | Requests are still saved (outbox); triage and copies between services catch up when the broker returns |
 
 ## 10. Deployment view
 
-```mermaid
-flowchart LR
-    subgraph Host["Container host: single VM or local machine for the MVP"]
-        GW2["gateway"]
-        WEB["static web: PWA + backoffice"]
-        EVS2["event-service"]
-        INC2["incident-service"]
-        TRI2["triage-worker"]
-        MQ2[("broker")]
-        DB[("database server<br/>one schema per service")]
-        OBS2["observability stack"]
-    end
-    Internet(["Users"]) --> GW2
-    GW2 --> WEB
-    GW2 --> EVS2
-    GW2 --> INC2
-```
+**[PENDING]** (Tomás): platform (Azure, ECS or Vercel), where the containers, RabbitMQ and PostgreSQL run, environments, infrastructure as code, local execution, rollback. Azure (Azure for Students) was chosen on 11 October and reopened on 15 October.
 
-**[PROPOSED]:** every container is built by the CI pipeline and started with one compose file for the MVP (assignment §8.4: reproducible builds, environment configuration, secrets outside the repository, deployment instructions, rollback). Orchestration (e.g. Kubernetes) only if justified (assignment §8.4).
+Already decided:
+- **One instance per service** for now.
+- Images built with **multi-stage Dockerfiles** (Maven, Java 21, Spring Boot 4.x).
+- **GitHub Actions** runs every check on every PR, merge and tag; each merge to `main` is published and deployed to production (**continuous deployment**), followed by a smoke test. The pipeline is being reviewed by Bruno.
+- **Flyway** migrations run at application start and stay compatible with the previous version (*expand and contract*), because a code rollback does not undo them.
+- Retention, backup and caching are **future improvements**.
 
-**Decided (11 October 2026):** the MVP is deployed on **Microsoft Azure**, on an **Azure for Students** subscription. Still open: which Azure services (e.g. Container Apps instead of a single VM), how the credit is spent, and how the teaching staff will access the deployment (assignment §12). See [`architecture-decisions-guide.md`](architecture-decisions-guide.md) §G.
+## 11. Architectural style and its evolution
 
-## 11. Why separate services, and the alternative
+**Decided:** **microservices** as the final state. They meet assignment §6.2 directly, isolate failures (a read peak does not stop help requests) and give small, closed contracts per service.
 
-**Proposal:** two business services (Event, Incident) plus a triage worker.
+**Evolution [PENDING, professor]:** proposed **modular monolith in Sprints A and B** (one deployable with the five modules, one schema per module, an ArchUnit test that fails if a module imports another's classes), then **each module becomes a service in Sprint C** (its own `main`, Dockerfile and database). Because modules already talk only through events and own their data, the split is mechanical, and it gives the *architecture evolution narrative* of §7.3.2 (item 11). Alternative, if the professor prefers: microservices from the start.
 
-| For | Against |
+## 12. Technology choices
+
+| Decision | Choice |
 |---|---|
-| The two contexts have different load: the Event service takes the participant read peaks (D2, cacheable); the Incident service takes few writes that must not be lost | More moving parts to build, deploy and monitor in three sprints (D9) |
-| Failure isolation: a read spike on event content must not stop help requests, and the reverse (§9) | Data needed by both sides (response teams, points of interest) must be copied or fetched |
-| The triage worker can fail or be slow without affecting anything else (D6) | |
-| Meets assignment §6.2 directly | |
+| Backend | **Java 21 + Spring Boot 4.x**, Maven |
+| Frontend | **React** web app (event management only) · **React Native** mobile app (everything else) |
+| Database | **PostgreSQL**, one database per service; Flyway |
+| Message broker | **RabbitMQ** with Spring AMQP |
+| Live updates | **Polling** |
+| API | Contract-first **OpenAPI**, `/api/v1` |
+| CI/CD | **GitHub Actions**, monorepo, private repository |
+| Architecture views | **C4** (all four levels, level 3 for every service) and **4+1** views without scenarios, drawn in **draw.io** |
+| Cloud and deployment | **[PENDING]** Tomás |
+| AI provider and model | **[PENDING]** Tomás |
+| Observability | **[PENDING]** Tomás |
+| Identity | **[PENDING]** Guerra |
+| API gateway | **[PENDING]** Guerra |
+| Venue map library (React Native) | **[PENDING]** Tiago |
+| React Native setup and distribution | **[PENDING]** Bruno |
 
-**Alternative:** a **modular monolith** with the same two modules and a background job for triage. The assignment accepts it only "when the team presents convincing evidence that independently deployable services would introduce unnecessary complexity", with module boundaries that stay explicit and enforceable (§6.2). **[DECISION NEEDED]**, to record as ADR-001. **Decided (11 October 2026):** the choice is between these two options, after a documented evaluation of both; a monolith without enforced module boundaries is ruled out.
+## 13. Architecture Decision Records
 
-## 12. Technology choices **[DECISION NEEDED]**
+Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format plus *Alternatives considered*.
 
-Each line below needs a decision and an ADR (assignment §7.1.2, item 8). The options are examples, not recommendations.
-
-| Decision | Examples of options | Constraint from the assignment or repository |
+| ADR | Decision | Status |
 |---|---|---|
-| Backend language and framework | **Decided: Java + Spring Boot** (11 October 2026) | Team skills; justify the choice |
-| Frontend (PWA and backoffice) | **Decided: React** (11 October 2026) | Must work as a PWA with offline cache (D3) |
-| Cloud and deployment platform | **Decided: Microsoft Azure** (Azure for Students). Open: Container Apps, AKS, App Service, VM | Containers (§8.4); orchestration only if justified; limited credit |
-| Database | PostgreSQL, MongoDB, … | **One** database technology unless justified (§6.4) |
-| Message broker | RabbitMQ, Redis Streams, Kafka, cloud queue | Retries, dead-letter queue, at-least-once delivery (§6.3) |
-| Real-time push | WebSocket, Server-Sent Events | Weak network (D3) |
-| Map rendering | Image with overlay coordinates, or a mapping library | Map is an image or PDF uploaded by the team (annex C3) |
-| AI provider and model | Hosted LLM API or a local model | Cost, latency, data sent to a third party (D5) |
-| Identity | Mocked JWT issuer, Keycloak, cloud identity | Mock allowed in the MVP (§6.6) |
-| Observability | Structured logs + metrics + dashboard stack | Logs, health checks, metrics, correlation IDs, error reporting, dashboard (§6.7) |
-| CI/CD | GitHub Actions or another pipeline | Build, tests, static analysis, dependency checks, images, deployment (§8.5) |
+| ADR-001 | Architectural style and evolution (§11) | Waits for the professor (evolution) |
+| ADR-002 | Backend and frontend technology | Ready to write (Bruno) |
+| ADR-003 | Database and data ownership | Ready to write (Bruno) |
+| ADR-004 | Message broker, delivery guarantees, communication only through events | Ready to write (Bruno) |
+| ADR-005 | AI workflow, provider and fallback | Waits for Tomás |
+| ADR-006 | Identity | Waits for Guerra |
+| ADR-007 | Venue map representation | Waits for Tiago |
+| ADR-008 | Transport data source | Waits for the professor |
+| ADR-009 | Architecture documentation (C4, 4+1, draw.io) | Ready to write (Bruno) |
+| ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
 
-## 13. Architecture Decision Records to write
-
-| ADR | Decision |
-|---|---|
-| ADR-001 | Separate services or modular monolith (§11) |
-| ADR-002 | Backend and frontend technology |
-| ADR-003 | Database technology and data ownership per service |
-| ADR-004 | Message broker and delivery guarantees |
-| ADR-005 | AI workflow (Option A or B), provider and fallback |
-| ADR-006 | Participant identity: account with mandatory login (decided 9 October 2026, domain model DM-1); record the decision and the mocked-auth choice |
-| ADR-007 | Venue map representation (image coordinates or geospatial) |
-| ADR-008 | Transport data source: STCP GTFS or simulator |
-
-> ⚠️ **GAP: ADRs, API outline and walking skeleton.** Sprint 1 also asks for Architecture Decision Records (item 8), an API outline (item 7) and a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10). None of these exists in the repository yet.
+> ⚠️ **GAP: API outline and walking skeleton.** Sprint A also asks for an API outline (item 7; owner: Bruno, with the event catalogue) and a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; later phase, no owner yet).

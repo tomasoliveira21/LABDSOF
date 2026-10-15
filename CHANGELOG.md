@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-15 · Architecture decisions confirmed by the team (#35)
+
+**Why:** the team meeting of 15 October confirmed the proposals below and split the remaining investigations. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions, 15 October 2026, team meeting*).
+
+### Decided
+- Proposals of areas A, B, C, D and H are team decisions, except **A4** (evolution between sprints) and the **transport data source**, which wait for the professor.
+- Diagrams in **draw.io**; **polling** for the MVP; cache, retention and backup are **future improvements**.
+- Frontend: **React web app** for event management only, **React Native mobile app** for the rest.
+- Deployment platform **reopened** (Azure, ECS or Vercel; Tomás investigates).
+
+### Changed
+- `architecture-decisions-guide.md`: rewritten as **Decisões Arquiteturais**: background, options and practice questions removed; only decisions, their status and owners; decisions credited to the team; *Próximos passos* added.
+- `README.md`: index entry updated; issue title format `[<Type>] <Title>` (§1), also in `team-and-process.md` §4.
+- `architecture.md`: rewritten to match the team decisions: five services, React web + React Native mobile, RabbitMQ with outbox, events only between services, polling, PostgreSQL per service, style and evolution (§11), technology table and ADR list with status. Open items marked **[PENDING]** with their owner.
+- Owners assigned to the open items (gateway, Security & Privacy assessment, map library, mobile setup, account deletion, API outline, Responsible AI). Walking skeleton moved to a later phase (no owner yet); Bruno writes the ADRs that are ready (002, 003, 004, 009).
+
 ## [Unreleased] · 2026-10-15 · Architecture decisions proposed and SDD rules (Bruno Lopes)
 
 **Why:** the architecture questions in the decisions guide blocked the walking skeleton. Bruno answered areas A, B, C, D and H; Tiago validates them and decides the rest. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up, 15 October 2026*).

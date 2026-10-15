@@ -78,6 +78,22 @@ Answers to [`architecture-decisions-guide.md`](../Technical/architecture-decisio
 | CI/CD (H) | GitHub Actions; current monorepo; Maven, Java 21, Spring Boot 4.x, multi-stage Dockerfiles; every check on every run; continuous deployment for now; repository stays private | guide §H |
 | Process | **Spec-Driven Development** rules | `spec-driven-development.md` |
 
+### Follow-up decisions (15 October 2026, team meeting)
+
+The proposals above are **team decisions**, except A4 (architecture evolution) and the transport data source, which wait for the professor's answer (email sent 15 Oct: Porto Digital FIWARE NGSI v2 bus API as the external integration; progressive vs up-front architecture). Full record: [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md).
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Diagrams | **draw.io** with the draw.io MCP (replaces Mermaid C4 / C4-PlantUML) | guide §B |
+| Real-time push | **Polling** is enough for the MVP | guide §C |
+| Cache, retention, backup | **Future improvements**, out of the MVP | guide §D |
+| Frontend | **Simple React web app** for event management; **React Native mobile app** for everything else | guide §0, §F |
+| Deployment platform | **Reopened:** Azure, ECS or Vercel | guide §G |
+| Investigations | **Tomás:** deployment, AI (Ollama deployment?), observability · **Guerra:** identity and security · **Tomás + Guerra:** domain model · **Tiago:** resilience and degradation, starts the backlog · **Bruno:** diagrams, then the CI/CD pipeline | guide (top) |
+| More owners | **Guerra:** API gateway, Security & Privacy assessment · **Tiago:** venue-map library in React Native · **Bruno:** React Native setup and mobile distribution, account deletion, API outline and event catalogue · **Tomás:** Responsible AI assessment and triage evaluation dataset · **Tomás + Guerra:** platform admin (P4), closed in the domain model | guide (top) |
+| Deployment and scaling | The deployment platform is decided after Tomás's investigation; Tiago takes the "one instance per service" decision into account for scaling | guide §G, §J |
+| Next steps | **Walking skeleton** (deliverable 10): later phase, no owner yet · **Bruno** writes ADR-002, 003, 004 and 009 | guide §Próximos passos |
+
 ## Status at a glance
 
 | # | Topic | Status | Blocking item for the presentation |
