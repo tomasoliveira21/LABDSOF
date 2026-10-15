@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-15 · Architecture decisions proposed and SDD rules (Bruno Lopes)
+
+**Why:** the architecture questions in the decisions guide blocked the walking skeleton. Bruno answered areas A, B, C, D and H; Tiago validates them and decides the rest. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up, 15 October 2026*).
+
+### Proposed (to validate with Tiago)
+- Microservices as the final state (Auth & Users, Events, Reports, Transports, Badges), built as a modular monolith in Sprints A–B and split in Sprint C.
+- RabbitMQ with Spring AMQP, outbox table, events only between services, contract-first OpenAPI; PostgreSQL with one database per service, `event_id` filtering, Flyway.
+- GitHub Actions in the current monorepo, Maven, Java 21, Spring Boot 4.x, multi-stage Dockerfiles, continuous deployment.
+
+### Added
+- `Docs/Process/spec-driven-development.md`: Spec-Driven Development rules and spec template (proposed).
+
+### Changed
+- `architecture-decisions-guide.md`: **Decisão** lines filled; items left to Tiago marked.
+- `README.md`: SDD rules added to the documentation index.
+
 ## [Unreleased] · 2026-10-11 · Technology decisions and architecture decisions guide (Bruno Lopes)
 
 **Why:** the team chose the main technologies, so the next step is preparing the high-level architecture and its ADRs. Decisions listed in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions, 11 October 2026*).

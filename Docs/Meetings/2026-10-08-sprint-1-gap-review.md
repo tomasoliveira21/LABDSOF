@@ -63,6 +63,21 @@
 | CI/CD | Full pipeline (build, tests, analysis, images, deployment) in scope; tool and stages still open | `architecture-decisions-guide.md` §H |
 | Working document | Open architecture questions, options and background in `architecture-decisions-guide.md` (Portuguese, study document) | `README.md` |
 
+### Follow-up (15 October 2026, Bruno) **[PROPOSED, to validate with Tiago]**
+
+Answers to [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md) areas A, B, C, D and H. Tiago validates them and decides the items left to him (E, F, G, I, J, K, C5 push, C6, D4, D5, H6, H7).
+
+| Topic | Proposal | Applied in |
+|---|---|---|
+| Style (A1, A4) | **Microservices** as the final state; **modular monolith in Sprints A–B**, split into services in Sprint C | guide §A |
+| Services (A2) | **Auth & Users** · **Events** · **Reports** (community reports **and** help requests, backoffice, AI triage) · **Transports** · **Badges** | guide §A |
+| Boundaries (A3) | One Maven project per service in `backend/<service>/`, same repository; ArchUnit test during the monolith phase | guide §A |
+| Documentation (B) | Mermaid C4, later C4-PlantUML in Visual Paradigm; level 3 for every service, docs next to each service; level 4 shows the hexagonal layout; 4+1 views without scenarios; ADRs in Nygard format plus *Alternatives considered* | guide §B |
+| Communication (C) | RabbitMQ + Spring AMQP; own outbox table; events only between services; no replicas for now; contract-first OpenAPI with code generation | guide §C |
+| Data (D) | PostgreSQL; one database per service; `event_id` + application filter; Flyway at startup | guide §D |
+| CI/CD (H) | GitHub Actions; current monorepo; Maven, Java 21, Spring Boot 4.x, multi-stage Dockerfiles; every check on every run; continuous deployment for now; repository stays private | guide §H |
+| Process | **Spec-Driven Development** rules | `spec-driven-development.md` |
+
 ## Status at a glance
 
 | # | Topic | Status | Blocking item for the presentation |

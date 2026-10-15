@@ -3,6 +3,7 @@
 > LABDSOF 2026/27 · Sprint A · Enunciado §6 (requisitos técnicos), §7.1.2 (entregáveis 7, 8 e 10), §8.4 e §8.5 (contentores e CI/CD), §10 (cada aluno tem de saber explicar a arquitetura)
 > **Estado:** documento de trabalho, em português, para estudo e preparação das decisões. **Não é um entregável.** Quando uma pergunta tiver resposta, a decisão passa para um ADR e para o [`architecture.md`](architecture.md).
 > **Como usar:** a Parte 1 dá a teoria necessária. A Parte 2 tem as perguntas, agrupadas por área. Cada pergunta indica porque é importante, as opções com prós e contras, e as secções da Parte 1 a ler antes. Escreve a resposta na linha **Decisão** e o ADR correspondente.
+> **Decisões propostas (15 de outubro de 2026):** o Bruno respondeu às áreas A, B, C, D e H; o Tiago valida-as e decide as que estão marcadas **Tiago** (E, F, G, I, J, K e algumas de C, D e H). Só depois disso passam para ADRs.
 > **Atenção:** preços, limites de planos gratuitos e disponibilidade de serviços no Azure mudam com frequência. Os valores indicados são ordens de grandeza; confirma-os na [calculadora de preços do Azure](https://azure.microsoft.com/pricing/calculator/) antes de decidir.
 
 ## 0. O que já está decidido (11 de outubro de 2026)
@@ -224,7 +225,7 @@ Ordem sugerida: **A → B → G → H** primeiro (bloqueiam o walking skeleton),
 
 - **Ler antes:** §1.2, §1.3, §1.6 (custos).
 - **Para pensar:** com que dados reais justificas cada opção (carga esperada, tamanho da equipa, crédito disponível)? Que critérios usas e que peso tem cada um? Uma matriz de decisão com pesos é uma boa evidência para o ADR. O que farias se o professor perguntasse "porque não a outra?"
-- **Decisão:** ______
+- **Decisão:** **Microserviços** (estado final; ver A4). Cumprem o §6.2 sem ter de provar que os serviços seriam complexidade desnecessária, isolam falhas (um pico de leituras não derruba os pedidos de ajuda) e dão contratos pequenos e fechados por serviço, que é o que o Spec-Driven Development precisa. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **A2. Quais são as fronteiras (módulos ou serviços) e quantas?**
 - **Porque importa:** o [`domain-model.md`](domain-model.md) tem dois contextos, mas desde então surgiram funcionalidades sem casa: contas de utilizador (F1, F2), relatos comunitários e badges (F12–F15), check-in (F16), amigos (F18), administrador da plataforma (P4, proposto).
@@ -239,51 +240,51 @@ Ordem sugerida: **A → B → G → H** primeiro (bloqueiam o walking skeleton),
 
 - **Ler antes:** §1.2 (bounded context, coesão, Lei de Conway).
 - **Para pensar:** para cada funcionalidade, pergunta "quem a altera, porquê e com que frequência?" e "que dados lê e escreve?". Os relatos comunitários são do evento ou do incidente? As badges dependem de confirmações feitas por operadores (Incident?) e de check-ins (Event?). Que serviço é dono do `UserAccount`?
-- **Decisão:** ______
+- **Decisão:** **5 serviços.** **Auth & Users**: authN, authZ, contas, papéis por evento, amigos (F1, F2, papéis do F4, F18) · **Events**: eventos, mapa e pontos de interesse, equipas de resposta, anúncios, check-in, entradas (F3, equipas do F4, F5, F10, F16, F17) · **Reports**: relatos comunitários e a sua confirmação, pedidos de ajuda, backoffice de incidentes e triagem IA com fallback (F6, F7, F8, F12, F13) · **Transports**: integração STCP GTFS e shuttles (F9) · **Badges**: badges (F14, F15). *(Bruno, 15/10, a validar pelo Tiago)*
 
 **A3. Como se impõem as fronteiras?**
 - **Opções:** pacotes + **Spring Modulith** `verify()` · **ArchUnit** · **módulos Maven** separados (o compilador impede dependências) · repositórios separados (só microserviços).
 - **Para pensar:** o §6.2 pede fronteiras "explícitas e verificáveis". Que teste falha se alguém violar uma fronteira? Este teste corre no CI?
-- **Decisão:** ______
+- **Decisão:** Cada serviço é um **projeto Maven próprio** em `backend/<serviço>/`, no mesmo repositório; nenhum serviço depende do código de outro, só dos contratos (OpenAPI e eventos). Na fase de monólito (A4) são módulos Maven do mesmo build, e um teste **ArchUnit** no módulo de arranque falha se um serviço importar classes de outro. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **A4. Como evolui a arquitetura entre os sprints A, B e C?**
 - **Porque importa:** o Sprint C pede uma *architecture evolution narrative* (§7.3.2, item 11).
 - **Opções:** começar com o estilo final · começar com um monólito modular e extrair serviços quando houver razão medida (ex.: teste de carga) · começar só com o walking skeleton (1 serviço + frontend) e adicionar.
-- **Decisão:** ______
+- **Decisão:** **Sprints A e B: monólito modular** (um deployável que junta os 5 módulos). **Sprint C: cada módulo passa a microserviço.** A1–A3 descrevem o estado final. Como os módulos só comunicam por eventos (C4) e têm dados separados (D2), a extração é mecânica (novo `main`, Dockerfile e base de dados). Dá a narrativa de evolução do §7.3.2 (item 11). *(Bruno, 15/10, a validar pelo Tiago)*
 
 ## B · C4 model e documentação
 
 **B1. Que ferramenta usamos para os diagramas?**
 - **Opções:** Structurizr DSL · C4-PlantUML · Mermaid C4 · draw.io (ver §1.1).
 - **Para pensar:** os diagramas têm de ser vistos no GitHub sem passos extra? Queremos um modelo único que gere todas as vistas? Quem atualiza os diagramas quando o código muda?
-- **Decisão:** ______
+- **Decisão:** **Mermaid C4** agora (o GitHub mostra-o no Markdown sem passos extra); na entrega final passamos para **C4-PlantUML no Visual Paradigm**. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **B2. O que entra no nível 1 (System Context)?**
 - **Para pensar:** que pessoas aparecem (P1–P4)? Que sistemas externos (STCP GTFS ou API meteorológica, fornecedor de IA, IdP, 112)? O IdP é externo (Entra) ou nosso (Keycloak, que seria então um container)? O 112 aparece, mesmo que o sistema não comunique com ele?
-- **Decisão:** ______
+- **Decisão:** O Farol (caixa única), as pessoas P1–P4 e os **sistemas externos que usamos**: STCP GTFS, fornecedor de IA e o IdP se for externo (depende de E1). O 112 não entra: o sistema não comunica com ele. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **B3. O que entra no nível 2 (Container)?**
 - **Para pensar:** a SPA do participante e o backoffice são um ou dois containers? O broker, a base de dados e o Blob Storage aparecem como containers (são nossos, ainda que geridos pelo Azure) ou como sistemas externos? O gateway aparece? Os serviços de observabilidade aparecem ou ficam numa nota?
-- **Decisão:** ______
+- **Decisão:** **Frontend e backend separados**; cada serviço (A2), o RabbitMQ e a base de dados de cada serviço; os sistemas externos mantêm-se. O número de frontends (F1) e o gateway (C6) dependem das decisões do Tiago. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **B4. Para que containers fazemos o nível 3 (Component)?**
 - **Opções:** todos · só os de negócio · só o mais rico (provavelmente Incident, que tem o fluxo assíncrono).
 - **Para pensar:** um diagrama de componentes por container custa tempo e desatualiza-se. O Spring Modulith gera diagramas de componentes a partir do código; isso muda a resposta?
-- **Decisão:** ______
+- **Decisão:** **Todos os serviços.** A documentação de cada serviço (nível 3, nível 4, contratos) fica junto ao código, em `backend/<serviço>/docs/`. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **B5. Como fazemos o nível 4 (Code)?**
 - **Opções:** diagrama de classes do domínio de um componente (pode reaproveitar o [`domain-model.md`](domain-model.md)) · diagrama gerado pelo IDE (IntelliJ) · diagrama ER da base de dados de um serviço.
 - **Para pensar:** o C4 recomenda fazê-lo só para componentes importantes ou complexos e gerá-lo automaticamente. Qual é o componente que mais vale a pena explicar ao detalhe (a máquina de estados do `HelpRequest`? o motor de badges?)
-- **Decisão:** ______
+- **Decisão:** Mostra a **arquitetura hexagonal** dentro de cada serviço: `domain` (entidades e regras), `application` (casos de uso e portas de entrada e saída), `adapters/in` (REST gerado do OpenAPI, consumidores RabbitMQ), `adapters/out` (JPA, publicador do outbox, clientes HTTP externos). *(Bruno, 15/10, a validar pelo Tiago)*
 
 **B6. Que diagramas suplementares fazemos?**
 - **Opções:** deployment (Azure) · dynamic (triagem assíncrona; pedido de ajuda) · ambos.
 - **Para pensar:** o §7.1.2 pede *deployment view* e *asynchronous workflow*; os diagramas dinâmicos e de deployment do C4 cobrem os dois.
-- **Decisão:** ______
+- **Decisão:** **Vistas do 4+1, sem os cenários:** lógica (C4 níveis 1–3 e modelo de domínio), processos (diagramas dinâmicos: pedido de ajuda e triagem assíncrona), desenvolvimento (repositório, módulos Maven, pacotes hexagonais), física (deployment no Azure, depende de G1). Os cenários ficam de fora porque os workflows W1–W8 já os cobrem. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **B7. Onde ficam os ADRs e em que formato?**
 - **Opções:** `Docs/Technical/adr/NNNN-titulo.md` com o formato de Michael Nygard (Contexto, Decisão, Estado, Consequências) · formato MADR (inclui alternativas consideradas, que o §7.1.2 exige).
-- **Decisão:** ______
+- **Decisão:** `Docs/Technical/adr/NNNN-titulo.md`, formato **Michael Nygard** (Contexto, Decisão, Estado, Consequências), com uma secção **Alternativas consideradas**, que o §7.1.2 exige. *(Bruno, 15/10, a validar pelo Tiago)*
 
 ## C · Comunicação
 
@@ -297,65 +298,65 @@ Ordem sugerida: **A → B → G → H** primeiro (bloqueiam o walking skeleton),
 | **Event Hubs / Kafka** | Streaming de alto volume, replay | Excessivo para este volume |
 
 - **Para pensar:** precisamos de tópicos (vários consumidores do mesmo evento) ou chegam filas? Como corremos o broker localmente e nos testes (Testcontainers)?
-- **Decisão:** ______
+- **Decisão:** **RabbitMQ.** Gratuito; igual localmente, nos testes (Testcontainers) e na cloud; exchanges *topic* dão pub-sub e a DLQ faz-se com *dead-letter exchange*. Não tem o custo fixo mensal do Service Bus Standard. Onde corre no Azure: Tiago (G1). *(Bruno, 15/10, a validar pelo Tiago)*
 
 **C2. Como fala o código com o broker?**
 - **Opções:** Spring Cloud Stream (troca de broker só com configuração) · Spring Cloud Azure Service Bus · Spring AMQP · Spring Modulith *externalized events* (no monólito modular).
-- **Decisão:** ______
+- **Decisão:** **Spring AMQP**: a integração nativa do Spring com o RabbitMQ. O Spring Cloud Stream só compensaria se quiséssemos trocar de broker. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **C3. Como garantimos o outbox, a idempotência e a DLQ?**
 - **Opções para o outbox:** tabela outbox + publicador por polling (feito por nós) · Event Publication Registry do Spring Modulith · CDC com Debezium (excessivo).
 - **Para pensar:** onde fica guardado o "já processei esta mensagem"? Quantas tentativas antes da DLQ? Quem olha para a DLQ e como?
-- **Decisão:** ______
+- **Decisão:** **Tabela outbox** em cada serviço, publicada por um job de polling feito por nós. Consumidores idempotentes com uma tabela de mensagens processadas (`message_id`); depois de N tentativas a mensagem vai para a DLQ. N e backoff: J1 (Tiago). *(Bruno, 15/10, a validar pelo Tiago)*
 
 **C4. Os serviços chamam-se diretamente (síncrono) ou só por eventos?**
 - **Exemplo concreto:** o Incident precisa das equipas de resposta e dos pontos de interesse do Event.
 - **Opções:** chamada REST quando precisa (acoplamento temporal) · cópia local alimentada por eventos (*event-carried state transfer*; consistência eventual) · o cliente envia os IDs e ninguém valida (inseguro).
 - **Para pensar:** o que acontece a um pedido de ajuda se o Event estiver em baixo, em cada opção?
-- **Decisão:** ______
+- **Decisão:** **Só eventos.** Cada serviço guarda uma cópia local do que precisa de outro (ex.: o Reports guarda as equipas de resposta do Events; todos guardam os papéis por evento do Auth & Users). Se um serviço cair, os outros continuam; o custo é a consistência eventual. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **C5. Como é feito o push em tempo real** (lista do backoffice, estado do pedido, anúncios)?
 - **Opções:** WebSocket/STOMP no Spring · Server-Sent Events · Azure Web PubSub/SignalR · polling a cada N segundos.
 - **Para pensar:** funciona com 2+ réplicas do serviço? Passa pelo gateway e pelo ingress do ACA? O polling é suficiente para o MVP?
-- **Decisão:** ______
+- **Decisão:** **Sem réplicas** por agora (uma instância por serviço). A tecnologia de push: **Tiago** decide. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **C6. Há um API gateway? Qual?**
 - **Opções:** Spring Cloud Gateway num contentor · Azure API Management (Consumption) · só o ingress do ACA com rotas por app · nenhum (o frontend chama cada serviço diretamente).
 - **Para pensar:** onde fica o rate limiting dos pedidos de ajuda (abuso)? Onde fica o CORS? É mais um container a manter?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide. *(Bruno sem posição, 15/10)*
 
 **C7. Como documentamos e versionamos a API?** (entregável *API outline*, Sprint A; *API contracts*, Sprint B)
 - **Opções:** code-first com springdoc-openapi · contract-first (OpenAPI escrito à mão + geração de código) · versionamento no caminho (`/api/v1`) ou nenhum no MVP · testes de contrato sim/não.
-- **Decisão:** ______
+- **Decisão:** **Contract-first:** OpenAPI escrito à mão em `backend/<serviço>/contracts/openapi.yaml`; o `openapi-generator` gera as interfaces e DTOs Spring e o cliente do frontend. Caminhos com `/api/v1`. É a base do Spec-Driven Development ([`spec-driven-development.md`](../Process/spec-driven-development.md)). *(Bruno, 15/10, a validar pelo Tiago)*
 
 ## D · Dados (ADR-003)
 
 **D1. Que base de dados?**
 - **Opções:** **PostgreSQL** (Flexible Server) · Azure SQL · Cosmos DB.
 - **Para pensar:** o §6.4 pede **uma só tecnologia** salvo justificação. Precisamos de consultas geográficas (PostGIS) ou o mapa é uma imagem com coordenadas em píxeis (ADR-007)? Precisamos de Row-Level Security?
-- **Decisão:** ______
+- **Decisão:** **PostgreSQL.** Uma só tecnologia (§6.4); o mapa é uma imagem, por isso não é preciso PostGIS; tem Row-Level Security se um dia for preciso. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **D2. Como isolamos os dados por serviço/módulo?**
 - **Opções:** servidor por serviço (caro) · base de dados por serviço no mesmo servidor · schema por serviço com utilizador próprio · tabelas com prefixo (só monólito).
 - **Para pensar:** quanto custa um servidor PostgreSQL por mês no escalão mais baixo e quantos cabem no crédito?
-- **Decisão:** ______
+- **Decisão:** **Uma base de dados por serviço**, a que só esse serviço acede. Na fase de monólito (A4), um schema por módulo, que passa a base de dados no Sprint C. Quantos servidores: Tiago (G2). *(Bruno, 15/10, a validar pelo Tiago)*
 
 **D3. Como isolamos os dados por evento (tenant, driver D1)?**
 - **Opções:** `event_id` + filtro na aplicação · `event_id` + Row-Level Security · schema por evento.
 - **Para pensar:** que teste automático prova que um membro do evento X não vê dados do evento Y (exigido pelo relatório §5)?
-- **Decisão:** ______
+- **Decisão:** **`event_id` + filtro na aplicação** em todas as tabelas com dados de um evento. Cada serviço tem um teste de integração que prova que um membro do evento X não lê nem altera dados do evento Y. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **D4. Como aguentamos o pico de leituras (D2)?**
 - **Opções:** cache HTTP + CDN (Front Door ou o CDN do Static Web Apps para conteúdo estático) · Caffeine em memória · Redis · réplicas de leitura · só escala horizontal.
 - **Para pensar:** que dados são iguais para todos os participantes (cacheáveis) e quais são pessoais? Como mostras a "última atualização" (D4) com cache?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **D5. Retenção, backup e eliminação** (§6.4; privacidade)
 - **Para pensar:** durante quanto tempo guardamos a localização de um pedido de ajuda? Quem apaga e como (job agendado)? O backup automático do Flexible Server chega? Como funciona o "eliminar conta" (F2) com backups?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **D6. Migrações:** Flyway ou Liquibase? Correm no arranque da app ou num passo do pipeline?
-- **Decisão:** ______
+- **Decisão:** **Flyway**, a correr no arranque da aplicação. Regra: migrações compatíveis com a versão anterior (*expand and contract*), porque o rollback do código não as desfaz. *(Bruno, 15/10, a validar pelo Tiago)*
 
 ## E · Identidade e segurança (ADR-006)
 
@@ -367,33 +368,33 @@ Ordem sugerida: **A → B → G → H** primeiro (bloqueiam o walking skeleton),
 | **Keycloak** num contentor | Open source, completo, igual local e na cloud | Mais um container a operar (com base de dados) |
 | **Microsoft Entra External ID** | Gerido, nativo no Azure, escalão gratuito | Configuração mais burocrática; dependência do Azure; testar localmente é mais difícil |
 
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide. Nota: o A2 põe a authN e a authZ no serviço Auth & Users; o IdP tem de encaixar nisso.
 
 **E2. Onde se valida o token e onde se verifica o papel por evento?**
 - **Para pensar:** gateway, cada serviço, ou ambos? O papel por evento vai no token (fica desatualizado quando o papel muda) ou é consultado em cada pedido (mais lento; cache)? O `PlatformAdmin` é um papel global no token?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **E3. Como se autenticam os serviços entre si?**
 - **Opções:** só rede interna (ingress interno do ACA) · client credentials OAuth2 · managed identity · mTLS.
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **E4. Onde ficam os segredos** (password da base de dados, chave da API de IA, connection string do broker)?
 - **Opções:** Key Vault + managed identity · segredos do ACA · GitHub Secrets injetados no deploy · managed identity em todo o lado (sem passwords, onde o serviço o suporta).
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 ## F · Frontend
 
 **F1. Uma ou duas aplicações React** (participante e backoffice)?
 - **Opções:** uma app com rotas e permissões · duas apps no mesmo repositório (monorepo com workspaces) · duas apps separadas.
 - **Para pensar:** o participante é mobile-first e PWA; o backoffice é desktop. Partilham componentes (mapa)? No C4, são um ou dois containers?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **F2. Onde fica alojado o frontend e como chega a configuração?**
 - **Opções:** Static Web Apps · Blob static website + CDN · contentor nginx no ACA. Configuração no build ou em runtime (§1.8).
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **F3. Biblioteca do mapa do recinto** (ADR-007): Leaflet `CRS.Simple` · SVG próprio · outra.
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 ## G · Azure e deploy (responsável: Tiago)
 
@@ -408,47 +409,47 @@ Ordem sugerida: **A → B → G → H** primeiro (bloqueiam o walking skeleton),
 | **Container Instances** | Não | Por segundo de execução | Manual | Sem ingress/escala integrados |
 
 - **Para pensar:** o §8.4 encoraja orquestração "quando justificada". Com Kubernetes fraco, o ACA dá orquestração sem esse custo de aprendizagem; o AKS pode ser uma justificação de evolução futura no roadmap.
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **G2. Como cabe tudo em US$100 por ano?**
 - **Para pensar:** faz uma estimativa por serviço (base de dados, broker, registry, compute, logs). O que está ligado 24/7 e o que pode ser desligado fora das demos? Configuramos **alertas de orçamento** (Cost Management → Budgets)? O que acontece se o crédito acabar antes da avaliação final (janeiro 2027)? Quem é dono da subscrição e como entram os outros (RBAC)?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **G3. Que região?**
 - **Para pensar:** dados pessoais e potencialmente de saúde → região na UE (RGPD). Que regiões permite a política da subscrição de estudante? Todos os serviços escolhidos existem nessa região?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **G4. Quantos ambientes?**
 - **Opções:** só produção · `dev` + `prod` · ambientes de preview por PR (o Static Web Apps faz isto no frontend).
 - **Para pensar:** cada ambiente multiplica o custo. Onde testamos antes de mostrar ao professor?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **G5. Infraestrutura por código ou à mão?**
 - **Opções:** Bicep · Terraform · `azd` · portal com instruções escritas.
 - **Para pensar:** o §8.4 pede builds reproduzíveis e instruções de deploy; o §12 pede que os professores consigam fazer deploy. Conseguimos recriar tudo do zero com um comando?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **G6. Como corre tudo localmente?**
 - **Para pensar:** um `docker compose up` arranca toda a solução (PostgreSQL, broker ou emulador do Service Bus, Azurite, serviços, frontend)? É o mesmo que os professores usam se o Azure não estiver disponível?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **G7. Como fazemos rollback e recuperação?** (§8.4)
 - **Opções:** revisões do ACA (reativar a anterior) · redeploy da imagem com o SHA anterior · restauro *point-in-time* da base de dados.
 - **Para pensar:** e se a nova versão incluir uma migração da base de dados?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 ## H · Pipeline de CI/CD (responsável a definir: DevOps lead)
 
 **H1. Que ferramenta?** GitHub Actions (o código já está no GitHub) · Azure DevOps Pipelines.
-- **Decisão:** ______
+- **Decisão:** **GitHub Actions** (o código já está no GitHub). *(Bruno, 15/10, a validar pelo Tiago)*
 
 **H2. Como organizamos o repositório?**
 - **Opções:** monorepo atual (`backend/<serviço>`, `frontend/`, `infra/`, `Docs/`) com path filters · um repositório por serviço.
 - **Para pensar:** com microserviços, cada serviço tem o seu workflow e é publicado independentemente (isso é parte da prova do §6.2).
-- **Decisão:** ______
+- **Decisão:** **Monorepo atual:** `backend/<serviço>/`, `frontend/`, `infra/`, `Docs/`. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **H3. Build:** Maven ou Gradle? Que versões de Java e Spring Boot (§1.7)? Imagem por Dockerfile multi-stage, Buildpacks ou Jib?
-- **Decisão:** ______
+- **Decisão:** **Maven**, **Java 21 (LTS)**, **Spring Boot 4.x** (última versão estável quando criarmos o projeto); imagens com **Dockerfile multi-stage** (JDK para compilar, só JRE na imagem final). *(Bruno, 15/10, a validar pelo Tiago)*
 
 **H4. O que corre em cada momento?** Preencher:
 
@@ -468,52 +469,52 @@ Ordem sugerida: **A → B → G → H** primeiro (bloqueiam o walking skeleton),
 | Smoke test pós-deploy (`/actuator/health`) | | | |
 
 - **Para pensar:** o §8.5 pede feedback "rápido e visível". Quanto tempo pode demorar o pipeline de um PR? O que é *required check* para o merge?
-- **Decisão:** ______
+- **Decisão:** **Corre tudo, sempre:** todas as verificações da tabela correm em cada PR, no merge e nas tags, para todos os serviços (sem path filters). A imagem é publicada e o deploy em produção é feito no merge para `main` (H5), seguido do smoke test. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **H5. Deploy contínuo ou com aprovação?**
 - **Opções:** cada merge vai para produção (continuous deployment) · cada merge vai para `dev`, produção com aprovação manual num *environment* (continuous delivery) · produção só em releases com tag.
-- **Decisão:** ______
+- **Decisão:** **Continuous deployment por agora:** cada merge em `main` vai para produção. *(Bruno, 15/10, a validar pelo Tiago)*
 
 **H6. Como se autentica o pipeline no Azure?** OIDC (federated credentials) ou service principal com segredo.
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **H7. Como versionamos e etiquetamos?** SHA do commit nas imagens; versão semântica nas releases (o §12 pede uma *release version*); changelog gerado ou manual.
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **H8. O repositório é público?** Muda o que é gratuito (CodeQL, SonarQube Cloud, GHCR, minutos de Actions).
-- **Decisão:** ______
+- **Decisão:** **Não**, o repositório fica privado. *(Bruno, 15/10, a validar pelo Tiago)*
 
 ## I · Observabilidade (§6.7)
 
 **I1. Que stack?**
 - **Opções:** Application Insights + Log Analytics (agente Java OTel) · Prometheus + Grafana + Loki em contentores · Azure Managed Grafana sobre Azure Monitor.
 - **Para pensar:** custo de ingestão de logs; o trace atravessa as mensagens do broker (correlation ID no §6.3 do `architecture.md`)?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **I2. Que SLIs e SLOs?**
 - **Candidatos:** tempo até à sugestão de triagem (≤ 30 s), taxa de pedidos de ajuda aceites, latência p95 das leituras do participante, idade dos dados de transporte, mensagens na DLQ.
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **I3. Que dashboard e que alertas?** Azure Workbook / Dashboard ou Grafana; alertas por email quando um SLO falha?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 ## J · Resiliência e degradação (§6.8)
 
 **J1. Que padrões em cada chamada externa** (IA, transportes)? Timeout, retry com backoff, circuit breaker (Resilience4j); valores concretos.
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **J2. Como demonstramos os modos degradados D1 e D2 na apresentação?**
 - **Opções:** *feature flag* / variável que desliga a integração · parar o contentor ou réplica · simulador que devolve erros ou atrasos (*fault injection*).
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 **J3. Como escalamos para o pico?** Mínimo e máximo de réplicas por serviço; escala até zero aceitável em que serviços (cold start)? Como provamos com um teste de carga (k6, JMeter, Azure Load Testing) para o *performance evidence* do Sprint C?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 ## K · IA (ADR-005)
 
 **K1. Que fornecedor e modelo?** Azure OpenAI/Foundry (confirmar acesso na subscrição de estudante) · API OpenAI ou outra · modelo local (Ollama) num contentor.
 - **Para pensar:** que dados do pedido de ajuda saem para o fornecedor (privacidade, região)? Quanto custa por pedido? Spring AI permite mudar de fornecedor por configuração?
-- **Decisão:** ______
+- **Decisão:** **Tiago** decide.
 
 ---
 
