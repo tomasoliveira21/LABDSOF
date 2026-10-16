@@ -2,6 +2,24 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-16 · Resilience, degraded modes and load testing (#43)
+
+**Why:** Tiago's investigation of area J (resilience and degradation) and of the retry values left open in C3. It meets assignment §6.8 and prepares the Sprint C performance evidence and degraded-mode demonstration (§7.3.2, items 7 and 8).
+
+### Decided
+- **J1:** **Resilience4j 2.4** (`resilience4j-spring-boot4`) in the outgoing adapters; timeout, retry and circuit-breaker values for the AI provider, the transport source and the identity provider (if external).
+- **C3:** 4 attempts in the consumer with backoff 1 s → 2 s → 4 s, then one DLQ per queue; DLQ messages are alerted on, never reprocessed automatically, and moved back by hand once the cause is fixed. An AI failure is a fallback, not a message failure.
+- **J2:** D1 and D2 are triggered in the demo by an admin-only fault switch (`DOWN`, `SLOW`, `INVALID`), off in production; tested on every PR with WireMock (SC5, US-15); freshness limit of **24 h** for a static timetable confirmed, **5 min** for live bus positions. Step-by-step demo script.
+- **J3:** design peak of ≈ 1,300 read requests/s for 10 min plus 1 help request/s, with its sources and assumptions; scaling order under one instance per service (Events scaled out first when C5 changes); load test with **k6**, scenarios L1–L5 and their pass criteria.
+
+### Changed
+- `architecture-decisions-guide.md`: C3 and J1–J3 marked ✅, with a table of values per external call.
+- `architecture.md`: §6 retries, dead letters and outbox publisher; §9.1–9.3 (patterns and values, how D1 and D2 are triggered, observed and tested, demo script); §10.1 (peak load, scaling, load test); resilience and load testing in the technology table.
+- `features.md` §3.1: D1 and D2 detection, recovery, demo and test updated; D2 dependency follows the pending transport source.
+
+### To confirm
+- AI timeouts with K1 (Tomás), identity provider values with E1 (Guerra), demo and load-test environment with G1 and G4 (Tomás), transport values with the professor's answer on the source; the busiest-night figure with the organisers.
+
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 
 ### Changed

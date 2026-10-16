@@ -70,27 +70,27 @@ Two scenarios, no more. Both are demoed by switching off one dependency while th
 | | |
 |---|---|
 | **Dependency** | AI model provider used by the triage worker (F8) |
-| **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout, a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker) |
-| **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down, a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
+| **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout (10 s per attempt, 2 attempts), a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker: at least half of the last 10 calls failed or were slow, minimum 4 calls). Values: [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1) |
+| **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down (circuit breaker open), a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
 | **What the operator does** | Sets the priority and response team by hand. Nothing else changes in F7 |
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
-| **When the AI comes back** | Requests the operator has not touched may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
-| **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and counted as a metric (fallback rate) |
-| **How it is demoed** | Stop the triage worker, or point it at an invalid provider key, and submit a help request |
-| **Test** | SC5: 100 % of requests are shown to the operator with the AI off |
+| **When the AI comes back** | The banner disappears after the first successful call. Requests from the last 15 min that the operator has not touched are sent to triage once more and may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
+| **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard |
+| **How it is demoed** | An admin sets the AI **fault switch** to `DOWN` (or `SLOW`, `INVALID`) in the demo environment and a participant submits help requests. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
+| **Test** | SC5: 100 % of requests are shown to the operator with the AI off. Reports integration test on every PR, with WireMock in place of the provider (delay over the timeout, 503, dropped connection, invalid body); also under load in Sprint C (scenario L5) |
 
 #### D2 · Transport source unavailable
 
 | | |
 |---|---|
-| **Dependency** | STCP GTFS feed (or the weather API, if plan B is used) |
-| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit **[PROPOSED: 24 h for the static timetable]** |
+| **Dependency** | Transport source **[PENDING, professor]**: Porto Digital FIWARE (live bus positions) or STCP GTFS (static timetable) |
+| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit: **24 h for a static timetable (GTFS), confirmed 16 October 2026**; **5 min for live bus positions (FIWARE)**, whose older observations are dropped on import |
 | **What the participant sees** | The **last valid data**, with *"Data from HH:MM"* and a warning *"Live transport information unavailable"*, plus a link to the operator's website. **Event shuttles and temporary stops entered by the team are not affected**: they are internal data |
 | **What the team sees** | A warning in the backoffice that the transport source is down, with the time of the last successful import |
 | **Invalid data** | Never replaces valid data: the import is rejected as a whole and the previous version stays in use |
-| **Recovery** | Import retried with backoff; the warning disappears after the first valid import |
-| **How it is demoed** | Point the feed URL at an unreachable address (or upload a broken file) and open the transport screen |
-| **Test** | Automated test with the source stopped: the last data and the warning are shown (US-15) |
+| **Recovery** | Import retried with backoff (3 attempts, 1 s and 2 s apart; after repeated failures the circuit breaker waits 60 s before trying again); the warning disappears after the first valid import |
+| **How it is demoed** | An admin sets the transport **fault switch** to `DOWN`, then `INVALID`, and the participant opens the transport screen. Script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
+| **Test** | US-15: Transports integration test on every PR, with WireMock in place of the source (503, timeout, invalid payload) and a fixed clock past the freshness limit: the last valid data, its time and the stale flag are returned, shuttles still shown, invalid data never stored |
 
 ## 4. Response teams (decided, 9 October 2026)
 

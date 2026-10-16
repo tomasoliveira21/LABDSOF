@@ -56,7 +56,7 @@
 |---|---|---|
 | C1 | **RabbitMQ**: gratuito; igual localmente, nos testes (Testcontainers) e na cloud; exchanges *topic* para pub-sub; DLQ com *dead-letter exchange*. Onde corre na cloud: depende da plataforma | ✅ (alojamento: 🔍 Tomás) |
 | C2 | **Spring AMQP** | ✅ |
-| C3 | **Tabela outbox** em cada serviço, publicada por um job de polling nosso. Consumidores idempotentes com tabela de mensagens processadas (`message_id`); após N tentativas, DLQ | ✅ (N e backoff: 🔍 Tiago) |
+| C3 | **Tabela outbox** em cada serviço, publicada por um job de polling nosso. Consumidores idempotentes com tabela de mensagens processadas (`message_id`); após N tentativas, DLQ. **N e backoff:** **4 tentativas** no consumidor (`spring.rabbitmq.listener.simple.retry.max-retries=3`), com backoff exponencial **1 s → 2 s → 4 s** (máximo 10 s): cerca de 7 s até à DLQ. Mensagens que não se convertem ou não passam a validação vão logo para a DLQ. Uma DLQ por fila (`<fila>.dlq`), com o motivo nos cabeçalhos (`RepublishMessageRecoverer`). **Mensagens na DLQ:** nunca se perdem nem se reprocessam sozinhas; há um alerta quando a DLQ não está vazia; corrigida a causa, são devolvidas à mão à fila original (seguro, porque os consumidores são idempotentes); as que nunca serão válidas ficam registadas e são apagadas. Uma falha da IA **não** é uma falha da mensagem: o worker regista o fallback (D1) e confirma a mensagem. Uma mensagem na DLQ nunca esconde um pedido de ajuda ao operador. Detalhe em [`architecture.md`](architecture.md) §6 | ✅ |
 | C4 | **Só eventos entre serviços.** Cada serviço guarda uma cópia local do que precisa de outro (ex.: o Reports guarda as equipas de resposta do Events). Custo aceite: consistência eventual | ✅ |
 | C5 | **Polling** chega para o MVP (lista do backoffice, estado do pedido, anúncios). Uma instância por serviço por agora | ✅ |
 | C6 | API gateway (e onde ficam rate limiting e CORS) | 🔍 Guerra |
@@ -132,11 +132,19 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 
 ## J · Resiliência e degradação (§6.8)
 
-| # | Pergunta | Estado |
+| # | Decisão | Estado |
 |---|---|---|
-| J1 | Padrões e valores em cada chamada externa (timeout, retry, circuit breaker); N tentativas e backoff do C3 | 🔍 Tiago |
-| J2 | Como demonstramos os modos degradados D1 (IA) e D2 (transportes) | 🔍 Tiago |
-| J3 | Escala para o pico e teste de carga (*performance evidence*, Sprint C). Tem em conta que o C5 fixa uma instância por serviço por agora | 🔍 Tiago |
+| J1 | **Resilience4j 2.4** (`resilience4j-spring-boot4`, com suporte para Spring Boot 4 desde março de 2026), usado só nos adaptadores de saída (`adapters/out`). Porquê: é a única opção madura com circuit breaker para Spring Boot 4, configura-se no `application.yml` e publica métricas Micrometer e o estado no health check. Alternativas postas de parte: o retry do Spring Framework 7 (não tem circuit breaker; é o que o Spring AMQP usa no C3), Spring Cloud Circuit Breaker (mais uma camada por cima do Resilience4j) e Failsafe (sem configuração automática no Spring Boot). Os timeouts ficam no cliente HTTP (`RestClient`); o retry envolve o circuit breaker, por isso cada tentativa conta para o circuito. Valores na tabela abaixo | ✅ (valores da IA: a confirmar com K1; IdP: com E1) |
+| J2 | **D1 e D2 demonstram-se com um interruptor de falhas** nos adaptadores de saída da IA e da fonte de transportes, com os modos `DOWN` (falha de ligação), `SLOW` (passa o timeout) e `INVALID` (resposta inválida). Só existe com `farol.fault-injection.enabled=true` (ligado só no ambiente da demo, nunca em produção) e só um admin o aciona. **Testes automáticos** em todas as PRs, com WireMock no lugar do sistema externo: SC5 (D1) e US-15 (D2). **O que mostra que funcionou:** etiqueta *"Not triaged"* e banner (D1); *"Data from HH:MM"* e aviso, com os shuttles visíveis (D2); estado do circuit breaker, contador de fallbacks e idade dos dados no dashboard; logs com o motivo e o *correlation id*. **Frescura (D2): 24 h confirmadas** para horários estáticos (GTFS); **5 min** para posições de autocarros em tempo real (FIWARE). Guião passo a passo em [`architecture.md`](architecture.md) §9 | ✅ (fonte de transportes: ⏳ professor; ambiente da demo: 🔍 Tomás, G4) |
+| J3 | **Pico esperado: ~1 300 pedidos de leitura/s durante 10 min** no fim do último concerto (12 000 apps abertas a fazer polling de 10 em 10 s), mais **1 pedido de ajuda/s**; cálculo e fontes em [`architecture.md`](architecture.md) §10. **Com uma instância por serviço (C5):** (1) menos trabalho por pedido: pedidos condicionais (ETag a partir da hora da última atualização → 304), imagem do mapa com URL versionado e cache longa, polling com *jitter* e só com a app em primeiro plano; (2) isolamento: os pedidos de ajuda ficam no Reports, longe do pico de leituras (Events e Transports); (3) escala vertical. **O primeiro serviço a ter mais instâncias**, quando o C5 mudar, é o **Events** (o mais lido), depois o Transports; antes disso, o job do outbox e as importações têm de correr numa só instância (`FOR UPDATE SKIP LOCKED` ou ShedLock). **Teste de carga com k6** (em vez de Gatling ou JMeter): 4 cenários (smoke, pico do fim do concerto, pedidos de ajuda durante o pico, stress até ao limite), com os critérios de aprovação como *thresholds*; corre à mão (`workflow_dispatch`) contra o ambiente de deploy no Sprint C, com a IA substituída por um stub | ✅ (ambiente do teste: 🔍 Tomás, G1) |
+
+**Valores do J1 por chamada externa:**
+
+| Chamada externa | Timeout | Retry | Circuit breaker | Quando falha |
+|---|---|---|---|---|
+| **Fornecedor de IA** (Reports, worker de triagem) | ligação 2 s, resposta 10 s | 2 tentativas, espera de 2 s; só em timeout, erro de ligação, 5xx e 429; nunca em 4xx nem em resposta inválida | últimas 10 chamadas, mínimo 4; abre com ≥ 50 % de falhas ou de chamadas lentas (> 8 s); 30 s aberto; 1 chamada de teste | Fallback D1. Pior caso ≈ 22 s, dentro dos 30 s do SC3. **A confirmar com K1:** um modelo local (Ollama em CPU) pode precisar de resposta 20 s e de 1 só tentativa |
+| **Fonte de transportes** (Transports, importação agendada) | ligação 3 s, resposta 5 s | 3 tentativas, esperas de 1 s e 2 s; não repete com o circuito aberto | últimas 6 chamadas, mínimo 3; abre com ≥ 50 % de falhas; 60 s aberto; 1 chamada de teste | D2. FIWARE: importação a cada 30 s (medido a 16/10: 1000 autocarros, 300 KB em 0,7 s). **A confirmar com a resposta do professor:** com GTFS, importação diária e resposta 30 s |
+| **IdP**, se for externo (chaves JWKS, em todos os serviços) | ligação 2 s, resposta 3 s | não | não | Chaves em cache (5 min, renovadas quando chega um `kid` desconhecido); se a renovação falha, continua com as chaves em cache. **A confirmar com E1** (com autenticação simulada não há chamada externa) |
 
 ## K · IA (ADR-005)
 
@@ -156,7 +164,7 @@ Email enviado a 15/10/2026 com duas perguntas:
 
 1. **Resposta do professor:** fechar A4 e a fonte de transportes (A2, B2) e atualizar este documento, o [`architecture.md`](architecture.md) e os ADR-001 e ADR-008.
 2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Fica para uma fase futura, ainda sem responsável.
-3. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E), Tomás + Guerra (modelo de domínio, incluindo o P4), Tiago (J, F3 e backlog), Bruno (C8, D7, F4, H6, H7, H9).
+3. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E), Tomás + Guerra (modelo de domínio, incluindo o P4), Tiago (F3 e backlog; J fechado a 16/10), Bruno (C8, D7, F4, H6, H7, H9).
 4. **Bruno:** diagramas C4 e 4+1 em draw.io a partir das decisões ✅.
 5. **Bruno: escrever os ADRs** já prontos (lista no [`architecture.md`](architecture.md) §13): ADR-002 (tecnologias), ADR-003 (dados), ADR-004 (comunicação) e ADR-009 (documentação). Os restantes escrevem-se quando a área fechar.
 6. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar (última atualização: 15/10).
