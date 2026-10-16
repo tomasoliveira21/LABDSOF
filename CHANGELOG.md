@@ -2,6 +2,38 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-15 · Architecture decisions confirmed by the team (#35)
+
+**Why:** the team meeting of 15 October confirmed the proposals below and split the remaining investigations. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions, 15 October 2026, team meeting*).
+
+### Decided
+- Proposals of areas A, B, C, D and H are team decisions, except **A4** (evolution between sprints) and the **transport data source**, which wait for the professor.
+- Diagrams in **draw.io**; **polling** for the MVP; cache, retention and backup are **future improvements**.
+- Frontend: **React web app** for event management only, **React Native mobile app** for the rest.
+- Deployment platform **reopened** (Azure, ECS or Vercel; Tomás investigates).
+
+### Changed
+- `architecture-decisions-guide.md`: rewritten as **Decisões Arquiteturais**: background, options and practice questions removed; only decisions, their status and owners; decisions credited to the team; *Próximos passos* added.
+- `README.md`: index entry updated; issue title format `[<Type>] <Title>` (§1), also in `team-and-process.md` §4.
+- `architecture.md`: rewritten to match the team decisions: five services, React web + React Native mobile, RabbitMQ with outbox, events only between services, polling, PostgreSQL per service, style and evolution (§11), technology table and ADR list with status. Open items marked **[PENDING]** with their owner.
+- Owners assigned to the open items (gateway, Security & Privacy assessment, map library, mobile setup, account deletion, API outline, Responsible AI). Walking skeleton moved to a later phase (no owner yet); Bruno writes the ADRs that are ready (002, 003, 004, 009).
+
+## [Unreleased] · 2026-10-15 · Architecture decisions proposed and SDD rules (Bruno Lopes)
+
+**Why:** the architecture questions in the decisions guide blocked the walking skeleton. Bruno answered areas A, B, C, D and H; Tiago validates them and decides the rest. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up, 15 October 2026*).
+
+### Proposed (to validate with Tiago)
+- Microservices as the final state (Auth & Users, Events, Reports, Transports, Badges), built as a modular monolith in Sprints A–B and split in Sprint C.
+- RabbitMQ with Spring AMQP, outbox table, events only between services, contract-first OpenAPI; PostgreSQL with one database per service, `event_id` filtering, Flyway.
+- GitHub Actions in the current monorepo, Maven, Java 21, Spring Boot 4.x, multi-stage Dockerfiles, continuous deployment.
+
+### Added
+- `Docs/Process/spec-driven-development.md`: Spec-Driven Development rules and spec template (proposed).
+
+### Changed
+- `architecture-decisions-guide.md`: **Decisão** lines filled; items left to Tiago marked.
+- `README.md`: SDD rules added to the documentation index.
+
 ## [Unreleased] · 2026-10-15 · Consolidated domain model and Porto Digital bus source
 
 **Why:** consolidate current product decisions, consider the architecture-decisions-guide branch without merging it, and represent the project owner's selected bus-context API.
@@ -62,6 +94,22 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `team-and-process.md`: language decision recorded; process health check updated (merge commits up to PR #30, the `feat/` branch, the new check and issue forms).
 - `definition-of-ready-and-done.md`: the "Open items" gap is replaced by *In the tool*, which says where each rule lives and what is left to set up on the board.
 
+## [Unreleased] · 2026-10-11 · Technology decisions and architecture decisions guide (Bruno Lopes)
+
+**Why:** the team chose the main technologies, so the next step is preparing the high-level architecture and its ADRs. Decisions listed in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions, 11 October 2026*).
+
+### Decided
+- Backend **Spring Boot**, frontend **React**, deployment on **Azure** (Azure for Students; Azure details owned by Tiago).
+- Architectural style: **microservices or modular monolith**, chosen after a documented evaluation (ADR-001); a monolith without enforced boundaries is ruled out.
+- Architecture views follow the **C4 model**, all four levels. A full **CI/CD** pipeline is in scope.
+
+### Added
+- `Docs/Technical/architecture-decisions-guide.md` (Portuguese, working document): background (C4, microservices vs modular monolith, messaging, data, Kubernetes and Azure Container Apps, Azure for Students, Spring, React, CI/CD, observability, identity), open questions with options per area (A–K), and practice questions for the individual evaluation (assignment §10).
+
+### Changed
+- `architecture.md`: status line, §10 (deployment target gap closed), §11 and §12 updated with the decisions above.
+- `README.md`: guide added to the documentation index.
+
 ## [Unreleased] · 2026-10-11 · User workflows slide (António Guerra)
 
 **Why:** the workflows owner prepared the topic's slide for the presentation of 12 October 2026 (presentation plan, meeting §9). The talk lasts at most **6 minutes**, and the deck already takes about 3 min 05 s by its speaker-note timings, before the problem-and-vision slide is added. So the topic gets **one slide of about 60 s**.
@@ -74,6 +122,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Not changed on purpose
 - `user-workflows.md`: the journeys on the slide (W2, W3, W7) are already described there.
+
 
 ## [Unreleased] · 2026-10-10 · Personas slide and platform admin (Tiago Teixeira, #26)
 

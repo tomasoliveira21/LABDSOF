@@ -51,6 +51,18 @@
 | Presentation | Personas slide added after the cover (one slide, P1–P4 + how each is validated; speaker notes in Portuguese). Presented as **proto-personas**, since the survey and interviews have no results yet | `Docs/Presentation/Farol_First_Presentation.pptx` |
 | Platform admin **[PROPOSED, to confirm with the group]** | New persona **P4 · Daniel**, from the Farol team: creates events for verified organisations, names their Owner, transfers it and suspends events; never sees event data. Proposed: only the platform admin creates events in the MVP (PE-5) | `personas.md`, `features.md` F3/F4 + US-25, `user-workflows.md` W4, `product-vision.md` §3; list in `CHANGELOG.md` |
 
+### Follow-up decisions (11 October 2026, team)
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Backend | **Spring Boot** (Java) | `architecture.md` §12 |
+| Frontend | **React** | `architecture.md` §12 |
+| Deployment target | **Microsoft Azure**, on an **Azure for Students** subscription. Azure services and budget still open; **Tiago** looks into them | `architecture.md` §10, §12 |
+| Architectural style | **Microservices or modular monolith**, chosen after a documented evaluation of both (ADR-001). A monolith without enforced module boundaries is ruled out | `architecture.md` §11 |
+| Architecture views | **C4 model**, all four levels (context, container, component, code) | `architecture-decisions-guide.md` §B |
+| CI/CD | Full pipeline (build, tests, analysis, images, deployment) in scope; tool and stages still open | `architecture-decisions-guide.md` §H |
+| Working document | Open architecture questions, options and background in `architecture-decisions-guide.md` (Portuguese, study document) | `README.md` |
+
 ### Follow-up (11 October 2026, workflows owner)
 
 | Topic | Decision | Applied in |
@@ -66,6 +78,37 @@
 | DoR / DoD in the tool | Issue forms (user story, task) and the PR template; board columns *Ready* and *Done* linked to the rules | `definition-of-ready-and-done.md` |
 | Process drift | A **Conventions** check on every PR (branch name, PR title, linked issue) | `.github/workflows/conventions.yml` |
 | Status slide | One slide with green/yellow/red for DoR/DoD, roles and process, domain model and architecture, at the end of the deck | `Farol_First_Presentation.pptx` |
+
+### Follow-up (15 October 2026, Bruno) **[PROPOSED, to validate with Tiago]**
+
+Answers to [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md) areas A, B, C, D and H. Tiago validates them and decides the items left to him (E, F, G, I, J, K, C5 push, C6, D4, D5, H6, H7).
+
+| Topic | Proposal | Applied in |
+|---|---|---|
+| Style (A1, A4) | **Microservices** as the final state; **modular monolith in Sprints A–B**, split into services in Sprint C | guide §A |
+| Services (A2) | **Auth & Users** · **Events** · **Reports** (community reports **and** help requests, backoffice, AI triage) · **Transports** · **Badges** | guide §A |
+| Boundaries (A3) | One Maven project per service in `backend/<service>/`, same repository; ArchUnit test during the monolith phase | guide §A |
+| Documentation (B) | Mermaid C4, later C4-PlantUML in Visual Paradigm; level 3 for every service, docs next to each service; level 4 shows the hexagonal layout; 4+1 views without scenarios; ADRs in Nygard format plus *Alternatives considered* | guide §B |
+| Communication (C) | RabbitMQ + Spring AMQP; own outbox table; events only between services; no replicas for now; contract-first OpenAPI with code generation | guide §C |
+| Data (D) | PostgreSQL; one database per service; `event_id` + application filter; Flyway at startup | guide §D |
+| CI/CD (H) | GitHub Actions; current monorepo; Maven, Java 21, Spring Boot 4.x, multi-stage Dockerfiles; every check on every run; continuous deployment for now; repository stays private | guide §H |
+| Process | **Spec-Driven Development** rules | `spec-driven-development.md` |
+
+### Follow-up decisions (15 October 2026, team meeting)
+
+The proposals above are **team decisions**, except A4 (architecture evolution) and the transport data source, which wait for the professor's answer (email sent 15 Oct: Porto Digital FIWARE NGSI v2 bus API as the external integration; progressive vs up-front architecture). Full record: [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md).
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Diagrams | **draw.io** with the draw.io MCP (replaces Mermaid C4 / C4-PlantUML) | guide §B |
+| Real-time push | **Polling** is enough for the MVP | guide §C |
+| Cache, retention, backup | **Future improvements**, out of the MVP | guide §D |
+| Frontend | **Simple React web app** for event management; **React Native mobile app** for everything else | guide §0, §F |
+| Deployment platform | **Reopened:** Azure, ECS or Vercel | guide §G |
+| Investigations | **Tomás:** deployment, AI (Ollama deployment?), observability · **Guerra:** identity and security · **Tomás + Guerra:** domain model · **Tiago:** resilience and degradation, starts the backlog · **Bruno:** diagrams, then the CI/CD pipeline | guide (top) |
+| More owners | **Guerra:** API gateway, Security & Privacy assessment · **Tiago:** venue-map library in React Native · **Bruno:** React Native setup and mobile distribution, account deletion, API outline and event catalogue · **Tomás:** Responsible AI assessment and triage evaluation dataset · **Tomás + Guerra:** platform admin (P4), closed in the domain model | guide (top) |
+| Deployment and scaling | The deployment platform is decided after Tomás's investigation; Tiago takes the "one instance per service" decision into account for scaling | guide §G, §J |
+| Next steps | **Walking skeleton** (deliverable 10): later phase, no owner yet · **Bruno** writes ADR-002, 003, 004 and 009 | guide §Próximos passos |
 
 ## Status at a glance
 
