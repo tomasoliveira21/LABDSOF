@@ -10,8 +10,9 @@ Multi-event coordination platform for large academic festivals (pilot case: Quei
 | Market | [Market and Competitor Analysis](Deliverables/market-and-competitor-analysis.md) · [Product-specific annex](Deliverables/market-and-competitor-analysis-product-specific.md) | EN |
 | Research | [Student survey (Google Forms script)](Research/inquerito-estudantes-google-forms.gs) | EN (questions in PT) |
 | Product | [Product Vision](Product/product-vision.md) · [Personas](Product/personas.md) · [Main Features and Backlog](Product/features.md) · [User Workflows](Product/user-workflows.md) | EN |
-| Process | [Team Roles and Work Process](Process/team-and-process.md) · [Definition of Ready and Done](Process/definition-of-ready-and-done.md) | EN |
+| Process | [Team Roles and Work Process](Process/team-and-process.md) · [Definition of Ready and Done](Process/definition-of-ready-and-done.md) · [Spec-Driven Development rules](Process/spec-driven-development.md) (proposed) | EN |
 | Technical | [Domain Model](Technical/domain-model.md) · [High-Level Architecture](Technical/architecture.md) | EN |
+| Technical (working document) | [Architecture decisions](Technical/architecture-decisions-guide.md): every architecture decision taken by the team, its status and owner, and next steps | PT |
 | Meetings | [2026-10-08 Sprint A gap review and decisions](Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Meetings/2026-10-12-sprint-1-presentation-feedback.md) | EN |
 | History | [CHANGELOG](../CHANGELOG.md) | EN |
 
@@ -23,7 +24,7 @@ These conventions keep the repository history clear and consistent, and make it 
 
 The team uses **GitHub Flow**.
 
-1. Every piece of work starts from a **GitHub Issue** (`#<number>`).
+1. Every piece of work starts from a **GitHub Issue** (`#<number>`). Issue title: `[<Type>] <Title>`, e.g. `[Documentation] Architecture decisions`. Types: `[Documentation]`, `[Back Office]`, `[Front Office]`, `[Technicians]`.
 2. Create a short-lived branch from `main`.
 3. Commit following the conventions below.
 4. Open a pull request to `main`.

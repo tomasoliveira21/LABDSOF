@@ -33,6 +33,7 @@ Defined in the README; summarised here for the presentation.
 | Area | Convention | Source |
 |---|---|---|
 | Workflow | **GitHub Flow**: every piece of work starts from an issue; short-lived branch from `main`; PR to `main`; squash merge; branch deleted. `main` is always deployable, no direct pushes | README §1 |
+| Issues | Title `[<Type>] <Title>`, e.g. `[Documentation] Architecture decisions`. Types: `[Documentation]`, `[Back Office]`, `[Front Office]`, `[Technicians]` | README §1 |
 | Branches | `<prefix>/<short-description>`, prefixes `feature/`, `bugfix/`, `refactor/`, `test/`, `docs/`, `ci/`, `chore/` | README §2 |
 | Commits | `<prefix> (#<issue>): <Title>`, title ≤ 50 characters, imperative mood | README §3 |
 | Pull requests | Title `<Prefix>: <Description>`; description with `Closes #<issue>`, summary and how it was tested. **Every PR has an issue** | README §4 |
