@@ -42,7 +42,7 @@
 | External integration | **STCP GTFS** (being validated); weather API only as plan B | `features.md` §3 |
 | Backlog | User stories rewritten (US-01 to US-23), to validate, then loaded into GitHub Projects | `features.md` §7 |
 | Presentation | Bruno opens with a cover slide (name + team); Tomás presents slide 1 (problem and vision). Main-features slides: `Docs/Presentation/Farol_First_Presentation.pptx` (speaker notes in Portuguese) | §9 |
-| Project context file | Dropped; references removed. The README is the documentation index | `README.md`, `CLAUDE.md` |
+| Project context file | Dropped; references removed. The README is the documentation index | `Docs/README.md`, `CLAUDE.md` |
 
 ### Follow-up (10 October 2026, personas owner)
 
@@ -61,7 +61,7 @@
 
 | Topic | Decision | Applied in |
 |---|---|---|
-| Language | **All documentation in English, and it stays that way.** The three deliverables were translated. Exceptions: survey questions and presentation speaker notes (Portuguese audience) | `README.md`, `team-and-process.md` §3–4 |
+| Language | **All documentation in English, and it stays that way.** The three deliverables were translated. Exceptions: survey questions and presentation speaker notes (Portuguese audience) | `Docs/README.md`, `team-and-process.md` §3–4 |
 | Roles | Confirmed: roles are identified and described; each member takes a role at a specific moment. No fixed assignment | `team-and-process.md` §2 |
 | DoR / DoD in the tool | Issue forms (user story, task) and the PR template; board columns *Ready* and *Done* linked to the rules | `definition-of-ready-and-done.md` |
 | Process drift | A **Conventions** check on every PR (branch name, PR title, linked issue) | `.github/workflows/conventions.yml` |

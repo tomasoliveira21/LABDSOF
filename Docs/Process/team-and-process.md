@@ -1,7 +1,7 @@
 # Team Roles and Work Process
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §8.1, §8.2 and §10
-> **Status:** agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). The work process is defined in the [README](../../README.md) and summarised here. Roles are identified by what they do. People are not assigned to them on purpose: everyone codes, reviews and can take any role.
+> **Status:** agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). The work process is defined in the [README](../README.md) and summarised here. Roles are identified by what they do. People are not assigned to them on purpose: everyone codes, reviews and can take any role.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
 ## 1. Team

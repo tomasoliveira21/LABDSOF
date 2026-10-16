@@ -2,6 +2,12 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-16 · Move README into Docs
+
+### Changed
+- Moved the repository README to `Docs/README.md` and adjusted its relative links.
+- Updated README paths in the project instructions, process documentation, meeting notes and changelog.
+
 ## [Unreleased] · 2026-10-15 · Consolidated domain model and Porto Digital bus source
 
 **Why:** consolidate current product decisions, consider the architecture-decisions-guide branch without merging it, and represent the project owner's selected bus-context API.
@@ -58,7 +64,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - **Translated to English:** the Problem and Opportunity Report, the Market and Competitor Analysis and its product-specific annex. Content unchanged.
 - `Docs/Research/inquerito-estudantes-google-forms.gs`: comments in English; the survey questions stay in Portuguese, for Portuguese students.
 - Quotes from the report in `features.md`, `product-vision.md`, `user-workflows.md`, `domain-model.md` and `architecture.md` now use the English text and section names.
-- `README.md`: language rule recorded, with two exceptions (survey questions, speaker notes); documentation index marks every document as EN; branch protection includes the Conventions check.
+- `Docs/README.md`: language rule recorded, with two exceptions (survey questions, speaker notes); documentation index marks every document as EN; branch protection includes the Conventions check.
 - `team-and-process.md`: language decision recorded; process health check updated (merge commits up to PR #30, the `feat/` branch, the new check and issue forms).
 - `definition-of-ready-and-done.md`: the "Open items" gap is replaced by *In the tool*, which says where each rule lives and what is left to set up on the board.
 
@@ -193,8 +199,8 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 | File | Change | Why |
 |---|---|---|
-| [`README.md`](README.md) | Added a short project description and a **Documentation** index (with the language of each document) at the top | The README had no link to any document |
-| [`README.md`](README.md) §7 | "Save as `.github/pull_request_template.md`" → "Saved as [link]" | The file now exists |
+| [`Docs/README.md`](Docs/README.md) | Added a short project description and a **Documentation** index (with the language of each document) at the top | The README had no link to any document |
+| [`Docs/README.md`](Docs/README.md) §7 | "Save as `.github/pull_request_template.md`" → "Saved as [link]" | The file now exists |
 
 ### Fixed
 
