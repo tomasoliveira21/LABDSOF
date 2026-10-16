@@ -20,12 +20,14 @@ body:
     id: persona
     attributes:
       label: Persona
-      description: Who it serves (see Docs/Product/personas.md)
+      description: Who it serves (see Docs/Product/personas.md). Pick every persona that applies.
+      multiple: true
       options:
         - P1 · Rita (participant)
         - P2 · Miguel (operator)
         - P3 · Sofia (event admin)
         - P4 · Daniel (platform admin)
+        - P5 · Inês (responder)
         - Technical goal (no persona)
     validations:
       required: true

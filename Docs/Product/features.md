@@ -2,7 +2,7 @@
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §7.1.2 (deliverables 4 *MVP definition* and 5 *Product Backlog*)
 > **Product name:** **Farol** (decided 9 October 2026).
-> **Status:** feature list and MoSCoW revised on **9 October 2026** (owner of the topic: Bruno Lopes) on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: the AI workflow details (§5.2), report types and expiry (§6.1). **[PROPOSED] 10 October 2026** (personas owner): a platform admin (persona P4) creates events and names their Owner (F3, F4, US-25), to confirm with the team. User stories (§7) are **[PROPOSED]**, to validate with the team.
+> **Status:** feature list and MoSCoW revised on **9 October 2026** (owner of the topic: Bruno Lopes) on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: the AI workflow details (§5.2), report types and expiry (§6.1). **[PROPOSED] 10 October 2026** (personas owner): a platform admin (persona P4) creates events and names their Owner (F3, F4, US-25), to confirm with the team. **16 October 2026:** user stories (§7) checked against the DoR (owner: Tiago Teixeira); issues not created yet; sprint goals and initial release plan (§8) **[PROPOSED]**, to confirm with the team.
 > **Sources:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (*MVP definition*, §5 risks) · [`market-and-competitor-analysis-product-specific.md`](../Deliverables/market-and-competitor-analysis-product-specific.md) (§1, §2) · assignment PDF (§5.5, §5.6, §6).
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
@@ -224,45 +224,72 @@ Badges are always linked to the participant's **account** (F1, F2). There are no
    - participants who don't report lose no information.
 5. **Control and opt-out:** reporting and badges are optional. In account management (F2) a participant can hide their badges, stop earning them, or delete them; deleting the account deletes the badges.
 
-## 7. Initial backlog: user stories **[PROPOSED]**
+## 7. Initial backlog: user stories
 
-Rewritten on 9 October 2026 to match the feature list above. **To validate with the team** before they go to the GitHub Projects board (one story = one issue = one PR). Acceptance criteria use *Given / When / Then*. Estimates and sprint allocation are not included. Won't-have features (F19, F20) have no stories.
+Rewritten on 9 October 2026 to match the feature list above, and checked against the [Definition of Ready](../Process/definition-of-ready-and-done.md#definition-of-ready-backlog-item) on 16 October 2026 (teacher feedback T1, [notes](../Meetings/2026-10-12-sprint-1-presentation-feedback.md)). One story = one issue = one PR. Acceptance criteria use *Given / When / Then*. Every story names its persona and its dependencies; a story moves to *Ready* on the board only when none of its dependencies blocks it (§8.4). Won't-have features (F19, F20) have no stories. Items still marked **[PROPOSED]** wait for the team decision named in their dependencies.
+
+### 7.1 DoR check (16 October 2026)
+
+| DoR item | What failed | Fix |
+|---|---|---|
+| User story format | US-04 had no *so that* | Added |
+| Persona | No story named a persona ID; US-01 and US-02 said only "user" | *Persona* line on every story (P1–P5, or the technical goal) |
+| Testable *Given / When / Then* | US-08: "shows the nearest first-aid point" offline needed the cached map (F11, Could). US-10: "close" had no criterion, and "alert on their phone" duplicated US-26 and assumed push notifications (guide C5 decided polling). US-13: no criterion for adding a shuttle. US-14: assumed a timetable feed, but the transport source is not decided. US-18: "too many reports" had no number. US-19: no *reject*. US-23: nothing for the team side | Criteria rewritten (see each story). Numbers that are new are marked **[PROPOSED]** |
+| Dependencies identified | No story listed its dependencies | *Depends on* line on every story; blockers in §8.4 |
+| One story = one PR | US-02, US-19 and US-25 each held two or three PRs of work | Split: account deletion → **US-29**; responder check and fix of a report → **US-27**; Owner transfer and event suspension → **US-28**. US-01's QR-code criterion moved to US-03, where the QR code is created |
+| AI fallback | US-11 did not say what happens when the AI fails | *AI fallback* line pointing to US-12 (scenario D1) |
+| On the board | No story had an issue | Issues to create from the user-story form (§8.3), once the team confirms this plan |
 
 ### F1 · Login and logout
 
 **US-01** · As a **user** (participant or team member), I want to log in and log out, so that only I can use my account.
+*Persona:* P1, P2, P3, P4, P5 · *Depends on:* walking skeleton (§8.2); identity provider (guide E1, Guerra; mocked authentication is allowed for the MVP, assignment §6.6)
 - Given I have an account, when I log in with valid credentials, then I see the events I can access.
-- Given I enter wrong credentials, then I see an error that does not say which field was wrong.
+- Given I enter wrong credentials, when I log in, then I see an error that does not say which field was wrong.
 - Given I am logged in, when I log out, then my session ends and protected pages ask me to log in again.
-- Given I am not logged in, when I scan an event's QR code, then I am asked to log in and then taken to that event.
 
 ### F2 · Personal account management
 
-**US-02** · As a **user**, I want to create and manage my account, so that I control my personal data.
+**US-02** · As a **user**, I want to create my account and edit my details, so that I control my personal data.
+*Persona:* P1, P2, P3, P5 · *Depends on:* US-01
 - Given I am a new participant, when I sign up and accept the terms, then my account is created.
+- Given I do not accept the terms, when I sign up, then no account is created.
 - Given I am logged in, when I edit my name or password, then the change is saved.
+
+**US-29** · As a **user**, I want to delete my account, so that my personal data leaves Farol.
+*Persona:* P1, P2, P3, P5 · *Depends on:* US-02, US-20; account deletion (guide D7, Bruno)
 - Given I delete my account, then my personal data and badges are deleted, and my past reports stay only as anonymous statistics.
+- Given I deleted my account, when I try to log in with it, then I am refused.
 
 ### F3 · Event management
 
 **US-25** **[PROPOSED]** · As a **platform admin**, I want to create an event for a verified organisation and name its first Owner, so that only real organisers run events on Farol.
+*Persona:* P4 · *Depends on:* US-01; team confirms P4 and who creates events (personas PE-5); global `PlatformAdmin` role (guide E2, Guerra)
 - Given an organisation asks for a new event, when I confirm the requester represents it and create the event with a name and dates, then it is saved as a draft that participants cannot see, and the named user becomes its Owner.
 - Given a user who is not a platform admin, when they try to create an event, then the action is refused.
-- Given the Owner of an event leaves the organisation, when the organisation asks, then I transfer the Owner role, and the change is recorded with my name and the time.
-- Given an event is abandoned or misused, when I suspend it, then participants can no longer open it.
 - Given I am a platform admin, when I open an event, then I see only its name, dates, organisation, owners and status, never its help requests, reports or participants.
 
+**US-28** **[PROPOSED]** · As a **platform admin**, I want to transfer an event's Owner role and suspend an event, so that an event never stays without an owner or open to misuse.
+*Persona:* P4 · *Depends on:* US-25
+- Given the Owner of an event leaves the organisation, when the organisation asks and I transfer the Owner role, then the new Owner has it and the change is recorded with my name and the time.
+- Given an event is abandoned or misused, when I suspend it, then participants can no longer open it.
+
 **US-03** · As an **event owner**, I want to edit, publish and close my event, so that participants can find it only while it is relevant.
-- Given the platform admin created my event (US-25), then I see it as a draft that participants cannot see, and I can edit it.
+*Persona:* P3 · *Depends on:* US-25
+- Given the platform admin created my event (US-25), when I open it, then I see it as a draft that participants cannot see, and I can edit it.
 - Given I publish the event, then participants can open it and its QR code and link are generated.
+- Given I am not logged in, when I scan the event's QR code, then I am asked to log in and then taken to that event.
 - Given I close the event, then participants can no longer send help requests or reports to it.
 
-**US-04** · As a **team member of event X**, I want to be sure no other event's team can see my event's data.
-- Given a user is a member of event X only, when they request any data from event Y, then the request is refused and the attempt is logged.
+**US-04** · As a **team member of event X**, I want no other event's team to see my event's data, so that our help requests, reports and participants stay private (SC8).
+*Persona:* P2, P3, P5; technical goal SC8 (report §5, technical risks) · *Depends on:* US-01, US-03; `event_id` filtering (guide D3, decided)
+- Given a user is a member of event X only, when they request any data from event Y, then the request is refused and the attempt is logged with the user, the event and the time.
+- Given a service stores event data, then an integration test proves that a member of event X cannot read or change event Y's data (guide D3).
 
 ### F4 · Event role and response-team management
 
 **US-05** · As an **event owner or admin**, I want to invite people, give them a role and put them in a response team, so that each person can only do what their job requires.
+*Persona:* P3 · *Depends on:* US-03; team confirms the `Responder` role (personas PE-6)
 - Given I invite a user as *Operator* in the *Medical* team, then they see event X's help requests but cannot change its configuration.
 - Given I invite a user as *Responder* in the *Medical* team, then they see only the requests and reports dispatched to that team. **[PROPOSED]**
 - Given I change or revoke a member's role, then the change applies at their next action and is recorded with my name and the time.
@@ -271,30 +298,40 @@ Rewritten on 9 October 2026 to match the feature list above. **To validate with 
 ### F5 · Venue map
 
 **US-06** · As an **event admin**, I want to upload the venue map as an image or PDF and place points of interest on it, so that participants and operators share the same reference.
+*Persona:* P3 · *Depends on:* US-03; venue map library (guide F3, ADR-007, #44)
 - Given I upload a valid image or PDF, when I save, then participants see the new map version.
-- Given I place a point of type *first aid*, then participants see it with its icon and name.
+- Given I upload a file that is not an image or PDF, when I save, then it is refused with a message and the current map stays.
+- Given I place a point of type *first aid*, when I save, then participants see it with its icon and name.
 
 **US-07** · As a **participant**, I want to find a type of place on the map (WC, first aid, entrance, transport stop), so that I know where to go.
+*Persona:* P1 · *Depends on:* US-06
 - Given the map has first-aid points, when I filter by *first aid*, then only those points are highlighted.
+- Given the map has no point of the type I filter by, when I filter, then I see a message saying so.
 
 ### F6 · Help request
 
 **US-08** · As a **participant**, I want to ask for help by choosing a category and marking where I am on the map, so that the team can reach me.
+*Persona:* P1 · *Depends on:* US-04, US-06
 - Given I choose a category and mark a location, when I submit, then I see a confirmation and the status of my request.
-- Given I have no network, when I submit, then the app tells me the request was not sent and shows the nearest first-aid point.
+- Given I submitted a request, then my location is visible only to the event's operators and admins and to the responders it is dispatched to.
+- Given I have no network, when I submit, then the app tells me the request was not sent, lets me send it again, and, if the map is already loaded, shows where the first-aid points are.
 
 ### F7 · Incident backoffice
 
 **US-09** · As an **incident operator**, I want to see new help requests as they arrive, on a list and on the map, so that I can react quickly.
-- Given a request is submitted for my event, then it appears in my list within 5 s without reloading the page (SC2).
+*Persona:* P2 · *Depends on:* US-05, US-08
+- Given a request is submitted for my event, then it appears in my list within 5 s without reloading the page (SC2; polling, guide C5).
 - Given a request has a location, then it is shown at that point on the venue map.
 
 **US-10** · As an **incident operator**, I want to set the priority, route a request to a response team and close it, so that the right people deal with it.
-- Given I change the status, priority or team of a request, then the change is recorded with my name and the time.
-- Given I route a request to the *Medical* team, then its responders get an alert on their phone with the point on the map.
+*Persona:* P2 · *Depends on:* US-09
+- Given I change the status, priority or team of a request, then the change is recorded with my name, the time, and the old and new values (SC9).
+- Given I route a request to the *Medical* team, then it appears in that team's responder list with its point on the map (US-26).
+- Given I close a request, then the participant sees it closed.
 
 **US-26** **[PROPOSED]** · As a **responder**, I want to get the requests dispatched to my team on my phone and update their status, so that the control room and the participant know help is on the way.
-- Given a request is dispatched to my team, then I get an alert with its category and its point on the venue map.
+*Persona:* P5 · *Depends on:* US-10; team confirms the `Responder` role (personas PE-6)
+- Given a request is dispatched to my team, then it appears on my phone within 5 s **[PROPOSED]**, with its category and its point on the venue map.
 - Given I accept it, then its status becomes *On the way* and the participant sees "Help is on the way".
 - Given another responder of my team already accepted it, then I see that and cannot accept it too.
 - Given I mark it resolved, then the participant and the control room see it closed.
@@ -302,68 +339,92 @@ Rewritten on 9 October 2026 to match the feature list above. **To validate with 
 ### F8 · AI help-request triage
 
 **US-11** · As an **incident operator**, I want each new help request to arrive with a suggested category, priority and response team, so that I can route it faster.
-- Given a help request is submitted and the AI is available, then a suggestion is shown within 30 s, marked as a suggestion.
+*Persona:* P2 · *Depends on:* US-09; AI provider and model (guide K1, Tomás); input, output schema and priority scale (§5.2 AI-1 to AI-3) · *AI fallback:* US-12 (scenario D1)
+- Given a help request is submitted and the AI is available, then a suggestion is shown within 30 s, marked as a suggestion (SC3).
 - Given I accept the suggestion, then its values become the request's values and the change is recorded as mine.
 - Given I already set a priority, when a suggestion arrives, then my priority is not changed.
+- Given the AI suggests a priority lower than the category's default, then the default priority is kept (domain model I4).
 
 **US-12** · As an **incident operator**, I want requests to keep arriving when the AI is down, so that no one is left without help (scenario D1).
-- Given the AI does not answer within 30 s, or answers with invalid data, then the request is shown with the participant's category, marked "Not triaged", in order of arrival.
+*Persona:* P2 · *Depends on:* US-11 · *AI fallback:* this story is the fallback
+- Given the AI does not answer within 30 s, or answers with invalid data, then the request is shown with the participant's category, marked "Not triaged", in order of arrival (SC5).
 - Given the AI provider is down, then the backoffice shows a banner saying triage is unavailable.
+- Given a fallback happens, then it is logged with its reason (timeout, error or invalid output) and counted in the fallback-rate metric.
 
 ### F9 · Transport information and external integration
 
 **US-13** · As an **event admin**, I want to add the event's shuttles and temporary stops with their schedule, so that participants know how to get home.
+*Persona:* P3 · *Depends on:* US-06
+- Given I add a shuttle with its stops and departure times, when I save, then participants see it on the transport screen.
 - Given I mark a shuttle as delayed, then participants see the change with the time it was made.
 
-**US-14** · As a **participant**, I want to see the next transport options home from the venue, including regular STCP lines, so that I don't walk home or drive.
-- Given the STCP feed was imported, then I see the next departures from the stops near the venue, with the time of the data.
+**US-14** · As a **participant**, I want to see the next transport options home from the venue, including regular STCP buses, so that I don't walk home or drive.
+*Persona:* P1 · *Depends on:* US-03; transport data source (professor's answer, guide A2, ADR-008)
+- Given the external transport source was read, then I see the next buses at the stops near the venue, with the time of the data.
 
 **US-15** · As a **participant**, I want to know when the transport information may be out of date, so that I don't rely on it blindly (scenario D2).
+*Persona:* P1, P3 · *Depends on:* US-13, US-14; resilience values (guide J1, #43)
 - Given the transport source is unavailable or sends invalid data, then I see the last valid information with "Data from HH:MM" and a warning, and event shuttles are still shown.
-- Given the source comes back, then the warning disappears after the next valid import.
+- Given the source sends invalid data, then the import is rejected as a whole and the previous data stays in use.
+- Given the source is unavailable, then the backoffice shows a warning with the time of the last successful import.
+- Given the source comes back, then the warnings disappear after the next valid import.
 
 ### F10 · Announcements
 
 **US-16** · As an **event admin**, I want to publish an announcement (e.g. "Gate 3 closed, use Gate 1"), so that participants find out immediately.
+*Persona:* P3 · *Depends on:* US-03
 - Given I publish an announcement, then participants with the app open see it within 10 s without reloading, with its publication time (SC6).
+- Given I edit or remove an announcement, then participants see the change within 10 s.
 
 ### F11 · Weak-network mode (Could)
 
 **US-17** · As a **participant**, I want the map and the last information to work when the network drops, so that I'm not left without information.
+*Persona:* P1 · *Depends on:* US-06, US-16
 - Given I opened the event once with network, when I lose connection, then I still see the map and information with "Data from HH:MM".
 
 ### F12 · Community reports
 
 **US-18** · As a **participant**, I want to report a problem on the map (e.g. a long queue at a gate), so that other people and the team know about it.
-- Given I choose a report type and a point on the map, when I submit, then the responsible team sees it in the backoffice straight away.
-- Given my report is confirmed, then it appears on other participants' maps with its time, and disappears when it expires.
-- Given I have sent too many reports in a short time, then new reports are refused with a message.
+*Persona:* P1 · *Depends on:* US-05, US-06; report types and expiry times (§6.1)
+- Given I choose a report type and a point on the map, when I submit, then the operators of the responsible team see it in the backoffice straight away, with status *Pending*.
+- Given my report is pending, then other participants do not see it.
+- Given I have sent 5 reports in the last 10 minutes **[PROPOSED]**, when I send another, then it is refused with a message saying when I can report again.
+- Given a report reaches the expiry time of its type (§6.1), then it leaves the map.
 
 ### F13 · Report confirmation
 
-**US-19** · As an **operator of the responsible team**, I want to confirm or unconfirm a report, so that only true information is shown and rewarded.
-- Given a report of a type my team is responsible for, when I confirm it, then it appears on participants' maps and counts for the reporter's badges.
-- Given a confirmed report, when I unconfirm it, then it disappears from the map, stops counting, and the reporter's badge levels are recalculated.
+**US-19** · As an **operator of the responsible team**, I want to confirm, reject or unconfirm a report, so that only true information is shown and rewarded.
+*Persona:* P2 · *Depends on:* US-18
+- Given a report of a type my team is responsible for, when I confirm it, then it appears on participants' maps with its time and counts as a confirmed report of the reporter.
+- Given a pending report, when I reject it, then it never appears on participants' maps and does not count.
+- Given a confirmed report, when I unconfirm it, then it disappears from the map and no longer counts.
 - Given a report of a type my team is not responsible for, then I cannot confirm it (an Admin can).
-- Given I cannot check a report from the control room, when I ask a responder of my team to check it, then they get it on their phone and their answer comes back to me. **[PROPOSED]**
-- Given a confirmed report needs action, when I send it to a responder and they mark it resolved, then it leaves the map and still counts for badges. **[PROPOSED]**
+
+**US-27** **[PROPOSED]** · As an **operator of the responsible team**, I want to send a report to a responder of my team to check it on site or to fix the problem, so that reports I cannot check from the control room still get an answer, and problems get fixed.
+*Persona:* P2, P5 · *Depends on:* US-19, US-26; team confirms the `Responder` role (personas PE-6)
+- Given I cannot check a report from the control room, when I ask a responder of my team to check it, then they get it on their phone and their answer ("true" or "not true") comes back to me.
+- Given a confirmed report needs action, when I send it to a responder and they mark it resolved, then it leaves the map and still counts for badges.
 
 ### F14 · Badges for confirmed reports
 
 **US-20** · As a **participant**, I want to earn badges for my confirmed reports, overall and in each event, so that my contribution is recognised.
+*Persona:* P1 · *Depends on:* US-19
 - Given my confirmed-report count reaches 1, 3, 10, 50, 100 or 500, then my *Report history* badge moves to Wood, Bronze, Silver, Gold, Platinum or Diamond.
 - Given my confirmed reports **in event X** reach a tier threshold, then my *Event reporter* badge for event X moves to that tier.
+- Given one of my confirmed reports is unconfirmed, then my counts go down and my badge tiers are recalculated, so a badge can go down a tier.
 - Given I hide or turn off my badges in my account, then they are not shown and no new ones are earned.
 
-### F15 · Badges for event attendance
+### F15 · Badges for event attendance (Should)
 
 **US-21** · As a **participant**, I want to earn a badge for the events I attend, so that coming back is recognised.
-- Given I checked in to an event (F16, US-22), then the event counts as attended (once per event).
+*Persona:* P1 · *Depends on:* US-20, US-22
+- Given I checked in to an event (US-22), then the event counts as attended (once per event).
 - Given my attended-event count reaches a tier threshold, then my *Event attendance* badge moves to that tier.
 
-### F16 · Event check-in
+### F16 · Event check-in (Should)
 
 **US-22** · As a **participant**, I want to check in at the venue by scanning the event's QR code, so that my attendance is recorded for my badges.
+*Persona:* P1 · *Depends on:* US-03
 - Given I am logged in and the event is running, when I scan the venue QR code, then I see "Checked in" and the event counts as attended.
 - Given I already checked in to this event, when I scan again, then nothing changes (one check-in per event).
 - Given the event has not started or has ended, when I scan the QR code, then the event opens but no check-in is recorded.
@@ -371,12 +432,93 @@ Rewritten on 9 October 2026 to match the feature list above. **To validate with 
 ### F17 · Entrance status (Could)
 
 **US-23** · As a **participant**, I want to see the status of each entrance, so that I choose a gate with a shorter queue.
-- Given the team marks Gate 2 as "long queue", then I see it on the map with the time of the update.
+*Persona:* P1, P3 · *Depends on:* US-06
+- Given I am an event admin, when I set Gate 2 to "long queue", then the status is saved with the time of the update.
+- Given the team marked Gate 2 as "long queue", then I see it on the map with the time of the update.
 
 ### F18 · Friends (Could)
 
 **US-24** · As a **participant**, I want to add friends in the app, so that I can find people I know who use it.
+*Persona:* P1 · *Depends on:* US-02
 - Given I send a friend request and it is accepted, then each of us appears in the other's friend list.
 - Given I remove a friend, then we no longer appear in each other's list.
 
-> ⚠️ **GAP: backlog not on the board.** Decided: the stories go to **GitHub Projects** as issues (one story = one issue = one PR), with sprint goals for Sprints B and C and the initial release plan (§7.1.2, item 5). To do once the stories above are validated.
+## 8. Sprint goals and initial release plan **[PROPOSED]**
+
+Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 (Tiago, backlog owner), to confirm with the team at the next planning meeting. Order follows the MoSCoW rank in §2 and the dependencies in §7.
+
+### 8.1 Sprint goals
+
+| Sprint | Dates | Goal |
+|---|---|---|
+| **B** · Build and operate the vertical slice | 2 Nov – 6 Dec 2026 | **A logged-in participant asks for help on the venue map of a published event; an operator sees the request at once with an AI suggestion, or without one when the AI is down, and dispatches it to a response team whose responder accepts and resolves it.** Deployed through the pipeline, with logs and metrics, and transport data read from the external source. Answers the Sprint B investor question: *does the product deliver observable user value, and can the team deploy, monitor and operate it?* |
+| **C** · Evaluate, harden and present | 7 Dec 2026 – 3 Jan 2027 | **The MVP is complete: transport with event shuttles and the D2 warning, live announcements, community reports confirmed by the responsible team, and badges.** The AI triage is evaluated against the non-AI baseline, and both degraded modes (D1, D2) are demoed. Answers: *is this a credible product and a maintainable system?* |
+
+### 8.2 Initial release plan
+
+Every merge to `main` is deployed (continuous deployment, guide H5). A *release* is the version shown at a review.
+
+| Release | When | What it contains | Assignment |
+|---|---|---|---|
+| **R0 · Walking skeleton** | First week of Sprint B (by 8 Nov 2026) | One endpoint, one test, a Dockerfile and the CI/CD pipeline, deployed. Not a user story: a task issue | §7.1.2 item 10 (late from Sprint A) |
+| **R1 · Vertical slice** | Sprint B review (6 Dec 2026) | US-01, US-25, US-03, US-04, US-05, US-06, US-08, US-09, US-10, US-26, US-11, US-12, US-14: the help-request journey end to end (W2 + W3), with AI triage, scenario D1 and the first external integration | §7.2.2 items 1–13 |
+| **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must: US-02, US-29, US-28, US-07, US-13, US-15, US-16, US-18, US-19, US-27, US-20 (scenario D2, engagement mechanism). Should US-22 and US-21 if there is time | §7.3.2 items 1–2, 8 |
+| **Later** (product roadmap) | After the course | Could: US-17, US-23, US-24. Won't: F19, F20 | §7.3.2 item 13 |
+
+**Cut line for Sprint C.** Sprint C is four weeks and also holds the evaluation, hardening and presentation deliverables. If it runs short, drop in this order: US-21 and US-22 (Should), then US-27, US-07 and US-28. US-02 and US-29 stay because of personal data (consent, deletion).
+
+**Why US-14 is in Sprint B:** Sprint B must already have an *initial external-system integration* (§7.2.2, item 7). **Why US-02 is in Sprint C:** mocked authentication with seeded accounts is enough for the slice (§6.6).
+
+### 8.3 Stories on the board
+
+Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1): **[Front Office]** for the participant's mobile app, **[Back Office]** for the event team (web event management and the operators' and responders' backoffice), **[Technicians]** for cross-cutting technical work.
+
+| Story | Issue | Type | Sprint |
+|---|---|---|---|
+| Walking skeleton (task) | # | Technicians | B |
+| US-01 · Log in and log out | # | Technicians | B |
+| US-25 · Create an event and name its Owner | # | Back Office | B |
+| US-03 · Edit, publish and close an event | # | Back Office | B |
+| US-04 · Keep each event's data private | # | Technicians | B |
+| US-05 · Invite members, roles and teams | # | Back Office | B |
+| US-06 · Upload the venue map and points | # | Back Office | B |
+| US-08 · Ask for help on the map | # | Front Office | B |
+| US-09 · See new help requests live | # | Back Office | B |
+| US-10 · Prioritise, route and close a request | # | Back Office | B |
+| US-26 · Responder receives and resolves a request | # | Back Office | B |
+| US-11 · AI triage suggestion | # | Back Office | B |
+| US-12 · Requests without AI (scenario D1) | # | Back Office | B |
+| US-14 · Next transport options home | # | Front Office | B |
+| US-02 · Create and edit my account | # | Front Office | C |
+| US-29 · Delete my account | # | Front Office | C |
+| US-28 · Transfer the Owner role and suspend an event | # | Back Office | C |
+| US-07 · Find a type of place on the map | # | Front Office | C |
+| US-13 · Event shuttles and temporary stops | # | Back Office | C |
+| US-15 · Out-of-date transport warning (scenario D2) | # | Front Office | C |
+| US-16 · Publish an announcement | # | Back Office | C |
+| US-18 · Report a problem on the map | # | Front Office | C |
+| US-19 · Confirm, reject or unconfirm a report | # | Back Office | C |
+| US-27 · Send a report to a responder | # | Back Office | C |
+| US-20 · Badges for confirmed reports | # | Front Office | C |
+| US-22 · Check in at the venue (Should) | # | Front Office | C |
+| US-21 · Badges for event attendance (Should) | # | Front Office | C |
+| US-17 · Weak-network mode (Could) | # | Front Office | — |
+| US-23 · Entrance status (Could) | # | Front Office | — |
+| US-24 · Friends (Could) | # | Front Office | — |
+
+### 8.4 What still blocks *Ready*
+
+These dependencies are open on 16 October 2026. A story that needs one stays in *Backlog*, not *Ready*, until it is closed. All are expected before Sprint B starts on 2 November.
+
+| Open dependency | Owner | Blocks |
+|---|---|---|
+| Walking skeleton (R0) | No owner yet | Every story (first to be built) |
+| Identity provider (guide E1) and global `PlatformAdmin` role (E2) | Guerra | US-01, US-25 |
+| P4 and who creates events (personas PE-5) | Team | US-25, US-28 |
+| `Responder` role (personas PE-6) | Team | US-05, US-26, US-27 |
+| Venue map library (guide F3, ADR-007, #44) | Tiago | US-06 |
+| AI provider and model (guide K1); AI-1 to AI-3 (§5.2) | Tomás, AI lead | US-11 |
+| Transport data source (professor, guide A2) | Professor | US-14 |
+| Resilience values (guide J1, #43) | Tiago | US-15 |
+| Report types and expiry times (§6.1) | Team | US-18 |
+| Account deletion (guide D7) | Bruno | US-29 |

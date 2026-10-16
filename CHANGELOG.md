@@ -2,6 +2,18 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-16 · Backlog checked against the DoR, sprint plan (#45)
+
+**Why:** teacher feedback T1 ([`2026-10-12-sprint-1-presentation-feedback.md`](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md)): every backlog item must meet the DoR before it goes to GitHub Projects. The assignment also asks for sprint objectives and an initial release plan (§7.1.2, item 5).
+
+### Changed
+- `features.md` §7: every user story checked against the DoR. Each story now has a *Persona* and a *Depends on* line; untestable or incomplete criteria rewritten (US-08, US-10, US-13, US-14, US-18, US-19, US-23); US-11 points to its AI fallback. Stories too big for one PR split: **US-27** (from US-19), **US-28** (from US-25), **US-29** (from US-02). Findings in §7.1.
+- `.github/ISSUE_TEMPLATE/user-story.yml`: persona P5 (responder) added; several personas can be picked.
+- `2026-10-12-sprint-1-presentation-feedback.md`: T1 DoR check done; issue creation left open.
+
+### Proposed (to confirm with the team)
+- `features.md` §8: sprint goals for Sprints B and C, initial release plan (R0 walking skeleton, R1 vertical slice, R2 MVP), the Sprint C cut line, the story-to-issue table and the dependencies that still block *Ready*. Replaces the backlog GAP note.
+
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 
 ### Changed
