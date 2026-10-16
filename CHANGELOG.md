@@ -34,6 +34,66 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `architecture-decisions-guide.md`: **Decisão** lines filled; items left to Tiago marked.
 - `README.md`: SDD rules added to the documentation index.
 
+## [Unreleased] · 2026-10-15 · Consolidated domain model and Porto Digital bus source
+
+**Why:** consolidate current product decisions, consider the architecture-decisions-guide branch without merging it, and represent the project owner's selected bus-context API.
+
+### Changed
+- `Docs/Technical/domain-model.md`: one consolidated conceptual class diagram covering accounts, event permissions, reports, field dispatch, badges, check-in and transport; a high-level entity/responsibility table and a short notation guide below it. The introduction names the services without tying the document to a branch.
+- Domain ownership follows the guide's proposed Auth & Users, Events, Reports, Transports and Badges split, preserving its pending-validation status.
+- Porto Digital FIWARE appears as an external source in the same diagram, with bus observations and geographic coordinates separate from venue-map positions. The endpoint does not supply schedules/ETAs.
+
+### Added
+- `Docs/Meetings/2026-10-15-domain-model-transport-source.md`: project-owner source choice and technical review notes, without claiming a team meeting or approval of the architecture proposals.
+
+## [Unreleased] · 2026-10-13 · Presentation feedback: BPMN journeys, report handling, no 112 (Bruno Lopes)
+
+**Why:** after the first presentation on 12 October 2026, the teacher asked for BPMN diagrams of the main journeys, for no mention of 112, and, as the only feedback on the talk itself, for a clearer explanation of who receives the reports and how they are handled. The feedback is recorded in [`2026-10-12-sprint-1-presentation-feedback.md`](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md).
+
+### Added
+- `Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md`: the six feedback items (T1–T6), the decisions and the open actions.
+- `Docs/Product/bpmn/`: two BPMN 2.0 diagrams with one lane per actor (participant, Farol, operator, responder), each as `.bpmn` (editable in bpmn.io or Camunda Modeler) and `.svg`:
+  - `help-request-journey`: W2 + W3 end to end. The AI triage runs in parallel and never holds the request back; the operator dispatches it or handles it remotely; the responder accepts it, goes to the place and resolves it.
+  - `report-journey`: W7 end to end. The report goes to the team responsible for its type; the operator confirms or rejects it, if needed after a responder checks it on site; a responder fixes it when action is needed; otherwise it expires.
+- `user-workflows.md`: section *Complete journeys (BPMN)* with both diagrams.
+
+### Proposed (to confirm with the group, PE-6)
+- `personas.md`: the incident operator is split into **P2 · Miguel, the control-room operator** (decides) and new **P5 · Inês, the responder** (in the field, acts).
+- `features.md`: new §4.1 *Who receives what, and who acts*. New role `Responder` (F4) and story **US-26**. F7 and F13 list P5. US-05, US-10 and US-19 updated. §6.2 says who confirms a report, adds the on-site check and the *Resolved* status, and lists the report statuses.
+- `user-workflows.md`: W2 sequence and W3 lifecycle with the responder (new status `OnTheWay`); W7 flow with the operator, the on-site check and the fix.
+- `domain-model.md`: role `Responder`; `HelpRequest.acceptedBy`. `architecture.md` §2 and `product-vision.md` §3: responder added.
+
+### Removed
+- Every mention of **112**, as the teacher asked: `features.md` (F6, §6.1, US-08), `user-workflows.md` (W2, W6, W7), `personas.md` (P1, P2), `architecture.md` (system context, degraded modes), the report (§5: the app must make clear it is not an emergency service) and both market analyses (the 112 row and the "Call 112 first" items).
+
+### Not changed on purpose
+- `Docs/Presentation/Farol_First_Presentation.pptx`: it stays as presented. The BPMN diagrams are not for slides (too detailed to read on a projector).
+
+## [Unreleased] · 2026-10-12 · Status slide, English docs and process setup (Bruno Lopes)
+
+**Why:** the teacher asked by email for the state of four topics: DoR/DoD, team roles and work process, domain model and high-level architecture. Preparing that status showed what still kept the process topics from green: the DoR and DoD were not in the tool, the conventions kept drifting, and the language rule was undecided. The team decided on 12 October 2026 that **all documentation is in English and stays that way**.
+
+### Added
+
+- `Docs/Presentation/Farol_First_Presentation.pptx`: section *Status overview*, at the end, with one slide, "Process and technical status". One card per topic with a green/yellow/red status, what is done and what comes next; speaker notes in Portuguese (~45 s).
+  - 🟢 DoR / DoD: agreed on 8 October and now in the issue forms and the PR template.
+  - 🟡 Team roles and process: roles, GitHub Flow, sprints and meetings defined; the board, branch protection and squash-only merging are still to turn on.
+  - 🟡 Domain model: DM-1 decided; DM-2 to DM-5 open; Report, Badge and PlatformAdmin not modelled.
+  - 🟡 Architecture: work has started (views and the triage flow exist), but services vs modular monolith, technology stack, ADRs, API outline and walking skeleton are not decided yet.
+- Deck review: the personas slide shows Sofia's success as "event configured and published"; the main-features slide no longer mentions 112 (the "Ask for help" item and its speaker notes).
+- `.github/ISSUE_TEMPLATE/user-story.yml`: issue form with the DoR as required fields plus a checklist, and the story-level DoD pre-filled as a checklist.
+- `.github/ISSUE_TEMPLATE/task.yml` (work that is not a story) and `config.yml` (blank issues disabled).
+- `.github/workflows/conventions.yml`: the **Conventions** check fails a PR whose branch name, title or `Closes #<issue>` line does not follow README §2 and §4.
+
+### Changed
+
+- **Translated to English:** the Problem and Opportunity Report, the Market and Competitor Analysis and its product-specific annex. Content unchanged.
+- `Docs/Research/inquerito-estudantes-google-forms.gs`: comments in English; the survey questions stay in Portuguese, for Portuguese students.
+- Quotes from the report in `features.md`, `product-vision.md`, `user-workflows.md`, `domain-model.md` and `architecture.md` now use the English text and section names.
+- `README.md`: language rule recorded, with two exceptions (survey questions, speaker notes); documentation index marks every document as EN; branch protection includes the Conventions check.
+- `team-and-process.md`: language decision recorded; process health check updated (merge commits up to PR #30, the `feat/` branch, the new check and issue forms).
+- `definition-of-ready-and-done.md`: the "Open items" gap is replaced by *In the tool*, which says where each rule lives and what is left to set up on the board.
+
 ## [Unreleased] · 2026-10-11 · Technology decisions and architecture decisions guide (Bruno Lopes)
 
 **Why:** the team chose the main technologies, so the next step is preparing the high-level architecture and its ADRs. Decisions listed in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions, 11 October 2026*).
@@ -50,11 +110,25 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `architecture.md`: status line, §10 (deployment target gap closed), §11 and §12 updated with the decisions above.
 - `README.md`: guide added to the documentation index.
 
+## [Unreleased] · 2026-10-11 · User workflows slide (António Guerra)
+
+**Why:** the workflows owner prepared the topic's slide for the presentation of 12 October 2026 (presentation plan, meeting §9). The talk lasts at most **6 minutes**, and the deck already takes about 3 min 05 s by its speaker-note timings, before the problem-and-vision slide is added. So the topic gets **one slide of about 60 s**.
+
+### Added
+- `Docs/Presentation/Farol_First_Presentation.pptx`: section *User workflows (António Guerra)*, after *Main features*, as in the presentation plan. It has one slide, "Help for people, reports for places".
+  - Two four-step rows: W2 + W3 (ask for help: 112 first, AI suggestion, the operator routes, the participant follows the status) and W7 (report a problem: the responsible team confirms it, everyone sees it until it expires, it counts toward badges), as listed in the meeting plan.
+  - Speaker notes in Portuguese (~60 s).
+  - Chosen over a W2 + W3-only version (swimlanes plus the request statuses), because this one also covers the engagement journey.
+
+### Not changed on purpose
+- `user-workflows.md`: the journeys on the slide (W2, W3, W7) are already described there.
+
+
 ## [Unreleased] · 2026-10-10 · Personas slide and platform admin (Tiago Teixeira, #26)
 
 **Why:** the personas owner prepared the topic's slide for the presentation of 12 October 2026 (presentation plan, meeting §9). While doing it, a gap showed up: Farol hosts many festivals (Queima do Porto, Braga, Coimbra, Lisboa, …) and each organisation manages only its own event, but nobody was defined to create events, name their Owner, or step in when the Owner leaves (board terms are annual). The `Owner`/`Admin`/`Operator` roles exist only inside an event.
 
-> ⚠️ **To confirm with the group.** Everything marked **[PROPOSED]** below changes topics owned by other members (features: Bruno; workflows: Antônio; vision: Tomás). Nothing here is agreed yet. If the group rejects P4, revert the items listed under *Proposed* and remove the fourth card from the slide.
+> ⚠️ **To confirm with the group.** Everything marked **[PROPOSED]** below changes topics owned by other members (features: Bruno; workflows: António; vision: Tomás). Nothing here is agreed yet. If the group rejects P4, revert the items listed under *Proposed* and remove the fourth card from the slide.
 
 ### Added
 - `Docs/Presentation/Farol_First_Presentation.pptx`: personas slide "Who we design for" after the cover. Four cards (Rita, Miguel, Sofia, Daniel), each with goal, pain and success, taken from `personas.md`. A band states that they are proto-personas and names what validates each one: student survey (Rita), security-volunteer interview (Miguel), organiser conversation (Sofia). Speaker notes in Portuguese (~70 s).
@@ -108,7 +182,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `team-and-process.md`:
   - roles are described, not assigned;
-  - Antônio Guerra added to the team;
+  - António Guerra added to the team;
   - GitHub Projects chosen as the board;
   - sprints renamed A/B/C;
   - two meetings a week;

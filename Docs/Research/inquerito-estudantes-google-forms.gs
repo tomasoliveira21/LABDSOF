@@ -1,22 +1,25 @@
 /**
- * Cria o inquérito a estudantes no Google Forms, com uma folha de respostas
- * no Google Sheets.
+ * Creates the student survey in Google Forms, with a response sheet
+ * in Google Sheets.
  *
- * Objetivo: validar as assunções críticas do Problem and Opportunity Report.
- *   A2 · Os participantes consultam a aplicação durante a noite      → perguntas 6, 7 e 8
- *   A3 · Adotam uma aplicação comum a vários eventos, sem instalar   → perguntas 7 e 9
- *   A4 · Pedir ajuda é hoje lento ou pouco claro                     → perguntas 3, 5 e 10
- *   Problema · Informação dispersa e difícil de encontrar            → perguntas 3, 4 e 6
+ * The questions are in Portuguese on purpose: the respondents are Portuguese
+ * students. Comments in this file are in English, like the rest of the repository.
  *
- * Quem nunca foi a uma Queima e não tenciona ir termina na primeira página.
- * Quem nunca foi, mas tenciona ir, salta as perguntas sobre a experiência.
+ * Goal: validate the critical assumptions of the Problem and Opportunity Report.
+ *   A2 · Participants check the application during the night     → questions 6, 7 and 8
+ *   A3 · They adopt one application shared by events, no install  → questions 7 and 9
+ *   A4 · Asking for help is slow or unclear today                 → questions 3, 5 and 10
+ *   Problem · Information is scattered and hard to find           → questions 3, 4 and 6
  *
- * Como usar:
- *   1. Abre https://script.google.com e cria um "Novo projeto"
- *      (ou acrescenta um ficheiro novo a um projeto que já tenhas).
- *   2. Cola este ficheiro inteiro.
- *   3. Escolhe a função criarInqueritoEstudantes e carrega em "Executar".
- *   4. Em "Registo de execução" aparecem os links do formulário e das respostas.
+ * Anyone who has never been to a Queima and does not plan to go ends on the first page.
+ * Anyone who has never been but plans to go skips the questions about the experience.
+ *
+ * How to use:
+ *   1. Open https://script.google.com and create a "New project"
+ *      (or add a new file to a project you already have).
+ *   2. Paste this whole file.
+ *   3. Choose the function criarInqueritoEstudantes and click "Run".
+ *   4. The links to the form and to the responses appear in the "Execution log".
  */
 
 function criarInqueritoEstudantes() {
@@ -35,12 +38,12 @@ function criarInqueritoEstudantes() {
     .setLimitOneResponsePerUser(false)
     .setConfirmationMessage('Obrigado! A tua resposta ajuda-nos muito.');
 
-  // ---------- Página 1 · Filtro ----------
+  // ---------- Page 1 · Filter ----------
   const q1 = form.addMultipleChoiceItem()
     .setTitle('1. Já foste a alguma Queima das Fitas ou semana académica?')
     .setRequired(true);
 
-  // ---------- Página 2 · A tua experiência ----------
+  // ---------- Page 2 · Your experience ----------
   const paginaExperiencia = form.addPageBreakItem()
     .setTitle('A tua experiência')
     .setHelpText('Pensa na última vez que foste a uma Queima ou semana académica.');
@@ -102,7 +105,7 @@ function criarInqueritoEstudantes() {
     .setLabels('Muito difícil', 'Muito fácil')
     .setRequired(true);
 
-  // ---------- Página 3 · Uma aplicação para o evento ----------
+  // ---------- Page 3 · An application for the event ----------
   const paginaApp = form.addPageBreakItem()
     .setTitle('Uma aplicação para o evento')
     .setHelpText(
@@ -172,7 +175,7 @@ function criarInqueritoEstudantes() {
   form.addParagraphTextItem()
     .setTitle('11. Há alguma coisa que mudarias na experiência da Queima? (opcional)');
 
-  // Navegação da pergunta 1: depende de já ter ido ou não.
+  // Question 1 navigation: depends on whether they have been before.
   q1.setChoices([
     q1.createChoice('Sim, várias vezes', paginaExperiencia),
     q1.createChoice('Sim, uma vez', paginaExperiencia),

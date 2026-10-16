@@ -55,6 +55,13 @@ A story is *Done* when its PR is merged and:
 
 ---
 
-## Open items
+## In the tool
 
-> ⚠️ **GAP: the DoR and DoD in the tool.** Needed: the DoR as a GitHub issue template, and the DoD as the rule for the "Done" column on the GitHub Projects board.
+| Rule | Where it lives |
+|---|---|
+| DoR | Issue form [`.github/ISSUE_TEMPLATE/user-story.yml`](../../.github/ISSUE_TEMPLATE/user-story.yml): the story, persona, acceptance criteria and dependencies are required fields, and the DoR is a checklist at the end. Work that is not a story uses [`task.yml`](../../.github/ISSUE_TEMPLATE/task.yml). Blank issues are disabled |
+| DoD, Level 1 (PR) | [`.github/pull_request_template.md`](../../.github/pull_request_template.md), plus the **Conventions** check (`.github/workflows/conventions.yml`) |
+| DoD, Level 2 (story) | Checklist pre-filled in every user-story issue, ticked before the item moves to "Done" |
+| Board | GitHub Projects *Status* field: `Backlog → Ready → In progress → In review → Done`. The *Ready* option is described as "Meets the DoR" and *Done* as "Meets the DoD", both linking to this page |
+
+> ⚠️ **Still to do in GitHub (repository owner):** create the board with the *Status* options above, the *Iteration* field for Sprints A, B and C and the built-in workflows (auto-add issues, *Item added → Backlog*, *Pull request merged → Done*, *Item closed → Done*), then add its link to the README.

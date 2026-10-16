@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2564" height="860" viewBox="0 0 2564 860" font-family="Segoe UI, Arial, sans-serif" font-size="12">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+<rect width="100%" height="100%" fill="#fff"/><g transform="translate(70,10)">
+<rect x="-60" y="0" width="2544" height="840" fill="none" stroke="#333" stroke-width="1.5"/>
+<line x1="-30" y1="0" x2="-30" y2="840" stroke="#333"/>
+<text transform="translate(-40,420) rotate(-90)" text-anchor="middle" font-weight="600" font-size="13">Community report, end to end (W7)</text>
+<line x1="0" y1="0" x2="0" y2="230" stroke="#333"/>
+<rect x="0" y="0" width="2484" height="230" fill="#dbeafe" opacity="0.35"/>
+<text transform="translate(-12,115) rotate(-90)" text-anchor="middle"><tspan x="0" dy="0">Participant (Rita, P1)</tspan></text>
+<line x1="-30" y1="230" x2="2484" y2="230" stroke="#333"/>
+<line x1="0" y1="230" x2="0" y2="460" stroke="#333"/>
+<rect x="0" y="230" width="2484" height="230" fill="#e5e7eb" opacity="0.35"/>
+<text transform="translate(-12,345) rotate(-90)" text-anchor="middle"><tspan x="0" dy="0">Farol (system)</tspan></text>
+<line x1="-30" y1="460" x2="2484" y2="460" stroke="#333"/>
+<line x1="0" y1="460" x2="0" y2="690" stroke="#333"/>
+<rect x="0" y="460" width="2484" height="230" fill="#fef3c7" opacity="0.35"/>
+<text transform="translate(-12,575) rotate(-90)" text-anchor="middle"><tspan x="0" dy="0">Team operator (Miguel, P2)</tspan></text>
+<line x1="-30" y1="690" x2="2484" y2="690" stroke="#333"/>
+<line x1="0" y1="690" x2="0" y2="840" stroke="#333"/>
+<rect x="0" y="690" width="2484" height="150" fill="#dcfce7" opacity="0.35"/>
+<text transform="translate(-12,765) rotate(-90)" text-anchor="middle"><tspan x="0" dy="-6.5">Responder in the</tspan><tspan x="0" dy="13">field (Inês, P5)</tspan></text>
+<polyline points="157,115 225,115" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="353,115 416,115" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="462,115 493.5,115 493.5,67 525,67" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="501.5" y="62" font-size="11" font-style="italic" fill="#333">Yes</text>
+<polyline points="653,67 721,67" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="462,115 493.5,115 493.5,163 525,163" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="501.5" y="158" font-size="11" font-style="italic" fill="#333">No</text>
+<polyline points="589,199 589,345 675,345" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="739,381 739,575 825,575" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="953,575 1016,575" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1062,575 1316,575" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1070" y="570" font-size="11" font-style="italic" fill="#333">Yes</text>
+<polyline points="1039,598 1039,765 1125,765" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1044" y="614" font-size="11" font-style="italic" fill="#333">No</text>
+<polyline points="1253,765 1339,765 1339,598" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1362,575 1393.5,575 1393.5,623 1425,623" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1401.5" y="618" font-size="11" font-style="italic" fill="#333">No</text>
+<polyline points="1553,623 1621,623" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1362,575 1393.5,575 1393.5,527 1425,527" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1401.5" y="522" font-size="11" font-style="italic" fill="#333">Yes</text>
+<polyline points="1489,491 1489,345 1575,345" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1639,381 1639,575 1766,575" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1789,552 1789,297 1875,297" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1794" y="546" font-size="11" font-style="italic" fill="#333">No</text>
+<polyline points="2003,297 2071,297" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1789,598 1789,765 1875,765" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1794" y="614" font-size="11" font-style="italic" fill="#333">Yes</text>
+<polyline points="2003,765 2025,765" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="2153,765 2239,765 2239,429" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="2303,393 2371,393" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<circle cx="139" cy="115" r="18" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="139" y="147" text-anchor="middle" font-size="11"><tspan x="139" dy="0">Sees a problem at</tspan><tspan x="139" dy="14">the venue</tspan></text>
+<rect x="225" y="79" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="289" y="115" text-anchor="middle"><tspan x="289" dy="0">Taps Report and</tspan><tspan x="289" dy="14">chooses the type</tspan></text>
+<g transform="translate(231,84)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<polygon points="439,92 462,115 439,138 416,115" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<path d="M432,108 L446,122 M446,108 L432,122" stroke="#333" stroke-width="3"/>
+<text x="435" y="60" text-anchor="end" font-size="11"><tspan x="435" dy="0">Urgent, or about a</tspan><tspan x="435" dy="14">person?</tspan></text>
+<rect x="525" y="31" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="589" y="67" text-anchor="middle"><tspan x="589" dy="0">Uses Ask for help</tspan><tspan x="589" dy="14">instead</tspan></text>
+<g transform="translate(531,36)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<circle cx="739" cy="67" r="18" fill="#fff" stroke="#333" stroke-width="4"/>
+<text x="739" y="99" text-anchor="middle" font-size="11"><tspan x="739" dy="0">Help request journey</tspan></text>
+<rect x="525" y="127" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="589" y="163" text-anchor="middle"><tspan x="589" dy="0">Marks the point on</tspan><tspan x="589" dy="14">the map and sends</tspan></text>
+<g transform="translate(531,132)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="675" y="309" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="739" y="338" text-anchor="middle"><tspan x="739" dy="0">Sends it to the team</tspan><tspan x="739" dy="14">responsible for its</tspan><tspan x="739" dy="14">type</tspan></text>
+<g transform="translate(687,321)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<rect x="825" y="539" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="889" y="568" text-anchor="middle"><tspan x="889" dy="0">Sees the report in</tspan><tspan x="889" dy="14">the backoffice at</tspan><tspan x="889" dy="14">once</tspan></text>
+<g transform="translate(831,544)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<polygon points="1039,552 1062,575 1039,598 1016,575" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<path d="M1032,568 L1046,582 M1046,568 L1032,582" stroke="#333" stroke-width="3"/>
+<text x="1035" y="520" text-anchor="end" font-size="11"><tspan x="1035" dy="0">Can it be checked from</tspan><tspan x="1035" dy="14">the control room?</tspan></text>
+<rect x="1125" y="729" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1189" y="765" text-anchor="middle"><tspan x="1189" dy="0">Checks it on site and</tspan><tspan x="1189" dy="14">answers</tspan></text>
+<g transform="translate(1131,734)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<polygon points="1339,552 1362,575 1339,598 1316,575" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<path d="M1332,568 L1346,582 M1346,568 L1332,582" stroke="#333" stroke-width="3"/>
+<text x="1335" y="534" text-anchor="end" font-size="11"><tspan x="1335" dy="0">Is it true?</tspan></text>
+<rect x="1425" y="587" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1489" y="630" text-anchor="middle"><tspan x="1489" dy="0">Rejects it</tspan></text>
+<g transform="translate(1431,592)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<circle cx="1639" cy="623" r="18" fill="#fff" stroke="#333" stroke-width="4"/>
+<text x="1639" y="655" text-anchor="middle" font-size="11"><tspan x="1639" dy="0">Hidden, no badge</tspan></text>
+<rect x="1425" y="491" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1489" y="534" text-anchor="middle"><tspan x="1489" dy="0">Confirms it</tspan></text>
+<g transform="translate(1431,496)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="1575" y="309" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1639" y="338" text-anchor="middle"><tspan x="1639" dy="0">Shows it on every map</tspan><tspan x="1639" dy="14">with its time; badge</tspan><tspan x="1639" dy="14">count goes up</tspan></text>
+<g transform="translate(1587,321)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<polygon points="1789,552 1812,575 1789,598 1766,575" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<path d="M1782,568 L1796,582 M1796,568 L1782,582" stroke="#333" stroke-width="3"/>
+<text x="1785" y="520" text-anchor="end" font-size="11"><tspan x="1785" dy="0">Does the team need to</tspan><tspan x="1785" dy="14">act?</tspan></text>
+<rect x="1875" y="261" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1939" y="290" text-anchor="middle"><tspan x="1939" dy="0">Removes it when the</tspan><tspan x="1939" dy="14">time for its type</tspan><tspan x="1939" dy="14">ends</tspan></text>
+<g transform="translate(1887,273)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<circle cx="2089" cy="297" r="18" fill="#fff" stroke="#333" stroke-width="4"/>
+<text x="2089" y="329" text-anchor="middle" font-size="11"><tspan x="2089" dy="0">Report expired</tspan></text>
+<rect x="1875" y="729" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1939" y="772" text-anchor="middle"><tspan x="1939" dy="0">Fixes the problem</tspan></text>
+<g transform="translate(1881,734)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="2025" y="729" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="2089" y="765" text-anchor="middle"><tspan x="2089" dy="0">Marks the report</tspan><tspan x="2089" dy="14">resolved</tspan></text>
+<g transform="translate(2031,734)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="2175" y="357" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="2239" y="393" text-anchor="middle"><tspan x="2239" dy="0">Removes it from the</tspan><tspan x="2239" dy="14">map (Resolved)</tspan></text>
+<g transform="translate(2187,369)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<circle cx="2389" cy="393" r="18" fill="#fff" stroke="#333" stroke-width="4"/>
+<text x="2389" y="425" text-anchor="middle" font-size="11"><tspan x="2389" dy="0">Problem fixed</tspan></text>
+</g></svg>

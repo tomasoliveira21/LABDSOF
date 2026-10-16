@@ -11,7 +11,7 @@
 | Topic | Decision | Applied in |
 |---|---|---|
 | Roles | Roles are identified and described, **not assigned to members** | `team-and-process.md` §2 |
-| Team | **Antônio Guerra** added to the member list | `team-and-process.md` §1 |
+| Team | **António Guerra** added to the member list | `team-and-process.md` §1 |
 | Project tool | **GitHub Projects** | `team-and-process.md` §3 |
 | Sprints | Named **A, B, C**. B: 2 Nov – 6 Dec 2026 · C: 7 Dec 2026 – 3 Jan 2027 | `team-and-process.md` §3 |
 | Meetings | **Twice a week**: planning during the class, stand-up at the weekend | `team-and-process.md` §3 |
@@ -25,7 +25,7 @@
 | DoR | Removed: estimate/fits in sprint, UI sketch, privacy-impact note | `definition-of-ready-and-done.md` |
 | DoD | **1 user story = 1 issue = 1 PR**; removed "every PR for the story merged" from Level 2; Level 3 removed | `definition-of-ready-and-done.md` |
 | Architecture & domain model | **Not part of this presentation**; they will be evaluated later | — |
-| Topic owners | Product vision: **Tomás** · Personas: **Tiago** · Main features: **Bruno** · Workflows: **Antônio**. The owner closes the open items of the topic and presents it | §9 |
+| Topic owners | Product vision: **Tomás** · Personas: **Tiago** · Main features: **Bruno** · Workflows: **António**. The owner closes the open items of the topic and presents it | §9 |
 
 ### Follow-up decisions (9 October 2026, main-features owner)
 
@@ -62,6 +62,22 @@
 | Architecture views | **C4 model**, all four levels (context, container, component, code) | `architecture-decisions-guide.md` §B |
 | CI/CD | Full pipeline (build, tests, analysis, images, deployment) in scope; tool and stages still open | `architecture-decisions-guide.md` §H |
 | Working document | Open architecture questions, options and background in `architecture-decisions-guide.md` (Portuguese, study document) | `README.md` |
+
+### Follow-up (11 October 2026, workflows owner)
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Workflows slide | One slide, about 60 s, since the talk lasts at most 6 min: **"Help for people, reports for places"**, with W2 + W3 (ask for help) and W7 (report a problem) as two rows. Chosen over a W2 + W3-only version. Placed after the main-features slides, as in the plan (§9) | `Farol_First_Presentation.pptx`; `CHANGELOG.md` |
+
+### Follow-up (12 October 2026, status overview)
+
+| Topic | Decision | Applied in |
+|---|---|---|
+| Language | **All documentation in English, and it stays that way.** The three deliverables were translated. Exceptions: survey questions and presentation speaker notes (Portuguese audience) | `README.md`, `team-and-process.md` §3–4 |
+| Roles | Confirmed: roles are identified and described; each member takes a role at a specific moment. No fixed assignment | `team-and-process.md` §2 |
+| DoR / DoD in the tool | Issue forms (user story, task) and the PR template; board columns *Ready* and *Done* linked to the rules | `definition-of-ready-and-done.md` |
+| Process drift | A **Conventions** check on every PR (branch name, PR title, linked issue) | `.github/workflows/conventions.yml` |
+| Status slide | One slide with green/yellow/red for DoR/DoD, roles and process, domain model and architecture, at the end of the deck | `Farol_First_Presentation.pptx` |
 
 ### Follow-up (15 October 2026, Bruno) **[PROPOSED, to validate with Tiago]**
 
@@ -279,6 +295,7 @@ Suggestion for the MVP: **(a)** for DM-1, DM-2 and DM-5; **no** for DM-3. These 
 **Missing:** confirmed statuses and response teams (interview) · the degraded-mode scenario to demo.
 
 - [x] Degraded-mode scenario: **AI unavailable (D1) and transport source down (D2)**; not shown in the presentation · **Decision:** 9 Oct, `features.md` §3.1
+- [x] Workflows slide: W2 + W3 plus W7 (help requests vs reports), one slide · **Decision:** 11 Oct, follow-up above
 
 ---
 
@@ -289,7 +306,7 @@ Suggestion for the MVP: **(a)** for DM-1, DM-2 and DM-5; **no** for DM-3. These 
 | 1 | Problem and vision (+ name, pitch) | product-vision §1–2 | Tomás Oliveira |
 | 2 | Personas P1–P3 | personas | Tiago Teixeira |
 | 3 | Main features + AI + engagement | features §2, §4, §5 | Bruno de Abreu Lopes |
-| 4 | Core workflow W2 + W3, plus W7 (reports) | user-workflows | Antônio Guerra |
+| 4 | Core workflow W2 + W3, plus W7 (reports) | user-workflows | António Guerra |
 | 5 | DoR / DoD | definition-of-ready-and-done | |
 | 6 | Team roles and process | team-and-process | |
 

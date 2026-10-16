@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2564" height="780" viewBox="0 0 2564 780" font-family="Segoe UI, Arial, sans-serif" font-size="12">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+<rect width="100%" height="100%" fill="#fff"/><g transform="translate(70,10)">
+<rect x="-60" y="0" width="2544" height="760" fill="none" stroke="#333" stroke-width="1.5"/>
+<line x1="-30" y1="0" x2="-30" y2="760" stroke="#333"/>
+<text transform="translate(-40,380) rotate(-90)" text-anchor="middle" font-weight="600" font-size="13">Help request, end to end (W2 + W3)</text>
+<line x1="0" y1="0" x2="0" y2="150" stroke="#333"/>
+<rect x="0" y="0" width="2484" height="150" fill="#dbeafe" opacity="0.35"/>
+<text transform="translate(-12,75) rotate(-90)" text-anchor="middle"><tspan x="0" dy="-6.5">Participant (Rita,</tspan><tspan x="0" dy="13">P1)</tspan></text>
+<line x1="-30" y1="150" x2="2484" y2="150" stroke="#333"/>
+<line x1="0" y1="150" x2="0" y2="380" stroke="#333"/>
+<rect x="0" y="150" width="2484" height="230" fill="#e5e7eb" opacity="0.35"/>
+<text transform="translate(-12,265) rotate(-90)" text-anchor="middle"><tspan x="0" dy="0">Farol (system)</tspan></text>
+<line x1="-30" y1="380" x2="2484" y2="380" stroke="#333"/>
+<line x1="0" y1="380" x2="0" y2="610" stroke="#333"/>
+<rect x="0" y="380" width="2484" height="230" fill="#fef3c7" opacity="0.35"/>
+<text transform="translate(-12,495) rotate(-90)" text-anchor="middle"><tspan x="0" dy="-6.5">Control-room operator (Miguel,</tspan><tspan x="0" dy="13">P2)</tspan></text>
+<line x1="-30" y1="610" x2="2484" y2="610" stroke="#333"/>
+<line x1="0" y1="610" x2="0" y2="760" stroke="#333"/>
+<rect x="0" y="610" width="2484" height="150" fill="#dcfce7" opacity="0.35"/>
+<text transform="translate(-12,685) rotate(-90)" text-anchor="middle"><tspan x="0" dy="-6.5">Responder in the</tspan><tspan x="0" dy="13">field (Inês, P5)</tspan></text>
+<polyline points="157,75 225,75" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="353,75 375,75" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="439,111 439,265 525,265" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="653,265 716,265" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="739,242 739,75 825,75" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="953,75 1021,75" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="762,265 825,265" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="953,265 1016,265" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1062,265 1093.5,265 1093.5,217 1125,217" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1101.5" y="212" font-size="11" font-style="italic" fill="#333">Yes</text>
+<polyline points="1062,265 1093.5,265 1093.5,313 1125,313" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1101.5" y="308" font-size="11" font-style="italic" fill="#333">No</text>
+<polyline points="1253,217 1287,217 1287,265 1321,265" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1253,313 1287,313 1287,265 1321,265" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="739,288 739,495 825,495" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="953,495 975,495" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1103,495 1166,495" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1212,495 1243.5,495 1243.5,543 1275,543" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1251.5" y="538" font-size="11" font-style="italic" fill="#333">Yes</text>
+<polyline points="1212,495 1318.5,495 1318.5,447 1425,447" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="1326.5" y="442" font-size="11" font-style="italic" fill="#333">No</text>
+<polyline points="1339,579 1339,685 1425,685" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1553,685 1639,685 1639,301" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1703,265 1766,265" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1789,242 1789,75 1875,75" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="2003,75 2071,75" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1789,288 1789,685 1875,685" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="2003,685 2025,685" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="2153,685 2239,685 2239,301" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="1553,447 2239,447 2239,301" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<polyline points="2239,229 2239,75 2371,75" fill="none" stroke="#333" stroke-width="1.3" marker-end="url(#arrow)"/>
+<circle cx="139" cy="75" r="18" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="139" y="107" text-anchor="middle" font-size="11"><tspan x="139" dy="0">Needs help</tspan></text>
+<rect x="225" y="39" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="289" y="68" text-anchor="middle"><tspan x="289" dy="0">Opens Ask for help</tspan><tspan x="289" dy="14">and chooses a</tspan><tspan x="289" dy="14">category</tspan></text>
+<g transform="translate(231,44)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="375" y="39" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="439" y="75" text-anchor="middle"><tspan x="439" dy="0">Marks the place on</tspan><tspan x="439" dy="14">the map and sends</tspan></text>
+<g transform="translate(381,44)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="525" y="229" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="589" y="265" text-anchor="middle"><tspan x="589" dy="0">Saves the request</tspan><tspan x="589" dy="14">(Submitted)</tspan></text>
+<g transform="translate(537,241)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<polygon points="739,242 762,265 739,288 716,265" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<path d="M739,255 L739,275 M729,265 L749,265" stroke="#333" stroke-width="3"/>
+<rect x="825" y="39" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="889" y="75" text-anchor="middle"><tspan x="889" dy="0">Sees the confirmation</tspan><tspan x="889" dy="14">and the live status</tspan></text>
+<g transform="translate(831,44)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<circle cx="1039" cy="75" r="18" fill="#fff" stroke="#333" stroke-width="4"/>
+<text x="1039" y="107" text-anchor="middle" font-size="11"><tspan x="1039" dy="0">Request sent</tspan></text>
+<rect x="825" y="229" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="889" y="265" text-anchor="middle"><tspan x="889" dy="0">AI suggests category,</tspan><tspan x="889" dy="14">priority and team</tspan></text>
+<g transform="translate(837,241)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<polygon points="1039,242 1062,265 1039,288 1016,265" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<path d="M1032,258 L1046,272 M1046,258 L1032,272" stroke="#333" stroke-width="3"/>
+<text x="1035" y="210" text-anchor="end" font-size="11"><tspan x="1035" dy="0">Valid answer within 30</tspan><tspan x="1035" dy="14">s?</tspan></text>
+<rect x="1125" y="181" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1189" y="217" text-anchor="middle"><tspan x="1189" dy="0">Shows the suggestion</tspan><tspan x="1189" dy="14">to the operator</tspan></text>
+<g transform="translate(1137,193)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<rect x="1125" y="277" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1189" y="313" text-anchor="middle"><tspan x="1189" dy="0">Marks it &quot;Not</tspan><tspan x="1189" dy="14">triaged&quot; (D1)</tspan></text>
+<g transform="translate(1137,289)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<circle cx="1339" cy="265" r="18" fill="#fff" stroke="#333" stroke-width="4"/>
+<text x="1339" y="297" text-anchor="middle" font-size="11"><tspan x="1339" dy="0">Triage finished</tspan></text>
+<rect x="825" y="459" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="889" y="488" text-anchor="middle"><tspan x="889" dy="0">Sees the request on</tspan><tspan x="889" dy="14">the list and the map</tspan><tspan x="889" dy="14">at once</tspan></text>
+<g transform="translate(831,464)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="975" y="459" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1039" y="488" text-anchor="middle"><tspan x="1039" dy="0">Checks the</tspan><tspan x="1039" dy="14">suggestion, sets</tspan><tspan x="1039" dy="14">priority and team</tspan></text>
+<g transform="translate(981,464)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<polygon points="1189,472 1212,495 1189,518 1166,495" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<path d="M1182,488 L1196,502 M1196,488 L1182,502" stroke="#333" stroke-width="3"/>
+<text x="1185" y="454" text-anchor="end" font-size="11"><tspan x="1185" dy="0">Someone needed on site?</tspan></text>
+<rect x="1275" y="507" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1339" y="543" text-anchor="middle"><tspan x="1339" dy="0">Dispatches it to the</tspan><tspan x="1339" dy="14">response team</tspan></text>
+<g transform="translate(1281,512)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="1425" y="411" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1489" y="440" text-anchor="middle"><tspan x="1489" dy="0">Handles it from the</tspan><tspan x="1489" dy="14">control room and</tspan><tspan x="1489" dy="14">closes it</tspan></text>
+<g transform="translate(1431,416)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="1425" y="649" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1489" y="685" text-anchor="middle"><tspan x="1489" dy="0">Gets the alert on the</tspan><tspan x="1489" dy="14">phone and accepts</tspan></text>
+<g transform="translate(1431,654)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="1575" y="229" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1639" y="265" text-anchor="middle"><tspan x="1639" dy="0">Sets the status On</tspan><tspan x="1639" dy="14">the way</tspan></text>
+<g transform="translate(1587,241)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<polygon points="1789,242 1812,265 1789,288 1766,265" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<path d="M1789,255 L1789,275 M1779,265 L1799,265" stroke="#333" stroke-width="3"/>
+<rect x="1875" y="39" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1939" y="75" text-anchor="middle"><tspan x="1939" dy="0">Sees &quot;Help is on the</tspan><tspan x="1939" dy="14">way&quot;</tspan></text>
+<g transform="translate(1881,44)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<circle cx="2089" cy="75" r="18" fill="#fff" stroke="#333" stroke-width="4"/>
+<text x="2089" y="107" text-anchor="middle" font-size="11"><tspan x="2089" dy="0">Knows help is coming</tspan></text>
+<rect x="1875" y="649" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="1939" y="685" text-anchor="middle"><tspan x="1939" dy="0">Goes to the marked</tspan><tspan x="1939" dy="14">place and helps</tspan></text>
+<g transform="translate(1881,654)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="2025" y="649" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="2089" y="685" text-anchor="middle"><tspan x="2089" dy="0">Marks the request</tspan><tspan x="2089" dy="14">resolved</tspan></text>
+<g transform="translate(2031,654)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
+<rect x="2175" y="229" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
+<text x="2239" y="258" text-anchor="middle"><tspan x="2239" dy="0">Sets the status</tspan><tspan x="2239" dy="14">Resolved and tells</tspan><tspan x="2239" dy="14">the participant</tspan></text>
+<g transform="translate(2187,241)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
+<circle cx="2389" cy="75" r="18" fill="#fff" stroke="#333" stroke-width="4"/>
+<text x="2389" y="107" text-anchor="middle" font-size="11"><tspan x="2389" dy="0">Participant helped</tspan></text>
+</g></svg>

@@ -10,7 +10,7 @@ What shapes the design, and where it comes from:
 
 | # | Driver | Source |
 |---|---|---|
-| D1 | **Isolation between events**: one team must never see or change another event's data | Report, *Permissões por evento*; §5 technical risks |
+| D1 | **Isolation between events**: one team must never see or change another event's data | Report, *Per-event permissions*; §5 technical risks |
 | D2 | **Read peaks**: tens of thousands of participant requests within minutes (e.g. end of a concert) | Report §5 technical risks |
 | D3 | **Weak or congested network** at the venue: short messages, data with its update time | Report §5; assumption A8; annex C10 |
 | D4 | **Freshness**: every piece of information shows when it was last updated | Report §5; annex C4 |
@@ -25,7 +25,8 @@ What shapes the design, and where it comes from:
 ```mermaid
 flowchart LR
     P(["Participant<br/>(P1)"])
-    O(["Incident operator<br/>(P2)"])
+    O(["Control-room operator<br/>(P2)"])
+    R(["Responder in the field<br/>(P5)"])
     A(["Event admin<br/>(P3)"])
     PA(["Platform admin<br/>(P4, to confirm in the domain model)"])
     SYS["Farol"]
@@ -35,14 +36,13 @@ flowchart LR
 
     P -- "uses the mobile app" --> SYS
     O -- "handles help requests" --> SYS
+    R -- "gets dispatched requests, updates status" --> SYS
     A -- "manages the event (web app)" --> SYS
     PA -- "creates events, names Owners" --> SYS
     SYS -- "reads transport data" --> TR
     SYS -- "asks for triage suggestions" --> LLM
     SYS -. "authenticates users" .-> IDP
 ```
-
-The emergency number 112 is not in the diagram: the system does not talk to it. The app shows "Call 112" first and lets the phone make the call (report §5).
 
 ## 3. Container view
 

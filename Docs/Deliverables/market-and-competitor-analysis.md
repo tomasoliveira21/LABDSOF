@@ -1,193 +1,193 @@
-# Análise de Mercado e Concorrência (geral)
+# Market and Competitor Analysis (general)
 
 > LABDSOF 2026/27 · Sprint A
-> **O que é este documento:** a visão **geral** do mercado de gestão de eventos académicos em Portugal, fase a fase, com tudo o que existe hoje. A análise **específica** das funcionalidades que queremos incluir no projeto está no anexo [`market-and-competitor-analysis-product-specific.md`](market-and-competitor-analysis-product-specific.md) (anexo 02a).
-> **Alinhado com o repositório** (`Docs/Deliverables/problem-opportunity-report-queima.md`, commit `442ecc3`, 2026-10-03): plataforma **multi-evento** de coordenação para eventos académicos de grande escala, com aplicação web para o participante e backoffice para a equipa de cada evento. Caso-piloto: Queima das Fitas do Porto.
-> **Mercado-alvo:** Portugal. As referências internacionais servem só de comparação.
+> **What this document is:** the **general** view of the academic event management market in Portugal, phase by phase, with everything that exists today. The **specific** analysis of the features we want to include in the project is in the annex [`market-and-competitor-analysis-product-specific.md`](market-and-competitor-analysis-product-specific.md) (annex 02a).
+> **Aligned with the repository** (`Docs/Deliverables/problem-opportunity-report-queima.md`, commit `442ecc3`, 2026-10-03): a **multi-event** coordination platform for large-scale academic events, with a web application for the participant and a backoffice for each event's team. Pilot case: Queima das Fitas do Porto.
+> **Target market:** Portugal. International references are for comparison only.
 >
-> **Legenda:** sem marca = facto com fonte · "Não identificada" = não encontrámos nas fontes (não quer dizer que não exista). As funcionalidades dos concorrentes são as que os próprios declaram, não foram testadas por nós.
+> **Legend:** no mark = fact with a source · "Not identified" = we did not find it in the sources (it does not mean it does not exist). Competitors' features are the ones they claim themselves; we did not test them.
 
 ---
 
-## 1. Contexto
+## 1. Context
 
-| Indicador | Valor | Fonte |
+| Indicator | Value | Source |
 |---|---|---|
-| Estudantes no ensino superior (2025/26) | 447 680 | [ECO](https://eco.sapo.pt/2026/04/24/numero-de-inscritos-no-ensino-superior-e-o-mais-alto-da-ultima-decada/) |
-| Orçamentos das grandes festas (2023) | Porto €2,5 M · Coimbra €1,5 M · Braga €0,9 M · Aveiro €0,6 M | [Notícias Magazine](https://www.noticiasmagazine.pt/2023/os-milhoes-que-alimentam-as-associacoes-academicas/historias/288877/) |
-| Queima do Porto 2026 | Cerca de 250 000 pessoas em 8 noites; 35 % do orçamento em segurança; mais de 500 operacionais por dia | [Observador](https://observador.pt/2026/04/30/queima-das-fitas-do-porto-arranca-com-maior-investimento-em-seguranca-de-sempre-diz-fap/) |
-| Queima de Coimbra 2026 | €2,2 M; mais de 210 000 visitantes | [As Beiras](https://www.asbeiras.pt/orcamento-da-queima-das-fitas-supera-os-dois-milhoes-de-euros/) |
-| Filas na Queima do Porto (2022 e 2023) | Filas de mais de 500 m, esperas de mais de 3 h, relatos de esmagamento; queixas de "falta de informação e sinalética" | [Renascença](https://rr.pt/noticia/pais/2022/05/05/filas-para-a-queima-das-fitas-do-porto-achei-que-ia-colapsar-a-ser-esmagada-e-quase-a-sufocar/283010/), [Público](https://www.publico.pt/2023/05/08/p3/noticia/primeira-noite-caotica-queima-fitas-porto-voltou-normal-2048919) |
+| Students in higher education (2025/26) | 447,680 | [ECO](https://eco.sapo.pt/2026/04/24/numero-de-inscritos-no-ensino-superior-e-o-mais-alto-da-ultima-decada/) |
+| Budgets of the big festivals (2023) | Porto €2.5 M · Coimbra €1.5 M · Braga €0.9 M · Aveiro €0.6 M | [Notícias Magazine](https://www.noticiasmagazine.pt/2023/os-milhoes-que-alimentam-as-associacoes-academicas/historias/288877/) |
+| Queima do Porto 2026 | About 250,000 people over 8 nights; 35% of the budget on security; more than 500 staff per day | [Observador](https://observador.pt/2026/04/30/queima-das-fitas-do-porto-arranca-com-maior-investimento-em-seguranca-de-sempre-diz-fap/) |
+| Queima de Coimbra 2026 | €2.2 M; more than 210,000 visitors | [As Beiras](https://www.asbeiras.pt/orcamento-da-queima-das-fitas-supera-os-dois-milhoes-de-euros/) |
+| Queues at Queima do Porto (2022 and 2023) | Queues of more than 500 m, waits of more than 3 h, reports of crushing; complaints about "lack of information and signage" | [Renascença](https://rr.pt/noticia/pais/2022/05/05/filas-para-a-queima-das-fitas-do-porto-achei-que-ia-colapsar-a-ser-esmagada-e-quase-a-sufocar/283010/), [Público](https://www.publico.pt/2023/05/08/p3/noticia/primeira-noite-caotica-queima-fitas-porto-voltou-normal-2048919) |
 
-Hoje, cada fase do evento é tratada por uma ferramenta diferente, e a informação que muda durante a noite não chega ao participante (Problem and Opportunity Report, secção 2).
+Today, each phase of the event is handled by a different tool, and the information that changes during the night does not reach the participant (Problem and Opportunity Report, section 2).
 
 ---
 
-## 2. Alternativas por fase
+## 2. Alternatives by phase
 
-### Fase 1 — Disponibilização e compra *(fora do produto; parceiros)*
+### Phase 1 — Availability and purchase *(outside the product; partners)*
 
-| Alternativa | Strengths | Weaknesses | IA |
+| Alternative | Strengths | Weaknesses | AI |
 |---|---|---|---|
-| **BOL** (Queimas do Porto e Coimbra, Enterro da Gata) | Líder nas festas académicas; loja com a marca do evento; rede física; combate à revenda | Comissão de 6 % + IVA; acaba na venda | Não identificada |
-| **Ticketline / MEO Blueticket / Fnac** | Marcas conhecidas; pontos de venda físicos | Cerca de 6 % de comissão; só fazem a venda | Não identificada |
-| **Fever (+ DICE) / Shotgun** | Descoberta de eventos; público jovem; revenda gerida | Orientados para consumo e marketing; preço para o organizador não é público | **Sim** (Fever): recomendações e previsão de procura |
-| **Eventbrite** | Self-service; app de check-in | Cara em bilhetes baratos (cerca de 15,6 % num bilhete de US$ 20) | **Sim**: gera descrições, emails e anúncios |
-| **APP FAP** | App oficial; desconto de estudante; carrega a pulseira cashless | Uma só federação; não cobre a operação do evento | Não identificada |
-| **Status quo** (Instagram + Google Forms + MB Way) | Grátis e conhecido | Pagamentos confirmados à mão; sem controlo de vagas | — |
-| *Ref. internacional:* **FIXR / native** (Reino Unido) | Feitos para associações de estudantes; bilhetes só para estudantes | Não existem em Portugal; não tratam do recinto | Não identificada |
+| **BOL** (Queimas do Porto and Coimbra, Enterro da Gata) | Leader in academic festivals; shop branded with the event; physical network; fights resale | 6% fee + VAT; ends at the sale | Not identified |
+| **Ticketline / MEO Blueticket / Fnac** | Well-known brands; physical points of sale | About 6% fee; only handle the sale | Not identified |
+| **Fever (+ DICE) / Shotgun** | Event discovery; young audience; managed resale | Focused on consumption and marketing; organiser pricing is not public | **Yes** (Fever): recommendations and demand forecasting |
+| **Eventbrite** | Self-service; check-in app | Expensive on cheap tickets (about 15.6% on a US$20 ticket) | **Yes**: generates descriptions, emails and ads |
+| **APP FAP** | Official app; student discount; tops up the cashless wristband | A single federation; does not cover event operations | Not identified |
+| **Status quo** (Instagram + Google Forms + MB Way) | Free and familiar | Payments confirmed by hand; no control of places | — |
+| *International ref.:* **FIXR / native** (United Kingdom) | Built for student unions; student-only tickets | Not present in Portugal; do not handle the venue | Not identified |
 
-### Fase 2 — Entrada e controlo de acessos *(o produto só informa; a capacidade física fica fora de âmbito)*
+### Phase 2 — Entry and access control *(the product only informs; physical capacity is out of scope)*
 
-| Alternativa | Strengths | Weaknesses | IA |
+| Alternative | Strengths | Weaknesses | AI |
 |---|---|---|---|
-| **Pulseira cashless da Queima do Porto** (entrada + pagamento) | Uma pulseira para tudo; menos fraude | Em 2023, a troca do bilhete pela pulseira à porta causou horas de fila ([JN](https://www.jn.pt/pais/artigo/horas-na-fila-e-nao-entraram-troca-de-bilhete-por-pulseira-gera-confusao-no-queimodromo/16310596)); o participante não sabe que porta está menos cheia | Não |
-| **Leitores da própria bilhética** (BOL, Eventbrite, pretix) | Validação de QR incluída | Cada plataforma tem o seu leitor; sem lotação por zona em tempo real | Não |
-| **Listas em papel ou Excel** (eventos pequenos) | Grátis; funcionam sem rede | Fraude, filas, sem dados | — |
-| *Ref. internacional:* **Weezevent** (França) | Bilhete, entrada (QR/NFC, zonas, offline) e cashless numa plataforma | Festivais profissionais; sem presença conhecida em Portugal | Não identificada |
-| *Ref. internacional:* **Waitwhile** (fila virtual) | Entrada na fila por link ou SMS, com tempo de espera estimado; mais de 30 000 pessoas geridas no Tribeca Film Festival ([caso](https://waitwhile.com/case-studies/tribeca-film-festival/)) | Pensado para filas de experiências e serviços, não para portas de um recinto com dezenas de milhares de pessoas | Não identificada |
+| **Queima do Porto cashless wristband** (entry + payment) | One wristband for everything; less fraud | In 2023, exchanging the ticket for the wristband at the gate caused hours of queuing ([JN](https://www.jn.pt/pais/artigo/horas-na-fila-e-nao-entraram-troca-de-bilhete-por-pulseira-gera-confusao-no-queimodromo/16310596)); the participant does not know which gate is less crowded | No |
+| **The ticketing platform's own scanners** (BOL, Eventbrite, pretix) | QR validation included | Each platform has its own scanner; no real-time occupancy per zone | No |
+| **Paper or Excel lists** (small events) | Free; work without a network | Fraud, queues, no data | — |
+| *International ref.:* **Weezevent** (France) | Ticket, entry (QR/NFC, zones, offline) and cashless in one platform | Professional festivals; no known presence in Portugal | Not identified |
+| *International ref.:* **Waitwhile** (virtual queue) | Join the queue by link or SMS, with an estimated wait time; more than 30,000 people managed at the Tribeca Film Festival ([case](https://waitwhile.com/case-studies/tribeca-film-festival/)) | Designed for experience and service queues, not for the gates of a venue with tens of thousands of people | Not identified |
 
-### Fase 3 — Durante o evento
+### Phase 3 — During the event
 
-#### 3a. Informação ao participante e orientação no recinto
+#### 3a. Participant information and wayfinding at the venue
 
-| Alternativa | Strengths | Weaknesses | IA |
+| Alternative | Strengths | Weaknesses | AI |
 |---|---|---|---|
-| **Instagram, site do evento e planta em imagem** (status quo) | É onde o público está; custo zero | Informação estática, publicada antes do evento; a planta é uma imagem que não se atualiza; não chega a quem já está no recinto | — |
-| **APP FAP** | Base de estudantes do Porto; marca oficial | Bilhetes, descontos e desporto; não tem planta, avisos operacionais nem ajuda (segundo a página da FAP) | Não identificada |
-| **Apps de festivais portugueses** (NOS Alive, Rock in Rio Lisboa) | Cartaz, mapa, agenda, informação de shuttles | Uma app por festival; só informação; sem pedido de ajuda | Não identificada |
-| **BindePaFesta** (PT, lançada em junho de 2026) | Mapa único de arraiais e festas populares do país; chegou ao topo da App Store portuguesa ([RFM](https://rfm.pt/atualidade/23680/esta-app-portuguesa-mostra-te-onde-sao-as-festas-da-terrinha-e-ja-esta-entre-as-mais-descarregadas)) | Serve para descobrir festas, não para orientar dentro do recinto nem para a operação | Não identificada |
-| *Ref. internacional:* **Appmiral** (CM.com) | App de festival madura: mapa, horários, push, botão SOS com localização | €375–935/mês; uma app por festival; exige instalação | Não identificada |
-| *Ref. internacional:* **Woov** | Uma só app para muitos festivais; mapa, horários, amigos; tem interface em português ([App Store](https://apps.apple.com/nl/app/woov-your-festival-companion/id1580044680)) | Exige instalação e recolhe localização exata; sem pedido de ajuda nem operação | **Sim**: moderação automática do chat |
-| *Ref. internacional:* **LineUpr** (Alemanha) | App de evento em PWA, sem instalação; subscrição anual para vários eventos ([preços](https://lineupr.com/en/pricing/)) | Feita para conferências; sem ajuda nem ocorrências | Não identificada |
-| *Ref. internacional:* **42Chat FestivalBot** (EUA) | Assistente por SMS ou web que responde a dúvidas sobre o evento (mais de 60 temas) ([site](https://www.42chat.com/festivalbot)) | Só perguntas e respostas; preço não público; não diz como trata o que não sabe responder | **Sim**: chatbot |
+| **Instagram, event website and map as an image** (status quo) | It is where the audience is; zero cost | Static information, published before the event; the map is an image that is not updated; does not reach those already at the venue | — |
+| **APP FAP** | Porto student base; official brand | Tickets, discounts and sport; no map, operational alerts or help (according to FAP's page) | Not identified |
+| **Portuguese festival apps** (NOS Alive, Rock in Rio Lisboa) | Line-up, map, schedule, shuttle information | One app per festival; information only; no help request | Not identified |
+| **BindePaFesta** (PT, launched in June 2026) | A single map of the country's village and popular festivals; reached the top of the Portuguese App Store ([RFM](https://rfm.pt/atualidade/23680/esta-app-portuguesa-mostra-te-onde-sao-as-festas-da-terrinha-e-ja-esta-entre-as-mais-descarregadas)) | For discovering festivals, not for wayfinding inside the venue or for operations | Not identified |
+| *International ref.:* **Appmiral** (CM.com) | Mature festival app: map, timetables, push, SOS button with location | €375–935/month; one app per festival; requires installation | Not identified |
+| *International ref.:* **Woov** | One app for many festivals; map, timetables, friends; has a Portuguese interface ([App Store](https://apps.apple.com/nl/app/woov-your-festival-companion/id1580044680)) | Requires installation and collects exact location; no help request or operations | **Yes**: automatic chat moderation |
+| *International ref.:* **LineUpr** (Germany) | Event app as a PWA, no installation; yearly subscription for several events ([pricing](https://lineupr.com/en/pricing/)) | Built for conferences; no help or incidents | Not identified |
+| *International ref.:* **42Chat FestivalBot** (USA) | SMS or web assistant that answers questions about the event (more than 60 topics) ([site](https://www.42chat.com/festivalbot)) | Questions and answers only; pricing not public; does not say how it handles what it cannot answer | **Yes**: chatbot |
 
-#### 3b. Pagamentos no recinto *(fora do produto)*
+#### 3b. Payments at the venue *(outside the product)*
 
-| Alternativa | Strengths | Weaknesses | IA |
+| Alternative | Strengths | Weaknesses | AI |
 |---|---|---|---|
-| **Zpos** (POS, PT) | Certificado pela AT; MB Way; funciona offline até 5 dias; desde €19,90/mês | Só pagamentos e faturação | Não identificada |
-| **SumUp / ifthenpay** | Baratos e conhecidos | Só pagamento | Não |
+| **Zpos** (POS, PT) | Certified by the Tax Authority; MB Way; works offline for up to 5 days; from €19.90/month | Payments and invoicing only | Not identified |
+| **SumUp / ifthenpay** | Cheap and well known | Payment only | No |
 
-#### 3c. Pedidos de ajuda, ocorrências e coordenação da equipa
+#### 3c. Help requests, incidents and team coordination
 
-| Alternativa | Strengths | Weaknesses | IA |
+| Alternative | Strengths | Weaknesses | AI |
 |---|---|---|---|
-| **Rádio + grupos WhatsApp** | Imediatos; o rádio funciona sem rede | Sem registo, sem prioridade, sem localização precisa; não chegam ao participante | — |
-| **Linha WhatsApp/QR + Ponto Lilás + voluntários por cores** (Queima do Porto) | Humano, conhecido, sem instalação | Pedidos sem categoria, local ou estado; não deixa dados | — |
-| **Zello** (walkie-talkie no telemóvel) | Substitui rádios por US$ 7–13/utilizador/mês | Depende da rede; voz sem estrutura | Parcial: transcrição |
-| *Ref. internacional:* **Raven Controls** (COP26, FIFA) | Ciclo completo ocorrência → resposta; o público reporta por WhatsApp/QR | Enterprise; sem PT; pensado para centrais profissionais | **Sim**: sugere categoria, prioridade e procedimento |
-| *Ref. internacional:* **CriticalArc SafeZone** (campus) | Três botões de ajuda; localização só no momento do alerta; cerca de 25 % das universidades do Reino Unido | Só dentro do campus; exige app; licença institucional | Não identificada |
-| *Ref. internacional:* **Rosterfy / VolunteerLocal** | Escalas e check-in de voluntários | Não tratam ocorrências em tempo real | **Sim** (Rosterfy) |
+| **Radio + WhatsApp groups** | Immediate; radio works without a network | No record, no priority, no precise location; do not reach the participant | — |
+| **WhatsApp/QR line + Ponto Lilás + colour-coded volunteers** (Queima do Porto) | Human, familiar, no installation | Requests without category, place or status; leaves no data | — |
+| **Zello** (walkie-talkie on the phone) | Replaces radios for US$7–13/user/month | Depends on the network; unstructured voice | Partial: transcription |
+| *International ref.:* **Raven Controls** (COP26, FIFA) | Full incident → response cycle; the public reports by WhatsApp/QR | Enterprise; no PT; designed for professional control rooms | **Yes**: suggests category, priority and procedure |
+| *International ref.:* **CriticalArc SafeZone** (campus) | Three help buttons; location only at the moment of the alert; about 25% of UK universities | Campus only; requires an app; institutional licence | Not identified |
+| *International ref.:* **Rosterfy / VolunteerLocal** | Volunteer rosters and check-in | Do not handle incidents in real time | **Yes** (Rosterfy) |
 
-### Fase 4 — Regresso a casa e mobilidade
+### Phase 4 — Getting home and mobility
 
-| Alternativa | Strengths | Weaknesses | IA |
+| Alternative | Strengths | Weaknesses | AI |
 |---|---|---|---|
-| **Comunicados da STCP, Metro e Andante** | Informação oficial sobre vaivéns e reforços ([STCP](https://www.stcp.pt/pt/noticias/stcp-com-servico-dedicado-para-a-queima-das-fitas-do-porto/), [Andante](https://andante.pt/noticias/operacoes-especiais-queima-fitas-2025/)) | Publicados antes do evento, em canais separados; não dizem o que mudou durante a noite | — |
-| **Google Maps com tempo real da STCP** (desde 9 de junho de 2026) | Localização dos autocarros e minutos até à chegada em 2 517 paragens ([Renascença](https://rr.pt/noticia/pais/2026/06/09/stcp-disponibiliza-horarios-dos-autocarros-em-tempo-real-no-google-maps/473765/)) | A notícia não diz se inclui os vaivéns especiais da Queima **[H: verificar]**; não conhece o recinto nem as paragens temporárias | Não identificada |
-| **Moovit / app Anda** | Planeamento de viagem; bilhética Andante | Não conhecem o contexto do evento | Não identificada |
-| **TVDE** (Uber, Bolt) | Partilha de viagem e botão de emergência | Preço e espera nos picos; não se ligam à organização | Não identificada |
+| **STCP, Metro and Andante announcements** | Official information on shuttles and extra services ([STCP](https://www.stcp.pt/pt/noticias/stcp-com-servico-dedicado-para-a-queima-das-fitas-do-porto/), [Andante](https://andante.pt/noticias/operacoes-especiais-queima-fitas-2025/)) | Published before the event, on separate channels; do not say what changed during the night | — |
+| **Google Maps with STCP real time** (since 9 June 2026) | Bus location and minutes to arrival at 2,517 stops ([Renascença](https://rr.pt/noticia/pais/2026/06/09/stcp-disponibiliza-horarios-dos-autocarros-em-tempo-real-no-google-maps/473765/)) | The news does not say whether it includes the Queima's special shuttles **[H: to verify]**; does not know the venue or the temporary stops | Not identified |
+| **Moovit / Anda app** | Journey planning; Andante ticketing | Do not know the event context | Not identified |
+| **Ride-hailing** (Uber, Bolt) | Trip sharing and emergency button | Price and wait at peaks; not connected to the organisation | Not identified |
 
-### Fase 5 — Pós-evento
+### Phase 5 — After the event
 
-| Alternativa | Strengths | Weaknesses | IA |
+| Alternative | Strengths | Weaknesses | AI |
 |---|---|---|---|
-| **Relatórios de cada fornecedor** (BOL, cashless, Zpos) | Dados de vendas e consumos fiáveis | Cada um mostra só a sua parte | **Sim** (Fever) |
-| **Excel e relatórios manuais** | Flexível | Lento; as ocorrências tratadas por rádio não deixam histórico; o conhecimento perde-se quando a direção muda | — |
+| **Each supplier's reports** (BOL, cashless, Zpos) | Reliable sales and consumption data | Each one shows only its own part | **Yes** (Fever) |
+| **Excel and manual reports** | Flexible | Slow; incidents handled by radio leave no history; knowledge is lost when the board changes | — |
 
-### Síntese
+### Summary
 
-| Fase | Situação no mercado português | O nosso produto |
+| Phase | Situation in the Portuguese market | Our product |
 |---|---|---|
-| Compra | **Bem servida** (BOL, Ticketline, Fever), com cerca de 6 % de comissão | Fora. Parceiro |
-| Entrada | Resolvida tecnicamente nos eventos grandes; as filas de 2022 e 2023 mostram falta de **informação** ao participante | Só informação (portas, avisos). Tempo de espera é opção do inquérito |
-| Durante: informação | **Estática** (Instagram, imagem da planta); as apps que existem são de um só evento ou de uma só federação | **Dentro**: planta, informação e avisos |
-| Durante: ajuda e ocorrências | **Fragmentada e sem registo** (rádio, WhatsApp) | **Dentro**: pedido de ajuda e backoffice |
-| Regresso | Informação oficial dispersa; o tempo real da STCP chegou ao Google Maps em 2026 | **Dentro**: informação de transportes do evento |
-| Pós-evento | **Manual** | Consequência: fica o histórico das ocorrências |
-| IA | Existe em marketing (Eventbrite, Fever), em centrais profissionais (Raven) e em assistentes de perguntas (42Chat). **Não encontrámos IA na operação de eventos académicos em Portugal** | Opções: triagem de pedidos e assistente de dúvidas, sempre com alternativa sem IA |
+| Purchase | **Well served** (BOL, Ticketline, Fever), with about a 6% fee | Out. Partner |
+| Entry | Technically solved at large events; the 2022 and 2023 queues show a lack of **information** for the participant | Information only (gates, alerts). Wait time is a survey option |
+| During: information | **Static** (Instagram, map image); existing apps cover a single event or a single federation | **In**: map, information and alerts |
+| During: help and incidents | **Fragmented and unrecorded** (radio, WhatsApp) | **In**: help request and backoffice |
+| Getting home | Scattered official information; STCP real time reached Google Maps in 2026 | **In**: the event's transport information |
+| After the event | **Manual** | Side effect: the incident history is kept |
+| AI | Exists in marketing (Eventbrite, Fever), in professional control rooms (Raven) and in Q&A assistants (42Chat). **We found no AI in the operation of academic events in Portugal** | Options: request triage and a Q&A assistant, always with a non-AI alternative |
 
 ---
 
-## 3. Oportunidade de diferenciação
+## 3. Differentiation opportunity
 
-**O problema do mercado:** quem informa o participante (Instagram, apps de festival) não trata ocorrências; quem trata ocorrências (rádio, centrais profissionais) não fala com o participante. Em Portugal, estas duas metades vivem em canais separados e nenhuma fica registada.
+**The market problem:** those who inform the participant (Instagram, festival apps) do not handle incidents; those who handle incidents (radio, professional control rooms) do not talk to the participant. In Portugal, these two halves live on separate channels and neither is recorded.
 
-**A nossa proposta (repositório):** uma plataforma multi-evento com duas faces ligadas pelos mesmos dados.
+**Our proposal (repository):** a multi-event platform with two sides connected by the same data.
 
-| Face | O que faz | O que ganha por estar ligada à outra |
+| Side | What it does | What it gains from being connected to the other |
 |---|---|---|
-| **Aplicação web do participante** (link ou QR, sem instalar, com login) | Escolhe o evento; vê a planta, a informação essencial e os transportes; pede ajuda | O pedido chega à equipa com contexto e local na planta |
-| **Backoffice da equipa do evento** | Configura o evento (planta, pontos, transportes); atualiza informação durante a noite; recebe, prioriza e encaminha ocorrências | O que a equipa atualiza aparece logo ao participante; cada equipa só vê o seu evento |
+| **Participant web application** (link or QR, no installation, with login) | Chooses the event; sees the map, essential information and transport; asks for help | The request reaches the team with context and a place on the map |
+| **Event team backoffice** | Configures the event (map, points, transport); updates information during the night; receives, prioritises and routes incidents | What the team updates appears to the participant immediately; each team only sees its own event |
 
-**Porque é diferente das alternativas:**
+**Why it is different from the alternatives:**
 
-1. **Liga participante e operação.** As apps de festival ficam na informação; o rádio e o WhatsApp ficam na operação. A referência mais próxima (Raven Controls) é para centrais profissionais e não tem versão portuguesa.
-2. **Multi-evento com equipas independentes.** Uma só aplicação para várias Queimas e semanas académicas. As apps de festival clássicas são uma por evento (Appmiral); as multi-evento (Woov, LineUpr) não têm operação.
-3. **A planta como referência comum.** O participante orienta-se por ela e a equipa situa nela os pedidos. Nas alternativas portuguesas a planta é uma imagem nas redes sociais.
-4. **Sem instalação e preparada para rede fraca.** Appmiral, Woov e SafeZone exigem app nativa.
-5. **Informação que muda durante a noite**, com a hora da última atualização. O status quo é estático.
-6. **Local:** PT-PT, transportes especiais do evento, "Ligar 112" em primeiro lugar nas emergências.
-7. **IA com alternativa sem IA.** Não é diferenciadora por si (o Raven e o 42Chat já a usam); o que conta é estar avaliada e ter fallback, como pede o enunciado.
+1. **It connects participant and operations.** Festival apps stop at information; radio and WhatsApp stop at operations. The closest reference (Raven Controls) is for professional control rooms and has no Portuguese version.
+2. **Multi-event with independent teams.** One application for several Queimas and academic weeks. Classic festival apps are one per event (Appmiral); multi-event ones (Woov, LineUpr) have no operations.
+3. **The map as the common reference.** The participant finds their way with it and the team places requests on it. In the Portuguese alternatives, the map is an image on social media.
+4. **No installation and ready for a weak network.** Appmiral, Woov and SafeZone require a native app.
+5. **Information that changes during the night**, with the time of the last update. The status quo is static.
+6. **Local:** European Portuguese and the event's special transport.
+7. **AI with a non-AI alternative.** It is not a differentiator in itself (Raven and 42Chat already use it); what counts is that it is evaluated and has a fallback, as the assignment requires.
 
-**Riscos a gerir:**
+**Risks to manage:**
 
-| Risco | Resposta |
+| Risk | Response |
 |---|---|
-| "Já temos o Instagram e o WhatsApp" | Mostrar o ganho em tempo até à ajuda e em informação atualizada; entrada por QR tão rápida como o WhatsApp |
-| O fornecedor da app atual da federação sente-se substituído | Entrar como complemento, por link ou QR, sem exigir mudanças na app existente |
-| Um fornecedor internacional (Appmiral, Woov) desce de segmento | Operação e ocorrências, que não são o ADN deles; contexto português |
-| Uso concentrado em poucos dias por ano | Multi-evento: o mesmo utilizador volta noutros eventos |
-| Âmbito grande para o MVP | Prioridade: pedido de ajuda, planta e transportes (como está no repositório) |
+| "We already have Instagram and WhatsApp" | Show the gain in time to help and in up-to-date information; QR entry as fast as WhatsApp |
+| The supplier of the federation's current app feels replaced | Come in as a complement, through a link or QR, without requiring changes to the existing app |
+| An international supplier (Appmiral, Woov) moves down-market | Operations and incidents, which are not in their DNA; Portuguese context |
+| Use concentrated in a few days a year | Multi-event: the same user comes back for other events |
+| Large scope for the MVP | Priority: help request, map and transport (as in the repository) |
 
-O detalhe por funcionalidade (alternativas, matriz comparativa, preços e hipóteses a validar) está no anexo `02a`.
-
----
-
-## 4. Fontes principais
-
-[Problem and Opportunity Report (repositório)](https://github.com/tomasoliveira21/LABDSOF) · [Taxas de bilhética em Portugal (Observador)](https://observador.pt/especiais/bilhetes-para-concertos-mais-caros-ha-espetaculos-com-taxa-extra-para-garantir-servidores-mais-potentes/) · [BOL — Enterro da Gata 2026](https://enterrodagata.bol.pt/Comprar/Bilhetes/176491-enterro_da_gata_2026_bilhete_geral-forum_braga_gatodromo/) · [Fever — Data & Analytics](https://business.feverup.com/en/event-data-and-analytics/) · [Shotgun](https://nevent.ai/en/ticketing-platforms/shotgun/) · [Eventbrite — ferramentas de IA](https://www.eventbrite.com/blog/press/newsroom/eventbrite-introduces-ai-powered-tools-to-empower-creators-and-reimagine-event-marketing/) · [Taxas da Eventbrite 2026](https://www.tickpick.com/blog/organizer/eventbrite-2026-fee-changes) · [APP FAP](https://www.fap.pt/noticias/app-fap-fap-no-teu-bolso) · [Pulseira cashless da Queima (JPN)](https://www.jpn.up.pt/2023/04/14/queima-das-fitas-no-queimodromo-pagamentos-vao-ser-feitos-com-uma-pulseira/) · [FIXR](https://blog.fixr.co/reasons-to-use-fixr-for-your-society-events/) · [native](https://knowledge.native.fm/kb/en/events-ticketing-227940) · [Weezevent](https://weezevent.com/en-gb/festivals/) · [Waitwhile — Tribeca](https://waitwhile.com/case-studies/tribeca-film-festival/) · [BindePaFesta (RFM)](https://rfm.pt/atualidade/23680/esta-app-portuguesa-mostra-te-onde-sao-as-festas-da-terrinha-e-ja-esta-entre-as-mais-descarregadas) · [Appmiral — preços](https://appmiral.com/pricing) · [Woov (App Store)](https://apps.apple.com/nl/app/woov-your-festival-companion/id1580044680) · [LineUpr — preços](https://lineupr.com/en/pricing/) · [42Chat FestivalBot](https://www.42chat.com/festivalbot) · [Zpos](https://en.zpos.pt/festivals/) · [SumUp PT](https://pt.mobiletransaction.org/sumup-leitor-cartoes/) · [ifthenpay](https://shelf.pt/blog/ifthenpay-review) · [Zello](https://zello.com/pricing/) · [Raven Controls](https://ravencontrols.com/) · [CriticalArc SafeZone](https://criticalarc.com/safezone-features/) · [Rosterfy](https://www.rosterfy.com/pricing/) · [STCP — serviço da Queima](https://www.stcp.pt/pt/noticias/stcp-com-servico-dedicado-para-a-queima-das-fitas-do-porto/) · [STCP em tempo real no Google Maps (Renascença, 2026)](https://rr.pt/noticia/pais/2026/06/09/stcp-disponibiliza-horarios-dos-autocarros-em-tempo-real-no-google-maps/473765/).
-
-Restantes fontes no anexo `02a`, secção 9.
+The detail per feature (alternatives, comparison matrix, prices and hypotheses to validate) is in annex `02a`.
 
 ---
 
-## 5. Como usei IA nesta pesquisa
+## 4. Main sources
 
-### 5.1 Ferramenta e papel
+[Problem and Opportunity Report (repository)](https://github.com/tomasoliveira21/LABDSOF) · [Ticketing fees in Portugal (Observador)](https://observador.pt/especiais/bilhetes-para-concertos-mais-caros-ha-espetaculos-com-taxa-extra-para-garantir-servidores-mais-potentes/) · [BOL — Enterro da Gata 2026](https://enterrodagata.bol.pt/Comprar/Bilhetes/176491-enterro_da_gata_2026_bilhete_geral-forum_braga_gatodromo/) · [Fever — Data & Analytics](https://business.feverup.com/en/event-data-and-analytics/) · [Shotgun](https://nevent.ai/en/ticketing-platforms/shotgun/) · [Eventbrite — AI tools](https://www.eventbrite.com/blog/press/newsroom/eventbrite-introduces-ai-powered-tools-to-empower-creators-and-reimagine-event-marketing/) · [Eventbrite fees 2026](https://www.tickpick.com/blog/organizer/eventbrite-2026-fee-changes) · [APP FAP](https://www.fap.pt/noticias/app-fap-fap-no-teu-bolso) · [Queima cashless wristband (JPN)](https://www.jpn.up.pt/2023/04/14/queima-das-fitas-no-queimodromo-pagamentos-vao-ser-feitos-com-uma-pulseira/) · [FIXR](https://blog.fixr.co/reasons-to-use-fixr-for-your-society-events/) · [native](https://knowledge.native.fm/kb/en/events-ticketing-227940) · [Weezevent](https://weezevent.com/en-gb/festivals/) · [Waitwhile — Tribeca](https://waitwhile.com/case-studies/tribeca-film-festival/) · [BindePaFesta (RFM)](https://rfm.pt/atualidade/23680/esta-app-portuguesa-mostra-te-onde-sao-as-festas-da-terrinha-e-ja-esta-entre-as-mais-descarregadas) · [Appmiral — pricing](https://appmiral.com/pricing) · [Woov (App Store)](https://apps.apple.com/nl/app/woov-your-festival-companion/id1580044680) · [LineUpr — pricing](https://lineupr.com/en/pricing/) · [42Chat FestivalBot](https://www.42chat.com/festivalbot) · [Zpos](https://en.zpos.pt/festivals/) · [SumUp PT](https://pt.mobiletransaction.org/sumup-leitor-cartoes/) · [ifthenpay](https://shelf.pt/blog/ifthenpay-review) · [Zello](https://zello.com/pricing/) · [Raven Controls](https://ravencontrols.com/) · [CriticalArc SafeZone](https://criticalarc.com/safezone-features/) · [Rosterfy](https://www.rosterfy.com/pricing/) · [STCP — Queima service](https://www.stcp.pt/pt/noticias/stcp-com-servico-dedicado-para-a-queima-das-fitas-do-porto/) · [STCP real time on Google Maps (Renascença, 2026)](https://rr.pt/noticia/pais/2026/06/09/stcp-disponibiliza-horarios-dos-autocarros-em-tempo-real-no-google-maps/473765/).
 
-| Item | Descrição |
+Remaining sources in annex `02a`, section 9.
+
+---
+
+## 5. How I used AI in this research
+
+### 5.1 Tool and role
+
+| Item | Description |
 |---|---|
-| Ferramenta | **Claude** (Anthropic), num projeto chamado "LABDSOF" que guarda os documentos de trabalho, com pesquisa na web e leitura de páginas ativadas |
-| Papel da IA | **Assistente de pesquisa e de redação.** Procurou alternativas, leu as páginas dos fornecedores e a imprensa, resumiu e organizou em tabelas |
-| Papel meu | Defini o âmbito e as perguntas em cada ronda, decidi o que entrava e saía, e alinhei o resultado com as decisões do grupo |
-| O que a IA **não** fez | Não fez pesquisa com utilizadores, não testou produtos, não tomou decisões de produto |
+| Tool | **Claude** (Anthropic), in a project called "LABDSOF" that keeps the working documents, with web search and page reading enabled |
+| AI's role | **Research and writing assistant.** It searched for alternatives, read supplier pages and the press, summarised and organised them into tables |
+| My role | I set the scope and the questions in each round, decided what went in and out, and aligned the result with the group's decisions |
+| What the AI did **not** do | It did no user research, tested no products and made no product decisions |
 
-### 5.2 Processo, por iteração
+### 5.2 Process, by iteration
 
-| Data | Versão | O que pedi | O que a IA fez |
+| Date | Version | What I asked | What the AI did |
 |---|---|---|---|
-| 2026-09-24 | v1.x | Concorrentes e alternativas não digitais para a coordenação de segurança, nas dimensões do enunciado | Três rondas de pesquisa (8 → 20 → 29 fichas), com matriz de 15 capacidades. |
-| 2026-10-01 | v2.0 | Alargar à gestão de eventos académicos como um todo | Pesquisa por etapa do ciclo do evento: 10 famílias, mais de 50 produtos, preços públicos |
-| 2026-10-01 | v3.0 | Versão curta, por fase, com forças, fraquezas e uso de IA, só mercado português | Condensou a pesquisa anterior em 2–3 páginas |
-| 2026-10-06 | **v4.0** (este documento) | Iterar a análise com base no que já está no repositório | Leu o Problem and Opportunity Report, o guião do inquérito e o histórico de commits do repositório; reorganizou as fases; fez pesquisa nova para a informação ao participante, as filas e o regresso a casa (fontes P1–P10 do anexo `02a`) |
+| 2026-09-24 | v1.x | Competitors and non-digital alternatives for security coordination, along the assignment's dimensions | Three research rounds (8 → 20 → 29 profiles), with a 15-capability matrix. |
+| 2026-10-01 | v2.0 | Widen it to academic event management as a whole | Research per stage of the event lifecycle: 10 families, more than 50 products, public prices |
+| 2026-10-01 | v3.0 | A short version, by phase, with strengths, weaknesses and AI use, Portuguese market only | Condensed the previous research into 2–3 pages |
+| 2026-10-06 | **v4.0** (this document) | Iterate the analysis based on what is already in the repository | Read the Problem and Opportunity Report, the survey script and the repository's commit history; reorganised the phases; did new research on participant information, queues and getting home (sources P1–P10 of annex `02a`) |
 
-### 5.3 Regras que segui para manter a evidência fiável
+### 5.3 Rules I followed to keep the evidence reliable
 
-| Regra | Como se vê no documento |
+| Rule | Where it shows in the document |
 |---|---|
-| Cada facto tem uma fonte com link | Links nas tabelas e na secção 4 |
-| Ausência de evidência não é evidência de ausência | "Não identificada" na coluna de IA |
-| Funcionalidades dos concorrentes são alegações comerciais | Aviso na legenda; nenhum produto foi testado |
-| Nenhum dado de utilizadores foi gerado por IA | Este documento não tem resultados de inquéritos nem de entrevistas |
-| A IA não é apresentada como facto | As conclusões da secção 3 são leitura nossa das tabelas, não um resultado medido |
+| Every fact has a linked source | Links in the tables and in section 4 |
+| Absence of evidence is not evidence of absence | "Not identified" in the AI column |
+| Competitors' features are commercial claims | Warning in the legend; no product was tested |
+| No user data was generated by AI | This document has no survey or interview results |
+| AI output is not presented as fact | The conclusions in section 3 are our reading of the tables, not a measured result |
 
-### 5.4 Limitações do uso de IA
+### 5.4 Limitations of the AI use
 
-| Limitação | Efeito possível | Mitigação |
+| Limitation | Possible effect | Mitigation |
 |---|---|---|
-| A IA lê as páginas através de um resumo automático | Pode falhar um pormenor ou um preço | Abrir a fonte antes de citar um número no relatório final |
-| Preços e funcionalidades mudam | Dados podem estar desatualizados | Cada lista de fontes tem a data de consulta |
-| Algumas pesquisas não devolveram nada útil (por exemplo, apps oficiais da Queima de Coimbra e do Enterro da Gata) | Lacunas na cobertura | Registadas como "não encontrado" |
-| A IA pode errar ou inventar | Risco de afirmações sem base | Só ficaram afirmações com link; verificação humana abaixo |
+| The AI reads pages through an automatic summary | It may miss a detail or a price | Open the source before quoting a number in the final report |
+| Prices and features change | Data may be out of date | Each source list has the date it was checked |
+| Some searches returned nothing useful (for example, official apps of Queima de Coimbra and Enterro da Gata) | Gaps in coverage | Recorded as "not found" |
+| AI can make mistakes or invent things | Risk of unfounded claims | Only claims with a link were kept; human verification below |
