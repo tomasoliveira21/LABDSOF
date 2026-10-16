@@ -198,9 +198,9 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | ADR | Decision | Status |
 |---|---|---|
 | ADR-001 | Architectural style and evolution (§11) | Waits for the professor (evolution) |
-| ADR-002 | Backend and frontend technology | Ready to write (Bruno) |
-| ADR-003 | Database and data ownership | Ready to write (Bruno) |
-| ADR-004 | Message broker, delivery guarantees, communication only through events | Ready to write (Bruno) |
+| [ADR-002](adr/0002-backend-and-frontend-technology.md) | Backend and frontend technology | Accepted |
+| [ADR-003](adr/0003-database-and-data-ownership.md) | Database and data ownership | Accepted |
+| [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
 | ADR-005 | AI workflow, provider and fallback | Waits for Tomás |
 | ADR-006 | Identity | Waits for Guerra |
 | ADR-007 | Venue map representation | Waits for Tiago |

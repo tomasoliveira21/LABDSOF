@@ -2,6 +2,20 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-16 · ADR-002, ADR-003 and ADR-004 (#38, Bruno Lopes)
+
+**Why:** the technology, data and communication decisions confirmed on 11 and 15 October lived only in the decisions guide. The assignment asks for them as Architecture Decision Records (§7.1.2, item 8).
+
+### Added
+- `Docs/Technical/adr/` in the Michael Nygard format plus *Alternatives considered* (guide B7):
+  - `0002-backend-and-frontend-technology.md`: Java 21, Spring Boot 4.x, Maven; React web app; React Native mobile app. Reason: the stacks the team already uses.
+  - `0003-database-and-data-ownership.md`: PostgreSQL only, one database per service (one schema per module if ADR-001 confirms a monolith phase), `event_id` filtering with an isolation test per service, Flyway with *expand and contract*.
+  - `0004-service-communication.md`: RabbitMQ with Spring AMQP, events only between services, outbox table, idempotent consumers, dead-letter queue, contract-first OpenAPI under `/api/v1`, polling.
+- Each ADR cites the guide ids it records and lists its open points with their owner. Alternatives come from the options in the old `architecture.md` §12; reviewers should confirm the reasons given.
+
+### Changed
+- `architecture.md` §13: ADR-002, 003 and 004 marked *Accepted* and linked. `README.md`: ADRs added to the index.
+
 ## [Unreleased] · 2026-10-15 · Architecture decisions confirmed by the team (#35)
 
 **Why:** the team meeting of 15 October confirmed the proposals below and split the remaining investigations. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions, 15 October 2026, team meeting*).
