@@ -2,6 +2,12 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-16 · Move README into Docs
+
+### Changed
+- Moved the repository README to `Docs/README.md` and adjusted its relative links.
+- Updated README paths in the project instructions, process documentation, meeting notes and changelog.
+
 ## [Unreleased] · 2026-10-15 · Architecture decisions confirmed by the team (#35)
 
 **Why:** the team meeting of 15 October confirmed the proposals below and split the remaining investigations. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Follow-up decisions, 15 October 2026, team meeting*).
@@ -14,7 +20,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - `architecture-decisions-guide.md`: rewritten as **Decisões Arquiteturais**: background, options and practice questions removed; only decisions, their status and owners; decisions credited to the team; *Próximos passos* added.
-- `README.md`: index entry updated; issue title format `[<Type>] <Title>` (§1), also in `team-and-process.md` §4.
+- `Docs/README.md`: index entry updated; issue title format `[<Type>] <Title>` (§1), also in `team-and-process.md` §4.
 - `architecture.md`: rewritten to match the team decisions: five services, React web + React Native mobile, RabbitMQ with outbox, events only between services, polling, PostgreSQL per service, style and evolution (§11), technology table and ADR list with status. Open items marked **[PENDING]** with their owner.
 - Owners assigned to the open items (gateway, Security & Privacy assessment, map library, mobile setup, account deletion, API outline, Responsible AI). Walking skeleton moved to a later phase (no owner yet); Bruno writes the ADRs that are ready (002, 003, 004, 009).
 
@@ -32,7 +38,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - `architecture-decisions-guide.md`: **Decisão** lines filled; items left to Tiago marked.
-- `README.md`: SDD rules added to the documentation index.
+- `Docs/README.md`: SDD rules added to the documentation index.
 
 ## [Unreleased] · 2026-10-15 · Consolidated domain model and Porto Digital bus source
 
@@ -90,7 +96,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - **Translated to English:** the Problem and Opportunity Report, the Market and Competitor Analysis and its product-specific annex. Content unchanged.
 - `Docs/Research/inquerito-estudantes-google-forms.gs`: comments in English; the survey questions stay in Portuguese, for Portuguese students.
 - Quotes from the report in `features.md`, `product-vision.md`, `user-workflows.md`, `domain-model.md` and `architecture.md` now use the English text and section names.
-- `README.md`: language rule recorded, with two exceptions (survey questions, speaker notes); documentation index marks every document as EN; branch protection includes the Conventions check.
+- `Docs/README.md`: language rule recorded, with two exceptions (survey questions, speaker notes); documentation index marks every document as EN; branch protection includes the Conventions check.
 - `team-and-process.md`: language decision recorded; process health check updated (merge commits up to PR #30, the `feat/` branch, the new check and issue forms).
 - `definition-of-ready-and-done.md`: the "Open items" gap is replaced by *In the tool*, which says where each rule lives and what is left to set up on the board.
 
@@ -108,7 +114,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - `architecture.md`: status line, §10 (deployment target gap closed), §11 and §12 updated with the decisions above.
-- `README.md`: guide added to the documentation index.
+- `Docs/README.md`: guide added to the documentation index.
 
 ## [Unreleased] · 2026-10-11 · User workflows slide (António Guerra)
 
@@ -242,8 +248,8 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 | File | Change | Why |
 |---|---|---|
-| [`README.md`](README.md) | Added a short project description and a **Documentation** index (with the language of each document) at the top | The README had no link to any document |
-| [`README.md`](README.md) §7 | "Save as `.github/pull_request_template.md`" → "Saved as [link]" | The file now exists |
+| [`Docs/README.md`](Docs/README.md) | Added a short project description and a **Documentation** index (with the language of each document) at the top | The README had no link to any document |
+| [`Docs/README.md`](Docs/README.md) §7 | "Save as `.github/pull_request_template.md`" → "Saved as [link]" | The file now exists |
 
 ### Fixed
 
