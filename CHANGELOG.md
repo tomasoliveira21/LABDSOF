@@ -2,6 +2,21 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-16 · Venue map library and ADR-007 (#44)
+
+**Why:** decisions guide F3 (venue map library, owner Tiago) was the last open item for the map (F5). The map is an uploaded image with no geo data (D1), and F4 (Expo or bare React Native) is still open, so the choice had to work with both.
+
+### Decided
+- Mobile venue map: **`react-native-svg`** markers inside a **`react-native-zoom-toolkit`** zoom/pan container (Gesture Handler + Reanimated), normalised `MapPosition` coordinates, filtering by type with React state. Works with Expo and bare React Native.
+- PDF maps (US-06) are **rendered to a PNG on upload** by the Events service with Apache PDFBox: single-page PDFs only, at most 4096 px on the long side; the original file and the rendered image are both kept.
+
+### Added
+- `Docs/Technical/adr/0007-venue-map-representation.md`: ADR-007 (Nygard format + *Alternatives considered*: WebView + Leaflet `CRS.Simple`, image-zoom components, `react-native-zoomable-view`, `react-native-maps`, Skia, PDF conversion on the device).
+
+### Changed
+- `architecture-decisions-guide.md`: F3 marked ✅ with the decision.
+- `architecture.md`: §12 venue map row filled in; §13 ADR-007 marked *Accepted* and linked.
+
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 
 ### Changed
