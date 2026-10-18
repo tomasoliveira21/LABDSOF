@@ -70,7 +70,7 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 | C3 | **Tabela outbox** em cada serviço, publicada por um job de polling nosso. Consumidores idempotentes com tabela de mensagens processadas (`message_id`); após N tentativas, DLQ | ✅ (N e backoff: 🔍 Tiago) |
 | C4 | **Só eventos entre serviços.** Cada serviço guarda uma cópia local do que precisa de outro (ex.: o Reports guarda as equipas, as suas permissões e categorias de ajuda do Events; todos guardam as *memberships* e as equipas de cada membro do Auth & Users). Custo aceite: consistência eventual | ✅ |
 | C5 | **Polling** chega para o MVP (lista do backoffice, estado do pedido, anúncios). Uma instância por serviço por agora | ✅ |
-| C6 | API gateway (e onde ficam rate limiting e CORS) | 🔍 Guerra |
+| C6 | API gateway (e onde ficam rate limiting e CORS). Opções e recomendação: [`investigations/api-gateway.md`](investigations/api-gateway.md) | 🔍 Guerra |
 | C7 | **Contract-first:** OpenAPI escrito à mão em `backend/<serviço>/contracts/openapi.yaml`; o `openapi-generator` gera interfaces e DTOs Spring e os clientes das apps. Caminhos com `/api/v1`. Base do [Spec-Driven Development](../Process/spec-driven-development.md) | ✅ |
 | C8 | API outline (entregável 7 do Sprint A) e catálogo de eventos: que eventos cada serviço publica e consome | 🔍 Bruno |
 
@@ -87,6 +87,8 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 | D7 | Eliminação de conta (F2, Must): se entra no MVP e como funciona, sem política de retenção | 🔍 Bruno |
 
 ## E · Identidade e segurança (ADR-006)
+
+Opções e recomendação para E1–E4: [`investigations/identity-and-access.md`](investigations/identity-and-access.md) (proposta, por decidir pela equipa).
 
 | # | Pergunta | Estado |
 |---|---|---|

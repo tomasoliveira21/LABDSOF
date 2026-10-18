@@ -5,7 +5,7 @@ Multi-event coordination platform for large academic festivals (pilot case: Quei
 ## Documentation
 
 | Area | Document | Language |
-|---|---|---|
+| --- | --- | --- |
 | Problem | [Problem and Opportunity Report](Deliverables/problem-opportunity-report-queima.md) | EN |
 | Market | [Market and Competitor Analysis](Deliverables/market-and-competitor-analysis.md) · [Product-specific annex](Deliverables/market-and-competitor-analysis-product-specific.md) | EN |
 | Research | [Student survey (Google Forms script)](Research/inquerito-estudantes-google-forms.gs) | EN (questions in PT) |
@@ -40,7 +40,7 @@ Format: `<prefix>/<short-description>`
 - Lowercase, kebab-case, short and descriptive.
 
 | Prefix | Use for |
-|---|---|
+| --- | --- |
 | `feature/` | New features or enhancements |
 | `bugfix/` | Bug fixes |
 | `refactor/` | Code restructuring with no behaviour change |
@@ -62,7 +62,7 @@ Format:
 ```
 
 | Rule | Detail |
-|---|---|
+| --- | --- |
 | Prefix | Same as the branch prefix, without the slash (`feature`, `bugfix`, `refactor`, `test`, `docs`, `ci`, `chore`) |
 | Issue | GitHub Issue number in parentheses, e.g. `(#1)` |
 | Title | At most **50 characters**, first letter capitalised, imperative mood ("Add", not "Added"), no trailing full stop |
@@ -73,7 +73,7 @@ Example: `docs (#1): Add conventions chapter to global report`
 ## 4. Pull requests
 
 | Item | Convention |
-|---|---|
+| --- | --- |
 | Target | `main` |
 | Title | `<Prefix>: <Concise description>` (capitalised prefix), e.g. `Docs: Add conventions to global report` |
 | Description | Must reference the issue with `Closes #<issue>` so the issue closes automatically on merge. Include a summary of the changes and how they were tested |
@@ -87,6 +87,7 @@ A pull request can only be merged after **two reviews**:
 2. **A team member**: 1 approval from someone other than the author.
 
 ### As the author
+
 - One issue per PR. Keep it small.
 - Review your own diff and wait for CI to pass before asking for a review.
 - Address every Copilot comment: fix it, or reply explaining why not.
@@ -94,6 +95,7 @@ A pull request can only be merged after **two reviews**:
 - Merge the PR yourself (squash) once both reviews are done.
 
 ### As the reviewer
+
 - Review within **1 working day**.
 - Read Copilot's comments first. Copilot helps, but does not replace your review.
 - Be respectful: comment on the code, not the person.

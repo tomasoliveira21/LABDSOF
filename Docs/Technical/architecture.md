@@ -136,7 +136,7 @@ Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end f
 
 ## 8. Security, authentication and authorisation
 
-Owner: **Guerra** (identity provider, token validation, service-to-service authentication, secrets, Security & Privacy assessment).
+Owner: **Guerra** (identity provider, token validation, service-to-service authentication, secrets, Security & Privacy assessment). Options under evaluation **[PROPOSED]**: [`investigations/identity-and-access.md`](investigations/identity-and-access.md) and [`investigations/api-gateway.md`](investigations/api-gateway.md).
 
 | Concern | Decided |
 |---|---|
