@@ -2,6 +2,18 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-19 · Bus tracking proof of concept (António Guerra)
+
+**Why:** test the Porto Digital FIWARE bus API, the candidate transport data source (ADR-008, still waiting for the professor), before the Transports service is built.
+
+### Added
+- `PoC/`: *Porto Live Buses*, a standalone web app (TypeScript, Vite, Leaflet) that polls the broker and shows the STCP buses on a map, with route, zone and bus filters. How to run it is in [`PoC/README.md`](PoC/README.md).
+
+### Changed
+- `Docs/Technical/architecture.md` §7: short note on what the PoC confirms about the source (no authentication, CORS open, data available, last positions kept on failure).
+- `architecture-decisions-guide.md`: the pending question about the transport source now links to the PoC.
+- `Docs/README.md` and `README.md`: link to the PoC.
+
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 
 ### Changed

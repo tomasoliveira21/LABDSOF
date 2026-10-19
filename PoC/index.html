@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Live map of STCP buses in Porto from the Porto Digital FIWARE broker, with route, zone and bus filters." />
+    <meta name="color-scheme" content="light dark" />
+    <title>Porto Live Buses</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='8' fill='%230b6e75'/%3E%3Cpath d='M10 9h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Zm0 3v4h12v-4Z' fill='white'/%3E%3Ccircle cx='11.5' cy='24' r='1.6' fill='white'/%3E%3Ccircle cx='20.5' cy='24' r='1.6' fill='white'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <aside class="sidebar" id="sidebar" aria-label="Filters and bus list">
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M6 3h12a3 3 0 0 1 3 3v10a3 3 0 0 1-2 2.83V20a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H8v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-1.17A3 3 0 0 1 3 16V6a3 3 0 0 1 3-3Zm0 3v5h12V6H6Zm1.5 7.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm9 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg>
+          </div>
+          <div>
+            <h1>Porto Live Buses</h1>
+            <p class="subtitle">STCP fleet · FIWARE context broker</p>
+          </div>
+          <button class="icon-btn sidebar-close" id="sidebar-close" type="button" aria-label="Close filters">✕</button>
+        </header>
+
+        <section class="live" aria-live="polite">
+          <div class="live-status">
+            <span class="live-dot" id="live-dot"></span>
+            <span id="live-text">Connecting…</span>
+          </div>
+          <div class="live-actions">
+            <label class="sr-only" for="refresh-interval">Auto-refresh interval</label>
+            <select id="refresh-interval" title="Auto-refresh interval">
+              <option value="10">Every 10 s</option>
+              <option value="20">Every 20 s</option>
+              <option value="30">Every 30 s</option>
+              <option value="60">Every 60 s</option>
+              <option value="0">Paused</option>
+            </select>
+            <button class="btn btn-icon" id="refresh-now" type="button" title="Refresh now" aria-label="Refresh now">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35Z"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <section class="stats" id="stats" aria-label="Summary">
+          <div class="stat"><span class="stat-value" id="stat-visible">–</span><span class="stat-label" id="stat-visible-label">buses shown</span></div>
+          <div class="stat"><span class="stat-value" id="stat-moving">–</span><span class="stat-label">moving</span></div>
+          <div class="stat"><span class="stat-value" id="stat-routes">–</span><span class="stat-label">routes</span></div>
+          <div class="stat"><span class="stat-value" id="stat-speed">–</span><span class="stat-label">avg km/h moving</span></div>
+        </section>
+
+        <div class="search">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10 4a6 6 0 0 1 4.75 9.67l4.79 4.79-1.08 1.08-4.79-4.79A6 6 0 1 1 10 4Zm0 1.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"/></svg>
+          <label class="sr-only" for="search">Search buses</label>
+          <input id="search" type="search" placeholder="Bus number or route, e.g. 3459, 205" autocomplete="off" />
+        </div>
+
+        <div class="active-filters" id="active-filters" hidden>
+          <span id="active-filters-text"></span>
+          <button class="link-btn" id="clear-all" type="button">Clear all filters</button>
+        </div>
+
+        <div class="panels">
+          <details class="panel" id="routes-panel" open>
+            <summary><span class="panel-title">Routes</span><span class="panel-badge" id="routes-badge"></span></summary>
+            <div class="panel-body">
+              <div class="panel-tools">
+                <label class="sr-only" for="route-query">Find a route</label>
+                <input id="route-query" type="search" placeholder="Find route…" autocomplete="off" />
+                <button class="link-btn" id="routes-clear" type="button">Clear</button>
+              </div>
+              <p class="hint">Tick routes to show only those. Group headers select the whole series.</p>
+              <div id="route-groups" class="route-groups"></div>
+            </div>
+          </details>
+
+          <details class="panel" id="zones-panel" open>
+            <summary><span class="panel-title">Zones</span><span class="panel-badge" id="zones-badge"></span></summary>
+            <div class="panel-body">
+              <div class="panel-tools">
+                <label class="switch"><input type="checkbox" id="show-boundaries" /><span>Show boundaries on map</span></label>
+                <button class="link-btn" id="zones-clear" type="button">Clear</button>
+              </div>
+              <p class="hint">Municipalities and parishes (freguesias). You can also click a parish on the map.</p>
+              <div id="zone-list" class="zone-list"></div>
+
+              <div class="area-box">
+                <div class="area-head">
+                  <strong>Custom area</strong>
+                  <span class="muted" id="area-status">Not set</span>
+                </div>
+                <div class="area-controls">
+                  <button class="btn" id="area-place" type="button">Place on map</button>
+                  <button class="link-btn" id="area-clear" type="button" disabled>Remove</button>
+                </div>
+                <label class="range">
+                  <span>Radius <output id="area-radius-out">1 km</output></span>
+                  <input type="range" id="area-radius" min="200" max="5000" step="100" value="1000" />
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="panel" id="buses-panel" open>
+            <summary><span class="panel-title">Buses</span><span class="panel-badge" id="buses-badge"></span></summary>
+            <div class="panel-body">
+              <div class="field">
+                <span class="field-label">Direction</span>
+                <div class="segmented" id="direction-filter" role="group" aria-label="Direction"></div>
+              </div>
+              <div class="field">
+                <span class="field-label">Status</span>
+                <div class="segmented" id="status-filter" role="group" aria-label="Status"></div>
+              </div>
+              <div class="field">
+                <label class="field-label" for="age-filter">Last report</label>
+                <select id="age-filter">
+                  <option value="">Any time</option>
+                  <option value="1">Within 1 min</option>
+                  <option value="5">Within 5 min</option>
+                  <option value="15">Within 15 min</option>
+                  <option value="60">Within 1 hour</option>
+                </select>
+              </div>
+              <label class="switch"><input type="checkbox" id="show-trails" checked /><span>Show recent trails</span></label>
+            </div>
+          </details>
+
+          <details class="panel" id="list-panel" open>
+            <summary><span class="panel-title">Bus list</span><span class="panel-badge" id="list-badge"></span></summary>
+            <div class="panel-body">
+              <ul class="bus-list" id="bus-list"></ul>
+            </div>
+          </details>
+        </div>
+
+        <footer class="credits">
+          Live data: <a href="https://broker.fiware.urbanplatform.portodigital.pt/v2/entities?q=vehicleType==bus&amp;limit=1000" target="_blank" rel="noopener">Porto Digital FIWARE broker</a> (STCP).<br />
+          Boundaries: CAOP © DGT via <a href="https://geoapi.pt" target="_blank" rel="noopener">geoapi.pt</a>.
+        </footer>
+      </aside>
+
+      <main class="map-wrap">
+        <div id="map" aria-label="Map of buses"></div>
+        <button class="sidebar-open btn" id="sidebar-open" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5Zm4 6h10v2H7v-2Zm3 6h4v2h-4v-2Z"/></svg>
+          Filters <span class="pill" id="sidebar-open-count" hidden></span>
+        </button>
+        <div class="placing-banner" id="placing-banner" hidden>Click on the map to place the area · <kbd>Esc</kbd> to cancel</div>
+        <div class="toast" id="toast" role="alert" hidden></div>
+        <article class="bus-card" id="bus-card" hidden aria-live="polite"></article>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
