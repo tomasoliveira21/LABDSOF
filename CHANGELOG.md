@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-21 · Architecture diagrams: level 4 split and view mappings (#39, Bruno Lopes)
+
+**Why:** review of the 4+1 diagrams. Legends added noise, separate personas at the top levels added nothing, and each level-4 diagram mixed several containers in one picture.
+
+### Added
+- Level 4 split into one diagram per container, in the logical, implementation and physical views: `*-level-4-mobile`, `-web`, `-reports` and `-transports`. The logical ones show the container's neighbours (personas, API gateway, database, RabbitMQ, AI provider or Porto Digital); the implementation ones show only what is inside. Transports gets its own components (bus import job, Porto Digital client) for the first time.
+- 14 view-mapping diagrams: `mapping-logical-implementation-level-{1,2,3,4-*}` and `mapping-logical-physical-level-{1,2,3,4-*}`. Each one copies the full logical diagram on the left and the full implementation or physical diagram of the same level on the right, with dashed arrows linking each logical element to its counterpart. External systems have no counterpart in the code.
+
+### Changed
+- Legends removed from every diagram.
+- Logical levels 1 and 2: the five personas become one **User**.
+- Physical level 1 shows only Farol, the AI provider and Porto Digital. Levels 2 and 3 show a **Mobile app** and a **Web app** node instead of a smartphone, a computer and static hosting.
+
+### Removed
+- `logical-view-level-4`, `implementation-view-level-4` and `physical-view-level-4` (replaced by the per-container diagrams).
+
 ## [Unreleased] · 2026-10-21 · Professor's answer: ADR-001 and ADR-008 (#39, Bruno Lopes)
 
 **Why:** the professor answered the email of 15 October. The Porto Digital urban platform (FIWARE NGSI v2 bus API) is accepted as the external integration, as long as the app handles unavailable, late and invalid data and the team keeps a simulator or recorded responses under its control. There is no imposed path: the architecture is defined from the start and any evolution is motivated by evidence, not by the calendar; Sprint B already requires two independently deployable backend components (§6.2). This closes guide A4 and the transport source (A2, B2).
