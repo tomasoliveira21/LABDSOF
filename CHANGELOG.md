@@ -2,6 +2,23 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-21 · Professor's answer: ADR-001 and ADR-008 (#39, Bruno Lopes)
+
+**Why:** the professor answered the email of 15 October. The Porto Digital urban platform (FIWARE NGSI v2 bus API) is accepted as the external integration, as long as the app handles unavailable, late and invalid data and the team keeps a simulator or recorded responses under its control. There is no imposed path: the architecture is defined from the start and any evolution is motivated by evidence, not by the calendar; Sprint B already requires two independently deployable backend components (§6.2). This closes guide A4 and the transport source (A2, B2).
+
+### Decided
+- **Microservices from Sprint A**; no modular-monolith phase. The ArchUnit test and the schema-per-module rule of that phase are dropped (guide A3, D2).
+- Transport source: **Porto Digital urban platform**; STCP GTFS and the weather plan B are dropped.
+- **Simulator of the Porto Digital API, or recorded real responses** (guide J4): for automated tests, the degraded-mode demo and presentation day. Form and tool still open, no owner.
+
+### Added
+- `Docs/Technical/adr/0001-architectural-style.md` and `0008-transport-data-source.md`.
+
+### Changed
+- `architecture-decisions-guide.md`: A2, A3, A4, B2 and D2 updated; *À espera do professor* becomes *Respostas do professor*.
+- `architecture.md` (§2, §3, §7, §11, §13), `features.md` (F9, §3, degraded mode D2), ADR-003, `README.md` and the meeting record of 8 October updated to match.
+- Diagrams (logical levels 1–3, physical levels 1–3, transport process views): the transport source is named Porto Digital (FIWARE NGSI v2), and the monolith note is replaced by "Each service is deployed on its own from Sprint A".
+
 ## [Unreleased] · 2026-10-16 · ADR-002, ADR-003 and ADR-004 (#38, Bruno Lopes)
 
 **Why:** the technology, data and communication decisions confirmed on 11 and 15 October lived only in the decisions guide. The assignment asks for them as Architecture Decision Records (§7.1.2, item 8).

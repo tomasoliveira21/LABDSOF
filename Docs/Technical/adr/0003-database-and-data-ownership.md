@@ -15,7 +15,7 @@
 ## Decision
 
 1. **PostgreSQL** is the only database technology (D1). No PostGIS: the map is an image.
-2. **One database per service**, which only that service reads and writes (D2). Data that a service needs from another arrives through events and is kept as a local copy ([ADR-004](0004-service-communication.md)). If ADR-001 confirms a modular-monolith phase (guide A4), each module has its own schema instead, with the same rule.
+2. **One database per service**, which only that service reads and writes (D2). Data that a service needs from another arrives through events and is kept as a local copy ([ADR-004](0004-service-communication.md)).
 3. **Per-event isolation:** every table that holds data of an event has an `event_id` column, and the application filters by it on every query (D3). **Each service has an integration test** that proves a member of event X cannot read or change data of event Y.
 4. **Flyway** runs the migrations when the service starts (D6). Every migration stays compatible with the previous version of the service (*expand and contract*): add first, switch the code, remove in a later release.
 

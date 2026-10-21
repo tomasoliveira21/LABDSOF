@@ -1,7 +1,7 @@
 # High-Level System Architecture
 
 > LABDSOF 2026/27 · Sprint A · Assignment §6 (Common Technical Requirements) and §7.1.2 (deliverable 7, *Technical Design*)
-> **Status (15 October 2026):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PENDING]** wait for the professor's answer or for an investigation; the owner is in that document. The final diagrams are drawn in draw.io; the Mermaid diagrams below are working sketches.
+> **Status (21 October 2026):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PENDING]** wait for an investigation; the owner is in that document. The final diagrams are drawn in draw.io; the Mermaid diagrams below are working sketches.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
 ## 1. Architecture drivers
@@ -30,7 +30,7 @@ flowchart LR
     A(["Event admin<br/>(P3)"])
     PA(["Platform admin<br/>(P4, to confirm in the domain model)"])
     SYS["Farol"]
-    TR["Transport data<br/>[PENDING: Porto Digital FIWARE or STCP GTFS]"]
+    TR["Porto Digital urban platform<br/>(FIWARE NGSI v2, live bus data)"]
     LLM["AI model provider<br/>[PENDING]"]
     IDP["Identity provider<br/>[PENDING: only if external]"]
 
@@ -46,7 +46,7 @@ flowchart LR
 
 ## 3. Container view
 
-Final state (Sprint C). In Sprints A and B the five services may run as **one modular monolith** with the same modules; this depends on the professor's answer (§11).
+The five services are deployed independently from Sprint A (§11).
 
 ```mermaid
 flowchart LR
@@ -126,7 +126,7 @@ Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end f
 
 | Integration | Purpose | Handling of unavailable, late, incomplete or invalid data (assignment §6.5) |
 |---|---|---|
-| **Transport data** **[PENDING]**: Porto Digital urban platform (FIWARE NGSI v2, live bus data), if the professor accepts it; otherwise STCP GTFS | Transport for F9 | Data validated on import; on failure, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected |
+| **Transport data**: Porto Digital urban platform (FIWARE NGSI v2, live bus positions; [ADR-008](adr/0008-transport-data-source.md)) | Transport for F9 | Calls with a timeout; data validated on import; data older than its freshness limit counts as late. On any of these, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected. A **simulator or recorded real responses** under the team's control (guide J4) is used for automated tests, to cause failures and invalid data in the demo, and as a fallback on presentation day |
 | **AI model provider** **[PENDING]** (Tomás; local Ollama is an option) | Triage suggestions (F8) | Timeout, then fallback (§6); the suggestion is never shown as a fact (assignment §5.6.2) |
 
 ## 8. Security, authentication and authorisation
@@ -167,9 +167,9 @@ Already decided:
 
 ## 11. Architectural style and its evolution
 
-**Decided:** **microservices** as the final state. They meet assignment §6.2 directly, isolate failures (a read peak does not stop help requests) and give small, closed contracts per service.
+**Decided:** **microservices from the start** ([ADR-001](adr/0001-architectural-style.md)). They meet assignment §6.2 directly, isolate failures (a read peak does not stop help requests) and give small, closed contracts per service.
 
-**Evolution [PENDING, professor]:** proposed **modular monolith in Sprints A and B** (one deployable with the five modules, one schema per module, an ArchUnit test that fails if a module imports another's classes), then **each module becomes a service in Sprint C** (its own `main`, Dockerfile and database). Because modules already talk only through events and own their data, the split is mechanical, and it gives the *architecture evolution narrative* of §7.3.2 (item 11). Alternative, if the professor prefers: microservices from the start.
+**Evolution (professor's answer):** the architecture is defined from the start: the five services are independently deployable from Sprint A, which already meets the Sprint B requirement of two independently deployable backend components (§6.2); there is **no modular-monolith phase**. There is no imposed path: any change is **motivated by evidence** (measurements, tests, failures), not by the calendar, and is recorded as a new or superseding ADR. Those ADRs are the *architecture evolution narrative* of §7.3.2 (item 11).
 
 ## 12. Technology choices
 
@@ -197,14 +197,14 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 
 | ADR | Decision | Status |
 |---|---|---|
-| ADR-001 | Architectural style and evolution (§11) | Waits for the professor (evolution) |
+| [ADR-001](adr/0001-architectural-style.md) | Architectural style and evolution (§11) | Accepted |
 | [ADR-002](adr/0002-backend-and-frontend-technology.md) | Backend and frontend technology | Accepted |
 | [ADR-003](adr/0003-database-and-data-ownership.md) | Database and data ownership | Accepted |
 | [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
 | ADR-005 | AI workflow, provider and fallback | Waits for Tomás |
 | ADR-006 | Identity | Waits for Guerra |
 | ADR-007 | Venue map representation | Waits for Tiago |
-| ADR-008 | Transport data source | Waits for the professor |
+| [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | ADR-009 | Architecture documentation (C4, 4+1, draw.io) | Ready to write (Bruno) |
 | ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
 

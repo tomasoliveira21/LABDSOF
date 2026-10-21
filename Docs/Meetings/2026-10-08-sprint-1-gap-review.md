@@ -96,7 +96,7 @@ Answers to [`architecture-decisions-guide.md`](../Technical/architecture-decisio
 
 ### Follow-up decisions (15 October 2026, team meeting)
 
-The proposals above are **team decisions**, except A4 (architecture evolution) and the transport data source, which wait for the professor's answer (email sent 15 Oct: Porto Digital FIWARE NGSI v2 bus API as the external integration; progressive vs up-front architecture). Full record: [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md).
+The proposals above are **team decisions**, except A4 (architecture evolution) and the transport data source, which wait for the professor's answer (email sent 15 Oct: Porto Digital FIWARE NGSI v2 bus API as the external integration; progressive vs up-front architecture). **Answer received (21 October 2026):** the Porto Digital API is accepted, provided the app handles unavailable, late and invalid data and the team keeps a simulator or recorded responses (guide J4). There is no imposed path: the architecture is defined from the start (**microservices from Sprint A**, no modular-monolith phase) and any evolution is motivated by evidence, not by the calendar. See ADR-001 and ADR-008. Full record: [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md).
 
 | Topic | Decision | Applied in |
 |---|---|---|
