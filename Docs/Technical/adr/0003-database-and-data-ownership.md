@@ -2,12 +2,12 @@
 
 ## Status
 
-**Accepted**: decided by the team on 15 October 2026. Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) D1, D2, D3 and D6.
+**Accepted**: decided by the team on 15 October 2026. Updated on 21 October 2026: no modular-monolith phase (guide A4). Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) D1, D2, D3 and D6.
 
 ## Context
 
 - The assignment asks for **one** database technology unless more are justified (§6.4).
-- Farol is split into five services (guide A2) that talk only through events (guide C4). A service that reads another service's tables would break that boundary.
+- Farol is split into five services (guide A2), deployed independently from Sprint A (guide A4), that talk only through events (guide C4). A service that reads another service's tables would break that boundary.
 - **One team must never see or change another event's data** (architecture driver D1). The report asks for automated tests that prove it.
 - The venue map is an uploaded image with coordinates on it, not a geographic map (annex C3), so no spatial queries are needed.
 - With continuous deployment (guide H5), a new version of a service starts while the old schema is still in use.
@@ -15,7 +15,7 @@
 ## Decision
 
 1. **PostgreSQL** is the only database technology (D1). No PostGIS: the map is an image.
-2. **One database per service**, which only that service reads and writes (D2). Data that a service needs from another arrives through events and is kept as a local copy ([ADR-004](0004-service-communication.md)). If ADR-001 confirms a modular-monolith phase (guide A4), each module has its own schema instead, with the same rule.
+2. **One database per service**, which only that service reads and writes (D2). Data that a service needs from another arrives through events and is kept as a local copy ([ADR-004](0004-service-communication.md)). This applies from Sprint A: there is no shared-database monolith phase (guide A4).
 3. **Per-event isolation:** every table that holds data of an event has an `event_id` column, and the application filters by it on every query (D3). **Each service has an integration test** that proves a member of event X cannot read or change data of event Y.
 4. **Flyway** runs the migrations when the service starts (D6). Every migration stays compatible with the previous version of the service (*expand and contract*): add first, switch the code, remove in a later release.
 
@@ -25,7 +25,7 @@
 - Services cannot join across databases. Cross-service views (e.g. response teams inside Reports) come from local copies and are **eventually consistent**.
 - Isolation depends on the application filter being present in every query; a missing filter is a data leak. The per-service isolation test is the safety net, so it must cover every new event-scoped table.
 - *Expand and contract* makes some changes (renames, type changes) take two releases.
-- Five databases cost more than one. How many PostgreSQL servers host them is still open (see *Open points*).
+- Five databases from Sprint A cost more than one. How many PostgreSQL servers host them is still open (see *Open points*).
 
 ## Alternatives considered
 

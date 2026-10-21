@@ -2,6 +2,21 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-21 · Professor's answer: transport source and microservices from the start (#38, Bruno Lopes)
+
+**Why:** the professor answered the email of 15 October, and the team decided A4 from that answer. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Professor's answer and follow-up decisions, 21 October 2026*).
+
+### Decided
+- Transport source: **Porto Digital API** (FIWARE NGSI v2). The app must handle unavailability, delays and invalid data; an **API simulator or recorded responses** under our control is required (new guide item J4, no owner yet).
+- **Microservices from the start** (A4): the five services deploy independently from Sprint A; the modular-monolith phase is dropped. Any later evolution needs evidence, not the calendar.
+
+### Changed
+- `architecture-decisions-guide.md`: A2, A3, A4, B2, D2, new J4, *Resposta do professor* replaces *À espera do professor*, *Próximos passos*.
+- `architecture.md`: status, §2 context diagram, §3, §7, §9, §11, ADR list (ADR-001 and ADR-008 ready to write).
+- ADR-002: services with their own deployment from Sprint A; hosting cost from the start.
+- ADR-003: monolith-phase schema option removed; one database per service from Sprint A.
+- ADR-004: context and consequences for independent deployment; new decision 5, external sources read by a scheduled poll with a configurable base URL for the simulator.
+
 ## [Unreleased] · 2026-10-16 · ADR-002, ADR-003 and ADR-004 (#38, Bruno Lopes)
 
 **Why:** the technology, data and communication decisions confirmed on 11 and 15 October lived only in the decisions guide. The assignment asks for them as Architecture Decision Records (§7.1.2, item 8).
@@ -9,7 +24,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Added
 - `Docs/Technical/adr/` in the Michael Nygard format plus *Alternatives considered* (guide B7):
   - `0002-backend-and-frontend-technology.md`: Java 21, Spring Boot 4.x, Maven; React web app; React Native mobile app. Reason: the stacks the team already uses.
-  - `0003-database-and-data-ownership.md`: PostgreSQL only, one database per service (one schema per module if ADR-001 confirms a monolith phase), `event_id` filtering with an isolation test per service, Flyway with *expand and contract*.
+  - `0003-database-and-data-ownership.md`: PostgreSQL only, one database per service, `event_id` filtering with an isolation test per service, Flyway with *expand and contract*.
   - `0004-service-communication.md`: RabbitMQ with Spring AMQP, events only between services, outbox table, idempotent consumers, dead-letter queue, contract-first OpenAPI under `/api/v1`, polling.
 - Each ADR cites the guide ids it records and lists its open points with their owner. Alternatives come from the options in the old `architecture.md` §12; reviewers should confirm the reasons given.
 
