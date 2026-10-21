@@ -18,6 +18,10 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Removed
 - `logical-view-level-4`, `implementation-view-level-4` and `physical-view-level-4` (replaced by the per-container diagrams).
 
+### Added (documentation decision)
+- `Docs/Technical/adr/0009-architecture-documentation.md`: C4 inside the 4+1 views without scenarios, four levels per view with one level-4 diagram per container, view mappings, draw.io `.drawio.svg` files (source and image in one), no legends.
+- `architecture.md` §14 links every diagram; §13 marks ADR-009 as accepted. `README.md` links ADR-009 and the diagrams.
+
 ## [Unreleased] · 2026-10-21 · Professor's answer: ADR-001 and ADR-008 (#39, Bruno Lopes)
 
 **Why:** the professor answered the email of 15 October. The Porto Digital urban platform (FIWARE NGSI v2 bus API) is accepted as the external integration, as long as the app handles unavailable, late and invalid data and the team keeps a simulator or recorded responses under its control. There is no imposed path: the architecture is defined from the start and any evolution is motivated by evidence, not by the calendar; Sprint B already requires two independently deployable backend components (§6.2). This closes guide A4 and the transport source (A2, B2).
