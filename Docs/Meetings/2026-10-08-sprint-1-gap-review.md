@@ -110,6 +110,15 @@ The proposals above are **team decisions**, except A4 (architecture evolution) a
 | Deployment and scaling | The deployment platform is decided after Tomás's investigation; Tiago takes the "one instance per service" decision into account for scaling | guide §G, §J |
 | Next steps | **Walking skeleton** (deliverable 10): later phase, no owner yet · **Bruno** writes ADR-002, 003, 004 and 009 | guide §Próximos passos |
 
+### Professor's answer and follow-up decisions (21 October 2026)
+
+Answer to the email of 15 October. Full record: [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md) (*Respostas do professor*).
+
+| Topic | Professor's answer | Team decision |
+|---|---|---|
+| External integration | The **Porto Digital API** is accepted. The app must handle **unavailability, delays and invalid data**. We also need an **API simulator or recorded real responses** under our control: repeatable automated tests, injecting failures and invalid data in the degraded-mode demo, and not depending on the real API on presentation day. The real integration stays the Porto Digital API | Transport source: Porto Digital FIWARE (A2, B2). New item **J4** (simulator), no owner yet |
+| Architecture evolution | No path is imposed. The architecture must be **defined from the start**; any evolution must be driven by **evidence, not the calendar**. **Sprint B** already requires **two independently deployed backend components**, or a properly justified modular monolith (§6.2) | **Microservices from the start** (A4): the five services deploy independently from Sprint A; the modular-monolith phase (A3, D2) is dropped. This replaces the A4 proposal of 15 October |
+
 ## Status at a glance
 
 | # | Topic | Status | Blocking item for the presentation |
