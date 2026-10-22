@@ -1,7 +1,7 @@
 # High-Level System Architecture
 
 > LABDSOF 2026/27 · Sprint A · Assignment §6 (Common Technical Requirements) and §7.1.2 (deliverable 7, *Technical Design*)
-> **Status (15 October 2026):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PENDING]** wait for the professor's answer or for an investigation; the owner is in that document. The final diagrams are drawn in draw.io; the Mermaid diagrams below are working sketches.
+> **Status (21 October 2026):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PENDING]** wait for an investigation; the owner is in that document. The final diagrams are drawn in draw.io; the Mermaid diagrams below are working sketches.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
 ## 1. Architecture drivers
@@ -30,7 +30,7 @@ flowchart LR
     A(["Event admin<br/>(P3)"])
     PA(["Platform admin<br/>(P4, to confirm in the domain model)"])
     SYS["Farol"]
-    TR["Transport data<br/>[PENDING: Porto Digital FIWARE or STCP GTFS]"]
+    TR["Transport data<br/>Porto Digital FIWARE (NGSI v2)"]
     LLM["AI model provider<br/>[PENDING]"]
     IDP["Identity provider<br/>[PENDING: only if external]"]
 
@@ -46,7 +46,7 @@ flowchart LR
 
 ## 3. Container view
 
-Final state (Sprint C). In Sprints A and B the five services may run as **one modular monolith** with the same modules; this depends on the professor's answer (§11).
+The five services are deployed independently from Sprint A (§11).
 
 ```mermaid
 flowchart LR
@@ -126,7 +126,7 @@ Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end f
 
 | Integration | Purpose | Handling of unavailable, late, incomplete or invalid data (assignment §6.5) |
 |---|---|---|
-| **Transport data** **[PENDING]**: Porto Digital urban platform (FIWARE NGSI v2, live bus data), if the professor accepts it; otherwise STCP GTFS | Transport for F9 | Data validated on import; on failure, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected |
+| **Transport data**: Porto Digital urban platform (FIWARE NGSI v2, live bus data), accepted by the professor on 21 October. A **simulator or recorded real responses** under our control is required for repeatable tests, failure injection in the demo and independence from the real API on presentation day (guide J4, owner **[PENDING]**) | Transport for F9 | Unavailability, delays and invalid data must all be handled. Data validated on import; on failure, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected |
 | **AI model provider** **[PENDING]** (Tomás; local Ollama is an option) | Triage suggestions (F8) | Timeout, then fallback (§6); the suggestion is never shown as a fact (assignment §5.6.2) |
 
 ## 8. Security, authentication and authorisation
@@ -145,7 +145,7 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 
 ## 9. Degraded modes
 
-**Decided (9 October 2026):** the §6.8 scenarios are **AI unavailable (D1)** and **transport source unavailable (D2)** ([`features.md` §3.1](../Product/features.md#31-degraded-mode-scenarios-decided-9-october-2026)). How they are demonstrated: **[PENDING]** (Tiago).
+**Decided (9 October 2026):** the §6.8 scenarios are **AI unavailable (D1)** and **transport source unavailable (D2)** ([`features.md` §3.1](../Product/features.md#31-degraded-mode-scenarios-decided-9-october-2026)). How they are demonstrated: **[PENDING]** (Tiago); for D2, the transport simulator injects unavailability, delays and invalid data (guide J4).
 
 | Unavailable | What the user sees |
 |---|---|
@@ -167,9 +167,9 @@ Already decided:
 
 ## 11. Architectural style and its evolution
 
-**Decided:** **microservices** as the final state. They meet assignment §6.2 directly, isolate failures (a read peak does not stop help requests) and give small, closed contracts per service.
+**Decided:** **microservices from the start.** They meet assignment §6.2 directly, isolate failures (a read peak does not stop help requests) and give small, closed contracts per service.
 
-**Evolution [PENDING, professor]:** proposed **modular monolith in Sprints A and B** (one deployable with the five modules, one schema per module, an ArchUnit test that fails if a module imports another's classes), then **each module becomes a service in Sprint C** (its own `main`, Dockerfile and database). Because modules already talk only through events and own their data, the split is mechanical, and it gives the *architecture evolution narrative* of §7.3.2 (item 11). Alternative, if the professor prefers: microservices from the start.
+**Evolution (decided 21 October 2026, guide A4):** the five services are deployed independently from Sprint A, each with its own `main`, Dockerfile and database; there is no modular-monolith phase. The professor asked for an architecture defined from the start, with any evolution driven by **evidence, not the calendar**, and Sprint B already requires two independently deployed backend components (assignment §6.2). Later changes (e.g. scaling a service for the peak, J3) are recorded as new ADRs together with the evidence that motivated them, which forms the *architecture evolution narrative* of §7.3.2 (item 11). This replaces the proposal of 15 October (modular monolith in Sprints A–B, split in Sprint C).
 
 ## 12. Technology choices
 
@@ -197,14 +197,14 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 
 | ADR | Decision | Status |
 |---|---|---|
-| ADR-001 | Architectural style and evolution (§11) | Waits for the professor (evolution) |
-| ADR-002 | Backend and frontend technology | Ready to write (Bruno) |
-| ADR-003 | Database and data ownership | Ready to write (Bruno) |
-| ADR-004 | Message broker, delivery guarantees, communication only through events | Ready to write (Bruno) |
+| ADR-001 | Architectural style and evolution (§11) | Ready to write |
+| [ADR-002](adr/0002-backend-and-frontend-technology.md) | Backend and frontend technology | Accepted |
+| [ADR-003](adr/0003-database-and-data-ownership.md) | Database and data ownership | Accepted |
+| [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
 | ADR-005 | AI workflow, provider and fallback | Waits for Tomás |
 | ADR-006 | Identity | Waits for Guerra |
 | ADR-007 | Venue map representation | Waits for Tiago |
-| ADR-008 | Transport data source | Waits for the professor |
+| ADR-008 | Transport data source (Porto Digital + simulator) | Ready to write |
 | ADR-009 | Architecture documentation (C4, 4+1, draw.io) | Ready to write (Bruno) |
 | ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
 
