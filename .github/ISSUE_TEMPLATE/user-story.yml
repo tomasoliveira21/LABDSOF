@@ -26,7 +26,7 @@ body:
         - P1 · Rita (participant)
         - P2 · Miguel (operator)
         - P3 · Sofia (event admin)
-        - P4 · Daniel (platform admin)
+        - P4 · Daniel (FarolAdmin)
         - P5 · Inês (responder)
         - Technical goal (no persona)
     validations:

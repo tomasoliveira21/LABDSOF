@@ -158,7 +158,7 @@ flowchart TD
 
 **[PROPOSED]:** the steps *invite team members*, *define response teams* and *publish with QR code* are not in the report but are needed for per-event permissions (report, *Product vision*) and for routing (W3).
 
-**[PROPOSED] 10 October 2026:** the first three steps (request, verification, creation by the platform admin, persona P4) are not in the report either. Farol hosts many festivals, so an event can only be created for a verified organisation, and its Owner manages only that event (F3, US-25). The platform admin never sees the event's help requests or reports. To confirm with the team (personas PE-5).
+**[PROPOSED] 10 October 2026:** the first three steps (request, verification, creation by the platform admin, persona P4) are not in the report either. Farol hosts many festivals, so an event can only be created for a verified organisation, and its EventAdmins manage only that event (F3, US-06; roles in [`features.md` §4](features.md#4-roles-teams-and-permissions-22-october-2026)). The platform admin never sees the event's help requests or reports. To confirm with the team (personas PE-5).
 
 ## W5 · Team publishes a live update
 

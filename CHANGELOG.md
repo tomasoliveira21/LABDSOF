@@ -2,18 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] · 2026-10-16 · Backlog checked against the DoR, sprint plan (#45)
+## [Unreleased] · 2026-10-22 · Backlog checked against the DoR, role model, sprint plan (#45)
 
-**Why:** teacher feedback T1 ([`2026-10-12-sprint-1-presentation-feedback.md`](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md)): every backlog item must meet the DoR before it goes to GitHub Projects. The assignment also asks for sprint objectives and an initial release plan (§7.1.2, item 5).
+**Why:** teacher feedback T1 ([`2026-10-12-sprint-1-presentation-feedback.md`](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md)): every backlog item must meet the DoR before it goes to GitHub Projects. The assignment also asks for sprint objectives and an initial release plan (§7.1.2, item 5). On 22 October Tiago (backlog owner) asked for smaller stories and defined a new role model.
 
 ### Changed
-- `features.md` §7: every user story checked against the DoR. Each story now has a *Persona* and a *Depends on* line; untestable or incomplete criteria rewritten (US-08, US-10, US-13, US-14, US-18, US-19, US-23); US-11 points to its AI fallback. Stories too big for one PR split: **US-27** (from US-19), **US-28** (from US-25), **US-29** (from US-02). Findings in §7.1.
-- `.github/ISSUE_TEMPLATE/user-story.yml`: persona P5 (responder) added; several personas can be picked.
+- `features.md` §4: **roles, teams and permissions** (to confirm with the team). Global `FarolAdmin`; per-event `EventAdmin` and `RegularUser`, so the same user can be EventAdmin in one event and RegularUser in another. EventAdmins create their event's teams (e.g. Security, Nursing), give each team permissions from a fixed list (`HelpRequests.Triage`, `HelpRequests.Respond`, `Reports.Review`, `Reports.Respond`, `Announcements.Publish`, `Map.Edit`, `Transport.Edit`, `Entrances.Update`) and add RegularUsers to them. Replaces the fixed roles (`Owner`, `Admin`, `Operator`, `Responder`) and the four fixed response teams of 9 October; suggested pilot set-up in §4.4. §2 (F3, F4, F7), §3 and §6.1–§6.2 aligned.
+- `features.md` §7: every user story checked against the DoR (persona, dependencies, testable criteria, AI fallback), then **split into 62 smaller stories, renumbered US-01 to US-62**, each one action and one PR. Old-to-new table, split rules, new numbers, rewritten criteria and issue types in §7.1.
+- `.github/ISSUE_TEMPLATE/user-story.yml`: persona P5 (responder) added, P4 named FarolAdmin; several personas can be picked.
+- `user-workflows.md` W4: EventAdmin instead of Owner, US-06 instead of US-25.
 - `2026-10-12-sprint-1-presentation-feedback.md`: T1 DoR check done; issue creation left open.
 
 ### Proposed (to confirm with the team)
-- `features.md` §8: sprint goals for Sprints B and C, initial release plan (R0 walking skeleton, R1 vertical slice, R2 MVP), the Sprint C cut line, the story-to-issue table and the dependencies that still block *Ready*. Replaces the backlog GAP note.
-- Justifications: `features.md` §7.1 explains each story split, the new numbers (5 reports in 10 minutes, ≤ 5 s to the responder), the rewritten criteria and the issue type of each story; §8.5 explains the Sprint B goal (mapped to every §7.2.2 deliverable), its capacity and risks, why US-14 is in Sprint B and US-02 in Sprint C, the Sprint C cut order and why the walking skeleton comes first.
+- `features.md` §8: sprint goals for Sprints B and C, initial release plan (R0 walking skeleton, R1 vertical slice with 27 stories, R2 MVP with 28), the Sprint C cut line, the story-to-issue table and the dependencies that still block *Ready*. §8.5 explains the Sprint B goal (mapped to every §7.2.2 deliverable), capacity and risks, the placement of the stories and the Sprint C cut order. Replaces the backlog GAP note.
+
+### Still to align (other documents)
+- The new role model is not yet in `personas.md` (PE-5, PE-6), `domain-model.md`, `architecture.md` or the architecture decisions guide (E2).
 
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 
