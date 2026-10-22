@@ -1,8 +1,8 @@
 # Decisões Arquiteturais
 
 > LABDSOF 2026/27 · Sprint A · Enunciado §6 (requisitos técnicos), §7.1.2 (entregáveis 7, 8 e 10), §8.4 e §8.5 (contentores e CI/CD)
-> **Estado (21 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
-> **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor).
+> **Estado (22 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
+> **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor) e reunião com o professor de 22 de outubro de 2026 ([`2026-10-22-professor-meeting.md`](../Meetings/2026-10-22-professor-meeting.md)).
 
 **Legenda do estado:**
 ✅ Decidido · ⏳ À espera da resposta do professor · 🔍 Em investigação (responsável indicado) · 🔮 Melhoria futura (fora do MVP) · ❗ Por decidir, **sem responsável**
@@ -11,11 +11,11 @@
 
 | Membro | Área |
 |---|---|
-| **Tomás** | Deploy (Azure, ECS ou Vercel) · integração de IA (se é viável fazer deploy de Ollama) · observabilidade · avaliação de Responsible AI e dataset de avaliação da triagem |
-| **Guerra** | Identidade e segurança · API gateway · Security & Privacy assessment |
+| **Tomás** | Deploy (Azure, ECS ou Vercel) · integração de IA (se é viável fazer deploy de Ollama) · observabilidade · avaliação de Responsible AI e dataset de avaliação da triagem · walking skeleton |
+| **Guerra** | Identidade e segurança · API gateway · Security & Privacy assessment · simulador da API do Porto Digital (J4) |
 | **Tomás + Guerra** | Modelo de domínio, incluindo o FarolAdmin (P4), as *memberships* por evento e as equipas com permissões |
-| **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto |
-| **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos |
+| **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto · lista de NFRs |
+| **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos · estimativa de custos (salários + infraestrutura) |
 
 ## Investigação de deploy, observabilidade e IA (22 de outubro de 2026)
 
@@ -111,7 +111,7 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 | # | Pergunta | Estado |
 |---|---|---|
 | G1 | Execução/deployment **apenas local**, sem cloud devido aos custos; autorização do professor reportada pelo Tomás. Comparação das plataformas preservada no relatório de investigação | ✅ âmbito local |
-| G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud | ✅ justificação registada |
+| G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud. Entra na estimativa de custos de operação (salários + infraestrutura) do Bruno | ✅ justificação registada |
 | G3 | Região cloud não se aplica à entrega local; RGPD e fluxos de dados locais/fornecedores continuam sujeitos à revisão do Guerra | ✅ sem região cloud; 🔍 privacidade |
 | G4 | Desenvolvimento, testes e demo localmente; não é necessário um ambiente cloud de produção | ✅ âmbito; 🔍 configuração |
 | G5 | Especificação local versionada (Compose); Bicep/cloud IaC mantém-se como alternativa estudada, sem provisionamento exigido | 🔍 implementação local |
@@ -148,7 +148,7 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 |---|---|---|
 | J1 | Padrões e valores em cada chamada externa (timeout, retry, circuit breaker); N tentativas e backoff do C3 | 🔍 Tiago |
 | J2 | Como demonstramos os modos degradados D1 (IA) e D2 (transportes) | 🔍 Tiago |
-| J4 | **Simulador da API do Porto Digital, ou respostas reais gravadas**, sob controlo da equipa (pedido do professor): testes automáticos repetíveis, provocar falhas, atrasos e dados inválidos na demo do D2, e não depender da API real no dia da apresentação. A integração real continua a ser o Porto Digital. Falta escolher a forma e a ferramenta | ✅ (forma e ferramenta: ❗) |
+| J4 | **Simulador da API do Porto Digital, ou respostas reais gravadas**, sob controlo da equipa (pedido do professor): testes automáticos repetíveis, provocar falhas, atrasos e dados inválidos na demo do D2, e não depender da API real no dia da apresentação. A integração real continua a ser o Porto Digital. Falta escolher a forma e a ferramenta | ✅ (forma e ferramenta: 🔍 Guerra) |
 | J3 | Escala para o pico e teste de carga (*performance evidence*, Sprint C). Tem em conta que o C5 fixa uma instância por serviço por agora | 🔍 Tiago |
 
 ## K · IA (ADR-005)
@@ -167,10 +167,22 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 
 ## Próximos passos
 
-1. **Resposta do professor:** recebida. A4 e a fonte de transportes (A2, B2) fechados; este documento, o [`architecture.md`](architecture.md), os diagramas e os ADR-001 e ADR-008 atualizados.
-2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Fica para uma fase futura, ainda sem responsável.
-3. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E), Tomás + Guerra (modelo de domínio, incluindo o P4), Tiago (J, F3 e backlog), Bruno (C8, D7, F4, H6, H7, H9).
-4. **Bruno:** diagramas C4 e 4+1 em draw.io a partir das decisões ✅.
-5. **Bruno: escrever os ADRs** já prontos (lista no [`architecture.md`](architecture.md) §13): ADR-002 (tecnologias), ADR-003 (dados), ADR-004 (comunicação) e ADR-009 (documentação). Os restantes escrevem-se quando a área fechar.
-6. **Explicar os custos na entrega:** usar a avaliação mantida para justificar no relatório e na apresentação a ausência de deployment cloud, conforme autorizado pelo professor.
-7. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar (última atualização: 21/10).
+**Feito:**
+- Resposta do professor (21/10): A4 e a fonte de transportes (A2, B2) fechados; ADR-001 e ADR-008.
+- Diagramas C4 e 4+1 em draw.io e ADR-009 (Bruno). A 22/10 saíram o nível 4 da vista física e os seus mapeamentos lógico–físico.
+- ADR-002, ADR-003 e ADR-004 (Bruno) e ADR-007 (Tiago).
+- Deploy **apenas local**, sem cloud por causa dos custos, autorizado pelo professor (G1, G2; Tomás, 22/10, [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). Investigação de deploy, observabilidade e IA no #53 (ADR-005, ADR-011 e ADR-012, propostos).
+
+**Em aberto, com responsável:**
+1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
+2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
+3. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.**
+4. **Transportes:** valores de x (intervalo do poll) e y (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). **Tiago.**
+5. **Estimativa de custos de operação:** salários + infraestrutura, simples; a parte de infraestrutura usa o G2 (Tomás) e serve também para explicar no relatório e na apresentação porque não há deployment na cloud (entrega apenas local, autorizada pelo professor; [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). **Bruno.**
+6. **Lista de NFRs** para a apresentação. **Tiago.**
+7. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar. **Quem fecha a área.**
+
+**Sem responsável, ficam para o fim** ❗ (reunião com o professor, 22/10, [ata](../Meetings/2026-10-22-professor-meeting.md)):
+- Apresentação (deck) com as secções pedidas pelo professor.
+- PDF único com os documentos dos entregáveis do Sprint A.
+- Lista de pressupostos e dependências, juntada a partir dos outros documentos.

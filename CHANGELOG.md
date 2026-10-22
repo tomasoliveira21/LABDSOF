@@ -2,6 +2,24 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-22 · Meeting with the professor (#55, Bruno Lopes)
+
+**Why:** record the points discussed with the professor on 22 October 2026 and what is still without an owner.
+
+### Added
+- `Docs/Meetings/2026-10-22-professor-meeting.md`: diagrams (physical level 4 and view mappings to delete, five databases in physical level 3), AI hosting (K1, Tomás), degraded modes and the transport poll (x and y), the presentation contents mapped to the existing documents, one PDF with the Sprint A documents, operating cost estimation (salaries + infrastructure), walking skeleton.
+
+### Changed
+- `architecture-decisions-guide.md`: status date, history, owners table, J4 owner (Guerra), G2 linked to the cost estimation, and *Próximos passos* rewritten as done / open with an owner / without an owner (left for the end).
+- `Docs/README.md`: meeting added to the index.
+- Owners assigned: cost estimation (Bruno), walking skeleton (Tomás), NFR list (Tiago), Porto Digital simulator J4 (Guerra). Left for the end, without an owner: the deck, the single PDF and the list of assumptions and dependencies.
+
+### Removed
+- `physical-view-level-4-{mobile,web,reports,transports}` and `mapping-logical-physical-level-4-{mobile,web,reports,transports}` (professor, 22 October 2026: the physical view stops at level 3). ADR-009 and `architecture.md` §14 updated. Showing the five databases in physical level 3 is still to do (Bruno).
+
+### Merged
+- `main` merged (#53: local-only deployment). Conflicts in the guide (G1–G7 from #53; G2 and *Próximos passos* link the local-only scope to the cost estimation), `architecture.md` §14 (no physical level-4 links, label from #53), `Docs/README.md` (both meetings of 22 October) and this CHANGELOG.
+
 ## [Unreleased] · 2026-10-22 · Local-only deployment authorised because of costs (#53)
 
 ### Changed
