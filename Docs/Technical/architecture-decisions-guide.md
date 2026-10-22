@@ -17,6 +17,12 @@
 | **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto |
 | **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos |
 
+## Investigação do Tomás (22 de outubro de 2026)
+
+**[Issue #53](https://github.com/tomasoliveira21/LABDSOF/issues/53): investigação documentada, propostas para revisão da equipa.** O [relatório e mapa de cobertura](../Research/tomas-architecture/README.md) cobre G1–G7, I1–I3, K1–K2, F2, alojamento do RabbitMQ (C1) e número de servidores PostgreSQL (D2). Inclui comparação de plataformas/custos, observabilidade, avaliação Responsible AI, 100 casos sintéticos e baseline reproduzível.
+
+Propostas: [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) (IA), [ADR-011](adr/0011-deployment-and-infrastructure.md) (infraestrutura), [ADR-012](adr/0012-observability.md) (observabilidade). **Mantêm-se os estados 🔍:** a investigação não é aprovação da equipa. Faltam validação dos rótulos, medições de modelos/SC3/SC5, orçamento/créditos, quotas e revisão de privacidade. Não houve deploy nem contratação de serviços. A proposta de recuperação G7 exige rever o âmbito de backup D5 antes de ser aceite.
+
 ## 0 · Base
 
 | Decisão | Estado |

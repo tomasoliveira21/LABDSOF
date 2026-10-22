@@ -2,6 +2,16 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-22 · Tomás's deployment, observability and AI research (#53)
+
+### Added
+- `Docs/Research/tomas-architecture/`: sourced investigation covering guide G1–G7, I1–I3, K1–K2, F2, RabbitMQ hosting (C1) and PostgreSQL server topology (D2), with a dated public Azure price snapshot, budget gates, recovery limitations, SLI/SLO and dashboard/alert specifications.
+- Responsible AI Opportunity Assessment, proposed triage prompt/output schema, 100 synthetic unreviewed cases (20 development / 80 test), offline scorer/checks and deterministic non-AI baseline. No model/provider benchmark or deployed performance is claimed.
+- Proposed ADR-005 (AI), ADR-011 (deployment) and ADR-012 (observability); ADR-010 stays reserved for Bruno's pipeline work.
+
+### Changed
+- Architecture guide, architecture index, product AI checklist and documentation index link the research. Pending team decisions stay pending; no meeting or acceptance is invented.
+
 ## [Unreleased] · 2026-10-21 · Architecture diagrams: level 4 split and view mappings (#39, Bruno Lopes)
 
 **Why:** review of the 4+1 diagrams. Legends added noise, separate personas at the top levels added nothing, and each level-4 diagram mixed several containers in one picture.

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Proposed Farol triage suggestion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "category",
+    "priority",
+    "team",
+    "reason",
+    "abstain"
+  ],
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "Health",
+        "Safety",
+        "LostPerson",
+        "Theft",
+        "Other"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
+      ]
+    },
+    "team": {
+      "type": "string",
+      "enum": [
+        "Medical",
+        "Security",
+        "PCR"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "abstain": {
+      "type": "boolean"
+    }
+  }
+}

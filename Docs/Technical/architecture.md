@@ -4,6 +4,8 @@
 > **Status (21 October 2026):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PENDING]** wait for an investigation; the owner is in that document. The reference diagrams are drawn in draw.io and listed in §14 ([ADR-009](adr/0009-architecture-documentation.md)); the Mermaid diagrams below are working sketches.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
+> **Research update (22 October 2026, #53):** Tomás's [investigation](../Research/tomas-architecture/README.md) supplies recommendations for deployment, observability and AI, including C1 hosting and D2 server topology. ADR-005, ADR-011 and ADR-012 are **Proposed**. Existing decisions and pending physical diagrams remain unchanged until team acceptance and the stated evidence gates.
+
 ## 1. Architecture drivers
 
 What shapes the design, and where it comes from:
@@ -81,7 +83,7 @@ flowchart LR
     RE -- "triage" --> LLM
 ```
 
-Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING]**). Clients get live updates by **polling** (no push in the MVP).
+Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING team acceptance]**; [observability proposal](../Research/tomas-architecture/observability.md)). Clients get live updates by **polling** (no push in the MVP).
 
 ## 4. Responsibilities and data ownership
 
@@ -156,7 +158,7 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 
 ## 10. Deployment view
 
-**[PENDING]** (Tomás): platform (Azure, ECS or Vercel), where the containers, RabbitMQ and PostgreSQL run, environments, infrastructure as code, local execution, rollback. Azure (Azure for Students) was chosen on 11 October and reopened on 15 October.
+**[PENDING team acceptance]** (Tomás; [deployment research](../Research/tomas-architecture/deployment.md), proposed [ADR-011](adr/0011-deployment-and-infrastructure.md)): platform (Azure, ECS or Vercel), where the containers, RabbitMQ and PostgreSQL run, environments, infrastructure as code, local execution, rollback. Azure (Azure for Students) was chosen on 11 October and reopened on 15 October.
 
 Already decided:
 - **One instance per service** for now.
@@ -183,9 +185,9 @@ Already decided:
 | API | Contract-first **OpenAPI**, `/api/v1` |
 | CI/CD | **GitHub Actions**, monorepo, private repository |
 | Architecture views | **C4** (all four levels, level 3 for every service) and **4+1** views without scenarios, drawn in **draw.io** |
-| Cloud and deployment | **[PENDING]** Tomás |
-| AI provider and model | **[PENDING]** Tomás |
-| Observability | **[PENDING]** Tomás |
+| Cloud and deployment | **[PROPOSED]** Azure target, conditional on budget/quota; [ADR-011](adr/0011-deployment-and-infrastructure.md) |
+| AI provider and model | **[PROPOSED]** Hosted Mistral Small vs local Ollama comparison; selection gates in [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) |
+| Observability | **[PROPOSED]** Micrometer/OpenTelemetry + Azure Monitor; [ADR-012](adr/0012-observability.md) |
 | Identity | **[PENDING]** Guerra |
 | API gateway | **[PENDING]** Guerra |
 | Venue map library (React Native) | **[PENDING]** Tiago |
@@ -201,12 +203,14 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-002](adr/0002-backend-and-frontend-technology.md) | Backend and frontend technology | Accepted |
 | [ADR-003](adr/0003-database-and-data-ownership.md) | Database and data ownership | Accepted |
 | [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
-| ADR-005 | AI workflow, provider and fallback | Waits for Tomás |
+| [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) | AI workflow, provider and fallback | Proposed; evaluation/privacy gates pending |
 | ADR-006 | Identity | Waits for Guerra |
 | ADR-007 | Venue map representation | Waits for Tiago |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
 | ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
+| [ADR-011](adr/0011-deployment-and-infrastructure.md) | Deployment and infrastructure | Proposed; budget/quota/recovery gates pending |
+| [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
 
 > ⚠️ **GAP: API outline and walking skeleton.** Sprint A also asks for an API outline (item 7; owner: Bruno, with the event catalogue) and a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; later phase, no owner yet).
 
