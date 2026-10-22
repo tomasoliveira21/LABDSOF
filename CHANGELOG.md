@@ -2,6 +2,17 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-22 · Meeting with the professor (#55, Bruno Lopes)
+
+**Why:** record the points discussed with the professor on 22 October 2026 and what is still without an owner.
+
+### Added
+- `Docs/Meetings/2026-10-22-professor-meeting.md`: diagrams (physical level 4 and view mappings to delete, five databases in physical level 3), AI hosting (K1, Tomás), degraded modes and the transport poll (x and y), the presentation contents mapped to the existing documents, one PDF with the Sprint A documents, operating cost estimation (salaries + infrastructure), walking skeleton.
+
+### Changed
+- `architecture-decisions-guide.md`: history and *Próximos passos* (new item 7 with the actions and the items without an owner; walking skeleton marked ❗).
+- `Docs/README.md`: meeting added to the index.
+
 ## [Unreleased] · 2026-10-21 · Architecture diagrams: level 4 split and view mappings (#39, Bruno Lopes)
 
 **Why:** review of the 4+1 diagrams. Legends added noise, separate personas at the top levels added nothing, and each level-4 diagram mixed several containers in one picture.

@@ -13,7 +13,7 @@ Multi-event coordination platform for large academic festivals (pilot case: Quei
 | Process | [Team Roles and Work Process](Process/team-and-process.md) · [Definition of Ready and Done](Process/definition-of-ready-and-done.md) · [Spec-Driven Development rules](Process/spec-driven-development.md) (proposed) | EN |
 | Technical | [Domain Model](Technical/domain-model.md) · [High-Level Architecture](Technical/architecture.md) · ADRs: [001](Technical/adr/0001-architectural-style.md) · [002](Technical/adr/0002-backend-and-frontend-technology.md) · [003](Technical/adr/0003-database-and-data-ownership.md) · [004](Technical/adr/0004-service-communication.md) · [008](Technical/adr/0008-transport-data-source.md) · [009](Technical/adr/0009-architecture-documentation.md) · [Diagrams](Technical/architecture.md#14-architecture-diagrams) | EN |
 | Technical (working document) | [Architecture decisions](Technical/architecture-decisions-guide.md): every architecture decision taken by the team, its status and owner, and next steps | PT |
-| Meetings | [2026-10-08 Sprint A gap review and decisions](Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Meetings/2026-10-12-sprint-1-presentation-feedback.md) | EN |
+| Meetings | [2026-10-08 Sprint A gap review and decisions](Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Meetings/2026-10-12-sprint-1-presentation-feedback.md) · [2026-10-22 Meeting with the professor](Meetings/2026-10-22-professor-meeting.md) | EN |
 | History | [CHANGELOG](../CHANGELOG.md) | EN |
 
 # Contributing Guidelines

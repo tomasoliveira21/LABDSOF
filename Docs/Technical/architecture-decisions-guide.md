@@ -2,7 +2,7 @@
 
 > LABDSOF 2026/27 · Sprint A · Enunciado §6 (requisitos técnicos), §7.1.2 (entregáveis 7, 8 e 10), §8.4 e §8.5 (contentores e CI/CD)
 > **Estado (21 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
-> **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor).
+> **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor) e reunião com o professor de 22 de outubro de 2026 ([`2026-10-22-professor-meeting.md`](../Meetings/2026-10-22-professor-meeting.md)).
 
 **Legenda do estado:**
 ✅ Decidido · ⏳ À espera da resposta do professor · 🔍 Em investigação (responsável indicado) · 🔮 Melhoria futura (fora do MVP) · ❗ Por decidir, **sem responsável**
@@ -156,8 +156,9 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 ## Próximos passos
 
 1. **Resposta do professor:** recebida. A4 e a fonte de transportes (A2, B2) fechados; este documento, o [`architecture.md`](architecture.md), os diagramas e os ADR-001 e ADR-008 atualizados.
-2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Fica para uma fase futura, ainda sem responsável.
+2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10; **ainda sem responsável** ❗.
 3. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E), Tomás + Guerra (modelo de domínio, incluindo o P4), Tiago (J, F3 e backlog), Bruno (C8, D7, F4, H6, H7, H9).
 4. **Bruno:** diagramas C4 e 4+1 em draw.io a partir das decisões ✅.
 5. **Bruno: escrever os ADRs** já prontos (lista no [`architecture.md`](architecture.md) §13): ADR-002 (tecnologias), ADR-003 (dados), ADR-004 (comunicação) e ADR-009 (documentação). Os restantes escrevem-se quando a área fechar.
 6. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar (última atualização: 21/10).
+7. **Reunião com o professor (22/10)** ([ata](../Meetings/2026-10-22-professor-meeting.md)): apagar o nível 4 da vista física e os diagramas de mapeamento e mostrar as cinco bases de dados no nível 3 físico (Bruno); x e y dos transportes (Tiago, J1 e D2). **Sem responsável** ❗: apresentação, PDF com os documentos do Sprint A, estimativa de custos (salários + infraestrutura), walking skeleton, listas de pressupostos e dependências e de NFRs, simulador (J4).
