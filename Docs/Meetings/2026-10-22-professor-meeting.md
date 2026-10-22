@@ -43,16 +43,17 @@ What the professor listed, with the document each section comes from today.
 |---|---|---|
 | Diagrams | Physical level 4 and view mappings removed; physical level 3 shows five databases | Diagrams, [ADR-009](../Technical/adr/0009-architecture-documentation.md) and [`architecture.md`](../Technical/architecture.md) §14: separate PR (Bruno) |
 | Transport data | Poll every x seconds, store the result, users read only from the database, warning after y | Already in ADR-004 and D2. Values of x and y: guide J1 and D2, Tiago |
-| Cost estimation | Salaries + infrastructure, simple assumptions | New item, owner to assign |
+| Cost estimation | Salaries + infrastructure, simple assumptions | New item, owner **Bruno** |
 
 ## Open actions
 
 - [ ] **Bruno:** delete `physical-view-level-4-*` and `mapping-*`; show the five databases in `physical-view-level-3`; update ADR-009 and `architecture.md` §14 (P1).
 - [ ] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2).
 - [ ] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2).
-- [ ] **Owner to assign:** the presentation deck (P5).
-- [ ] **Owner to assign:** the single PDF with the Sprint A documents (P6).
-- [ ] **Owner to assign:** the operating cost estimation, salaries + infrastructure (P7). The infrastructure part can reuse Tomás's research in #53 (G2).
-- [ ] **Owner to assign:** the walking skeleton (P8).
-- [ ] **Owner to assign:** one list of assumptions and dependencies, and one list of NFRs, for the deck.
-- [ ] **Owner to assign:** simulator of the Porto Digital API or recorded responses (guide J4, still without an owner).
+- [ ] **No owner yet, done at the end:** the presentation deck (P5).
+- [ ] **No owner yet, done at the end:** the single PDF with the Sprint A documents (P6).
+- [ ] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). The infrastructure part can reuse Tomás's research in #53 (G2).
+- [ ] **Tomás:** the walking skeleton (P8).
+- [ ] **Tiago:** one list of NFRs, for the deck.
+- [ ] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents.
+- [ ] **Guerra:** simulator of the Porto Digital API or recorded responses (guide J4).

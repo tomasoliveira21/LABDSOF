@@ -12,6 +12,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `architecture-decisions-guide.md`: history and *Próximos passos* (new item 7 with the actions and the items without an owner; walking skeleton marked ❗).
 - `Docs/README.md`: meeting added to the index.
+- Owners assigned: cost estimation (Bruno), walking skeleton (Tomás), NFR list (Tiago), Porto Digital simulator J4 (Guerra). Left for the end, without an owner: the deck, the single PDF and the list of assumptions and dependencies.
 
 ## [Unreleased] · 2026-10-21 · Architecture diagrams: level 4 split and view mappings (#39, Bruno Lopes)
 

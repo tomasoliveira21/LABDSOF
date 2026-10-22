@@ -11,11 +11,11 @@
 
 | Membro | Área |
 |---|---|
-| **Tomás** | Deploy (Azure, ECS ou Vercel) · integração de IA (se é viável fazer deploy de Ollama) · observabilidade · avaliação de Responsible AI e dataset de avaliação da triagem |
-| **Guerra** | Identidade e segurança · API gateway · Security & Privacy assessment |
+| **Tomás** | Deploy (Azure, ECS ou Vercel) · integração de IA (se é viável fazer deploy de Ollama) · observabilidade · avaliação de Responsible AI e dataset de avaliação da triagem · walking skeleton |
+| **Guerra** | Identidade e segurança · API gateway · Security & Privacy assessment · simulador da API do Porto Digital (J4) |
 | **Tomás + Guerra** | Modelo de domínio, incluindo o platform admin (P4) |
-| **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto |
-| **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos |
+| **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto · lista de NFRs |
+| **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos · estimativa de custos (salários + infraestrutura) |
 
 ## 0 · Base
 
@@ -136,7 +136,7 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 |---|---|---|
 | J1 | Padrões e valores em cada chamada externa (timeout, retry, circuit breaker); N tentativas e backoff do C3 | 🔍 Tiago |
 | J2 | Como demonstramos os modos degradados D1 (IA) e D2 (transportes) | 🔍 Tiago |
-| J4 | **Simulador da API do Porto Digital, ou respostas reais gravadas**, sob controlo da equipa (pedido do professor): testes automáticos repetíveis, provocar falhas, atrasos e dados inválidos na demo do D2, e não depender da API real no dia da apresentação. A integração real continua a ser o Porto Digital. Falta escolher a forma e a ferramenta | ✅ (forma e ferramenta: ❗) |
+| J4 | **Simulador da API do Porto Digital, ou respostas reais gravadas**, sob controlo da equipa (pedido do professor): testes automáticos repetíveis, provocar falhas, atrasos e dados inválidos na demo do D2, e não depender da API real no dia da apresentação. A integração real continua a ser o Porto Digital. Falta escolher a forma e a ferramenta | ✅ (forma e ferramenta: 🔍 Guerra) |
 | J3 | Escala para o pico e teste de carga (*performance evidence*, Sprint C). Tem em conta que o C5 fixa uma instância por serviço por agora | 🔍 Tiago |
 
 ## K · IA (ADR-005)
@@ -156,9 +156,9 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 ## Próximos passos
 
 1. **Resposta do professor:** recebida. A4 e a fonte de transportes (A2, B2) fechados; este documento, o [`architecture.md`](architecture.md), os diagramas e os ADR-001 e ADR-008 atualizados.
-2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10; **ainda sem responsável** ❗.
+2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10; responsável: **Tomás**.
 3. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E), Tomás + Guerra (modelo de domínio, incluindo o P4), Tiago (J, F3 e backlog), Bruno (C8, D7, F4, H6, H7, H9).
 4. **Bruno:** diagramas C4 e 4+1 em draw.io a partir das decisões ✅.
 5. **Bruno: escrever os ADRs** já prontos (lista no [`architecture.md`](architecture.md) §13): ADR-002 (tecnologias), ADR-003 (dados), ADR-004 (comunicação) e ADR-009 (documentação). Os restantes escrevem-se quando a área fechar.
 6. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar (última atualização: 21/10).
-7. **Reunião com o professor (22/10)** ([ata](../Meetings/2026-10-22-professor-meeting.md)): apagar o nível 4 da vista física e os diagramas de mapeamento e mostrar as cinco bases de dados no nível 3 físico (Bruno); x e y dos transportes (Tiago, J1 e D2). **Sem responsável** ❗: apresentação, PDF com os documentos do Sprint A, estimativa de custos (salários + infraestrutura), walking skeleton, listas de pressupostos e dependências e de NFRs, simulador (J4).
+7. **Reunião com o professor (22/10)** ([ata](../Meetings/2026-10-22-professor-meeting.md)): apagar o nível 4 da vista física e os diagramas de mapeamento e mostrar as cinco bases de dados no nível 3 físico (Bruno); x e y dos transportes (Tiago, J1 e D2). Estimativa de custos, salários + infraestrutura (Bruno); walking skeleton (Tomás); lista de NFRs (Tiago); simulador J4 (Guerra). **Sem responsável, ficam para o fim** ❗: apresentação, PDF com os documentos do Sprint A, lista de pressupostos e dependências.
