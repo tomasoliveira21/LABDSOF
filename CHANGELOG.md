@@ -2,24 +2,91 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] · 2026-10-16 · Resilience, degraded modes and load testing (#43)
+## [Unreleased] · 2026-10-22 · Resilience, degraded modes and load testing (#43)
 
-**Why:** Tiago's investigation of area J (resilience and degradation) and of the retry values left open in C3. It meets assignment §6.8 and prepares the Sprint C performance evidence and degraded-mode demonstration (§7.3.2, items 7 and 8).
+**Why:** Tiago's investigation of area J (resilience and degradation) and of the retry values left open in C3. It meets assignment §6.8, applies the professor's answer (Porto Digital as the source, with a simulator under the team's control) and prepares the Sprint C performance evidence and degraded-mode demonstration (§7.3.2, items 7 and 8). Every value is recorded with the reason for it.
 
 ### Decided
-- **J1:** **Resilience4j 2.4** (`resilience4j-spring-boot4`) in the outgoing adapters; timeout, retry and circuit-breaker values for the AI provider, the transport source and the identity provider (if external).
+- **J1:** **Resilience4j 2.4** (`resilience4j-spring-boot4`) in the outgoing adapters; timeout, retry and circuit-breaker values for the AI provider, the Porto Digital API (import every 30 s, only buses within 2 km of the venue) and the identity provider (if external), each with its reason (SC3's 30 s budget, measured API latency, low traffic at night).
 - **C3:** 4 attempts in the consumer with backoff 1 s → 2 s → 4 s, then one DLQ per queue; DLQ messages are alerted on, never reprocessed automatically, and moved back by hand once the cause is fixed. An AI failure is a fallback, not a message failure.
-- **J2:** D1 and D2 are triggered in the demo by an admin-only fault switch (`DOWN`, `SLOW`, `INVALID`), off in production; tested on every PR with WireMock (SC5, US-15); freshness limit of **24 h** for a static timetable confirmed, **5 min** for live bus positions. Step-by-step demo script.
+- **J2:** D1 and D2 are triggered, in the demo and in the tests, by **WireMock** placed in front of the AI provider and the Porto Digital API (proxy to the real system, failure stubs on demand), with no fault-injection code in the services. Tested on every PR (SC5, US-15). Freshness limit of **5 min** for bus positions; the 24 h proposed for a static GTFS timetable no longer applies. Step-by-step demo script.
+- **J4:** the simulator of the Porto Digital API is **WireMock** (proxy, recorded real responses, failure stubs); it also simulates the AI provider.
 - **J3:** design peak of ≈ 1,300 read requests/s for 10 min plus 1 help request/s, with its sources and assumptions; scaling order under one instance per service (Events scaled out first when C5 changes); load test with **k6**, scenarios L1–L5 and their pass criteria.
 
 ### Changed
-- `architecture-decisions-guide.md`: C3 and J1–J3 marked ✅, with a table of values per external call.
-- `architecture.md`: §6 retries, dead letters and outbox publisher; §9.1–9.3 (patterns and values, how D1 and D2 are triggered, observed and tested, demo script); §10.1 (peak load, scaling, load test); resilience and load testing in the technology table.
-- `features.md` §3.1: D1 and D2 detection, recovery, demo and test updated; D2 dependency follows the pending transport source.
+- `architecture-decisions-guide.md`: C3, J1–J4 marked ✅, with a table of values per external call and the reasons for them.
+- `architecture.md`: §6 retries, dead letters and outbox publisher; §7 AI row; §9.1–9.3 (patterns, values and reasons; how D1 and D2 are triggered, observed and tested; demo script); §10.1 (peak load, scaling, load test, pass criteria); resilience, simulator and load testing in the technology table.
+- `features.md` §3.1: D1 and D2 detection, freshness limit, recovery, demo and test.
+- ADR-004 and ADR-008: retry values, import interval, freshness limit and simulator recorded; their open points on these closed.
 
 ### To confirm
-- AI timeouts with K1 (Tomás), identity provider values with E1 (Guerra), demo and load-test environment with G1 and G4 (Tomás), transport values with the professor's answer on the source; the busiest-night figure with the organisers.
+- AI timeouts with K1 (Tomás), identity provider values with E1 (Guerra), demo and load-test environment with G1 and G4 (Tomás); the busiest-night figure with the organisers.
 
+## [Unreleased] · 2026-10-21 · Architecture diagrams: level 4 split and view mappings (#39, Bruno Lopes)
+
+**Why:** review of the 4+1 diagrams. Legends added noise, separate personas at the top levels added nothing, and each level-4 diagram mixed several containers in one picture.
+
+### Added
+- Level 4 split into one diagram per container, in the logical, implementation and physical views: `*-level-4-mobile`, `-web`, `-reports` and `-transports`. The logical ones show the container's neighbours (personas, API gateway, database, RabbitMQ, AI provider or Porto Digital); the implementation ones show only what is inside. Transports gets its own components (bus import job, Porto Digital client) for the first time.
+- 14 view-mapping diagrams: `mapping-logical-implementation-level-{1,2,3,4-*}` and `mapping-logical-physical-level-{1,2,3,4-*}`. Each one copies the full logical diagram on the left and the full implementation or physical diagram of the same level on the right, with dashed arrows linking each logical element to its counterpart. External systems have no counterpart in the code.
+
+### Changed
+- Legends removed from every diagram.
+- Logical levels 1 and 2: the five personas become one **User**.
+- Physical level 1 shows only Farol, the AI provider and Porto Digital. Levels 2 and 3 show a **Mobile app** and a **Web app** node instead of a smartphone, a computer and static hosting.
+
+### Removed
+- `logical-view-level-4`, `implementation-view-level-4` and `physical-view-level-4` (replaced by the per-container diagrams).
+
+### Added (documentation decision)
+- `Docs/Technical/adr/0009-architecture-documentation.md`: C4 inside the 4+1 views without scenarios, four levels per view with one level-4 diagram per container, view mappings, draw.io `.drawio.svg` files (source and image in one), no legends.
+- `architecture.md` §14 links every diagram; §13 marks ADR-009 as accepted. `Docs/README.md` links the ADRs and the diagrams.
+
+## [Unreleased] · 2026-10-21 · Professor's answer: ADR-001 and ADR-008 (#39, Bruno Lopes)
+
+**Why:** the professor answered the email of 15 October. The Porto Digital urban platform (FIWARE NGSI v2 bus API) is accepted as the external integration, as long as the app handles unavailable, late and invalid data and the team keeps a simulator or recorded responses under its control. There is no imposed path: the architecture is defined from the start and any evolution is motivated by evidence, not by the calendar; Sprint B already requires two independently deployable backend components (§6.2). This closes guide A4 and the transport source (A2, B2).
+
+### Decided
+- **Microservices from Sprint A**; no modular-monolith phase. The ArchUnit test and the schema-per-module rule of that phase are dropped (guide A3, D2).
+- Transport source: **Porto Digital urban platform**; STCP GTFS and the weather plan B are dropped.
+- **Simulator of the Porto Digital API, or recorded real responses** (guide J4): for automated tests, the degraded-mode demo and presentation day. Form and tool still open, no owner.
+
+### Added
+- `Docs/Technical/adr/0001-architectural-style.md` and `0008-transport-data-source.md`.
+
+### Changed
+- `architecture-decisions-guide.md`: A2, A3, A4, B2 and D2 updated; *À espera do professor* becomes *Respostas do professor*.
+- `architecture.md` (§2, §3, §7, §11, §13), `features.md` (F9, §3, degraded mode D2), ADR-003, `README.md` and the meeting record of 8 October updated to match.
+- Diagrams (logical levels 1–3, physical levels 1–3, transport process views): the transport source is named Porto Digital (FIWARE NGSI v2), and the monolith note is replaced by "Each service is deployed on its own from Sprint A".
+
+## [Unreleased] · 2026-10-21 · Professor's answer: transport source and microservices from the start (#38, Bruno Lopes)
+
+**Why:** the professor answered the email of 15 October, and the team decided A4 from that answer. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Professor's answer and follow-up decisions, 21 October 2026*).
+
+### Decided
+- Transport source: **Porto Digital API** (FIWARE NGSI v2). The app must handle unavailability, delays and invalid data; an **API simulator or recorded responses** under our control is required (new guide item J4, no owner yet).
+- **Microservices from the start** (A4): the five services deploy independently from Sprint A; the modular-monolith phase is dropped. Any later evolution needs evidence, not the calendar.
+
+### Changed
+- `architecture-decisions-guide.md`: A2, A3, A4, B2, D2, new J4, *Resposta do professor* replaces *À espera do professor*, *Próximos passos*.
+- `architecture.md`: status, §2 context diagram, §3, §7, §9, §11, ADR list (ADR-001 and ADR-008 ready to write).
+- ADR-002: services with their own deployment from Sprint A; hosting cost from the start.
+- ADR-003: monolith-phase schema option removed; one database per service from Sprint A.
+- ADR-004: context and consequences for independent deployment; new decision 5, external sources read by a scheduled poll with a configurable base URL for the simulator.
+
+## [Unreleased] · 2026-10-16 · ADR-002, ADR-003 and ADR-004 (#38, Bruno Lopes)
+
+**Why:** the technology, data and communication decisions confirmed on 11 and 15 October lived only in the decisions guide. The assignment asks for them as Architecture Decision Records (§7.1.2, item 8).
+
+### Added
+- `Docs/Technical/adr/` in the Michael Nygard format plus *Alternatives considered* (guide B7):
+  - `0002-backend-and-frontend-technology.md`: Java 21, Spring Boot 4.x, Maven; React web app; React Native mobile app. Reason: the stacks the team already uses.
+  - `0003-database-and-data-ownership.md`: PostgreSQL only, one database per service, `event_id` filtering with an isolation test per service, Flyway with *expand and contract*.
+  - `0004-service-communication.md`: RabbitMQ with Spring AMQP, events only between services, outbox table, idempotent consumers, dead-letter queue, contract-first OpenAPI under `/api/v1`, polling.
+- Each ADR cites the guide ids it records and lists its open points with their owner. Alternatives come from the options in the old `architecture.md` §12; reviewers should confirm the reasons given.
+
+### Changed
+- `architecture.md` §13: ADR-002, 003 and 004 marked *Accepted* and linked. `Docs/README.md`: ADRs added to the index.
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 
 ### Changed

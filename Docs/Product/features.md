@@ -30,7 +30,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F6 | Help request | C6 | Must | 6 | P1 | Category and location marked on the map; location shared only with the request |
 | F7 | Incident backoffice | C7 | Must | 7 | P2, P5 | Receive, prioritise, route to a response team and close help requests; live list and map; full status history. **[PROPOSED] 12 Oct:** responders get what is dispatched to their team on the phone and update its status (§4.1) |
 | F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Suggests category, priority and response team; the operator decides. Kept separate from F7 on purpose (see note below). See §5 |
-| F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **STCP GTFS feed** for regular lines (being validated; weather API as plan B, §3) plus event shuttles and temporary stops entered by the team |
+| F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **Porto Digital urban platform** (FIWARE NGSI v2): live positions of the city buses (§3), plus event shuttles and temporary stops entered by the team |
 | F10 | Live announcements, with last-update time | C4 | Must | 10 | P1, P3 | |
 | F11 | Weak-network mode: cached map and information, "data from HH:MM" | C10 | Could | — | P1 | Not one of the §6.8 degraded-mode scenarios (§3.1). Moved from Must to Could on 9 October 2026 |
 | F12 | Community reports on the map | — | Must (assignment §5.5) | 11 | P1 | Waze-style reports (queues, WC out of service, …). See §6 |
@@ -57,13 +57,13 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | §5.6 At least one AI-assisted workflow, with evaluation and baseline or fallback | F8: help-request triage | Decided; details open (§5.2) |
 | §6.1 Client application | Participant web app (PWA) and backoffice, both behind login | Decided |
 | §6.3 At least one asynchronous workflow | Help request → AI triage → notification of the event team (see [`architecture.md`](../Technical/architecture.md)) | **[PROPOSED]** |
-| §6.5 Integration with at least one external system or realistic simulator | **STCP GTFS feed** (F9). **Plan B:** a weather API (e.g. IPMA open data) for the event nights, only if the GTFS feed is not usable | Decided; GTFS being validated |
+| §6.5 Integration with at least one external system or realistic simulator | **Porto Digital urban platform**, FIWARE NGSI v2 bus API (F9; accepted by the professor, [ADR-008](../Technical/adr/0008-transport-data-source.md)) | Decided |
 | §6.6 Authentication and authorisation | F1 login for every user; F2 account and consent; F4 per-event roles; audit records for help requests (domain model I5) | Decided; mocked authentication allowed for the MVP |
 | §6.8 At least one degraded-mode scenario | **D1** AI unavailable and **D2** transport source unavailable (§3.1) | Decided |
 
 ### 3.1 Degraded-mode scenarios (decided, 9 October 2026)
 
-Two scenarios, no more. Both are demoed by switching off one dependency while the rest of the product keeps working. Assignment §6.8: *"fail safely and communicate limitations clearly to users"*.
+Two scenarios, no more. Both are demoed by breaking one dependency while the rest of the product keeps working. Assignment §6.8: *"fail safely and communicate limitations clearly to users"*.
 
 #### D1 · AI triage unavailable
 
@@ -76,21 +76,21 @@ Two scenarios, no more. Both are demoed by switching off one dependency while th
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
 | **When the AI comes back** | The banner disappears after the first successful call. Requests from the last 15 min that the operator has not touched are sent to triage once more and may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
 | **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard |
-| **How it is demoed** | An admin sets the AI **fault switch** to `DOWN` (or `SLOW`, `INVALID`) in the demo environment and a participant submits help requests. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
+| **How it is demoed** | The triage worker points at **WireMock** (guide J4), which normally passes requests to the real AI provider. The presenter makes it drop the connection (or answer late, or return invalid output) and a participant submits help requests; the services carry no fault-injection code. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
 | **Test** | SC5: 100 % of requests are shown to the operator with the AI off. Reports integration test on every PR, with WireMock in place of the provider (delay over the timeout, 503, dropped connection, invalid body); also under load in Sprint C (scenario L5) |
 
 #### D2 · Transport source unavailable
 
 | | |
 |---|---|
-| **Dependency** | Transport source **[PENDING, professor]**: Porto Digital FIWARE (live bus positions) or STCP GTFS (static timetable) |
-| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit: **24 h for a static timetable (GTFS), confirmed 16 October 2026**; **5 min for live bus positions (FIWARE)**, whose older observations are dropped on import |
+| **Dependency** | Porto Digital urban platform (FIWARE NGSI v2 bus API, [ADR-008](../Technical/adr/0008-transport-data-source.md)) |
+| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit: **5 min** (decided 22 October 2026), so late observations are dropped on import. Bus positions normally arrive about 1 min old, and a bus covers about 2 km in 5 min, so an older position misleads. The 24 h proposed earlier was for a static GTFS timetable, dropped with the professor's answer |
 | **What the participant sees** | The **last valid data**, with *"Data from HH:MM"* and a warning *"Live transport information unavailable"*, plus a link to the operator's website. **Event shuttles and temporary stops entered by the team are not affected**: they are internal data |
 | **What the team sees** | A warning in the backoffice that the transport source is down, with the time of the last successful import |
 | **Invalid data** | Never replaces valid data: the import is rejected as a whole and the previous version stays in use |
-| **Recovery** | Import retried with backoff (3 attempts, 1 s and 2 s apart; after repeated failures the circuit breaker waits 60 s before trying again); the warning disappears after the first valid import |
-| **How it is demoed** | An admin sets the transport **fault switch** to `DOWN`, then `INVALID`, and the participant opens the transport screen. Script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
-| **Test** | US-15: Transports integration test on every PR, with WireMock in place of the source (503, timeout, invalid payload) and a fixed clock past the freshness limit: the last valid data, its time and the stale flag are returned, shuttles still shown, invalid data never stored |
+| **Recovery** | Import every 30 s, retried with backoff (3 attempts, 1 s and 2 s apart; after repeated failures the circuit breaker waits 60 s before trying again, so a public service we do not control is not hammered); the warning disappears after the first valid import |
+| **How it is demoed** | Transports points at **WireMock**, the team's simulator of the Porto Digital API (guide J4), which normally passes requests to the real API. The presenter makes it return invalid data, then drop the connection, and the participant opens the transport screen. Script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
+| **Test** | US-15: Transports integration test on every PR, with WireMock replaying recorded Porto Digital responses, then a 503, a timeout and an invalid payload, and a fixed clock past the freshness limit: the last valid data, its time and the stale flag are returned, shuttles still shown, invalid data never stored |
 
 ## 4. Response teams (decided, 9 October 2026)
 
