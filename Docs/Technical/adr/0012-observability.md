@@ -6,7 +6,7 @@
 
 ## Context
 
-The asynchronous triage spans queueing, inference and persistence. Fallback must preserve operator visibility, while RabbitMQ, the AI and transport source can fail. Assignment §6.7 requires observable evidence. The [research specification](../../Research/tomas-architecture/observability.md) defines SLIs/denominators, dashboard panels, metric contracts, alerts, sampling and privacy controls.
+The asynchronous triage spans queueing, inference and persistence. Fallback must preserve operator visibility, while RabbitMQ, the AI and transport source can fail. Assignment §6.7 requires observable evidence. The [research specification](../../Research/architecture-investigation/observability.md) defines SLIs/denominators, dashboard panels, metric contracts, alerts, sampling and privacy controls.
 
 ## Proposed decision
 

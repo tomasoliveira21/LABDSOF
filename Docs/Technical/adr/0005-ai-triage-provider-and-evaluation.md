@@ -6,7 +6,7 @@
 
 ## Context
 
-F8 suggests category, priority and response team; an operator decides. F7 must work without AI. SC3 allows 30 s from submission to stored suggestion and SC5 requires all requests visible with AI off. Domain invariant I4 forbids lowering priorities or overwriting operator decisions. The complete [Responsible AI assessment](../../Research/tomas-architecture/responsible-ai.md) records sources, costs, input/output, risks and evidence gaps.
+F8 suggests category, priority and response team; an operator decides. F7 must work without AI. SC3 allows 30 s from submission to stored suggestion and SC5 requires all requests visible with AI off. Domain invariant I4 forbids lowering priorities or overwriting operator decisions. The complete [Responsible AI assessment](../../Research/architecture-investigation/responsible-ai.md) records sources, costs, input/output, risks and evidence gaps.
 
 ## Proposed decision
 
@@ -31,4 +31,4 @@ F8 suggests category, priority and response team; an operator decides. F7 must w
 
 ## Acceptance evidence pending
 
-Independent labels and fresh holdout; repeated candidate runs; deployed SC3/SC5 evidence; privacy/provider review; approved spend. Research artefacts and offline baseline are linked in the [evaluation package](../../Research/tomas-architecture/evaluation/README.md).
+Independent labels and fresh holdout; repeated candidate runs; deployed SC3/SC5 evidence; privacy/provider review; approved spend. Research artefacts and offline baseline are linked in the [evaluation package](../../Research/architecture-investigation/evaluation/README.md).

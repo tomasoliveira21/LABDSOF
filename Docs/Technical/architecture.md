@@ -4,7 +4,7 @@
 > **Status (21 October 2026):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PENDING]** wait for an investigation; the owner is in that document. The reference diagrams are drawn in draw.io and listed in §14 ([ADR-009](adr/0009-architecture-documentation.md)); the Mermaid diagrams below are working sketches.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
-> **Research update (22 October 2026, #53):** Tomás's [investigation](../Research/tomas-architecture/README.md) supplies recommendations for deployment, observability and AI, including C1 hosting and D2 server topology. ADR-005, ADR-011 and ADR-012 are **Proposed**. Existing decisions and pending physical diagrams remain unchanged until team acceptance and the stated evidence gates.
+> **Research update (22 October 2026, #53):** The [investigation](../Research/architecture-investigation/README.md) supplies recommendations for deployment, observability and AI, including C1 hosting and D2 server topology. ADR-005, ADR-011 and ADR-012 are **Proposed**. Existing decisions and pending physical diagrams remain unchanged until team acceptance and the stated evidence gates.
 
 ## 1. Architecture drivers
 
@@ -83,7 +83,7 @@ flowchart LR
     RE -- "triage" --> LLM
 ```
 
-Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING team acceptance]**; [observability proposal](../Research/tomas-architecture/observability.md)). Clients get live updates by **polling** (no push in the MVP).
+Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING team acceptance]**; [observability proposal](../Research/architecture-investigation/observability.md)). Clients get live updates by **polling** (no push in the MVP).
 
 ## 4. Responsibilities and data ownership
 
@@ -158,7 +158,7 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 
 ## 10. Deployment view
 
-**[PENDING team acceptance]** (Tomás; [deployment research](../Research/tomas-architecture/deployment.md), proposed [ADR-011](adr/0011-deployment-and-infrastructure.md)): platform (Azure, ECS or Vercel), where the containers, RabbitMQ and PostgreSQL run, environments, infrastructure as code, local execution, rollback. Azure (Azure for Students) was chosen on 11 October and reopened on 15 October.
+**[PENDING team acceptance]** (Tomás; [deployment research](../Research/architecture-investigation/deployment.md), proposed [ADR-011](adr/0011-deployment-and-infrastructure.md)): platform (Azure, ECS or Vercel), where the containers, RabbitMQ and PostgreSQL run, environments, infrastructure as code, local execution, rollback. Azure (Azure for Students) was chosen on 11 October and reopened on 15 October.
 
 Already decided:
 - **One instance per service** for now.

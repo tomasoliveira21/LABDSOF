@@ -15,9 +15,9 @@ Slices include plain language, informal Portuguese/typos, English, mixed languag
 From the repository root, Python 3.10+ with only the standard library:
 
 ```sh
-python3 Docs/Research/tomas-architecture/evaluation/evaluate.py --validate
-python3 Docs/Research/tomas-architecture/evaluation/evaluate.py --self-test
-python3 Docs/Research/tomas-architecture/evaluation/evaluate.py --baseline --split test --out Docs/Research/tomas-architecture/evaluation/baseline-report.json
+python3 Docs/Research/architecture-investigation/evaluation/evaluate.py --validate
+python3 Docs/Research/architecture-investigation/evaluation/evaluate.py --self-test
+python3 Docs/Research/architecture-investigation/evaluation/evaluate.py --baseline --split test --out Docs/Research/architecture-investigation/evaluation/baseline-report.json
 ```
 
 The baseline preserves participant category and uses deterministic category defaults from the proposal. It is a comparison for the **no-AI routing policy**; it is not a model and does not invent latency measurements. The committed [baseline report](baseline-report.json) records counts, denominator-inclusive accuracy, coverage, urgent misses, slice results and dataset/prompt/schema hashes. The self-test uses expected-label fixtures **only to verify the scorer**; those fixtures are never reported as model predictions.
@@ -30,7 +30,7 @@ The scorer checks the precise simple object schema shipped here (required keys, 
 2. Pass the fixed [system prompt](system-prompt.txt), [schema](output.schema.json) and each row's **input only**. Never send reference labels, split or tags to the model. No credentials or external API calls are required by this package. Provider runs are a later, explicitly budgeted action using synthetic data.
 3. Save one JSONL wrapper per selected case: `{"id":"T001","elapsed_ms":1234,"output":{"category":"Health","priority":"Critical","team":"Medical","reason":"Requer revisão imediata pela equipa.","abstain":false}}`. A timeout/refusal/transport error is represented by `output:null` with observed elapsed time, not a fabricated valid fallback prediction. Only include IDs from the selected split.
 4. `elapsed_ms` must represent submission-to-stored-valid-suggestion time including queue and persistence for SC3. A direct model-call benchmark can score quality but must omit `elapsed_ms` here and record `provider_ms` separately in its manifest; it does not establish deployed SC3. Scoring an asserted elapsed value cannot verify the measurement instrument.
-5. Run `python3 Docs/Research/tomas-architecture/evaluation/evaluate.py --predictions /path/to/test-predictions.jsonl --split test --out /path/to/run-report.json`.
+5. Run `python3 Docs/Research/architecture-investigation/evaluation/evaluate.py --predictions /path/to/test-predictions.jsonl --split test --out /path/to/run-report.json`.
 6. Compare with the baseline. Review reasons, all urgent misses, language/injection slices, cold/warm/concurrent runs and actual token/cost usage. A provider benchmark, labels, privacy review and an AI-off end-to-end test remain pending.
 
 ## Proposed gates

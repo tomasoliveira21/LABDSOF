@@ -6,7 +6,7 @@
 
 ## Context
 
-Five services are independently deployable from Sprint A (ADR-001). Each owns a PostgreSQL database (ADR-003) and exchanges events through RabbitMQ (ADR-004). The deployment platform was reopened on 15 October; student credits and the approved budget are unknown. The sourced [deployment investigation](../../Research/tomas-architecture/deployment.md) includes workload comparison, cost assumptions, environments, recovery and implementation checks.
+Five services are independently deployable from Sprint A (ADR-001). Each owns a PostgreSQL database (ADR-003) and exchanges events through RabbitMQ (ADR-004). The deployment platform was reopened on 15 October; student credits and the approved budget are unknown. The sourced [deployment investigation](../../Research/architecture-investigation/deployment.md) includes workload comparison, cost assumptions, environments, recovery and implementation checks.
 
 ## Proposed decision
 

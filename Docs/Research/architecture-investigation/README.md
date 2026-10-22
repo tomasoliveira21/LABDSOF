@@ -1,4 +1,4 @@
-# Tomás's architecture investigation
+# Architecture investigation
 
 **Issue:** [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53) · **Date:** 22 October 2026 · **Owner:** Tomás Oliveira
 
