@@ -188,7 +188,7 @@ Already decided:
 | Observability | **[PENDING]** Tomás |
 | Identity | **[PENDING]** Guerra |
 | API gateway | **[PENDING]** Guerra |
-| Venue map library (React Native) | **[PENDING]** Tiago |
+| Venue map (React Native) | **`react-native-svg`** markers inside a **`react-native-zoom-toolkit`** zoom/pan container (Gesture Handler + Reanimated); normalised `MapPosition` coordinates; works on iOS and Android, with Expo and bare React Native (to confirm with a spike on real devices before the map is built). The web app uses a plain `<img>` with positioned markers. PDF maps are rendered to a PNG on upload by the Events service (**Apache PDFBox**). See [ADR-007](adr/0007-venue-map-representation.md) |
 | React Native setup and distribution | **[PENDING]** Bruno |
 
 ## 13. Architecture Decision Records
@@ -203,7 +203,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
 | ADR-005 | AI workflow, provider and fallback | Waits for Tomás |
 | ADR-006 | Identity | Waits for Guerra |
-| ADR-007 | Venue map representation | Waits for Tiago |
+| [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Accepted |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
 | ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
