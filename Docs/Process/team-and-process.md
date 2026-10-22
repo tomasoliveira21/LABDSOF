@@ -68,6 +68,10 @@ The team meets **twice a week**:
 | **GitHub Projects** | Backlog, sprints, decisions, sprint goals, investor feedback (the "Jira or equivalent" of assignment §8.2) | Chosen on 8 October 2026; link to add to the README |
 | GitHub Copilot | Automatic PR review | Defined in README §5 |
 
+### Deployment scope clarification (recorded 22 October 2026)
+
+Tomás reported that the professor authorised **local-only delivery because of cloud costs**, which must be explained in the final report/presentation ([record](../Meetings/2026-10-22-local-deployment-clarification.md), [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)). Keep the cloud cost/hosting evaluation as justification. Builds, tests, independently replaceable service images and local smoke/failure demonstrations remain required; the earlier automatic cloud-production deployment expectation is superseded. Bruno adapts the local delivery handoff; no unattended access to a developer's machine is assumed.
+
 ## 4. Process health check (what the repository shows today)
 
 | Check | Finding | Action (agreed 8 October 2026) |

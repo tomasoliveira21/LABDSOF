@@ -17,6 +17,18 @@
 | **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto · lista de NFRs |
 | **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos · estimativa de custos (salários + infraestrutura) |
 
+## Investigação de deploy, observabilidade e IA (22 de outubro de 2026)
+
+**[Issue #53](https://github.com/tomasoliveira21/LABDSOF/issues/53): investigação documentada, propostas para revisão da equipa.** O [relatório e mapa de cobertura](../Research/architecture-investigation/README.md) cobre G1–G7, I1–I3, K1–K2, F2, alojamento do RabbitMQ (C1) e número de servidores PostgreSQL (D2). Inclui comparação de plataformas/custos, observabilidade, avaliação Responsible AI, 100 casos sintéticos e baseline reproduzível.
+
+Propostas de IA e observabilidade: [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) (IA), [ADR-011](adr/0011-deployment-and-infrastructure.md) (infraestrutura), [ADR-012](adr/0012-observability.md) (observabilidade). **As propostas técnicas mantêm os estados 🔍:** a investigação não é aprovação da equipa; a autorização posterior para entrega apenas local está registada abaixo. Faltam validação dos rótulos, medições de modelos/SC3/SC5, dimensionamento local e revisão de privacidade. Orçamento/créditos e quotas de cloud só voltam a ser necessários se essa alternativa for retomada. Não houve deploy nem contratação de serviços. A proposta de recuperação G7 exige rever o âmbito de backup D5 antes de ser aceite.
+
+## Entrega apenas local autorizada pelo professor (registo de 22 de outubro de 2026)
+
+Segundo a informação transmitida pelo **Tomás**, o professor autorizou avançar com **execução/deployment apenas local, sem deployment na cloud, por causa dos custos**. É necessário explicar no relatório e na apresentação que a ausência de deployment na cloud se deve aos custos. O [registo da clarificação](../Meetings/2026-10-22-local-deployment-clarification.md) e o [ADR-011](adr/0011-deployment-and-infrastructure.md) documentam o âmbito e a justificação.
+
+A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidência e alternativa futura**, não como plano de contratação. Os cinco serviços continuam independentes; execução local não exige cinco máquinas nem elimina testes, imagens, integração, observabilidade ou demonstração dos modos degradados. A topologia e a automação local detalhadas continuam por implementar/validar. Esta clarificação substitui a expectativa anterior de deploy automático numa produção cloud em H4/H5.
+
 ## 0 · Base
 
 | Decisão | Estado |
@@ -27,7 +39,7 @@
 | **Arquitetura distribuída**; o monólito sem fronteiras impostas está excluído | ✅ |
 | **C4 model nos 4 níveis** | ✅ |
 | **Pipeline de CI e CD completa** | ✅ |
-| **Plataforma de deploy:** o Azure (Azure for Students) foi escolhido a 11/10 e **voltou a estar em aberto**: Azure, ECS ou Vercel. A decisão fica para depois da investigação | 🔍 Tomás |
+| **Entrega/deployment local**, sem cloud devido aos custos, autorizado pelo professor segundo o Tomás (registo de 22/10). Avaliação cloud preservada como justificação e alternativa futura | ✅ âmbito local; detalhes no ADR-011 |
 
 ## A · Estilo arquitetural (ADR-001)
 
@@ -47,14 +59,14 @@
 | B3 | **Nível 2:** app web React (gestão de eventos), app mobile React Native, cada serviço, o RabbitMQ e a base de dados de cada serviço; os sistemas externos mantêm-se. Gateway: ver C6 | ✅ |
 | B4 | **Nível 3 para todos os serviços.** A documentação de cada serviço (nível 3, nível 4, contratos) fica em `backend/<serviço>/docs/` | ✅ |
 | B5 | **Nível 4** mostra a **arquitetura hexagonal** de cada serviço: `domain`, `application` (casos de uso e portas), `adapters/in` (REST gerado do OpenAPI, consumidores RabbitMQ), `adapters/out` (JPA, publicador do outbox, clientes HTTP externos) | ✅ |
-| B6 | **Vistas do 4+1, sem cenários** (os workflows W1–W8 já os cobrem): lógica (C4 1–3 e modelo de domínio), processos (dinâmicos: pedido de ajuda e triagem assíncrona), desenvolvimento (repositório, módulos Maven, pacotes hexagonais), física (deployment; depende da plataforma, 🔍 Tomás) | ✅ |
+| B6 | **Vistas do 4+1, sem cenários** (os workflows W1–W8 já os cobrem): lógica (C4 1–3 e modelo de domínio), processos (dinâmicos: pedido de ajuda e triagem assíncrona), desenvolvimento (repositório, módulos Maven, pacotes hexagonais), física (contentores no ambiente local autorizado; diagramas a alinhar pelo responsável) | ✅ |
 | B7 | ADRs em `Docs/Technical/adr/NNNN-titulo.md`, formato **Michael Nygard** (Contexto, Decisão, Estado, Consequências) + secção **Alternativas consideradas** (§7.1.2) | ✅ |
 
 ## C · Comunicação (ADR-004)
 
 | # | Decisão | Estado |
 |---|---|---|
-| C1 | **RabbitMQ**: gratuito; igual localmente, nos testes (Testcontainers) e na cloud; exchanges *topic* para pub-sub; DLQ com *dead-letter exchange*. Onde corre na cloud: depende da plataforma | ✅ (alojamento: 🔍 Tomás) |
+| C1 | **RabbitMQ** com Spring AMQP, exchanges *topic* e DLQ; corre localmente em contentor com volume persistente. O alojamento cloud estudado fica como alternativa futura (ADR-011) | ✅ tecnologia e âmbito local; 🔍 configuração |
 | C2 | **Spring AMQP** | ✅ |
 | C3 | **Tabela outbox** em cada serviço, publicada por um job de polling nosso. Consumidores idempotentes com tabela de mensagens processadas (`message_id`); após N tentativas, DLQ | ✅ (N e backoff: 🔍 Tiago) |
 | C4 | **Só eventos entre serviços.** Cada serviço guarda uma cópia local do que precisa de outro (ex.: o Reports guarda as equipas, as suas permissões e categorias de ajuda do Events; todos guardam as *memberships* e as equipas de cada membro do Auth & Users). Custo aceite: consistência eventual | ✅ |
@@ -90,7 +102,7 @@
 | # | Decisão | Estado |
 |---|---|---|
 | F1 | **Duas aplicações:** web React simples para a gestão de eventos; mobile React Native para o resto | ✅ |
-| F2 | Alojamento da app web | 🔍 Tomás (deploy) |
+| F2 | App web servida **localmente**; alojamento cloud não é exigido para a entrega autorizada (ADR-011) | ✅ âmbito; 🔍 implementação |
 | F3 | **Mapa do recinto ([ADR-007](adr/0007-venue-map-representation.md)):** na app mobile, **`react-native-svg`** para os marcadores dentro do zoom/pan do **`react-native-zoom-toolkit`** (sobre Gesture Handler e Reanimated); posições em coordenadas normalizadas (`MapPosition`); filtro por tipo (US-22) com estado React. Funciona em iOS e Android, com Expo e com React Native *bare*, por isso não depende do F4. Antes de implementar o mapa, um *spike* confirma o zoom-toolkit com o Gesture Handler 3 num iPhone e num Android reais; se falhar, o zoom/pan escreve-se diretamente com Gesture Handler e Reanimated. A app web usa só `<img>` com marcadores posicionados. **PDF convertido em imagem no upload**, no serviço Events, com Apache PDFBox (só PDFs de uma página; imagem com no máximo 4096 px no lado maior; guarda-se o original e a imagem). Onde ficam os ficheiros depende do G1 | ✅ |
 | F4 | Configuração do React Native (ex.: Expo ou não) e como a app mobile chega aos professores e à demo (§12) | 🔍 Bruno |
 
@@ -98,13 +110,13 @@
 
 | # | Pergunta | Estado |
 |---|---|---|
-| G1 | Plataforma (Azure, ECS ou Vercel) e onde correm os contentores | 🔍 Tomás |
-| G2 | Custo da infraestrutura e orçamento (entra na estimativa de custos de operação do Bruno) | 🔍 Tomás |
-| G3 | Região (RGPD) | 🔍 Tomás |
-| G4 | Ambientes | 🔍 Tomás |
-| G5 | Infraestrutura como código | 🔍 Tomás |
-| G6 | Execução local (`docker compose`) | 🔍 Tomás |
-| G7 | Rollback e recuperação | 🔍 Tomás |
+| G1 | Execução/deployment **apenas local**, sem cloud devido aos custos; autorização do professor reportada pelo Tomás. Comparação das plataformas preservada no relatório de investigação | ✅ âmbito local |
+| G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud. Entra na estimativa de custos de operação (salários + infraestrutura) do Bruno | ✅ justificação registada |
+| G3 | Região cloud não se aplica à entrega local; RGPD e fluxos de dados locais/fornecedores continuam sujeitos à revisão do Guerra | ✅ sem região cloud; 🔍 privacidade |
+| G4 | Desenvolvimento, testes e demo localmente; não é necessário um ambiente cloud de produção | ✅ âmbito; 🔍 configuração |
+| G5 | Especificação local versionada (Compose); Bicep/cloud IaC mantém-se como alternativa estudada, sem provisionamento exigido | 🔍 implementação local |
+| G6 | Execução local com contentores independentes; procedimento reproduzível de arranque/atualização e smoke test (ADR-011) | ✅ alvo local; 🔍 implementação |
+| G7 | Rollback por imagem e recuperação de estado local; volumes não são backups. Plano e medições de RTO/RPO continuam necessários | 🔍 implementação/validação |
 
 ## H · Pipeline de CI/CD
 
@@ -115,9 +127,9 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 | H1 | **GitHub Actions** | ✅ |
 | H2 | **Monorepo atual:** `backend/<serviço>/`, `frontend/`, `infra/`, `Docs/` | ✅ |
 | H3 | **Maven**, **Java 21 (LTS)**, **Spring Boot 4.x**; imagens com **Dockerfile multi-stage** | ✅ |
-| H4 | **Corre tudo, sempre:** todas as verificações em cada PR, no merge e nas tags, para todos os serviços (sem path filters). Imagem publicada e deploy no merge para `main`, seguido de smoke test | ✅ |
-| H5 | **Continuous deployment** por agora: cada merge em `main` vai para produção | ✅ |
-| H6 | Autenticação da pipeline na cloud (depende de G1) | 🔍 Bruno |
+| H4 | **Corre tudo, sempre:** verificações em cada PR, merge e tag para todos os serviços (sem path filters); imagens versionadas e validação/smoke test local. Cloud não é destino obrigatório | ✅ âmbito atualizado; 🔍 automação Bruno |
+| H5 | A expectativa anterior de **deploy automático na produção cloud** é substituída pela entrega local autorizada por custos. Bruno define o procedimento/pipeline de entrega local; não se presume acesso automático à máquina pessoal | ✅ âmbito local; 🔍 automação Bruno |
+| H6 | Autenticação para publicação/entrega de imagens, se aplicável; autenticação de deploy cloud fica adiada com essa alternativa | 🔍 Bruno |
 | H7 | Versionamento e etiquetas | 🔍 Bruno |
 | H8 | Repositório **privado** | ✅ |
 | H9 | Build e distribuição da app mobile na pipeline | 🔍 Bruno (depende de F4) |
@@ -159,13 +171,14 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Resposta do professor (21/10): A4 e a fonte de transportes (A2, B2) fechados; ADR-001 e ADR-008.
 - Diagramas C4 e 4+1 em draw.io e ADR-009 (Bruno). A 22/10 saíram o nível 4 da vista física e os seus mapeamentos lógico–físico.
 - ADR-002, ADR-003 e ADR-004 (Bruno) e ADR-007 (Tiago).
+- Deploy **apenas local**, sem cloud por causa dos custos, autorizado pelo professor (G1, G2; Tomás, 22/10, [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). Investigação de deploy, observabilidade e IA no #53 (ADR-005, ADR-011 e ADR-012, propostos).
 
 **Em aberto, com responsável:**
-1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
+1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
 2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
 3. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.**
 4. **Transportes:** valores de x (intervalo do poll) e y (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). **Tiago.**
-5. **Estimativa de custos de operação:** salários + infraestrutura, simples; a parte de infraestrutura usa o G2 (Tomás). **Bruno.**
+5. **Estimativa de custos de operação:** salários + infraestrutura, simples; a parte de infraestrutura usa o G2 (Tomás) e serve também para explicar no relatório e na apresentação porque não há deployment na cloud (entrega apenas local, autorizada pelo professor; [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). **Bruno.**
 6. **Lista de NFRs** para a apresentação. **Tiago.**
 7. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar. **Quem fecha a área.**
 
