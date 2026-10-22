@@ -14,6 +14,9 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `Docs/README.md`: meeting added to the index.
 - Owners assigned: cost estimation (Bruno), walking skeleton (Tomás), NFR list (Tiago), Porto Digital simulator J4 (Guerra). Left for the end, without an owner: the deck, the single PDF and the list of assumptions and dependencies.
 
+### Removed
+- `physical-view-level-4-{mobile,web,reports,transports}` and `mapping-logical-physical-level-4-{mobile,web,reports,transports}` (professor, 22 October 2026: the physical view stops at level 3). ADR-009 and `architecture.md` §14 updated. Showing the five databases in physical level 3 is still to do (Bruno).
+
 ## [Unreleased] · 2026-10-21 · Architecture diagrams: level 4 split and view mappings (#39, Bruno Lopes)
 
 **Why:** review of the 4+1 diagrams. Legends added noise, separate personas at the top levels added nothing, and each level-4 diagram mixed several containers in one picture.

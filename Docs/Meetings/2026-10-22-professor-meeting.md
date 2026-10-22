@@ -7,7 +7,7 @@
 
 | # | Point | Outcome |
 |---|---|---|
-| P1 | **Architecture diagrams** | Delete the **physical view level 4** diagrams (`physical-view-level-4-*`) and the **view-mapping** diagrams (`mapping-*`). In **physical view level 3**, show that there are **five different databases**, one per service |
+| P1 | **Architecture diagrams** | Delete the **physical view level 4** diagrams (`physical-view-level-4-*`) and their **logical–physical mappings** (`mapping-logical-physical-level-4-*`). The logical–implementation mappings stay. In **physical view level 3**, show that there are **five different databases**, one per service |
 | P2 | **AI hosting:** our own machine (e.g. Ollama) or a hosted API with an API key? Who decides? | Already planned: guide K1, owner **Tomás**. The proposal is in [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53) (ADR-005, *Proposed*) |
 | P3 | **Degraded modes:** what happens when the transport source or the AI is down | **AI down:** manual triage by the operator (scenario D1, unchanged). **Transport source down:** see P4 |
 | P4 | **Transport data flow** | A scheduled loop requests the Porto Digital API every **x** seconds and stores the result in the database. Users always read the stored data, never the API directly. If the stored data is older than **y**, the app shows a warning. This matches [ADR-004](../Technical/adr/0004-service-communication.md) decision 5 and scenario D2 ([`features.md`](../Product/features.md) §3.1). Invalid data still never replaces the last valid data |
@@ -41,13 +41,14 @@ What the professor listed, with the document each section comes from today.
 
 | Topic | Decision | Applied in |
 |---|---|---|
-| Diagrams | Physical level 4 and view mappings removed; physical level 3 shows five databases | Diagrams, [ADR-009](../Technical/adr/0009-architecture-documentation.md) and [`architecture.md`](../Technical/architecture.md) §14: separate PR (Bruno) |
+| Diagrams | Physical level 4 and its logical–physical mappings removed; physical level 3 shows five databases | Removal: diagrams, [ADR-009](../Technical/adr/0009-architecture-documentation.md) and [`architecture.md`](../Technical/architecture.md) §14 (#55). Level 3: Bruno, later |
 | Transport data | Poll every x seconds, store the result, users read only from the database, warning after y | Already in ADR-004 and D2. Values of x and y: guide J1 and D2, Tiago |
 | Cost estimation | Salaries + infrastructure, simple assumptions | New item, owner **Bruno** |
 
 ## Open actions
 
-- [ ] **Bruno:** delete `physical-view-level-4-*` and `mapping-*`; show the five databases in `physical-view-level-3`; update ADR-009 and `architecture.md` §14 (P1).
+- [x] **Bruno:** delete `physical-view-level-4-*` and `mapping-logical-physical-level-4-*`; update ADR-009 and `architecture.md` §14 (P1). Done in #55.
+- [ ] **Bruno:** expand `physical-view-level-3` to show the five databases (P1).
 - [ ] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2).
 - [ ] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2).
 - [ ] **No owner yet, done at the end:** the presentation deck (P5).
