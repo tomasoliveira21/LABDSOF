@@ -2,6 +2,10 @@
 
 **22 October 2026 · #53 · K1–K2 / AI-1–AI-11 · PROPOSED.** Research artefacts for the academic MVP; no clinical validation, production deployment or measured model performance.
 
+**Current scope update:** [Local-only application delivery is authorised because of cloud costs](../../Meetings/2026-10-22-local-deployment-clarification.md). Keep the hosted-versus-Ollama assessment below; the preference for hosted inference describes the original cloud-demo scenario, not an accepted current provider decision. Evaluate local Ollama first if avoiding external-service spend is the goal; an optional API still needs quality, privacy and cost review. No inference test is claimed here.
+
+**Compatibility after merging the 22 October role model:** the fixed Medical/Security/PCR names in this evaluation are a frozen synthetic event fixture, not a global production team list. Current `features.md` §4 allows event-defined teams with permissions and handled categories. Implementation must supply/validate the current event's eligible teams, abstain when none is eligible, and evaluate another event with different names/permissions. The existing draft labels/baseline remain research evidence and do not prove that cross-event team selection.
+
 ## Opportunity, boundaries and human control
 
 F8 assists the incident operator with category, operational priority and response-team suggestions for help requests. The expected value is more consistent routing in informal Portuguese, not automated diagnosis, emergency advice or autonomous dispatch. Existing F7 works immediately without AI: participant category, order of arrival, **Not triaged**. The operator approves/changes every suggestion. The system must never overwrite an operator decision or lower an existing priority (domain invariant I4).
@@ -29,7 +33,7 @@ Local Ollama supports [JSON-schema output](https://docs.ollama.com/capabilities/
 
 Send only participant `category` and optional sanitised text (max 500 characters), current priority floor and the fixed available team types. Do not send account/event IDs, precise coordinates, names, phone numbers, credentials, tickets or the complete request record. A coarse zone is not needed for categorisation and is excluded initially. An opaque local correlation ID is kept outside the provider payload. Free text can still contain sensitive information after redaction: minimisation is not anonymisation.
 
-[System prompt](evaluation/system-prompt.txt) separates trusted rules from a JSON user-data message. No tools or retrieval. [Output schema](evaluation/output.schema.json) fixes five categories, four priorities, three help-response teams, short reason and abstention. Unknown keys, invalid enums, excessive strings, timeout, refusal or semantic violations cause fallback. `Logistics` never receives help requests (features §4). Proposed default routing: Health→Medical, Safety/Theft→Security, LostPerson/Other→PCR; **Other→PCR needs team validation**. A missing team in an event forces manual routing.
+[System prompt](evaluation/system-prompt.txt) separates trusted rules from a JSON user-data message. No tools or retrieval. [Output schema](evaluation/output.schema.json) fixes five categories, four priorities, three help-response teams, short reason and abstention. Unknown keys, invalid enums, excessive strings, timeout, refusal or semantic violations cause fallback. In this frozen pilot fixture, `Logistics` is not a help-request destination; current production eligibility must follow event-defined permissions/categories, not the name. Fixture default routing: Health→Medical, Safety/Theft→Security, LostPerson/Other→PCR; **Other→PCR needs team validation**. A missing or unauthorised team in an event forces manual routing. The fixed-name fixture schema must be adapted to that event-derived allowlist before production integration.
 
 | Priority | Proposed operational meaning; synthetic examples |
 |---|---|

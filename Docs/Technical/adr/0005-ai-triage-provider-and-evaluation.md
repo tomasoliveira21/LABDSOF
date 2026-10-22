@@ -4,6 +4,8 @@
 
 **Proposed**, 22 October 2026, research for [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53). Not accepted by the team; no model performance or provider/privacy approval claimed. Covers guide K1–K2 and features AI-1–AI-11.
 
+**Delivery-scope update:** the professor authorised local-only application execution due to cost ([clarification](../../Meetings/2026-10-22-local-deployment-clarification.md)). The hosted-demo preference below remains a researched alternative; no provider/model is selected by this authorisation. Fixed team names in the synthetic schema are an event fixture, not the production role model: derive eligible teams from the event's configured permissions/categories and validate isolation.
+
 ## Context
 
 F8 suggests category, priority and response team; an operator decides. F7 must work without AI. SC3 allows 30 s from submission to stored suggestion and SC5 requires all requests visible with AI off. Domain invariant I4 forbids lowering priorities or overwriting operator decisions. The complete [Responsible AI assessment](../../Research/architecture-investigation/responsible-ai.md) records sources, costs, input/output, risks and evidence gaps.

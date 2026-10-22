@@ -2,6 +2,8 @@
 
 **#53 · 22 October 2026 · research tooling only.** Every case is synthetic, authored in this investigation; none came from a real incident, user account or clinical dataset. Labels are unreviewed operational proposals. No model was called.
 
+**Role-model compatibility:** Medical/Security/PCR are fixture team names for this synthetic evaluation only. Current events create their own teams and assign permissions/categories (`features.md` §4). A production integration must accept the current event's eligible teams and reject cross-event or unauthorised choices. This frozen scorer is not that production contract and must not replace it. Add a separate multi-event routing evaluation before implementation acceptance.
+
 ## Dataset and rubric
 
 [cases.jsonl](cases.jsonl) contains 100 distinct inputs with stable IDs: 20 development and 80 test. Development examples may inform the prompt; test cases may not. The split is deterministic (every fifth ID is development), not a random or blinded real-world sample. Labels remain visible in the repository, so do not train/tune on the test file or present it as an independent benchmark. A second reviewer must adjudicate the labels and add a new held-out sample before release.

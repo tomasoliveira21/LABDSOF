@@ -2,6 +2,14 @@
 
 **22 October 2026 · #53 · PROPOSED** · Covers G1–G7, F2, RabbitMQ hosting (C1) and PostgreSQL topology (D2).
 
+## Current delivery scope: local-only, authorised by the professor
+
+**Update recorded 22 October 2026:** Tomás reported that the professor authorised local-only execution because of cloud-hosting costs. The team must explain this reason in the final report/presentation. See the [clarification](../../Meetings/2026-10-22-local-deployment-clarification.md) and [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md).
+
+The platform comparisons, cloud topology, regional prices, budget scenarios and cloud rollback notes below are retained as the **assessment of an alternative, not the current deployment plan or an implementation prerequisite**. No paid cloud environment is required. The current recommendation is Compose on one local machine: five separate backend containers, one RabbitMQ, one PostgreSQL instance with five service-owned databases and one web-server container, plus gateway/simulator/observability/AI components as needed. Local volume persistence is not a host-loss backup guarantee.
+
+Local startup, service replacement, smoke tests, migrations, observability and degraded modes still need implementation/evidence. The cloud IaC/region/subscription steps below apply only if cloud hosting is reconsidered. A local prototype may use one PostgreSQL container or separate ones; this does not change the five-database ownership rule.
+
 ## Platform comparison
 
 The non-negotiable constraints are five independently deployable Java services from Sprint A, background outbox publishers and consumers, RabbitMQ, PostgreSQL, private images and a small team. HTTP traffic is not the only source of work.
@@ -15,7 +23,7 @@ The non-negotiable constraints are five independently deployable Java services f
 
 These are workload-fit conclusions, not provider benchmarks. Fargate and Amazon MQ expose separate [compute](https://aws.amazon.com/fargate/pricing/) and [broker/storage](https://aws.amazon.com/amazon-mq/pricing/) charges. Vercel's current [Docker documentation](https://vercel.com/kb/guide/docker-on-vercel-vs-render) describes HTTP functions with external state: rejecting it here is about the workers and broker, not an outdated claim that Vercel cannot run Docker.
 
-## Proposed physical topology
+## Original cloud topology proposal (retained alternative)
 
 - **Region (G3):** Azure West Europe for compute, PostgreSQL, disks, registry and telemetry where supported. Check SKU/quota availability before committing. EU resource placement does not prove where every CDN request, support access or AI subprocess executes; Guerra reviews those flows.
 - **Five Container Apps:** one per service, initially 0.5 vCPU/1 GiB **as a sizing hypothesis**, `minReplicas=maxReplicas=1` during operation. Check actual JVM RSS/startup and raise resources if necessary. Every service consumes events and/or publishes an outbox: an HTTP-only scale rule must not strand background work. Scaling rules are described in [Azure's documentation](https://learn.microsoft.com/en-us/azure/container-apps/scale-app). A second revision may temporarily overlap during rollout and must be included in cost and idempotency tests.

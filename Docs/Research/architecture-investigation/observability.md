@@ -2,6 +2,8 @@
 
 **22 October 2026 · #53 · I1–I3 · PROPOSED.** The targets below are design proposals, not measured service levels. SC3 (30 s) and SC5 (no requests lost with AI off) come from the product vision.
 
+**Current scope update:** [Local-only delivery is authorised because of cloud costs](../../Meetings/2026-10-22-local-deployment-clarification.md). Implement the local Prometheus/Grafana/OpenTelemetry option for the demo; Azure Monitor, cloud alert routing and cloud ingestion costs below are retained alternatives. The proposed SLIs/SLOs and evidence checks still apply locally; no cloud dashboard is required.
+
 ## Stack (I1)
 
 Instrument Java services with **Micrometer/Actuator metrics and one OpenTelemetry Java instrumentation path** for traces. Spring Boot documents [HTTP/JVM metrics and registries](https://docs.spring.io/spring-boot/reference/actuator/metrics.html); OpenTelemetry supports [Java automatic instrumentation](https://opentelemetry.io/docs/languages/java/automatic/). Lock compatible versions when the actual Spring Boot 4.x skeleton exists; avoid double-instrumenting spans with two Java agents.

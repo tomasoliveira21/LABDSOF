@@ -4,6 +4,8 @@
 
 **Proposed**, 22 October 2026, [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53), guide I1–I3. Targets are not measured SLOs and no dashboard is deployed.
 
+**Delivery-scope update:** use the local observability option for the [authorised local-only delivery](../../Meetings/2026-10-22-local-deployment-clarification.md). Azure Monitor/log ingestion proposals remain documented cloud alternatives, not current provisioning requirements. Targets and evidence still need validation.
+
 ## Context
 
 The asynchronous triage spans queueing, inference and persistence. Fallback must preserve operator visibility, while RabbitMQ, the AI and transport source can fail. Assignment §6.7 requires observable evidence. The [research specification](../../Research/architecture-investigation/observability.md) defines SLIs/denominators, dashboard panels, metric contracts, alerts, sampling and privacy controls.
