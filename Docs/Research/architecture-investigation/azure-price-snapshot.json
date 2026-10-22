@@ -1,0 +1,126 @@
+{
+  "retrieved_on": "2026-10-22",
+  "source": "https://prices.azure.com/api/retail/prices?%24filter=serviceName+eq+%27Azure+Container+Apps%27+and+armRegionName+eq+%27westeurope%27+and+priceType+eq+%27Consumption%27",
+  "assumptions": "Public USD consumption retail prices; no taxes, agreement discounts or credit deductions. Regional totals require the remaining resource quotes.",
+  "items": [
+    {
+      "meterId": "0426badc-b719-5201-b141-b2d5c4943b7d",
+      "meterName": "Standard vCPU Active Usage",
+      "retailPrice": 3.4e-05,
+      "unitOfMeasure": "1 Second",
+      "currencyCode": "USD",
+      "armRegionName": "westeurope",
+      "productName": "Azure Container Apps",
+      "skuName": "Standard",
+      "effectiveStartDate": "2022-06-01T00:00:00Z"
+    },
+    {
+      "meterId": "3ba64b1c-cb46-5ee0-b086-a68736392ac0",
+      "meterName": "Standard Memory Active Usage",
+      "retailPrice": 4e-06,
+      "unitOfMeasure": "1 GiB Second",
+      "currencyCode": "USD",
+      "armRegionName": "westeurope",
+      "productName": "Azure Container Apps",
+      "skuName": "Standard",
+      "effectiveStartDate": "2022-06-01T00:00:00Z"
+    },
+    {
+      "meterId": "7b7747f8-2c0b-5b6b-a6d9-d998e92f6bcc",
+      "meterName": "Standard vCPU Idle Usage",
+      "retailPrice": 4e-06,
+      "unitOfMeasure": "1 Second",
+      "currencyCode": "USD",
+      "armRegionName": "westeurope",
+      "productName": "Azure Container Apps",
+      "skuName": "Standard",
+      "effectiveStartDate": "2022-06-01T00:00:00Z"
+    },
+    {
+      "meterId": "b110d175-46b6-5bbc-adde-cf3438ed87f0",
+      "meterName": "Standard Requests",
+      "retailPrice": 0.56,
+      "unitOfMeasure": "1M",
+      "currencyCode": "USD",
+      "armRegionName": "westeurope",
+      "productName": "Azure Container Apps",
+      "skuName": "Standard",
+      "effectiveStartDate": "2022-06-01T00:00:00Z"
+    },
+    {
+      "meterId": "cea8b5c0-c6fe-59cf-baa7-123dbc4c6bb8",
+      "meterName": "Standard Memory Idle Usage",
+      "retailPrice": 4e-06,
+      "unitOfMeasure": "1 GiB Second",
+      "currencyCode": "USD",
+      "armRegionName": "westeurope",
+      "productName": "Azure Container Apps",
+      "skuName": "Standard",
+      "effectiveStartDate": "2022-06-01T00:00:00Z"
+    }
+  ],
+  "supporting_components": [
+    {
+      "component": "broker_vm",
+      "source": "https://prices.azure.com/api/retail/prices?%24filter=serviceName+eq+%27Virtual+Machines%27+and+armRegionName+eq+%27westeurope%27+and+armSkuName+eq+%27Standard_B2s%27+and+priceType+eq+%27Consumption%27",
+      "items": [
+        {
+          "meterId": "15a6938e-e86b-4b1b-9a76-7cce5581553a",
+          "meterName": "B2s",
+          "retailPrice": 0.048,
+          "unitOfMeasure": "1 Hour",
+          "currencyCode": "USD",
+          "armRegionName": "westeurope",
+          "productName": "Virtual Machines BS Series",
+          "skuName": "B2s",
+          "effectiveStartDate": "2025-10-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "component": "postgres",
+      "source": "https://prices.azure.com/api/retail/prices?%24filter=serviceName+eq+%27Azure+Database+for+PostgreSQL%27+and+armRegionName+eq+%27westeurope%27+and+priceType+eq+%27Consumption%27",
+      "items": [
+        {
+          "meterId": "2e345945-22c2-5a5e-b40d-f532206e8cfc",
+          "meterName": "B2S",
+          "retailPrice": 0.0796,
+          "unitOfMeasure": "1 Hour",
+          "currencyCode": "USD",
+          "armRegionName": "westeurope",
+          "productName": "Azure Database for PostgreSQL Flexible Server Burstable BS Series Compute",
+          "skuName": "B2S",
+          "effectiveStartDate": "2021-06-01T00:00:00Z"
+        },
+        {
+          "meterId": "36845e2a-736f-5a9d-af4e-b2dc7547a06f",
+          "meterName": "Storage Data Stored",
+          "retailPrice": 0.1369,
+          "unitOfMeasure": "1 GB/Month",
+          "currencyCode": "USD",
+          "armRegionName": "westeurope",
+          "productName": "Azure Database for PostgreSQL Flex Server Storage",
+          "skuName": "Storage",
+          "effectiveStartDate": "2021-06-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "component": "registry",
+      "source": "https://prices.azure.com/api/retail/prices?%24filter=serviceName+eq+%27Container+Registry%27+and+armRegionName+eq+%27westeurope%27+and+priceType+eq+%27Consumption%27",
+      "items": [
+        {
+          "meterId": "5c9e7a65-5784-494c-9718-7749d4075dd9",
+          "meterName": "Basic Registry Unit",
+          "retailPrice": 0.1666,
+          "unitOfMeasure": "1/Day",
+          "currencyCode": "USD",
+          "armRegionName": "westeurope",
+          "productName": "Container Registry",
+          "skuName": "Basic",
+          "effectiveStartDate": "2018-01-01T00:00:00Z"
+        }
+      ]
+    }
+  ]
+}

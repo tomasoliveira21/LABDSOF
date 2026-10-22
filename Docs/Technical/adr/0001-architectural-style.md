@@ -4,6 +4,8 @@
 
 **Accepted**: style decided by the team on 15 October 2026; evolution decided after the professor's answer to the email of 15 October (received by 21 October 2026). Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) A1, A2, A3 and A4.
 
+**Deployment-scope clarification (recorded 22 October 2026):** the professor authorised local-only execution due to cost, as reported by Tomás ([record](../../Meetings/2026-10-22-local-deployment-clarification.md), [ADR-011](0011-deployment-and-infrastructure.md)). Independent deployment in this ADR can be demonstrated with separate local service containers; no cloud deployment is required for the authorised delivery scope. The five-service architecture is retained.
+
 ## Context
 
 - The assignment asks for at least two independently deployable backend components, or a modular monolith with convincing evidence that services would add unnecessary complexity (§6.2, architecture driver D7).

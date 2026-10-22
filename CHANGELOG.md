@@ -2,6 +2,27 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-22 · Local-only deployment authorised because of costs (#53)
+
+### Changed
+- Recorded Tomás's report that the professor authorised local-only execution because cloud deployment costs are not justified for this project; the report and presentation must explain this reason.
+- Kept the complete hosting/cost evaluation as supporting evidence and a possible future alternative. Cloud provisioning, paid hosting and automatic cloud deployment are not current delivery requirements.
+- Aligned the guide, architecture, ADR-011, research summaries, observability/AI proposals and process notes. Independent service containers, five service-owned databases, build/test evidence and local smoke/failure tests remain in scope.
+- Merged current `main`, preserving the updated backlog, role/team model and ADR-007 alongside the investigation.
+
+### Added
+- `Docs/Meetings/2026-10-22-local-deployment-clarification.md`: source, scope and the cost justification to reuse in the final report/presentation.
+
+## [Unreleased] · 2026-10-22 · Deployment, observability and AI research (#53)
+
+### Added
+- `Docs/Research/architecture-investigation/`: sourced investigation covering guide G1–G7, I1–I3, K1–K2, F2, RabbitMQ hosting (C1) and PostgreSQL server topology (D2), with a dated public Azure price snapshot, budget gates, recovery limitations, SLI/SLO and dashboard/alert specifications.
+- Responsible AI Opportunity Assessment, proposed triage prompt/output schema, 100 synthetic unreviewed cases (20 development / 80 test), offline scorer/checks and deterministic non-AI baseline. No model/provider benchmark or deployed performance is claimed.
+- Proposed ADR-005 (AI), ADR-011 (deployment) and ADR-012 (observability); ADR-010 stays reserved for Bruno's pipeline work.
+
+### Changed
+- Architecture guide, architecture index, product AI checklist and documentation index link the research. Pending team decisions stay pending; no meeting or acceptance is invented.
+
 ## [Unreleased] · 2026-10-22 · Documents aligned with the role model (#56)
 
 **Why:** the role, team and permission model of `features.md` §4 (#45, to confirm with the team) was only in `features.md`. The other documents still used the fixed roles (`Owner`, `Admin`, `Operator`, `Responder`, `PlatformAdmin`), the four fixed response teams and, in places, the old story numbers. This closes the *Still to align* list of #45.

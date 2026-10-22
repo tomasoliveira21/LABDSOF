@@ -174,6 +174,8 @@ The help categories still need to be checked against the interview with the secu
 
 ### 5.2 Still to define
 
+**Research available (22 October 2026, #53):** [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md) proposes answers to AI-1–AI-11, with an [evaluation package](../Research/architecture-investigation/evaluation/README.md) and proposed [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md). These questions remain pending team acceptance, independent labels, provider/privacy review and measured model/SC3/SC5 evidence. The original questions below remain the review checklist.
+
 This is the list the team works through before the AI work starts. Owner: AI lead (see [`team-and-process.md`](../Process/team-and-process.md) §2).
 
 | # | Item | Open question | Needed for |
