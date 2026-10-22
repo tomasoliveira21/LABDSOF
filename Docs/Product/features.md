@@ -2,7 +2,7 @@
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §7.1.2 (deliverables 4 *MVP definition* and 5 *Product Backlog*)
 > **Product name:** **Farol** (decided 9 October 2026).
-> **Status:** feature list and MoSCoW revised on **9 October 2026** (owner of the topic: Bruno Lopes) on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: the AI workflow details (§5.2), report types and expiry (§6.1). **[PROPOSED] 10 October 2026** (personas owner): a platform admin (persona P4) creates events and names their first admin (F3, F4), to confirm with the team. **16 October 2026:** user stories (§7) checked against the DoR (owner: Tiago Teixeira); issues not created yet; sprint goals and initial release plan (§8) **[PROPOSED]**, to confirm with the team. **22 October 2026** (Tiago Teixeira, backlog owner): new role model, `FarolAdmin` (global), `EventAdmin` and `RegularUser` (per event), with teams and permissions defined by each event's admins (§4), replacing the fixed roles and teams of 9 October; stories split into smaller ones and renumbered US-01 to US-62 (§7.1). To confirm with the team.
+> **Status:** feature list and MoSCoW revised on **9 October 2026** (owner of the topic: Bruno Lopes) on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: the AI workflow details (§5.2), report types and expiry (§6.1). **[PROPOSED] 10 October 2026** (personas owner): a platform admin (persona P4) creates events and names their first admin (F3, F4), to confirm with the team. **16 October 2026:** user stories (§7) checked against the DoR (owner: Tiago Teixeira); issues created on 22 October 2026 (#58 to #121, §8.3); sprint goals and initial release plan (§8) **[PROPOSED]**, to confirm with the team. **22 October 2026** (Tiago Teixeira, backlog owner): new role model, `FarolAdmin` (global), `EventAdmin` and `RegularUser` (per event), with teams and permissions defined by each event's admins (§4), replacing the fixed roles and teams of 9 October; stories split into smaller ones and renumbered US-01 to US-62 (§7.1). To confirm with the team.
 > **Sources:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (*MVP definition*, §5 risks) · [`market-and-competitor-analysis-product-specific.md`](../Deliverables/market-and-competitor-analysis-product-specific.md) (§1, §2) · assignment PDF (§5.5, §5.6, §6).
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
@@ -279,7 +279,7 @@ Rewritten on 9 October 2026 to match the feature list above; checked against the
 | Dependencies identified | No story listed its dependencies | *Depends on* line on every story; blockers in §8.4 |
 | One story = one PR | Several stories held two or more PRs of work | Split (below) |
 | AI fallback | The AI suggestion did not say what happens when the AI fails | *AI fallback* line pointing to US-36 (scenario D1) |
-| On the board | No story had an issue | Issues to create from the user-story form (§8.3), once the team confirms this plan |
+| On the board | No story had an issue | Issues #58 to #121 created on 22 October 2026 from the user-story form (§8.3). The GitHub Projects board does not exist yet; the box stays unticked until the issues are on it |
 
 #### How the stories were split (22 October 2026)
 
@@ -563,7 +563,7 @@ README §1 allows four issue types. Rule used in §8.3, from the two-app decisio
 - Given a shuttle was marked delayed or cancelled (US-38), then I see that with the time of the change.
 
 **US-40** · As the **Farol team**, we want to import the external transport source regularly and validate it, so that participants get regular public transport data (assignment §6.5).
-*Persona:* technical goal (assignment §6.5) · *Depends on:* walking skeleton; transport data source (professor's answer, guide A2, ADR-008)
+*Persona:* technical goal (assignment §6.5) · *Depends on:* walking skeleton; transport data source: Porto Digital urban platform, accepted by the professor ([ADR-008](../Technical/adr/0008-transport-data-source.md)); proof of concept #48 as reference
 - Given the source answers with valid data, when the import runs, then the data is stored with the time of the import.
 - Given the source answers with invalid or incomplete data, when the import runs, then the import is rejected as a whole and the previous data stays in use.
 
@@ -705,7 +705,7 @@ Every merge to `main` is deployed (continuous deployment, guide H5). A *release*
 
 | Release | When | What it contains | Assignment |
 |---|---|---|---|
-| **R0 · Walking skeleton** | First week of Sprint B (by 8 Nov 2026) | One endpoint, one test, a Dockerfile and the CI/CD pipeline, deployed. Not a user story: a task issue | §7.1.2 item 10 (late from Sprint A) |
+| **R0 · Walking skeleton** | Sprint A, before Sprint B starts on 2 Nov 2026 (#58, owner: Tomás) | One endpoint, one test, a Dockerfile and the CI/CD pipeline, deployed. Not a user story: a task issue | §7.1.2 item 10 (Sprint A) |
 | **R1 · Vertical slice** | Sprint B review (6 Dec 2026) | 27 stories: US-01, 02, 06, 11, 12, 14, 16, 17, 18, 19, 20, 21, 23, 24, 26 to 36, 40, 41. The help-request journey end to end (W2 + W3), with teams and permissions, AI triage, scenario D1 and the first external integration | §7.2.2 items 1–13 |
 | **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58 and US-57 if there is time | §7.3.2 items 1–2, 8 |
 | **Later** (product roadmap) | After the course | Could: US-46, US-59 to US-62. Won't: F19, F20 | §7.3.2 item 13 |
@@ -714,73 +714,73 @@ Every merge to `main` is deployed (continuous deployment, guide H5). A *release*
 
 ### 8.3 Stories on the board
 
-Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1.
+Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) stay open as they are.
 
 | Story | Issue | Type | Sprint |
 |---|---|---|---|
-| Walking skeleton (task) | # | Technicians | B |
-| US-01 · Log in | # | Technicians | B |
-| US-02 · Log out | # | Technicians | B |
-| US-03 · Sign up | # | Front Office | C |
-| US-04 · Edit name and password | # | Front Office | C |
-| US-05 · Delete my account | # | Front Office | C |
-| US-06 · Create an event and name its first EventAdmin | # | Back Office | B |
-| US-07 · List events with basic details only | # | Back Office | C |
-| US-08 · Name a new EventAdmin | # | Back Office | C |
-| US-09 · Suspend and reactivate an event | # | Back Office | C |
-| US-10 · Edit event details | # | Back Office | C |
-| US-11 · Publish an event | # | Back Office | B |
-| US-12 · Join an event by QR code or link | # | Front Office | B |
-| US-13 · Close an event | # | Back Office | C |
-| US-14 · Keep each event's data private | # | Technicians | B |
-| US-15 · Make or remove an EventAdmin | # | Back Office | C |
-| US-16 · Create, rename and delete teams | # | Back Office | B |
-| US-17 · Set a team's permissions and help categories | # | Back Office | B |
-| US-18 · Add and remove team members | # | Back Office | B |
-| US-19 · Upload the venue map | # | Back Office | B |
-| US-20 · Place points of interest | # | Back Office | B |
-| US-21 · Open the venue map | # | Front Office | B |
-| US-22 · Filter the map by type of place | # | Front Office | C |
-| US-23 · Ask for help on the map | # | Front Office | B |
-| US-24 · Follow my help request | # | Front Office | B |
-| US-25 · Help request not sent | # | Front Office | C |
-| US-26 · Live list of help requests | # | Back Office | B |
-| US-27 · Help requests on the map | # | Back Office | B |
-| US-28 · Set priority and status, with history | # | Back Office | B |
-| US-29 · Route a request to a team | # | Back Office | B |
-| US-30 · Close a request | # | Back Office | B |
-| US-31 · Field team sees routed requests | # | Back Office | B |
-| US-32 · Accept a request | # | Back Office | B |
-| US-33 · Mark a request resolved | # | Back Office | B |
-| US-34 · AI triage suggestion | # | Back Office | B |
-| US-35 · Accept or change the AI suggestion | # | Back Office | B |
-| US-36 · Requests without AI (scenario D1) | # | Back Office | B |
-| US-37 · Add shuttles and temporary stops | # | Back Office | C |
-| US-38 · Mark a shuttle delayed or cancelled | # | Back Office | C |
-| US-39 · See the event's shuttles | # | Front Office | C |
-| US-40 · Import the external transport source | # | Technicians | B |
-| US-41 · See the next buses home | # | Front Office | B |
-| US-42 · Out-of-date transport warning (D2) | # | Front Office | C |
-| US-43 · Transport source down warning (D2) | # | Back Office | C |
-| US-44 · Publish an announcement | # | Back Office | C |
-| US-45 · Edit or remove an announcement | # | Back Office | C |
-| US-46 · Weak-network mode (Could) | # | Front Office | — |
-| US-47 · Report a problem on the map | # | Front Office | C |
-| US-48 · Report rate limit | # | Front Office | C |
-| US-49 · See confirmed reports on the map | # | Front Office | C |
-| US-50 · Confirm or reject a report | # | Back Office | C |
-| US-51 · Unconfirm a report | # | Back Office | C |
-| US-52 · Send a report to be checked on site | # | Back Office | C |
-| US-53 · Fix a report and mark it resolved | # | Back Office | C |
-| US-54 · *Report history* badge | # | Front Office | C |
-| US-55 · *Event reporter* badge | # | Front Office | C |
-| US-56 · Hide or stop earning badges | # | Front Office | C |
-| US-57 · *Event attendance* badge (Should) | # | Front Office | C |
-| US-58 · Check in at the venue (Should) | # | Front Office | C |
-| US-59 · Set entrance status (Could) | # | Back Office | — |
-| US-60 · See entrance status (Could) | # | Front Office | — |
-| US-61 · Send and accept friend requests (Could) | # | Front Office | — |
-| US-62 · Remove a friend (Could) | # | Front Office | — |
+| Walking skeleton (task) | #58 | Technicians | A |
+| US-01 · Log in | #59 | Technicians | B |
+| US-02 · Log out | #60 | Technicians | B |
+| US-03 · Sign up | #86 | Front Office | C |
+| US-04 · Edit name and password | #87 | Front Office | C |
+| US-05 · Delete my account | #88 | Front Office | C |
+| US-06 · Create an event and name its first EventAdmin | #61 | Back Office | B |
+| US-07 · List events with basic details only | #89 | Back Office | C |
+| US-08 · Name a new EventAdmin | #90 | Back Office | C |
+| US-09 · Suspend and reactivate an event | #91 | Back Office | C |
+| US-10 · Edit event details | #92 | Back Office | C |
+| US-11 · Publish an event | #62 | Back Office | B |
+| US-12 · Join an event by QR code or link | #63 | Front Office | B |
+| US-13 · Close an event | #93 | Back Office | C |
+| US-14 · Keep each event's data private | #64 | Technicians | B |
+| US-15 · Make or remove an EventAdmin | #94 | Back Office | C |
+| US-16 · Create, rename and delete teams | #65 | Back Office | B |
+| US-17 · Set a team's permissions and help categories | #66 | Back Office | B |
+| US-18 · Add and remove team members | #67 | Back Office | B |
+| US-19 · Upload the venue map | #68 | Back Office | B |
+| US-20 · Place points of interest | #69 | Back Office | B |
+| US-21 · Open the venue map | #70 | Front Office | B |
+| US-22 · Filter the map by type of place | #95 | Front Office | C |
+| US-23 · Ask for help on the map | #71 | Front Office | B |
+| US-24 · Follow my help request | #72 | Front Office | B |
+| US-25 · Help request not sent | #97 | Front Office | C |
+| US-26 · Live list of help requests | #73 | Back Office | B |
+| US-27 · Help requests on the map | #74 | Back Office | B |
+| US-28 · Set priority and status, with history | #75 | Back Office | B |
+| US-29 · Route a request to a team | #76 | Back Office | B |
+| US-30 · Close a request | #77 | Back Office | B |
+| US-31 · Field team sees routed requests | #78 | Back Office | B |
+| US-32 · Accept a request | #79 | Back Office | B |
+| US-33 · Mark a request resolved | #80 | Back Office | B |
+| US-34 · AI triage suggestion | #81 | Back Office | B |
+| US-35 · Accept or change the AI suggestion | #82 | Back Office | B |
+| US-36 · Requests without AI (scenario D1) | #83 | Back Office | B |
+| US-37 · Add shuttles and temporary stops | #98 | Back Office | C |
+| US-38 · Mark a shuttle delayed or cancelled | #99 | Back Office | C |
+| US-39 · See the event's shuttles | #100 | Front Office | C |
+| US-40 · Import the external transport source | #84 | Technicians | B |
+| US-41 · See the next buses home | #85 | Front Office | B |
+| US-42 · Out-of-date transport warning (D2) | #101 | Front Office | C |
+| US-43 · Transport source down warning (D2) | #102 | Back Office | C |
+| US-44 · Publish an announcement | #103 | Back Office | C |
+| US-45 · Edit or remove an announcement | #104 | Back Office | C |
+| US-46 · Weak-network mode (Could) | #117 | Front Office | — |
+| US-47 · Report a problem on the map | #105 | Front Office | C |
+| US-48 · Report rate limit | #106 | Front Office | C |
+| US-49 · See confirmed reports on the map | #107 | Front Office | C |
+| US-50 · Confirm or reject a report | #108 | Back Office | C |
+| US-51 · Unconfirm a report | #109 | Back Office | C |
+| US-52 · Send a report to be checked on site | #110 | Back Office | C |
+| US-53 · Fix a report and mark it resolved | #111 | Back Office | C |
+| US-54 · *Report history* badge | #112 | Front Office | C |
+| US-55 · *Event reporter* badge | #113 | Front Office | C |
+| US-56 · Hide or stop earning badges | #114 | Front Office | C |
+| US-57 · *Event attendance* badge (Should) | #115 | Front Office | C |
+| US-58 · Check in at the venue (Should) | #116 | Front Office | C |
+| US-59 · Set entrance status (Could) | #118 | Back Office | — |
+| US-60 · See entrance status (Could) | #119 | Front Office | — |
+| US-61 · Send and accept friend requests (Could) | #120 | Front Office | — |
+| US-62 · Remove a friend (Could) | #121 | Front Office | — |
 
 ### 8.4 What still blocks *Ready*
 
@@ -788,12 +788,11 @@ These dependencies are open on 22 October 2026. A story that needs one stays in 
 
 | Open dependency | Owner | Blocks |
 |---|---|---|
-| Walking skeleton (R0), which needs the deployment platform (guide G1, Tomás) | To assign at the Sprint B planning | Every story (first to be built) |
+| Walking skeleton (R0, #58), in Sprint A; needs the deployment platform (guide G1, #53) | Tomás | Every story (first to be built) |
 | Identity provider (guide E1) | Guerra | US-01, US-03 |
 | Role, team and permission model (§4): team confirmation, then the domain model (Tomás + Guerra) and where permissions are checked (guide E2, Guerra). Replaces personas PE-5 and PE-6 | Team; Tomás + Guerra; Guerra | US-06, US-14, US-15, US-16 |
 | Venue map library (guide F3, ADR-007, #44) | Tiago | US-19 |
 | AI provider and model (guide K1); AI-1 to AI-3 (§5.2) | Tomás, AI lead | US-34 |
-| Transport data source (professor, guide A2) | Professor | US-40 |
 | Resilience values (guide J1, #43) | Tiago | US-42, US-43 |
 | Report types and expiry times (§6.1) | Team | US-47 |
 | Account deletion (guide D7) | Bruno | US-05 |
@@ -843,7 +842,7 @@ Every Sprint B story is a step of the journey or something it needs first:
 
 Nothing in Sprint B is there for convenience, so Sprint B has no cut line.
 
-**Capacity:** 27 stories and the walking skeleton, in 5 weeks, for 4 people: about 7 stories per person, under 1.5 per person per week. After the split each story is one action and one PR of one to three days. The largest are US-17 (permission checks), US-21 and US-23 (first use of the map), US-26 (first use of polling) and US-34 (AI).
+**Capacity:** 27 stories in 5 weeks (the walking skeleton is done in Sprint A), for 4 people: about 7 stories per person, under 1.5 per person per week. After the split each story is one action and one PR of one to three days. The largest are US-17 (permission checks), US-21 and US-23 (first use of the map), US-26 (first use of polling) and US-34 (AI).
 
 **Risks and what happens if they occur:**
 
@@ -851,7 +850,6 @@ Nothing in Sprint B is there for convenience, so Sprint B has no cut line.
 |---|---|
 | A blocker in §8.4 is not closed by 2 November | The stories that need it stay in *Backlog*; the team starts with the stories it does not block (US-02, US-11, US-12, US-28 to US-30) |
 | The team does not confirm the role model (§4) | US-16 to US-18 are replaced by teams created by a seed script with the pilot set-up (§4.4); the other stories do not change, because they check permissions, not team names |
-| The professor's answer on the transport source comes late | US-40 starts with plan B, the weather API (§3), so deliverable 7 is still met |
 
 #### Why US-40 and US-41 are in Sprint B, and US-42 and US-43 in Sprint C
 
@@ -886,4 +884,4 @@ Sprint C has 28 Must stories in four weeks, including Christmas, and it also hol
 
 #### Why the walking skeleton comes first
 
-It is a Sprint A deliverable (§7.1.2, item 10) that still has no owner. DoD Level 2 asks for every story to be *deployed through the pipeline*, so no story can be *Done* before the skeleton exists. One week is enough for one endpoint, one test, a Dockerfile and the pipeline, because the CI/CD choices are decided (guide H1–H5). It needs the deployment platform (guide G1, Tomás) first. **Owner:** to assign at the Sprint B planning.
+It is a Sprint A deliverable (§7.1.2, item 10), so it stays in Sprint A (#58) and is done before Sprint B starts. DoD Level 2 asks for every story to be *deployed through the pipeline*, so no story can be *Done* before the skeleton exists. One week is enough for one endpoint, one test, a Dockerfile and the pipeline, because the CI/CD choices are decided (guide H1–H5). It needs the deployment platform (guide G1, #53) first. **Owner:** Tomás ([professor meeting of 22 October 2026](../Meetings/2026-10-22-professor-meeting.md)).
