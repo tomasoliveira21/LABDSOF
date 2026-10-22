@@ -2,6 +2,45 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-22 · Documents aligned with the role model (#56)
+
+**Why:** the role, team and permission model of `features.md` §4 (#45, to confirm with the team) was only in `features.md`. The other documents still used the fixed roles (`Owner`, `Admin`, `Operator`, `Responder`, `PlatformAdmin`), the four fixed response teams and, in places, the old story numbers. This closes the *Still to align* list of #45.
+
+### Changed
+- `personas.md`: a *role or job* for each persona. P4 is the **FarolAdmin** (global role). P3 is an EventAdmin, P1 a RegularUser. P2 and P5 are **jobs given by team permissions**, not roles (`HelpRequests.Triage` and `Reports.Review` for P2; `HelpRequests.Respond` and `Reports.Respond` for P5). **PE-5** answered by features §4.1 (only the FarolAdmin creates events); **PE-6** updated (the `Responder` role is dropped). Both stay open only until the team confirms the role model.
+- `domain-model.md` (owners Tomás and Guerra, to review): `EventMembership` with role `EventAdmin` or `RegularUser`, at least one EventAdmin per event; `GlobalRoleGrant` holds `FarolAdmin`; `ResponseTeam` (four fixed teams) replaced by **`Team`** (created per event, with its handled help categories) and **`TeamPermission`** (fixed list, report types for `Reports.Review`). Reports are no longer tied to one responsible team: they go to the members with `Reports.Review` for their type. The draw.io export `domain-model.svg` still shows the old model and is flagged for redrawing.
+- `architecture.md` (§2 context, §3, §4 responsibilities, §7, §8): FarolAdmin and EventAdmin in the context diagram; Auth & Users holds the FarolAdmin grant, memberships and team assignments; Events holds teams, their permissions and help categories; new *Where roles and permissions live* note; authorisation row points to E2.
+- `architecture-decisions-guide.md` (PT, owner Guerra for E2, to review): E2 records the role model and what is still open (what the token carries, where role + teams + permissions are joined); A2, C4 and the domain-model owners row aligned.
+- `user-workflows.md`: W3 *Control room handles a help request* and W4 *FarolAdmin creates an event, EventAdmin sets it up* (teams, permissions and help categories, members join before they are added to teams); actors in W2 and W5 and the W7 steps use the permissions; story numbers added; broken anchors to the old features §4 fixed. The BPMN lanes stay as personas.
+- `product-vision.md`: event team and platform team rows, SC3 wording.
+- `features.md`: "response team" wording in §1, F8, D1 and §5 (AI-2) replaced by the event's teams.
+- `ADR-003`, `ADR-004`: local-copy examples use teams and memberships.
+- Old story numbers: ADR-007 (US-06, US-07, US-08, US-09, US-17, US-18 of 16 October → US-19 to US-23, US-27, US-46, US-47), guide F3 (US-07 → US-22), `architecture.md` §7 (US-09 → US-42, US-43).
+
+### Merged
+- `main` merged into this branch (it was cut from `docs/initial-backlog`, #45): conflicts in `features.md` (§3 and D2: the Porto Digital text from `main`, the role model and new story numbers from #45) and in this CHANGELOG.
+
+### Not changed
+- Meeting notes and earlier CHANGELOG entries keep the old names and numbers: they record what was decided at the time.
+- The architecture diagrams (`Docs/Technical/diagrams/*.drawio.svg`) and the BPMN files name personas (e.g. *Responder (P5)*, *platform admins*), not roles; renaming them needs draw.io and is left to the diagram owner.
+
+## [Unreleased] · 2026-10-22 · Backlog checked against the DoR, role model, sprint plan (#45)
+
+**Why:** teacher feedback T1 ([`2026-10-12-sprint-1-presentation-feedback.md`](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md)): every backlog item must meet the DoR before it goes to GitHub Projects. The assignment also asks for sprint objectives and an initial release plan (§7.1.2, item 5). On 22 October Tiago (backlog owner) asked for smaller stories and defined a new role model.
+
+### Changed
+- `features.md` §4: **roles, teams and permissions** (to confirm with the team). Global `FarolAdmin`; per-event `EventAdmin` and `RegularUser`, so the same user can be EventAdmin in one event and RegularUser in another. EventAdmins create their event's teams (e.g. Security, Nursing), give each team permissions from a fixed list (`HelpRequests.Triage`, `HelpRequests.Respond`, `Reports.Review`, `Reports.Respond`, `Announcements.Publish`, `Map.Edit`, `Transport.Edit`, `Entrances.Update`) and add RegularUsers to them. Replaces the fixed roles (`Owner`, `Admin`, `Operator`, `Responder`) and the four fixed response teams of 9 October; suggested pilot set-up in §4.4. §2 (F3, F4, F7), §3 and §6.1–§6.2 aligned.
+- `features.md` §7: every user story checked against the DoR (persona, dependencies, testable criteria, AI fallback), then **split into 62 smaller stories, renumbered US-01 to US-62**, each one action and one PR. Old-to-new table, split rules, new numbers, rewritten criteria and issue types in §7.1.
+- `.github/ISSUE_TEMPLATE/user-story.yml`: persona P5 (responder) added, P4 named FarolAdmin; several personas can be picked.
+- `user-workflows.md` W4: EventAdmin instead of Owner, US-06 instead of US-25.
+- `2026-10-12-sprint-1-presentation-feedback.md`: T1 DoR check done; issue creation left open.
+
+### Proposed (to confirm with the team)
+- `features.md` §8: sprint goals for Sprints B and C, initial release plan (R0 walking skeleton, R1 vertical slice with 27 stories, R2 MVP with 28), the Sprint C cut line, the story-to-issue table and the dependencies that still block *Ready*. §8.5 explains the Sprint B goal (mapped to every §7.2.2 deliverable), capacity and risks, the placement of the stories and the Sprint C cut order. Replaces the backlog GAP note.
+
+### Still to align (other documents)
+- The new role model is not yet in `personas.md` (PE-5, PE-6), `domain-model.md`, `architecture.md` or the architecture decisions guide (E2).
+
 ## [Unreleased] · 2026-10-22 · Venue map library and ADR-007 (#44)
 
 **Why:** decisions guide F3 (venue map library, owner Tiago) was the last open item for the map (F5). The app is mainly mobile, the map is an uploaded image with no geo data (D1), and F4 (Expo or bare React Native) is still open, so the choice had to work on iOS and Android, with Expo and with bare React Native.

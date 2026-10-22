@@ -25,10 +25,10 @@ What shapes the design, and where it comes from:
 ```mermaid
 flowchart LR
     P(["Participant<br/>(P1)"])
-    O(["Control-room operator<br/>(P2)"])
-    R(["Responder in the field<br/>(P5)"])
-    A(["Event admin<br/>(P3)"])
-    PA(["Platform admin<br/>(P4, to confirm in the domain model)"])
+    O(["Control-room operator<br/>(P2: team with HelpRequests.Triage)"])
+    R(["Field-team member<br/>(P5: team with HelpRequests.Respond)"])
+    A(["EventAdmin<br/>(P3)"])
+    PA(["FarolAdmin<br/>(P4, global role)"])
     SYS["Farol"]
     TR["Porto Digital urban platform<br/>(FIWARE NGSI v2, live bus data)"]
     LLM["AI model provider<br/>[PENDING]"]
@@ -36,9 +36,9 @@ flowchart LR
 
     P -- "uses the mobile app" --> SYS
     O -- "handles help requests" --> SYS
-    R -- "gets dispatched requests, updates status" --> SYS
-    A -- "manages the event (web app)" --> SYS
-    PA -- "creates events, names Owners" --> SYS
+    R -- "gets routed requests, updates status" --> SYS
+    A -- "manages the event and its teams (web app)" --> SYS
+    PA -- "creates events, names EventAdmins" --> SYS
     SYS -- "reads transport data" --> TR
     SYS -- "asks for triage suggestions" --> LLM
     SYS -. "authenticates users" .-> IDP
@@ -52,7 +52,7 @@ The five services are deployed independently from Sprint A (§11).
 flowchart LR
     subgraph Clients
         direction TB
-        MOB["Mobile app<br/>(React Native)<br/>participants, operators"]
+        MOB["Mobile app<br/>(React Native)<br/>participants, event teams"]
         WEB["Web app<br/>(React)<br/>event management"]
     end
 
@@ -87,17 +87,22 @@ Not drawn: every container sends logs, metrics and health checks to the observab
 
 | Service | Responsibility (features) | Owns (see [`domain-model.md`](domain-model.md)) |
 |---|---|---|
-| **Auth & Users** | Authentication, authorisation, accounts, roles per event, friends (F1, F2, roles of F4, F18) | UserAccount, Membership, TeamMember; friendships |
-| **Events** | Events, venue map and points of interest, response teams, announcements, check-in, entries (F3, teams of F4, F5, F10, F16, F17) | Event, VenueMap, PointOfInterest, ResponseTeam, Announcement; check-ins |
+| **Auth & Users** | Authentication, authorisation, accounts, the global `FarolAdmin` role, memberships of events with their role (`EventAdmin`, `RegularUser`) and team assignments, friends (F1, F2, roles and team members of F4, F18) | UserAccount, GlobalRoleGrant, EventMembership, TeamAssignment; friendships |
+| **Events** | Events, venue map and points of interest, teams with their permissions and help categories, announcements, check-in, entries (F3, teams of F4, F5, F10, F16, F17) | Event, VenueMap, PointOfInterest, Team, TeamPermission, Announcement; check-ins |
 | **Reports** | Community reports and their confirmation, help requests, incident backoffice, AI triage with fallback (F6, F7, F8, F12, F13) | HelpRequest, TriageSuggestion, StatusChange; community reports |
 | **Transports** | External transport integration and event shuttles (F9) | TransportOption |
 | **Badges** | Badges (F14, F15) | Badges |
 
-Entities in lower case are not in the domain model yet; Tomás and Guerra add them, together with the platform admin (P4).
+Entities in lower case are not in the domain model yet; Tomás and Guerra add them.
+
+**Where roles and permissions live** ([`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026), to confirm with the team):
+- **Auth & Users** holds who is who: the `FarolAdmin` grant, each user's membership of each event with its role, and which members are in which team. It publishes a domain event when any of these changes.
+- **Events** holds the teams: their names, permissions (fixed list, with the report types for `Reports.Review`) and help categories. It publishes a domain event when a team or its permissions change.
+- A member's permissions in an event are the union of their teams' permissions; an `EventAdmin` has all of them. Each service that checks a permission keeps a local copy of the memberships, team assignments and team permissions it needs (rules below). Where the check runs and how the token carries it is guide E2 (Guerra).
 
 **Rules:**
 - Each service owns its data and its database; no service reads another service's database.
-- Services talk **only through events**. Each service keeps a local copy of what it needs from another (e.g. Reports keeps the response teams from Events; every service keeps the roles per event from Auth & Users). The cost is eventual consistency.
+- Services talk **only through events**. Each service keeps a local copy of what it needs from another (e.g. Reports keeps the teams, their permissions and help categories from Events; every service keeps the memberships and team assignments of its events from Auth & Users). The cost is eventual consistency.
 - Each service is its own Maven project in `backend/<service>/` and depends only on the others' contracts (OpenAPI and events). Inside, it follows a **hexagonal layout**: `domain`, `application`, `adapters/in`, `adapters/out`.
 - APIs are **contract-first**: hand-written OpenAPI in `backend/<service>/contracts/openapi.yaml`, paths under `/api/v1`, server and client code generated ([`spec-driven-development.md`](../Process/spec-driven-development.md)).
 
@@ -126,7 +131,7 @@ Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end f
 
 | Integration | Purpose | Handling of unavailable, late, incomplete or invalid data (assignment §6.5) |
 |---|---|---|
-| **Transport data**: Porto Digital urban platform (FIWARE NGSI v2, live bus positions; [ADR-008](adr/0008-transport-data-source.md)) | Transport for F9 | Calls with a timeout; data validated on import; data older than its freshness limit counts as late. On any of these, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected. A **simulator or recorded real responses** under the team's control (guide J4) is used for automated tests, to cause failures and invalid data in the demo, and as a fallback on presentation day |
+| **Transport data**: Porto Digital urban platform (FIWARE NGSI v2, live bus positions; [ADR-008](adr/0008-transport-data-source.md)) | Transport for F9 | Calls with a timeout; data validated on import; data older than its freshness limit counts as late. On any of these, the last valid data is kept and shown with its time and a warning (US-42, US-43); event shuttles entered manually are unaffected. A **simulator or recorded real responses** under the team's control (guide J4) is used for automated tests, to cause failures and invalid data in the demo, and as a fallback on presentation day |
 | **AI model provider** **[PENDING]** (Tomás; local Ollama is an option) | Triage suggestions (F8) | Timeout, then fallback (§6); the suggestion is never shown as a fact (assignment §5.6.2) |
 
 ## 8. Security, authentication and authorisation
@@ -136,7 +141,7 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 | Concern | Decided |
 |---|---|
 | Accounts | **Login mandatory for every user**, participants included (9 October 2026, DM-1) |
-| Authorisation | Role checked **per event** (invariant I1); authN and authZ live in Auth & Users |
+| Authorisation | Checked **per event** (invariant I1): the user's role in that event (`EventAdmin` or `RegularUser`) and the permissions of their teams there (§4). `FarolAdmin` is the only global role and gives no access to any event's data. Accounts, roles and memberships live in Auth & Users, teams and their permissions in Events; where the token is validated and the permission is checked is **[PENDING]** (guide E2, Guerra) |
 | Isolation between events | `event_id` on every event-scoped table, filtered by the application; each service has an integration test proving that a member of event X cannot read or change event Y |
 | Audit | Every change to a help request recorded (StatusChange, domain model I5) |
 | Rate limiting of help requests | **[PENDING]** with the gateway decision (Guerra) |
