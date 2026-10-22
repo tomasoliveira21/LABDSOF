@@ -2,12 +2,13 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] · 2026-10-16 · Venue map library and ADR-007 (#44)
+## [Unreleased] · 2026-10-22 · Venue map library and ADR-007 (#44)
 
-**Why:** decisions guide F3 (venue map library, owner Tiago) was the last open item for the map (F5). The map is an uploaded image with no geo data (D1), and F4 (Expo or bare React Native) is still open, so the choice had to work with both.
+**Why:** decisions guide F3 (venue map library, owner Tiago) was the last open item for the map (F5). The app is mainly mobile, the map is an uploaded image with no geo data (D1), and F4 (Expo or bare React Native) is still open, so the choice had to work on iOS and Android, with Expo and with bare React Native.
 
 ### Decided
-- Mobile venue map: **`react-native-svg`** markers inside a **`react-native-zoom-toolkit`** zoom/pan container (Gesture Handler + Reanimated), normalised `MapPosition` coordinates, filtering by type with React state. Works with Expo and bare React Native.
+- Mobile venue map: **`react-native-svg`** markers inside a **`react-native-zoom-toolkit`** zoom/pan container (Gesture Handler + Reanimated), normalised `MapPosition` coordinates, filtering by type with React state. Works on iOS and Android, with Expo and bare React Native.
+- A **spike on real iOS and Android devices** checks `react-native-zoom-toolkit` with Gesture Handler 3 before the map is built; if it fails, pan and zoom are written directly with Gesture Handler and Reanimated.
 - PDF maps (US-06) are **rendered to a PNG on upload** by the Events service with Apache PDFBox: single-page PDFs only, at most 4096 px on the long side; the original file and the rendered image are both kept.
 
 ### Added
