@@ -13,7 +13,7 @@
 |---|---|
 | **Tomás** | Deploy (Azure, ECS ou Vercel) · integração de IA (se é viável fazer deploy de Ollama) · observabilidade · avaliação de Responsible AI e dataset de avaliação da triagem |
 | **Guerra** | Identidade e segurança · API gateway · Security & Privacy assessment |
-| **Tomás + Guerra** | Modelo de domínio, incluindo o platform admin (P4) |
+| **Tomás + Guerra** | Modelo de domínio, incluindo o FarolAdmin (P4), as *memberships* por evento e as equipas com permissões |
 | **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto |
 | **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos |
 
@@ -34,7 +34,7 @@
 | # | Decisão | Estado |
 |---|---|---|
 | A1 | **Microserviços** como estado final. Cumprem o §6.2 sem ter de provar que os serviços seriam complexidade desnecessária, isolam falhas e dão contratos pequenos por serviço (base do Spec-Driven Development) | ✅ |
-| A2 | **5 serviços.** **Auth & Users** (authN, authZ, contas, papéis por evento, amigos: F1, F2, papéis do F4, F18) · **Events** (eventos, mapa e pontos de interesse, equipas de resposta, anúncios, check-in, entradas: F3, equipas do F4, F5, F10, F16, F17) · **Reports** (relatos comunitários e confirmação, pedidos de ajuda, backoffice, triagem IA com fallback: F6, F7, F8, F12, F13) · **Transports** (F9; fonte: Plataforma Urbana do Porto Digital (FIWARE, NGSI v2), aceite pelo professor a 21/10, com simulador sob o nosso controlo (J4); ADR-008) · **Badges** (F14, F15) | ✅ |
+| A2 | **5 serviços.** **Auth & Users** (authN, authZ, contas, papel global `FarolAdmin`, *memberships* por evento com o papel `EventAdmin` ou `RegularUser` e as equipas de cada membro, amigos: F1, F2, papéis e membros das equipas do F4, F18) · **Events** (eventos, mapa e pontos de interesse, equipas com as suas permissões e categorias de ajuda, anúncios, check-in, entradas: F3, equipas do F4, F5, F10, F16, F17) · **Reports** (relatos comunitários e confirmação, pedidos de ajuda, backoffice, triagem IA com fallback: F6, F7, F8, F12, F13) · **Transports** (F9; fonte: Plataforma Urbana do Porto Digital (FIWARE, NGSI v2), aceite pelo professor a 21/10, com simulador sob o nosso controlo (J4); ADR-008) · **Badges** (F14, F15) | ✅ |
 | A3 | Cada serviço é um **projeto Maven próprio** em `backend/<serviço>/`, no mesmo repositório; nenhum serviço depende do código de outro, só dos contratos (OpenAPI e eventos) | ✅ |
 | A4 | **Microserviços desde o início**: os 5 serviços são deployáveis de forma independente desde o Sprint A, sem fase de monólito. Não há percurso imposto: qualquer evolução tem de ser **motivada por evidência** (medições, testes, falhas), não pelo calendário, e fica registada num ADR (resposta do professor). Cumpre já o requisito do Sprint B de dois componentes backend com deploy independente (§6.2). Rejeitado: monólito modular nos Sprints A e B, dividido no C | ✅ |
 
@@ -57,7 +57,7 @@
 | C1 | **RabbitMQ**: gratuito; igual localmente, nos testes (Testcontainers) e na cloud; exchanges *topic* para pub-sub; DLQ com *dead-letter exchange*. Onde corre na cloud: depende da plataforma | ✅ (alojamento: 🔍 Tomás) |
 | C2 | **Spring AMQP** | ✅ |
 | C3 | **Tabela outbox** em cada serviço, publicada por um job de polling nosso. Consumidores idempotentes com tabela de mensagens processadas (`message_id`); após N tentativas, DLQ | ✅ (N e backoff: 🔍 Tiago) |
-| C4 | **Só eventos entre serviços.** Cada serviço guarda uma cópia local do que precisa de outro (ex.: o Reports guarda as equipas de resposta do Events). Custo aceite: consistência eventual | ✅ |
+| C4 | **Só eventos entre serviços.** Cada serviço guarda uma cópia local do que precisa de outro (ex.: o Reports guarda as equipas, as suas permissões e categorias de ajuda do Events; todos guardam as *memberships* e as equipas de cada membro do Auth & Users). Custo aceite: consistência eventual | ✅ |
 | C5 | **Polling** chega para o MVP (lista do backoffice, estado do pedido, anúncios). Uma instância por serviço por agora | ✅ |
 | C6 | API gateway (e onde ficam rate limiting e CORS) | 🔍 Guerra |
 | C7 | **Contract-first:** OpenAPI escrito à mão em `backend/<serviço>/contracts/openapi.yaml`; o `openapi-generator` gera interfaces e DTOs Spring e os clientes das apps. Caminhos com `/api/v1`. Base do [Spec-Driven Development](../Process/spec-driven-development.md) | ✅ |
@@ -80,7 +80,7 @@
 | # | Pergunta | Estado |
 |---|---|---|
 | E1 | Que IdP (mock, Keycloak, Entra External ID…)? Tem de encaixar no serviço Auth & Users (A2) | 🔍 Guerra |
-| E2 | Onde se valida o token e onde se verifica o papel por evento; o `PlatformAdmin` é papel global? | 🔍 Guerra |
+| E2 | Onde se valida o token e onde se verificam o papel e as permissões por evento. **Modelo de papéis definido a 22/10** pelo Tiago, a confirmar com a equipa ([`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026)): `FarolAdmin` é o único papel global e não dá acesso aos dados de nenhum evento; `EventAdmin` e `RegularUser` são papéis da *membership* de cada evento (o mesmo utilizador pode ser EventAdmin num evento e RegularUser noutro); os EventAdmins criam equipas e dão a cada uma permissões de uma lista fixa (`HelpRequests.Triage`, `HelpRequests.Respond`, `Reports.Review` por tipo de report, `Reports.Respond`, `Announcements.Publish`, `Map.Edit`, `Transport.Edit`, `Entrances.Update`). As *memberships* e as equipas de cada membro ficam no Auth & Users; as equipas e as suas permissões ficam no Events. **Falta decidir:** se o token leva as permissões por evento ou só a identidade, e onde se junta papel + equipas + permissões para cada pedido (gateway, cada serviço com cópia local, ou consulta ao Auth & Users) | 🔍 Guerra |
 | E3 | Autenticação entre serviços | 🔍 Guerra |
 | E4 | Onde ficam os segredos | 🔍 Guerra |
 | E5 | Security & Privacy assessment (entregável 9 do Sprint A) | 🔍 Guerra |
@@ -91,7 +91,7 @@
 |---|---|---|
 | F1 | **Duas aplicações:** web React simples para a gestão de eventos; mobile React Native para o resto | ✅ |
 | F2 | Alojamento da app web | 🔍 Tomás (deploy) |
-| F3 | **Mapa do recinto ([ADR-007](adr/0007-venue-map-representation.md)):** na app mobile, **`react-native-svg`** para os marcadores dentro do zoom/pan do **`react-native-zoom-toolkit`** (sobre Gesture Handler e Reanimated); posições em coordenadas normalizadas (`MapPosition`); filtro por tipo (US-07) com estado React. Funciona em iOS e Android, com Expo e com React Native *bare*, por isso não depende do F4. Antes de implementar o mapa, um *spike* confirma o zoom-toolkit com o Gesture Handler 3 num iPhone e num Android reais; se falhar, o zoom/pan escreve-se diretamente com Gesture Handler e Reanimated. A app web usa só `<img>` com marcadores posicionados. **PDF convertido em imagem no upload**, no serviço Events, com Apache PDFBox (só PDFs de uma página; imagem com no máximo 4096 px no lado maior; guarda-se o original e a imagem). Onde ficam os ficheiros depende do G1 | ✅ |
+| F3 | **Mapa do recinto ([ADR-007](adr/0007-venue-map-representation.md)):** na app mobile, **`react-native-svg`** para os marcadores dentro do zoom/pan do **`react-native-zoom-toolkit`** (sobre Gesture Handler e Reanimated); posições em coordenadas normalizadas (`MapPosition`); filtro por tipo (US-22) com estado React. Funciona em iOS e Android, com Expo e com React Native *bare*, por isso não depende do F4. Antes de implementar o mapa, um *spike* confirma o zoom-toolkit com o Gesture Handler 3 num iPhone e num Android reais; se falhar, o zoom/pan escreve-se diretamente com Gesture Handler e Reanimated. A app web usa só `<img>` com marcadores posicionados. **PDF convertido em imagem no upload**, no serviço Events, com Apache PDFBox (só PDFs de uma página; imagem com no máximo 4096 px no lado maior; guarda-se o original e a imagem). Onde ficam os ficheiros depende do G1 | ✅ |
 | F4 | Configuração do React Native (ex.: Expo ou não) e como a app mobile chega aos professores e à demo (§12) | 🔍 Bruno |
 
 ## G · Deploy e infraestrutura

@@ -13,7 +13,7 @@
 | 1. No single source of operational information | One platform per event where the team publishes everything participants need | F5, F9, F10 |
 | 2. Communication is static | The team updates information during the night; every item shows its last-update time. Participants report what they see, and the team confirms it | F10, F11, F12, F13 |
 | 3. No shared spatial reference of the venue | The venue map, uploaded by the team, is the common reference for participants and operators | F5, F6, F12 |
-| 4. Incident coordination depends on radio and phone *(hypothesis)* | Help requests arrive structured, with location, category and status, and are triaged and routed to a response team in the backoffice | F6, F7, F8 |
+| 4. Incident coordination depends on radio and phone *(hypothesis)* | Help requests arrive structured, with location, category and status, and are triaged and routed to a team of the event in the backoffice | F6, F7, F8 |
 | 5. Slow processes at the gate | Out of scope as a process; at most, entrance status information | F17 |
 
 ## 2. Feature list and priority
@@ -29,7 +29,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F5 | Venue map with points of interest | C3 | Must | 5 | P1, P3 | Map uploaded as an image or PDF; points placed on it (entrances, stages, WC, first aid, transport stops) |
 | F6 | Help request | C6 | Must | 6 | P1 | Category and location marked on the map; location shared only with the request |
 | F7 | Incident backoffice | C7 | Must | 7 | P2, P5 | Receive, prioritise, route to a team and close help requests; live list and map; full status history. Members of a team with the *respond* permission get what is routed to their team on the phone and update its status (§4.3) |
-| F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Suggests category, priority and response team; the operator decides. Kept separate from F7 on purpose (see note below). See §5 |
+| F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Suggests category, priority and team (one of the event's teams that handles the category, §4.2); the operator decides. Kept separate from F7 on purpose (see note below). See §5 |
 | F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **Porto Digital urban platform** (FIWARE NGSI v2): live positions of the city buses (§3), plus event shuttles and temporary stops entered by the team |
 | F10 | Live announcements, with last-update time | C4 | Must | 10 | P1, P3 | |
 | F11 | Weak-network mode: cached map and information, "data from HH:MM" | C10 | Could | — | P1 | Not one of the §6.8 degraded-mode scenarios (§3.1). Moved from Must to Could on 9 October 2026 |
@@ -72,7 +72,7 @@ Two scenarios, no more. Both are demoed by switching off one dependency while th
 | **Dependency** | AI model provider used by the triage worker (F8) |
 | **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout, a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker) |
 | **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down, a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
-| **What the operator does** | Sets the priority and response team by hand. Nothing else changes in F7 |
+| **What the operator does** | Sets the priority and team by hand. Nothing else changes in F7 |
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
 | **When the AI comes back** | Requests the operator has not touched may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
 | **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and counted as a metric (fallback rate) |
@@ -165,7 +165,7 @@ The help categories still need to be checked against the interview with the secu
 
 | | Help-request triage |
 |---|---|
-| What the AI does | Reads the participant's category and optional text, then suggests a **category, a priority and the response team** (§4). The operator accepts or changes the suggestion |
+| What the AI does | Reads the participant's category and optional text, then suggests a **category, a priority and the team** (one of the event's teams that handles the category, §4.2). The operator accepts or changes the suggestion |
 | User need | Requests arrive without category or priority (root cause 4); assumption A4 |
 | Non-AI fallback | Scenario D1 (§3.1): participant's category, order of arrival, "Not triaged" |
 | Human control | The AI only suggests. It never lowers a priority, and it never overwrites an operator's decision (domain model I4) |
@@ -179,7 +179,7 @@ This is the list the team works through before the AI work starts. Owner: AI lea
 | # | Item | Open question | Needed for |
 |---|---|---|---|
 | AI-1 | **Input** | Exactly which fields go to the model: category, free text, map zone, time of night? Is the location sent, or only the zone? | Privacy, prompt design |
-| AI-2 | **Output format** | A fixed JSON schema: category (fixed list), priority (`Low`/`Medium`/`High`/`Critical`), response team (§4), a short reason for the operator. What happens with an answer outside the schema (→ D1) | Validation, UI |
+| AI-2 | **Output format** | A fixed JSON schema: category (fixed list), priority (`Low`/`Medium`/`High`/`Critical`), team (one of the event's teams, §4.2), a short reason for the operator. What happens with an answer outside the schema (→ D1) | Validation, UI |
 | AI-3 | **Priority scale** | What each level means, with examples, so people and the AI apply the same rule. What is the "default priority" of each category, so that "never lowers a priority" is measurable | Evaluation, I4 |
 | AI-4 | **Model and provider** | Which provider and model; hosted API or local model; cost per request; what happens to the text sent (data retention by the provider, GDPR) | Cost, privacy, ADR |
 | AI-5 | **Prompt design** | System prompt, few-shot examples, European Portuguese informal language, how the participant's text is isolated from the instructions | Quality, prompt injection |

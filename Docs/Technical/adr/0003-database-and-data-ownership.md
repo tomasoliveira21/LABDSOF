@@ -22,7 +22,7 @@
 ## Consequences
 
 - One technology to learn, run and back up. The same PostgreSQL runs locally, in the tests (Testcontainers) and in the cloud.
-- Services cannot join across databases. Cross-service views (e.g. response teams inside Reports) come from local copies and are **eventually consistent**.
+- Services cannot join across databases. Cross-service views (e.g. the event's teams and their permissions inside Reports) come from local copies and are **eventually consistent**.
 - Isolation depends on the application filter being present in every query; a missing filter is a data leak. The per-service isolation test is the safety net, so it must cover every new event-scoped table.
 - *Expand and contract* makes some changes (renames, type changes) take two releases.
 - Five databases from Sprint A cost more than one. How many PostgreSQL servers host them is still open (see *Open points*).

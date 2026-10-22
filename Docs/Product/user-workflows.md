@@ -10,9 +10,9 @@
 | ID | Journey | Persona | Source in the report | Demo priority |
 |---|---|---|---|---|
 | **W2** | **Participant asks for help** | P1 → P2 → P5 | Third journey (help request) | **1, the core journey** (links both sides of the product) |
-| W3 | Operator handles a help request | P2 → P5 | Third journey | 1 (continuation of W2) |
+| W3 | Control room handles a help request | P2 → P5 | Third journey | 1 (continuation of W2) |
 | W1 | Participant finds information | P1 | First journey | 2 |
-| W4 | Admin sets up an event | P4 → P3 | Second journey | 3 |
+| W4 | FarolAdmin creates an event, EventAdmin sets it up | P4 → P3 | Second journey | 3 |
 | W5 | Team publishes a live update | P3 → P1 | Second journey ("updates information during the night") | 4 |
 | W6 | Participant loses the network | P1 | Risks: congested network, offline mode (report §5) | Could (F11). Assignment §6.8 is covered by scenarios D1 and D2 ([`features.md` §3.1](features.md#31-degraded-mode-scenarios-decided-9-october-2026)) |
 | W7 | Participant reports a problem and earns a badge | P1 → P2 → P5 | Engagement mechanism ([`features.md` §6](features.md#6-ethical-engagement-mechanism-community-reports-and-badges)) | Required by assignment §5.5 |
@@ -22,7 +22,7 @@ For the 5–7 minute presentation, **W2 + W3 tell the whole story**: a participa
 
 ## Complete journeys (BPMN)
 
-Added after the presentation of 12 October 2026 (teacher feedback): one BPMN diagram per core journey, from the participant's first tap to the end, with one lane per actor. The Mermaid diagrams in W1–W8 stay as the step-by-step detail. Who receives what is in [`features.md` §4.1](features.md#41-who-receives-what-and-who-acts-proposed-12-october-2026).
+Added after the presentation of 12 October 2026 (teacher feedback): one BPMN diagram per core journey, from the participant's first tap to the end, with one lane per actor. The Mermaid diagrams in W1–W8 stay as the step-by-step detail. Who receives what is in [`features.md` §4.3](features.md#43-who-receives-what-and-who-acts). The lanes are personas, and since 22 October 2026 they are jobs given by team permissions, not roles ([`features.md` §4.2](features.md#42-teams-and-permissions)): P2 stands for the members with `HelpRequests.Triage` or `Reports.Review`, P5 for the members with `HelpRequests.Respond` or `Reports.Respond`.
 
 ### Help request, end to end (W2 + W3)
 
@@ -37,8 +37,8 @@ Added after the presentation of 12 October 2026 (teacher feedback): one BPMN dia
 
 ![Community report journey in BPMN](bpmn/report-journey.svg)
 
-- A report skips the shared queue: its **type** says which team is responsible ([`features.md` §6.1](features.md#61-what-can-be-reported)), so it goes straight to that team's operators.
-- The **operator decides**: confirms or rejects, if needed after a responder checks on site. A **responder acts** when the problem needs fixing.
+- A report skips the shared queue: its **type** says who is responsible, so it goes straight to the members with `Reports.Review` for that type ([`features.md` §4.3](features.md#43-who-receives-what-and-who-acts)).
+- The **reviewer decides**: confirms or rejects, if needed after a team with `Reports.Respond` checks on site. A member of that team **acts** when the problem needs fixing.
 - Not drawn: the team unconfirms a report later (see W7).
 
 **Files:** [`bpmn/`](bpmn/) has each diagram as `.bpmn` (BPMN 2.0; open and edit it in [bpmn.io](https://demo.bpmn.io) or Camunda Modeler) and as `.svg` (for reading here). After editing a `.bpmn`, export the SVG again. These diagrams are for the documentation, not the slides: they are too detailed to read on a projector.
@@ -76,8 +76,8 @@ sequenceDiagram
     participant Inc as Incident service
     participant AI as AI triage
     participant BO as Backoffice
-    actor O as Operator (Miguel)
-    actor R as Responder (Inês)
+    actor O as Control room (Miguel, HelpRequests.Triage)
+    actor R as Field team (Inês, HelpRequests.Respond)
 
     P->>App: Taps "Ask for help"
     P->>App: Chooses category, marks location on map, optional short text
@@ -92,9 +92,9 @@ sequenceDiagram
     end
     Inc-)BO: New request for this event
     BO-->>O: Request appears on list and map
-    O->>BO: Acknowledges, sets priority, dispatches to a response team
+    O->>BO: Acknowledges, sets priority, routes it to a team
     BO->>Inc: Status Dispatched
-    Inc-)R: Alert on the phone, with the point on the map
+    Inc-)R: Appears on the phone of the team's members, with the point on the map
     R->>Inc: Accepts
     Inc-->>App: Status On the way
     App-->>P: "Help is on the way"
@@ -108,7 +108,7 @@ sequenceDiagram
 
 **[PROPOSED]:** the participant sees the status of their request (the market annex notes that no current channel shows the status of a request, §4 *UX* row).
 
-## W3 · Operator handles a help request
+## W3 · Control room handles a help request
 
 Lifecycle of a help request **[PROPOSED]**. The report says the team *"avalia a sua prioridade e encaminha-o"*, but does not define statuses.
 
@@ -116,12 +116,12 @@ Lifecycle of a help request **[PROPOSED]**. The report says the team *"avalia a 
 stateDiagram-v2
     [*] --> Submitted
     Submitted --> Triaged: AI suggestion stored
-    Submitted --> Acknowledged: operator opens it (fallback, no AI)
-    Triaged --> Acknowledged: operator accepts or changes suggestion
-    Acknowledged --> Dispatched: routed to a response team
+    Submitted --> Acknowledged: control room opens it (fallback, no AI)
+    Triaged --> Acknowledged: control room accepts or changes suggestion
+    Acknowledged --> Dispatched: routed to a team
     Acknowledged --> Resolved: handled without dispatch
-    Dispatched --> OnTheWay: a responder accepts it
-    OnTheWay --> Resolved: the responder closes it
+    Dispatched --> OnTheWay: a team member accepts it
+    OnTheWay --> Resolved: that member closes it
     Submitted --> Cancelled: participant cancels
     Acknowledged --> Duplicate: merged with another request
     Resolved --> [*]
@@ -130,35 +130,37 @@ stateDiagram-v2
 ```
 
 Steps:
-1. A new request appears on the operator's list and on the venue map, with category, location, time and, if available, the AI suggestion.
-2. The operator acknowledges it and confirms or changes the priority.
-3. The operator routes it to a response team (Medical, Security or PCR; [`features.md` §4](features.md#4-response-teams-decided-9-october-2026)) or handles it directly. **[PROPOSED] 12 Oct:** the team's responders get an alert on their phone; the first one who accepts it sets it *On the way*.
+1. A new request appears on the list and the venue map of every member with `HelpRequests.Triage` (the control room, P2), with category, location, time and, if available, the AI suggestion (US-26, US-27).
+2. A control-room member acknowledges it and confirms or changes the priority (US-28).
+3. They route it to a team of the event with `HelpRequests.Respond`, by default the team that handles its help category (e.g. *Nursing* for `Health`; [`features.md` §4.2](features.md#42-teams-and-permissions), US-29), or handle it directly. The request appears on the phone of that team's members (P5, US-31); the first one who accepts it sets it *On the way* (US-32).
 4. Every change is recorded with who and when (audit, assignment §6.6).
-5. The responder who accepted it closes it as resolved, or the operator, if it was handled from the control room.
+5. The team member who accepted it closes it as resolved (US-33), or the control room closes it, if it was handled from there (US-30).
 
-> ⚠️ **GAP:** the response teams are decided (features §4); the statuses and who closes a request are still assumptions. Needed: the interview with the security volunteer (report §4) to confirm how requests are handled today and which teams exist.
+> ⚠️ **GAP:** the role model is defined (features §4, to confirm with the team), and each event creates its own teams; the statuses and who closes a request are still assumptions. Needed: the interview with the security volunteer (report §4) to confirm how requests are handled today and which teams the pilot set-up should have (features §4.4).
 
-## W4 · Admin sets up an event
+## W4 · FarolAdmin creates an event, EventAdmin sets it up
 
 Source: report, second journey: *"creates or selects an event in the backoffice, uploads or configures the venue map, adds key points such as entrances, stages, toilets, first aid and transport stops"*.
 
 ```mermaid
 flowchart TD
-    R["Organisation asks Farol for an event"] --> V["Platform admin (Daniel) verifies the requester"]
-    V --> N["Platform admin creates the event as a draft and names its Owner"]
-    N --> A["Owner (Sofia) logs in to the backoffice"]
-    A --> B["Completes the event: dates, nights"]
-    B --> C["Uploads venue map: image or PDF"]
-    C --> D["Places points of interest: entrances, stages, WC, first aid, stops"]
-    D --> E["Adds transport: shuttles, temporary stops, schedules"]
-    E --> F["Invites team members with a role: admin, operator"]
-    F --> G["Puts members in response teams: Medical, Security, PCR, Logistics"]
-    G --> H["Publishes the event: QR code and link generated"]
+    R["Organisation asks Farol for an event"] --> V["FarolAdmin (Daniel) verifies the requester"]
+    V --> N["FarolAdmin creates the event as a draft and names its first EventAdmin (US-06)"]
+    N --> A["EventAdmin (Sofia) logs in to the backoffice"]
+    A --> B["Completes the event: dates, nights (US-10)"]
+    B --> C["Uploads venue map: image or PDF (US-19)"]
+    C --> D["Places points of interest: entrances, stages, WC, first aid, stops (US-20)"]
+    D --> E["Adds transport: shuttles, temporary stops, schedules (US-37)"]
+    E --> G["Creates the event's teams, e.g. Control room, Nursing, Security (US-16)"]
+    G --> P["Gives each team its permissions and help categories (US-17)"]
+    P --> H["Publishes the event: QR code and link generated (US-11)"]
+    H --> J["Team members join with the QR code or link, as RegularUsers (US-12)"]
+    J --> F["Adds them to their teams; may make other members EventAdmin (US-18, US-15)"]
 ```
 
-**[PROPOSED]:** the steps *invite team members*, *define response teams* and *publish with QR code* are not in the report but are needed for per-event permissions (report, *Product vision*) and for routing (W3).
+**[PROPOSED]:** the steps *create teams*, *set their permissions*, *add members to teams* and *publish with QR code* are not in the report but are needed for per-event permissions (report, *Product vision*) and for routing (W3). Since 22 October 2026 the teams are not fixed: each event creates its own from the permission list in [`features.md` §4.2](features.md#42-teams-and-permissions); §4.4 has a suggested set-up for the Queima. People join the event first (US-12) and are added to teams after, because only members of the event can be in its teams (US-18).
 
-**[PROPOSED] 10 October 2026:** the first three steps (request, verification, creation by the platform admin, persona P4) are not in the report either. Farol hosts many festivals, so an event can only be created for a verified organisation, and its EventAdmins manage only that event (F3, US-06; roles in [`features.md` §4](features.md#4-roles-teams-and-permissions-22-october-2026)). The platform admin never sees the event's help requests or reports. To confirm with the team (personas PE-5).
+**[PROPOSED] 10 October 2026:** the first three steps (request, verification, creation by the FarolAdmin, persona P4) are not in the report either. Farol hosts many festivals, so an event can only be created for a verified organisation, and its EventAdmins manage only that event (F3, US-06; roles in [`features.md` §4](features.md#4-roles-teams-and-permissions-22-october-2026)). The FarolAdmin never sees the event's help requests or reports. To confirm with the team (personas PE-5).
 
 ## W5 · Team publishes a live update
 
@@ -166,7 +168,7 @@ Source: report, *"updates information during the night"*; root cause 2.
 
 ```mermaid
 sequenceDiagram
-    actor A as Admin (Sofia)
+    actor A as EventAdmin (Sofia, or a member with Announcements.Publish)
     participant BO as Backoffice
     participant Ev as Event service
     participant App as Participant web app
@@ -205,14 +207,14 @@ Source: engagement mechanism decided by the team on 8 October and detailed on 9 
 flowchart TD
     A["Participant taps Report"] --> B["Chooses type: queue, WC, water, crowd, hazard, transport, wrong info"]
     B --> C["Marks the point on the venue map"]
-    C --> D["Sent to the operators of the team responsible for its type (Pending)"]
-    D --> K{"Operator can check it from the control room?"}
-    K -- No --> L["A responder of the team checks it on site"] --> E
-    K -- Yes --> E{"Operator confirms it?"}
+    C --> D["Sent to the members with Reports.Review for its type (Pending)"]
+    D --> K{"Reviewer can check it from the control room?"}
+    K -- No --> L["A team with Reports.Respond checks it on site"] --> E
+    K -- Yes --> E{"Reviewer confirms it?"}
     E -- Yes --> F["Shown on everyone's map with its time, until it expires"]
     F --> G["Reporter's count goes up; badge tier when a level is reached (Wood 1 … Diamond 500+)"]
     F --> M{"Does the team need to act?"}
-    M -- Yes --> N["A responder fixes it and marks it Resolved: off the map, still counts"]
+    M -- Yes --> N["A member of a team with Reports.Respond fixes it and marks it Resolved: off the map, still counts"]
     E -- No --> H["Rejected, or expires unconfirmed: no badge"]
     F --> I{"Team unconfirms it later?"}
     I -- Yes --> J["Removed from the map; count goes down; tier recalculated"]
