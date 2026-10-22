@@ -1,9 +1,8 @@
-# ADR-007: Venue map representation
+# ADR-007 · Venue map representation
 
-- **Status:** Accepted (22 October 2026), subject to the compatibility check in *Decision* 5
-- **Owner:** Tiago (decisions guide F3)
-- **Issue:** #44
-- **Related:** guide D1 (PostgreSQL, no PostGIS), A2 (the Events service owns the venue map), F1 (web app for event management, mobile app for the rest), F4 (React Native setup, open), G1 (deployment platform, open); US-06, US-07, US-08, US-09, US-17, US-18
+## Status
+
+**Accepted**: investigated by Tiago (issue #44) and approved on 22 October 2026, subject to the compatibility check in *Decision* 5. Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) F3; related: D1 (PostgreSQL, no PostGIS), A2 (the Events service owns the venue map), F1, F4 (React Native setup, open) and G1 (deployment platform, open). User stories: US-06, US-07, US-08, US-09, US-17, US-18 ([`features.md`](../../Product/features.md)).
 
 ## Context
 
@@ -71,6 +70,12 @@ The venue map (F5, Must) is the shared spatial reference of the product: points 
 | **`react-native-maps` with an image overlay** | ✅ / ✅ | Development build / ✅ | Needs geographic coordinates (fake ones, here) and a Google Maps API key on Android. Contradicts D1 and the normalised `MapPosition`. |
 | **`@shopify/react-native-skia` canvas** | ✅ / ✅ | ✅ / ✅ | Best performance for thousands of markers, but a heavy dependency and lower-level drawing. Not needed for a few hundred points. |
 | **PDF converted on the device** | — | — | Uploads happen in the browser, so each client would need its own PDF renderer; on mobile that means a native module (`react-native-pdf`) that does not run in Expo Go. Every client would convert again and could produce a different raster, and offline caching gets harder. |
+
+## Open points
+
+- Compatibility spike on real iOS and Android devices (*Decision* 5): done with F4's setup, before US-06 and US-07; owner to be set when the stories are planned.
+- Where the original and rendered files are stored: guide G1, Tomás.
+- Upload file-size limit: set when US-06 is specified.
 
 ## Sources (checked 22 October 2026)
 
