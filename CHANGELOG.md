@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
+
+**Why:** the stories in `features.md` §7 are now GitHub issues, so the backlog can be planned and tracked (assignment §8.2, DoR item "has a GitHub issue").
+
+### Added (on GitHub)
+- Issues **#58 to #121**: the walking skeleton (`task`, milestone *Sprint A*) and US-01 to US-62 (`user story`), from the user-story form, with persona, acceptance criteria, linked dependencies, DoR and DoD. Milestones *Sprint B* (27 stories) and *Sprint C* (30); the 5 Could stories have none.
+- Milestones **Sprint B** (due 6 December 2026) and **Sprint C** (due 3 January 2027); label **`user story`**.
+
+### Changed
+- `features.md`: issue numbers in §8.3; walking skeleton in Sprint A, owner Tomás (§8.2, §8.4, §8.5); transport source no longer a blocker (Porto Digital, ADR-008; PoC #48 as reference); §7.1 and the status line say the issues exist.
+- `2026-10-12-sprint-1-presentation-feedback.md`: T1 done; creating the board left as an open action.
+- `2026-10-22-professor-meeting.md`: backlog row points to the issues.
+
+### Not changed
+- The old feature issues #2 to #16 stay open as Sprint A feature discovery. The GitHub Projects board does not exist yet, so the README has no board link.
+
 ## [Unreleased] · 2026-10-22 · Meeting with the professor (#55, Bruno Lopes)
 
 **Why:** record the points discussed with the professor on 22 October 2026 and what is still without an owner.

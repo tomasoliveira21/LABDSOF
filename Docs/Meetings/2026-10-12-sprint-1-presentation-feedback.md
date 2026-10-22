@@ -7,7 +7,7 @@
 
 | # | Feedback | Action | Status |
 |---|---|---|---|
-| T1 | **DoR:** it is the set of criteria for an issue to start being worked on. When the backlog is built, **every issue must meet the DoR** | When the user stories (US-01 to US-26) go to GitHub Projects, each one is checked against the DoR before it is moved to *Ready*. The issue form already asks for the DoR fields ([`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md)) | DoR check done on 16 October 2026 ([`features.md` §7.1](../Product/features.md#71-dor-check-and-split)); issues still to create (#45) |
+| T1 | **DoR:** it is the set of criteria for an issue to start being worked on. When the backlog is built, **every issue must meet the DoR** | When the user stories (US-01 to US-26) go to GitHub Projects, each one is checked against the DoR before it is moved to *Ready*. The issue form already asks for the DoR fields ([`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md)) | Done: DoR check on 16 October 2026 ([`features.md` §7.1](../Product/features.md#71-dor-check-and-split)); issues #58 to #121 created on 22 October 2026 ([`features.md` §8.3](../Product/features.md#83-stories-on-the-board)). The board does not exist yet |
 | T2 | The **main workflows and user journeys need a BPMN diagram**, showing a complete journey: what happens from start to end | Two BPMN diagrams, one lane per actor: help request (W2 + W3) and community report (W7) | Done: [`user-workflows.md`, *Complete journeys*](../Product/user-workflows.md#complete-journeys-bpmn), files in `Docs/Product/bpmn/` |
 | T3 | **Be careful with BPMN in the presentation**: it is hard to read on a slide | BPMN stays in the documentation. If a journey goes on a slide, it is a simplified version | Agreed |
 | T4 | **Change the presentations so they do not look so AI-made** | Applies to the next presentation. The first deck is not changed (see *Decisions*) | Open: next presentation |
@@ -28,5 +28,6 @@
 
 - [ ] Team confirms the operator / responder split and the `Responder` role (personas **PE-6**).
 - [x] Check every user story against the DoR (T1): done on 16 October 2026, see [`features.md` §7.1](../Product/features.md#71-dor-check-and-split).
-- [ ] Create the story issues and load them into GitHub Projects (#45, after the team confirms the sprint plan in `features.md` §8).
+- [x] Create the story issues (#45): #58 to #121, on 22 October 2026, see [`features.md` §8.3](../Product/features.md#83-stories-on-the-board).
+- [ ] Create the GitHub Projects board and add the issues to it (repository owner).
 - [ ] Next presentation: rewrite the slides in the team's own words (T4); no full BPMN on the slides (T3).
