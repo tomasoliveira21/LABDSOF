@@ -1,7 +1,7 @@
 # Decisões Arquiteturais
 
 > LABDSOF 2026/27 · Sprint A · Enunciado §6 (requisitos técnicos), §7.1.2 (entregáveis 7, 8 e 10), §8.4 e §8.5 (contentores e CI/CD)
-> **Estado (21 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
+> **Estado (22 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
 > **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor) e reunião com o professor de 22 de outubro de 2026 ([`2026-10-22-professor-meeting.md`](../Meetings/2026-10-22-professor-meeting.md)).
 
 **Legenda do estado:**
@@ -13,7 +13,7 @@
 |---|---|
 | **Tomás** | Deploy (Azure, ECS ou Vercel) · integração de IA (se é viável fazer deploy de Ollama) · observabilidade · avaliação de Responsible AI e dataset de avaliação da triagem · walking skeleton |
 | **Guerra** | Identidade e segurança · API gateway · Security & Privacy assessment · simulador da API do Porto Digital (J4) |
-| **Tomás + Guerra** | Modelo de domínio, incluindo o platform admin (P4) |
+| **Tomás + Guerra** | Modelo de domínio, incluindo o FarolAdmin (P4), as *memberships* por evento e as equipas com permissões |
 | **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto · lista de NFRs |
 | **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos · estimativa de custos (salários + infraestrutura) |
 
@@ -34,7 +34,7 @@
 | # | Decisão | Estado |
 |---|---|---|
 | A1 | **Microserviços** como estado final. Cumprem o §6.2 sem ter de provar que os serviços seriam complexidade desnecessária, isolam falhas e dão contratos pequenos por serviço (base do Spec-Driven Development) | ✅ |
-| A2 | **5 serviços.** **Auth & Users** (authN, authZ, contas, papéis por evento, amigos: F1, F2, papéis do F4, F18) · **Events** (eventos, mapa e pontos de interesse, equipas de resposta, anúncios, check-in, entradas: F3, equipas do F4, F5, F10, F16, F17) · **Reports** (relatos comunitários e confirmação, pedidos de ajuda, backoffice, triagem IA com fallback: F6, F7, F8, F12, F13) · **Transports** (F9; fonte: Plataforma Urbana do Porto Digital (FIWARE, NGSI v2), aceite pelo professor a 21/10, com simulador sob o nosso controlo (J4); ADR-008) · **Badges** (F14, F15) | ✅ |
+| A2 | **5 serviços.** **Auth & Users** (authN, authZ, contas, papel global `FarolAdmin`, *memberships* por evento com o papel `EventAdmin` ou `RegularUser` e as equipas de cada membro, amigos: F1, F2, papéis e membros das equipas do F4, F18) · **Events** (eventos, mapa e pontos de interesse, equipas com as suas permissões e categorias de ajuda, anúncios, check-in, entradas: F3, equipas do F4, F5, F10, F16, F17) · **Reports** (relatos comunitários e confirmação, pedidos de ajuda, backoffice, triagem IA com fallback: F6, F7, F8, F12, F13) · **Transports** (F9; fonte: Plataforma Urbana do Porto Digital (FIWARE, NGSI v2), aceite pelo professor a 21/10, com simulador sob o nosso controlo (J4); ADR-008) · **Badges** (F14, F15) | ✅ |
 | A3 | Cada serviço é um **projeto Maven próprio** em `backend/<serviço>/`, no mesmo repositório; nenhum serviço depende do código de outro, só dos contratos (OpenAPI e eventos) | ✅ |
 | A4 | **Microserviços desde o início**: os 5 serviços são deployáveis de forma independente desde o Sprint A, sem fase de monólito. Não há percurso imposto: qualquer evolução tem de ser **motivada por evidência** (medições, testes, falhas), não pelo calendário, e fica registada num ADR (resposta do professor). Cumpre já o requisito do Sprint B de dois componentes backend com deploy independente (§6.2). Rejeitado: monólito modular nos Sprints A e B, dividido no C | ✅ |
 
@@ -57,7 +57,7 @@
 | C1 | **RabbitMQ**: gratuito; igual localmente, nos testes (Testcontainers) e na cloud; exchanges *topic* para pub-sub; DLQ com *dead-letter exchange*. Onde corre na cloud: depende da plataforma | ✅ (alojamento: 🔍 Tomás) |
 | C2 | **Spring AMQP** | ✅ |
 | C3 | **Tabela outbox** em cada serviço, publicada por um job de polling nosso. Consumidores idempotentes com tabela de mensagens processadas (`message_id`); após N tentativas, DLQ | ✅ (N e backoff: 🔍 Tiago) |
-| C4 | **Só eventos entre serviços.** Cada serviço guarda uma cópia local do que precisa de outro (ex.: o Reports guarda as equipas de resposta do Events). Custo aceite: consistência eventual | ✅ |
+| C4 | **Só eventos entre serviços.** Cada serviço guarda uma cópia local do que precisa de outro (ex.: o Reports guarda as equipas, as suas permissões e categorias de ajuda do Events; todos guardam as *memberships* e as equipas de cada membro do Auth & Users). Custo aceite: consistência eventual | ✅ |
 | C5 | **Polling** chega para o MVP (lista do backoffice, estado do pedido, anúncios). Uma instância por serviço por agora | ✅ |
 | C6 | API gateway (e onde ficam rate limiting e CORS) | 🔍 Guerra |
 | C7 | **Contract-first:** OpenAPI escrito à mão em `backend/<serviço>/contracts/openapi.yaml`; o `openapi-generator` gera interfaces e DTOs Spring e os clientes das apps. Caminhos com `/api/v1`. Base do [Spec-Driven Development](../Process/spec-driven-development.md) | ✅ |
@@ -80,7 +80,7 @@
 | # | Pergunta | Estado |
 |---|---|---|
 | E1 | Que IdP (mock, Keycloak, Entra External ID…)? Tem de encaixar no serviço Auth & Users (A2) | 🔍 Guerra |
-| E2 | Onde se valida o token e onde se verifica o papel por evento; o `PlatformAdmin` é papel global? | 🔍 Guerra |
+| E2 | Onde se valida o token e onde se verificam o papel e as permissões por evento. **Modelo de papéis definido a 22/10** pelo Tiago, a confirmar com a equipa ([`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026)): `FarolAdmin` é o único papel global e não dá acesso aos dados de nenhum evento; `EventAdmin` e `RegularUser` são papéis da *membership* de cada evento (o mesmo utilizador pode ser EventAdmin num evento e RegularUser noutro); os EventAdmins criam equipas e dão a cada uma permissões de uma lista fixa (`HelpRequests.Triage`, `HelpRequests.Respond`, `Reports.Review` por tipo de report, `Reports.Respond`, `Announcements.Publish`, `Map.Edit`, `Transport.Edit`, `Entrances.Update`). As *memberships* e as equipas de cada membro ficam no Auth & Users; as equipas e as suas permissões ficam no Events. **Falta decidir:** se o token leva as permissões por evento ou só a identidade, e onde se junta papel + equipas + permissões para cada pedido (gateway, cada serviço com cópia local, ou consulta ao Auth & Users) | 🔍 Guerra |
 | E3 | Autenticação entre serviços | 🔍 Guerra |
 | E4 | Onde ficam os segredos | 🔍 Guerra |
 | E5 | Security & Privacy assessment (entregável 9 do Sprint A) | 🔍 Guerra |
@@ -91,7 +91,7 @@
 |---|---|---|
 | F1 | **Duas aplicações:** web React simples para a gestão de eventos; mobile React Native para o resto | ✅ |
 | F2 | Alojamento da app web | 🔍 Tomás (deploy) |
-| F3 | Biblioteca do mapa do recinto (ADR-007), agora em React Native | 🔍 Tiago |
+| F3 | **Mapa do recinto ([ADR-007](adr/0007-venue-map-representation.md)):** na app mobile, **`react-native-svg`** para os marcadores dentro do zoom/pan do **`react-native-zoom-toolkit`** (sobre Gesture Handler e Reanimated); posições em coordenadas normalizadas (`MapPosition`); filtro por tipo (US-22) com estado React. Funciona em iOS e Android, com Expo e com React Native *bare*, por isso não depende do F4. Antes de implementar o mapa, um *spike* confirma o zoom-toolkit com o Gesture Handler 3 num iPhone e num Android reais; se falhar, o zoom/pan escreve-se diretamente com Gesture Handler e Reanimated. A app web usa só `<img>` com marcadores posicionados. **PDF convertido em imagem no upload**, no serviço Events, com Apache PDFBox (só PDFs de uma página; imagem com no máximo 4096 px no lado maior; guarda-se o original e a imagem). Onde ficam os ficheiros depende do G1 | ✅ |
 | F4 | Configuração do React Native (ex.: Expo ou não) e como a app mobile chega aos professores e à demo (§12) | 🔍 Bruno |
 
 ## G · Deploy e infraestrutura
@@ -99,7 +99,7 @@
 | # | Pergunta | Estado |
 |---|---|---|
 | G1 | Plataforma (Azure, ECS ou Vercel) e onde correm os contentores | 🔍 Tomás |
-| G2 | Custo e orçamento | 🔍 Tomás |
+| G2 | Custo da infraestrutura e orçamento (entra na estimativa de custos de operação do Bruno) | 🔍 Tomás |
 | G3 | Região (RGPD) | 🔍 Tomás |
 | G4 | Ambientes | 🔍 Tomás |
 | G5 | Infraestrutura como código | 🔍 Tomás |
@@ -155,10 +155,21 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 
 ## Próximos passos
 
-1. **Resposta do professor:** recebida. A4 e a fonte de transportes (A2, B2) fechados; este documento, o [`architecture.md`](architecture.md), os diagramas e os ADR-001 e ADR-008 atualizados.
-2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10; responsável: **Tomás**.
-3. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E), Tomás + Guerra (modelo de domínio, incluindo o P4), Tiago (J, F3 e backlog), Bruno (C8, D7, F4, H6, H7, H9).
-4. **Bruno:** diagramas C4 e 4+1 em draw.io a partir das decisões ✅.
-5. **Bruno: escrever os ADRs** já prontos (lista no [`architecture.md`](architecture.md) §13): ADR-002 (tecnologias), ADR-003 (dados), ADR-004 (comunicação) e ADR-009 (documentação). Os restantes escrevem-se quando a área fechar.
-6. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar (última atualização: 21/10).
-7. **Reunião com o professor (22/10)** ([ata](../Meetings/2026-10-22-professor-meeting.md)): nível 4 da vista física e os seus mapeamentos lógico–físico apagados; falta mostrar as cinco bases de dados no nível 3 físico (Bruno); x e y dos transportes (Tiago, J1 e D2). Estimativa de custos, salários + infraestrutura (Bruno); walking skeleton (Tomás); lista de NFRs (Tiago); simulador J4 (Guerra). **Sem responsável, ficam para o fim** ❗: apresentação, PDF com os documentos do Sprint A, lista de pressupostos e dependências.
+**Feito:**
+- Resposta do professor (21/10): A4 e a fonte de transportes (A2, B2) fechados; ADR-001 e ADR-008.
+- Diagramas C4 e 4+1 em draw.io e ADR-009 (Bruno). A 22/10 saíram o nível 4 da vista física e os seus mapeamentos lógico–físico.
+- ADR-002, ADR-003 e ADR-004 (Bruno) e ADR-007 (Tiago).
+
+**Em aberto, com responsável:**
+1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
+2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
+3. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.**
+4. **Transportes:** valores de x (intervalo do poll) e y (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). **Tiago.**
+5. **Estimativa de custos de operação:** salários + infraestrutura, simples; a parte de infraestrutura usa o G2 (Tomás). **Bruno.**
+6. **Lista de NFRs** para a apresentação. **Tiago.**
+7. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar. **Quem fecha a área.**
+
+**Sem responsável, ficam para o fim** ❗ (reunião com o professor, 22/10, [ata](../Meetings/2026-10-22-professor-meeting.md)):
+- Apresentação (deck) com as secções pedidas pelo professor.
+- PDF único com os documentos dos entregáveis do Sprint A.
+- Lista de pressupostos e dependências, juntada a partir dos outros documentos.
