@@ -19,6 +19,89 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Still to align (other documents)
 - The new role model is not yet in `personas.md` (PE-5, PE-6), `domain-model.md`, `architecture.md` or the architecture decisions guide (E2).
 
+## [Unreleased] · 2026-10-22 · Venue map library and ADR-007 (#44)
+
+**Why:** decisions guide F3 (venue map library, owner Tiago) was the last open item for the map (F5). The app is mainly mobile, the map is an uploaded image with no geo data (D1), and F4 (Expo or bare React Native) is still open, so the choice had to work on iOS and Android, with Expo and with bare React Native.
+
+### Decided
+- Mobile venue map: **`react-native-svg`** markers inside a **`react-native-zoom-toolkit`** zoom/pan container (Gesture Handler + Reanimated), normalised `MapPosition` coordinates, filtering by type with React state. Works on iOS and Android, with Expo and bare React Native.
+- A **spike on real iOS and Android devices** checks `react-native-zoom-toolkit` with Gesture Handler 3 before the map is built; if it fails, pan and zoom are written directly with Gesture Handler and Reanimated.
+- PDF maps (US-06) are **rendered to a PNG on upload** by the Events service with Apache PDFBox: single-page PDFs only, at most 4096 px on the long side; the original file and the rendered image are both kept.
+
+### Added
+- `Docs/Technical/adr/0007-venue-map-representation.md`: ADR-007 (Nygard format + *Alternatives considered*: WebView + Leaflet `CRS.Simple`, image-zoom components, `react-native-zoomable-view`, `react-native-maps`, Skia, PDF conversion on the device).
+
+### Changed
+- `architecture-decisions-guide.md`: F3 marked ✅ with the decision.
+- `architecture.md`: §12 venue map row filled in; §13 ADR-007 marked *Accepted* and linked.
+- `Docs/README.md`: ADR-007 added to the index.
+
+## [Unreleased] · 2026-10-21 · Architecture diagrams: level 4 split and view mappings (#39, Bruno Lopes)
+
+**Why:** review of the 4+1 diagrams. Legends added noise, separate personas at the top levels added nothing, and each level-4 diagram mixed several containers in one picture.
+
+### Added
+- Level 4 split into one diagram per container, in the logical, implementation and physical views: `*-level-4-mobile`, `-web`, `-reports` and `-transports`. The logical ones show the container's neighbours (personas, API gateway, database, RabbitMQ, AI provider or Porto Digital); the implementation ones show only what is inside. Transports gets its own components (bus import job, Porto Digital client) for the first time.
+- 14 view-mapping diagrams: `mapping-logical-implementation-level-{1,2,3,4-*}` and `mapping-logical-physical-level-{1,2,3,4-*}`. Each one copies the full logical diagram on the left and the full implementation or physical diagram of the same level on the right, with dashed arrows linking each logical element to its counterpart. External systems have no counterpart in the code.
+
+### Changed
+- Legends removed from every diagram.
+- Logical levels 1 and 2: the five personas become one **User**.
+- Physical level 1 shows only Farol, the AI provider and Porto Digital. Levels 2 and 3 show a **Mobile app** and a **Web app** node instead of a smartphone, a computer and static hosting.
+
+### Removed
+- `logical-view-level-4`, `implementation-view-level-4` and `physical-view-level-4` (replaced by the per-container diagrams).
+
+### Added (documentation decision)
+- `Docs/Technical/adr/0009-architecture-documentation.md`: C4 inside the 4+1 views without scenarios, four levels per view with one level-4 diagram per container, view mappings, draw.io `.drawio.svg` files (source and image in one), no legends.
+- `architecture.md` §14 links every diagram; §13 marks ADR-009 as accepted. `Docs/README.md` links the ADRs and the diagrams.
+
+## [Unreleased] · 2026-10-21 · Professor's answer: ADR-001 and ADR-008 (#39, Bruno Lopes)
+
+**Why:** the professor answered the email of 15 October. The Porto Digital urban platform (FIWARE NGSI v2 bus API) is accepted as the external integration, as long as the app handles unavailable, late and invalid data and the team keeps a simulator or recorded responses under its control. There is no imposed path: the architecture is defined from the start and any evolution is motivated by evidence, not by the calendar; Sprint B already requires two independently deployable backend components (§6.2). This closes guide A4 and the transport source (A2, B2).
+
+### Decided
+- **Microservices from Sprint A**; no modular-monolith phase. The ArchUnit test and the schema-per-module rule of that phase are dropped (guide A3, D2).
+- Transport source: **Porto Digital urban platform**; STCP GTFS and the weather plan B are dropped.
+- **Simulator of the Porto Digital API, or recorded real responses** (guide J4): for automated tests, the degraded-mode demo and presentation day. Form and tool still open, no owner.
+
+### Added
+- `Docs/Technical/adr/0001-architectural-style.md` and `0008-transport-data-source.md`.
+
+### Changed
+- `architecture-decisions-guide.md`: A2, A3, A4, B2 and D2 updated; *À espera do professor* becomes *Respostas do professor*.
+- `architecture.md` (§2, §3, §7, §11, §13), `features.md` (F9, §3, degraded mode D2), ADR-003, `README.md` and the meeting record of 8 October updated to match.
+- Diagrams (logical levels 1–3, physical levels 1–3, transport process views): the transport source is named Porto Digital (FIWARE NGSI v2), and the monolith note is replaced by "Each service is deployed on its own from Sprint A".
+
+## [Unreleased] · 2026-10-21 · Professor's answer: transport source and microservices from the start (#38, Bruno Lopes)
+
+**Why:** the professor answered the email of 15 October, and the team decided A4 from that answer. Summary in [`Docs/Meetings/2026-10-08-sprint-1-gap-review.md`](Docs/Meetings/2026-10-08-sprint-1-gap-review.md) (*Professor's answer and follow-up decisions, 21 October 2026*).
+
+### Decided
+- Transport source: **Porto Digital API** (FIWARE NGSI v2). The app must handle unavailability, delays and invalid data; an **API simulator or recorded responses** under our control is required (new guide item J4, no owner yet).
+- **Microservices from the start** (A4): the five services deploy independently from Sprint A; the modular-monolith phase is dropped. Any later evolution needs evidence, not the calendar.
+
+### Changed
+- `architecture-decisions-guide.md`: A2, A3, A4, B2, D2, new J4, *Resposta do professor* replaces *À espera do professor*, *Próximos passos*.
+- `architecture.md`: status, §2 context diagram, §3, §7, §9, §11, ADR list (ADR-001 and ADR-008 ready to write).
+- ADR-002: services with their own deployment from Sprint A; hosting cost from the start.
+- ADR-003: monolith-phase schema option removed; one database per service from Sprint A.
+- ADR-004: context and consequences for independent deployment; new decision 5, external sources read by a scheduled poll with a configurable base URL for the simulator.
+
+## [Unreleased] · 2026-10-16 · ADR-002, ADR-003 and ADR-004 (#38, Bruno Lopes)
+
+**Why:** the technology, data and communication decisions confirmed on 11 and 15 October lived only in the decisions guide. The assignment asks for them as Architecture Decision Records (§7.1.2, item 8).
+
+### Added
+- `Docs/Technical/adr/` in the Michael Nygard format plus *Alternatives considered* (guide B7):
+  - `0002-backend-and-frontend-technology.md`: Java 21, Spring Boot 4.x, Maven; React web app; React Native mobile app. Reason: the stacks the team already uses.
+  - `0003-database-and-data-ownership.md`: PostgreSQL only, one database per service, `event_id` filtering with an isolation test per service, Flyway with *expand and contract*.
+  - `0004-service-communication.md`: RabbitMQ with Spring AMQP, events only between services, outbox table, idempotent consumers, dead-letter queue, contract-first OpenAPI under `/api/v1`, polling.
+- Each ADR cites the guide ids it records and lists its open points with their owner. Alternatives come from the options in the old `architecture.md` §12; reviewers should confirm the reasons given.
+
+### Changed
+- `architecture.md` §13: ADR-002, 003 and 004 marked *Accepted* and linked. `Docs/README.md`: ADRs added to the index.
+
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 
 ### Changed

@@ -30,7 +30,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F6 | Help request | C6 | Must | 6 | P1 | Category and location marked on the map; location shared only with the request |
 | F7 | Incident backoffice | C7 | Must | 7 | P2, P5 | Receive, prioritise, route to a team and close help requests; live list and map; full status history. Members of a team with the *respond* permission get what is routed to their team on the phone and update its status (§4.3) |
 | F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Suggests category, priority and response team; the operator decides. Kept separate from F7 on purpose (see note below). See §5 |
-| F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **STCP GTFS feed** for regular lines (being validated; weather API as plan B, §3) plus event shuttles and temporary stops entered by the team |
+| F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **Porto Digital urban platform** (FIWARE NGSI v2): live positions of the city buses (§3), plus event shuttles and temporary stops entered by the team |
 | F10 | Live announcements, with last-update time | C4 | Must | 10 | P1, P3 | |
 | F11 | Weak-network mode: cached map and information, "data from HH:MM" | C10 | Could | — | P1 | Not one of the §6.8 degraded-mode scenarios (§3.1). Moved from Must to Could on 9 October 2026 |
 | F12 | Community reports on the map | — | Must (assignment §5.5) | 11 | P1 | Waze-style reports (queues, WC out of service, …). See §6 |
@@ -57,7 +57,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | §5.6 At least one AI-assisted workflow, with evaluation and baseline or fallback | F8: help-request triage | Decided; details open (§5.2) |
 | §6.1 Client application | Participant web app (PWA) and backoffice, both behind login | Decided |
 | §6.3 At least one asynchronous workflow | Help request → AI triage → notification of the event team (see [`architecture.md`](../Technical/architecture.md)) | **[PROPOSED]** |
-| §6.5 Integration with at least one external system or realistic simulator | **STCP GTFS feed** (F9). **Plan B:** a weather API (e.g. IPMA open data) for the event nights, only if the GTFS feed is not usable | Decided; GTFS being validated |
+| §6.5 Integration with at least one external system or realistic simulator | **Porto Digital urban platform**, FIWARE NGSI v2 bus API (F9; accepted by the professor, [ADR-008](../Technical/adr/0008-transport-data-source.md)) | Decided |
 | §6.6 Authentication and authorisation | F1 login for every user; F2 account and consent; F4 per-event roles and team permissions (§4); audit records for help requests (domain model I5) | Decided; mocked authentication allowed for the MVP |
 | §6.8 At least one degraded-mode scenario | **D1** AI unavailable and **D2** transport source unavailable (§3.1) | Decided |
 
@@ -83,14 +83,14 @@ Two scenarios, no more. Both are demoed by switching off one dependency while th
 
 | | |
 |---|---|
-| **Dependency** | STCP GTFS feed (or the weather API, if plan B is used) |
-| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit **[PROPOSED: 24 h for the static timetable]** |
+| **Dependency** | Porto Digital urban platform (FIWARE NGSI v2 bus API) |
+| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit **[PENDING]** (Tiago, guide J) |
 | **What the participant sees** | The **last valid data**, with *"Data from HH:MM"* and a warning *"Live transport information unavailable"*, plus a link to the operator's website. **Event shuttles and temporary stops entered by the team are not affected**: they are internal data |
 | **What the team sees** | A warning in the backoffice that the transport source is down, with the time of the last successful import |
 | **Invalid data** | Never replaces valid data: the import is rejected as a whole and the previous version stays in use |
 | **Recovery** | Import retried with backoff; the warning disappears after the first valid import |
-| **How it is demoed** | Point the feed URL at an unreachable address (or upload a broken file) and open the transport screen |
-| **Test** | Automated test with the source stopped: the last data and the warning are shown (US-42, US-43) |
+| **How it is demoed** | Point Transports at the team's simulator of the Porto Digital API (or recorded real responses, guide J4) and make it fail, answer late or return invalid data, then open the transport screen |
+| **Test** | Automated tests against the simulator (source stopped, late, invalid data): the last data and the warning are shown (US-42, US-43) |
 
 ## 4. Roles, teams and permissions (22 October 2026)
 
