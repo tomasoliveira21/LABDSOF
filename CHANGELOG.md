@@ -13,6 +13,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Proposed (to confirm with the team)
 - `features.md` §8: sprint goals for Sprints B and C, initial release plan (R0 walking skeleton, R1 vertical slice, R2 MVP), the Sprint C cut line, the story-to-issue table and the dependencies that still block *Ready*. Replaces the backlog GAP note.
+- Justifications: `features.md` §7.1 explains each story split, the new numbers (5 reports in 10 minutes, ≤ 5 s to the responder), the rewritten criteria and the issue type of each story; §8.5 explains the Sprint B goal (mapped to every §7.2.2 deliverable), its capacity and risks, why US-14 is in Sprint B and US-02 in Sprint C, the Sprint C cut order and why the walking skeleton comes first.
 
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 

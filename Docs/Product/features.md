@@ -240,6 +240,41 @@ Rewritten on 9 October 2026 to match the feature list above, and checked against
 | AI fallback | US-11 did not say what happens when the AI fails | *AI fallback* line pointing to US-12 (scenario D1) |
 | On the board | No story had an issue | Issues to create from the user-story form (§8.3), once the team confirms this plan |
 
+#### Why the stories were split
+
+The DoR page says a story that needs more than one PR is too big and must be split. Each split below also separates an open dependency from work that can start now.
+
+| New story | Split from | Why it is a separate story |
+|---|---|---|
+| **US-29** · Delete my account | US-02 | (1) It depends on account deletion (guide D7, still open with Bruno); inside US-02 it would block sign-up behind that decision. (2) It deletes badges, which only exist from US-20 in Sprint C. (3) Deleting an account touches every service that holds personal data (Auth & Users, Reports, Badges), so it needs its own events and its own tests for the right to erasure (GDPR). Sign-up and profile editing touch only Auth & Users |
+| **US-27** · Send a report to a responder | US-19 | (1) It needs the responder's phone view (US-26) and the `Responder` role, which the team has not confirmed yet (PE-6). (2) Confirm, reject and unconfirm work from the control room alone, so US-19 delivers value without it. (3) It is a different flow, with two personas (P2 sends, P5 checks or fixes), like the help-request dispatch |
+| **US-28** · Transfer the Owner role, suspend an event | US-25 | (1) Creating an event is the first step of every journey and must be in Sprint B; transferring the Owner and suspending an event are exception flows, only needed when an owner leaves or an event is misused. (2) Each has its own audit and authorisation tests. (3) Until it is built, the platform admin (an internal user, P4) can do both by hand |
+
+**US-01's QR-code criterion moved to US-03.** The QR code is created when the Owner publishes the event (US-03). Left in US-01, it made login depend on event management.
+
+#### Why these numbers **[PROPOSED]**
+
+| Number | Story | Why |
+|---|---|---|
+| **5 reports in 10 minutes** per account | US-18 | A participant can see several problems at once (a queue, a broken WC, broken glass), so 5 allows a real burst. More than that in 10 minutes looks like spam or badge farming, which §6.4 must prevent. Reports expire after 20–60 minutes (§6.1), so 10 minutes is shorter than any expiry. It is a setting, to tune with real data |
+| **≤ 5 s** until a dispatched request appears on the responder's phone | US-26 | Same target as SC2 for the control room: the responder is on the critical path of a help request. With polling (guide C5) it needs a refresh every 2–3 s on the open screen, which one instance per service can serve at the expected load |
+
+#### Why these criteria were rewritten
+
+| Story | Before | After | Why |
+|---|---|---|---|
+| US-08 (no network) | "shows the nearest first-aid point" | Says the request was not sent, lets the participant send it again, and shows the first-aid points if the map is already loaded | Finding the nearest point offline needs the cached map, which is F11 (Could). A Must story cannot depend on a Could. The new criterion can be tested with the map in memory |
+| US-10 (routing) | "its responders get an alert on their phone" | The request appears in the team's responder list (US-26) | Push notifications were never decided; the team decided polling (guide C5). The phone side belongs to US-26, so US-10 stops where the operator's work ends. A criterion for *close* was also missing |
+| US-14 (transport) | "next departures" from the STCP feed | "next buses at the stops near the venue", from whatever source is chosen | The source is waiting for the professor (Porto Digital FIWARE or another). FIWARE gives buses in circulation, not timetables, so the old criterion could fail whichever source is chosen |
+
+#### Issue type of each story
+
+README §1 allows four issue types. Rule used in §8.3, from the two-app decision (guide F1):
+
+- **[Front Office]**: the participant's mobile app (P1).
+- **[Back Office]**: the event team's work: event management on the web (P3, P4) and the backoffice of operators and responders (P2, P5). The responder works on the phone, but in the backoffice field view (personas, P5), not in the participant app.
+- **[Technicians]**: technical work with no single user screen: login (US-01, used by both apps), isolation between events (US-04, a test in every service) and the walking skeleton.
+
 ### F1 · Login and logout
 
 **US-01** · As a **user** (participant or team member), I want to log in and log out, so that only I can use my account.
@@ -465,9 +500,7 @@ Every merge to `main` is deployed (continuous deployment, guide H5). A *release*
 | **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must: US-02, US-29, US-28, US-07, US-13, US-15, US-16, US-18, US-19, US-27, US-20 (scenario D2, engagement mechanism). Should US-22 and US-21 if there is time | §7.3.2 items 1–2, 8 |
 | **Later** (product roadmap) | After the course | Could: US-17, US-23, US-24. Won't: F19, F20 | §7.3.2 item 13 |
 
-**Cut line for Sprint C.** Sprint C is four weeks and also holds the evaluation, hardening and presentation deliverables. If it runs short, drop in this order: US-21 and US-22 (Should), then US-27, US-07 and US-28. US-02 and US-29 stay because of personal data (consent, deletion).
-
-**Why US-14 is in Sprint B:** Sprint B must already have an *initial external-system integration* (§7.2.2, item 7). **Why US-02 is in Sprint C:** mocked authentication with seeded accounts is enough for the slice (§6.6).
+**Cut line for Sprint C.** If Sprint C runs short, drop in this order: US-21 and US-22, then US-27, US-07 and US-28 (reasons in §8.5).
 
 ### 8.3 Stories on the board
 
@@ -512,7 +545,7 @@ These dependencies are open on 16 October 2026. A story that needs one stays in 
 
 | Open dependency | Owner | Blocks |
 |---|---|---|
-| Walking skeleton (R0) | No owner yet | Every story (first to be built) |
+| Walking skeleton (R0), which needs the deployment platform (guide G1, Tomás) | To assign at the Sprint B planning | Every story (first to be built) |
 | Identity provider (guide E1) and global `PlatformAdmin` role (E2) | Guerra | US-01, US-25 |
 | P4 and who creates events (personas PE-5) | Team | US-25, US-28 |
 | `Responder` role (personas PE-6) | Team | US-05, US-26, US-27 |
@@ -522,3 +555,76 @@ These dependencies are open on 16 October 2026. A story that needs one stays in 
 | Resilience values (guide J1, #43) | Tiago | US-15 |
 | Report types and expiry times (§6.1) | Team | US-18 |
 | Account deletion (guide D7) | Bruno | US-29 |
+
+### 8.5 Why this plan
+
+#### Why this Sprint B goal
+
+Assignment §7.2.1 asks Sprint B for *"an operational end-to-end version of the product's most important user journey"*. That journey is the help request:
+
+- the report's scope mitigation puts help requests first (*"prioritise help requests, the map and transport information in the MVP"*, report §5), and F6–F8 are the first features after the foundations (rank 6–8, §2);
+- W2 + W3 is journey 1 in [`user-workflows.md`](user-workflows.md), and it is already drawn end to end in BPMN;
+- it holds the riskiest parts of the product: the AI workflow (§5.6), the asynchronous workflow (§6.3) and isolation between events (report §5). Building them in Sprint B leaves Sprint C for evaluating them.
+
+The goal also covers every Sprint B deliverable of §7.2.2:
+
+| §7.2.2 deliverable | Covered by |
+|---|---|
+| 1 · Functional client application | US-08 (mobile app), US-25 and US-03 (web app) |
+| 2 · Authentication and authorisation | US-01, US-04, US-05 |
+| 3 · Persistent data storage | Every story (PostgreSQL, one database per service, guide D1–D2) |
+| 4 · Documented API contracts | OpenAPI written first for each story (contract-first, guide C7) |
+| 5 · At least two backend components | Auth & Users, Events, Reports and Transports (guide A2) |
+| 6 · One asynchronous workflow | Help request → AI triage → backoffice (US-08, US-11; §3, row §6.3) |
+| 7 · Initial external-system integration | US-14 |
+| 8 · First version of the AI capability | US-11 |
+| 9 · Non-AI baseline or fallback | US-12 |
+| 10 · Automated tests | DoD, Level 2, on every story |
+| 11 · CI/CD pipeline | R0, walking skeleton |
+| 12 · Structured logs, health checks, initial metrics | R0 (health check); DoD Level 2 (logs with correlation ID); US-12 (fallback-rate metric) |
+| 13 · Demonstration of a failure condition | Scenario D1 (US-12) |
+| 14 · Updated backlog and architecture documentation | This section, updated at each planning |
+
+#### Why these stories in Sprint B, and whether it is realistic
+
+Every Sprint B story is either a step of the journey or something it needs first: US-01 → US-25 → US-03 → US-05 → US-06 → US-08 → US-09 → US-10 → US-26, plus US-04 (isolation, a top technical risk and SC8), US-11 and US-12 (AI and its fallback) and US-14 (deliverable 7). Nothing in Sprint B is there for convenience, so Sprint B has no cut line.
+
+**Capacity:** 13 stories and the walking skeleton, in 5 weeks, for 4 people: about 3–4 stories per person, less than one per person per week. Several are small: US-03 (edit, publish, close), US-04 (one test pattern repeated in each service) and US-12 (the backoffice without the AI suggestion). The largest are US-08 and US-09 (first use of the map and of polling) and US-11 (AI).
+
+**Risks and what happens if they occur:**
+
+| Risk | Plan |
+|---|---|
+| A blocker in §8.4 is not closed by 2 November | The stories that need it stay in *Backlog*; the team starts with the stories it does not block (US-04, US-03, US-05) |
+| The team rejects the `Responder` role (PE-6) | US-26 leaves the plan; the journey ends at US-10, with the operator handling the request from the control room |
+| The professor's answer on the transport source comes late | US-14 starts with plan B, the weather API (§3), so deliverable 7 is still met |
+
+#### Why US-14 is in Sprint B and US-15 in Sprint C
+
+Sprint B must already have an *initial external-system integration* (§7.2.2, item 7), so US-14 is in Sprint B. Sprint B needs only **one** failure condition (§7.2.2, item 13), and D1 covers it. The *resilience and degraded-mode demonstration* is a Sprint C deliverable (§7.3.2, item 8), where D2 is the second scenario. US-15 also needs US-13, so that event shuttles stay on screen when the source is down.
+
+#### Why US-02 is in Sprint C
+
+- Mocked authentication is allowed for the MVP (assignment §6.6, footnote 1), so seeded test accounts are enough for the help-request journey.
+- Sign-up is not a step of that journey.
+- The terms and consent text should follow the Security & Privacy assessment (guide E5, Guerra), which is not done yet.
+- US-02 and US-29 both handle personal data, so they are built and tested together.
+
+#### Why this cut order in Sprint C
+
+Sprint C is four weeks long, includes Christmas, and also holds the evaluation, accessibility, security, performance and presentation deliverables (§7.3.2). If the stories do not fit, they are dropped in this order:
+
+1. **US-21 and US-22**: Should (MoSCoW). The engagement mechanism (§5.5) is already complete with the two Must badge tracks (F14).
+2. **US-27** **[PROPOSED]**: reports can still be confirmed and rejected from the control room (US-19).
+3. **US-07**: a convenience. The map already shows every point with its icon (US-06).
+4. **US-28**: an exception flow. The platform admin is an internal user and can transfer an Owner or suspend an event by hand for the demo.
+
+**Never cut:**
+- **US-02 and US-29**: personal data (consent and the right to erasure), checked in the security review (§7.3.2, item 6).
+- **US-13 and US-15**: scenario D2 (§7.3.2, item 8).
+- **US-16**: the answer to root cause 2, static communication (§1).
+- **US-18, US-19 and US-20**: the engagement mechanism, which the assignment requires (§5.5).
+
+#### Why the walking skeleton comes first
+
+It is a Sprint A deliverable (§7.1.2, item 10) that still has no owner. DoD Level 2 asks for every story to be *deployed through the pipeline*, so no story can be *Done* before the skeleton exists. One week is enough for one endpoint, one test, a Dockerfile and the pipeline, because the CI/CD choices are decided (guide H1–H5). It needs the deployment platform (guide G1, Tomás) first. **Owner:** to assign at the Sprint B planning.
