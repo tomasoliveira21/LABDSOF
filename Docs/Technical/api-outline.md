@@ -50,9 +50,26 @@
 
 Stories: US-01 to US-05, US-08, US-12, US-15, US-18.
 
+Owns accounts, the `FarolAdmin` grant, memberships of events and team assignments. Keeps local copies of the events (status, name) and their teams (`EventChanged`, `TeamChanged`).
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
-| | | _To fill in (step 3)_ | | |
+| — | _identity provider_ | Log in and log out happen in Keycloak; the apps send its token on every call (§1.4) | — | US-01, US-02 |
+| `GET` | `/me` | My account: name, e-mail and global roles (`FarolAdmin`), so the apps know what to show | Authenticated | US-01 |
+| `GET` | `/me/memberships` | The events I am a member of, with my role, my teams and each event's name and status | Authenticated | US-01 |
+| `POST` | `/accounts` | Sign up; refused without `termsAccepted` or if the e-mail is already used. Whether sign-up runs here or in Keycloak depends on guide E1 (Guerra) | Public | US-03 |
+| `PATCH` | `/me` | Change my display name. The password changes in Keycloak | Authenticated | US-04 |
+| `DELETE` | `/me` | Delete my account; `422` if I am the last EventAdmin of an event. Details in the account-deletion issue (guide D7) | Authenticated | US-05 |
+| `GET` | `/accounts?email=` | Find the account to name as EventAdmin | FarolAdmin | US-06, US-08 |
+| `POST` | `/events/{eventId}/members` | Name a user EventAdmin of an event (`{ userId, role: EventAdmin }`); recorded with who and when | FarolAdmin | US-08 |
+| `POST` | `/events/{eventId}/members/me` | Join the event as RegularUser (QR code or link); `404` if the event is not published in the local copy | Authenticated | US-12 |
+| `GET` | `/events/{eventId}/members` | List the event's members with role and teams; filters `role`, `teamId` | EventAdmin | US-15, US-18 |
+| `PATCH` | `/events/{eventId}/members/{userId}` | Make a member EventAdmin or RegularUser (`{ role }`); `422` for the last EventAdmin; recorded with who and when | EventAdmin | US-15 |
+| `PUT` | `/events/{eventId}/members/{userId}/teams/{teamId}` | Add a member to a team; `404` if the user is not a member or the team is not in the local copy | EventAdmin | US-18 |
+| `DELETE` | `/events/{eventId}/members/{userId}/teams/{teamId}` | Remove a member from a team | EventAdmin | US-18 |
+
+- The first EventAdmin of a new event (US-06) is not created through this API: Auth & Users creates the membership when it consumes `EventChanged` with the `firstEventAdminUserId` (§3). **[PROPOSED]**, to confirm with Tomás and Guerra.
+- Publishes `MembershipChanged`, `GlobalRoleChanged` and, for account deletion, `UserDeleted` (§7).
 
 ## 3. Events
 
