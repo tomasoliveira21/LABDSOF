@@ -252,8 +252,8 @@ Owns the event's transport options (shuttles and external bus routes), their dep
 | `DELETE` | `/events/{eventId}/transport-options/{optionId}` | Remove it | `Transport.Edit` | US-37 |
 | `POST` | `/events/{eventId}/transport-options/{optionId}/delay` | Mark a shuttle delayed (`{ delayMinutes, note }`); `0` clears it; stored with the time of the change | `Transport.Edit` | US-38 |
 | `POST` | `/events/{eventId}/transport-options/{optionId}/cancel` | Mark a shuttle cancelled | `Transport.Edit` | US-38 |
-| `GET` | `/events/{eventId}/bus-observations` | Latest bus positions on the event's external routes, with `dataFrom` (time of the data) and `stale: true` when the source is down or the data is older than the freshness limit | Member | US-41, US-42 |
-| `GET` | `/events/{eventId}/transport-source-status` | Whether the Porto Digital source is available, and the time of the last valid import, for the backoffice warning | EventAdmin, `Transport.Edit` | US-43 |
+| `GET` | `/events/{eventId}/bus-observations` | Latest bus positions on the event's external routes, with `dataFrom` (time of the data) and `stale: true` when the source is down or the data is older than the freshness limit | Member | US-40, US-41, US-42 |
+| `GET` | `/events/{eventId}/transport-source-status` | Whether the Porto Digital source is available, and the time of the last valid import, for the backoffice warning | EventAdmin, `Transport.Edit` | US-40, US-43 |
 
 - The import from Porto Digital (US-40) is a scheduled job inside Transports, with a timeout and validation; it is never called inside a user's request, and there is no endpoint for it. An invalid import is rejected as a whole and the previous data stays.
 - Shuttles are internal data: they are shown even when the source is down (scenario D2).
@@ -313,7 +313,7 @@ Every payload also carries `version` (§7.3). `eventId` is in the envelope.
 
 | Event · routing key | Producer | Consumers (why) | Payload |
 |---|---|---|---|
-| `MembershipChanged` · `membership.changed` | Auth & Users | **Events**, **Reports**, **Transports**: decide who may call each endpoint of an event (role and teams, §1.5); Events also lists each event's EventAdmins (US-07) | `userId`, `role` (`EventAdmin` \| `RegularUser`), `status` (`Active` \| `Removed`), `teamIds` |
+| `MembershipChanged` · `membership.changed` | Auth & Users | **Events**, **Reports**, **Transports**: decide who may call each endpoint of an event (role and teams, §1.5) and refuse non-members (US-14); Events also lists each event's EventAdmins (US-07) | `userId`, `role` (`EventAdmin` \| `RegularUser`), `status` (`Active` \| `Removed`), `teamIds` |
 | `GlobalRoleChanged` · `global-role.changed` | Auth & Users | **Events**: only the FarolAdmin creates, lists, suspends and reactivates events (US-06, US-07, US-09) | `userId`, `role` (`FarolAdmin`), `granted` |
 | `UserProfileChanged` · `user-profile.changed` **[PROPOSED]** | Auth & Users | **Reports**: the name of who accepted a field task, in the backoffice; **Events**: the names of the EventAdmins (US-07). Without it, both show only the `userId` | `userId`, `displayName` |
 | `UserDeleted` · `user.deleted` | Auth & Users | Every service that keeps personal data. Name reserved; defined in the account-deletion issue (guide D7) | — |
@@ -349,11 +349,73 @@ Each queue has its dead-letter queue (`<queue>.dlq`); retries and backoff follow
 
 ## 8. Coverage
 
-Every Must and Should story has at least one endpoint or event.
+Every Must and Should story (US-01 to US-58, except the Could US-46) has at least one endpoint or event. `…/` stands for `/api/v1/events/{eventId}/`; the other paths start with `/api/v1`.
 
-| Story | Endpoint or event |
-|---|---|
-| | _To fill in (step 5)_ |
+| Story | Endpoints | Events |
+|---|---|---|
+| US-01 | Keycloak (§1.4), `GET /me`, `GET /me/memberships` | — |
+| US-02 | Keycloak (§1.4) | — |
+| US-03 | `POST /accounts` | — |
+| US-04 | `PATCH /me` | — |
+| US-05 | `DELETE /me` | — |
+| US-06 | `GET /accounts`, `POST /events` | `GlobalRoleChanged`, `EventChanged` |
+| US-07 | `GET /events` | `MembershipChanged`, `GlobalRoleChanged`, `UserProfileChanged` |
+| US-08 | `GET /accounts`, `POST …/members` | — |
+| US-09 | `POST …/suspend`, `POST …/reactivate` | `GlobalRoleChanged`, `EventChanged` |
+| US-10 | `GET /events/{eventId}`, `PATCH /events/{eventId}` | — |
+| US-11 | `GET /events/{eventId}`, `POST …/publish` | — |
+| US-12 | `POST …/members/me`, `GET /events/{eventId}` | `EventChanged` |
+| US-13 | `POST …/close` | `EventChanged` |
+| US-14 | — | `MembershipChanged` |
+| US-15 | `GET …/members`, `PATCH …/members/{userId}` | — |
+| US-16 | `GET …/teams`, `POST …/teams`, `PATCH …/teams/{teamId}`, `DELETE …/teams/{teamId}` | `TeamChanged` |
+| US-17 | `PATCH …/teams/{teamId}`, `PUT …/teams/{teamId}/permissions` | — |
+| US-18 | `GET …/members`, `PUT …/members/{userId}/teams/{teamId}`, `DELETE …/members/{userId}/teams/{teamId}` | `TeamChanged` |
+| US-19 | `POST …/map-versions` | — |
+| US-20 | `POST …/map-versions/{version}/points-of-interest`, `PATCH …/map-versions/{version}/points-of-interest/{poiId}`, `DELETE …/map-versions/{version}/points-of-interest/{poiId}` | — |
+| US-21 | `GET …/map-versions/current`, `GET …/map-versions/{version}/image` | — |
+| US-22 | `GET …/map-versions/current` | — |
+| US-23 | `POST …/help-requests` | `VenueMapVersionPublished` |
+| US-24 | `GET …/help-requests`, `GET …/help-requests/{requestId}` | — |
+| US-25 | `POST …/help-requests` | — |
+| US-26 | `GET …/help-requests` | — |
+| US-27 | `GET …/map-versions/{version}`, `GET …/help-requests` | — |
+| US-28 | `PATCH …/help-requests/{requestId}`, `POST …/help-requests/{requestId}/acknowledge`, `GET …/help-requests/{requestId}/history` | — |
+| US-29 | `GET …/teams`, `GET …/help-requests/{requestId}`, `POST …/help-requests/{requestId}/route` | `TeamChanged` |
+| US-30 | `POST …/help-requests/{requestId}/close` | — |
+| US-31 | `GET …/help-requests`, `GET …/field-tasks` | — |
+| US-32 | `POST …/field-tasks/{taskId}/accept` | — |
+| US-33 | `POST …/field-tasks/{taskId}/resolve` | — |
+| US-34 | `GET …/help-requests/{requestId}` | `TeamChanged`, `HelpRequestSubmitted` |
+| US-35 | `POST …/help-requests/{requestId}/accept-suggestion` | — |
+| US-36 | `GET …/triage-status` | — |
+| US-37 | `POST …/map-versions/{version}/points-of-interest`, `POST …/transport-options`, `PATCH …/transport-options/{optionId}`, `DELETE …/transport-options/{optionId}` | `TeamChanged`, `PointOfInterestChanged` |
+| US-38 | `POST …/transport-options/{optionId}/delay`, `POST …/transport-options/{optionId}/cancel` | — |
+| US-39 | `GET …/transport-options` | `PointOfInterestChanged` |
+| US-40 | `GET …/bus-observations`, `GET …/transport-source-status` | — |
+| US-41 | `POST …/transport-options`, `GET …/bus-observations` | — |
+| US-42 | `GET …/bus-observations` | — |
+| US-43 | `GET …/transport-source-status` | — |
+| US-44 | `GET …/announcements`, `POST …/announcements` | — |
+| US-45 | `GET …/announcements`, `PATCH …/announcements/{announcementId}`, `DELETE …/announcements/{announcementId}` | — |
+| US-47 | `POST …/reports`, `GET …/reports` | `VenueMapVersionPublished` |
+| US-48 | `POST …/reports` | — |
+| US-49 | `GET …/reports` | — |
+| US-50 | `GET …/reports`, `POST …/reports/{reportId}/confirm`, `POST …/reports/{reportId}/reject` | — |
+| US-51 | `POST …/reports/{reportId}/unconfirm` | — |
+| US-52 | `GET …/teams`, `POST …/reports/{reportId}/dispatch`, `GET …/field-tasks`, `POST …/field-tasks/{taskId}/answer` | — |
+| US-53 | `POST …/reports/{reportId}/dispatch`, `POST …/field-tasks/{taskId}/resolve` | — |
+| US-54 | `GET /me/badges` | `ReportConfirmed`, `ReportUnconfirmed` |
+| US-55 | `GET /me/badges` | `EventChanged`, `ReportConfirmed`, `ReportUnconfirmed` |
+| US-56 | `GET /me/badges/preferences`, `PUT /me/badges/preferences`, `GET /users/{userId}/badges` | — |
+| US-57 | `GET /me/badges` | `CheckInRecorded` |
+| US-58 | `POST …/check-ins/me` | — |
+
+- **US-14** (isolation) is also covered by the conventions: `{eventId}` in every event path (§1.2), the per-event check from local copies (§1.5) and `404` for non-members (§1.7). The integration test per service is in guide D3.
+- **US-25** (request not sent) is mostly in the app; the API only makes the resend safe with `clientRequestId`.
+- **US-40** (import) is a scheduled job inside Transports with no endpoint of its own; its result is what the two endpoints return.
+
+**No service calls another's REST API** (guide C4): every row in §7.4 is a message on RabbitMQ, every consumer in §7.5 reads from its own queue, and each "Requires" column is checked against a local copy. The only outbound HTTP call is Transports → Porto Digital, an external system, from a scheduled job (§5).
 
 ## 9. Future (Could) and open points
 
