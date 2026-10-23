@@ -427,4 +427,23 @@ Every Must and Should story (US-01 to US-58, except the Could US-46) has at leas
 
 ### 9.2 Open points
 
-_To fill in as the outline is reviewed._
+Items marked **[PROPOSED]** above, and the decisions of other owners the outline depends on. When one is decided, this list and the item above are updated.
+
+| Point | Where | Waits for |
+|---|---|---|
+| Path routing in the gateway (`/me/badges/**` to Badges before `/me/**` to Auth & Users; `/events/*/members/**` to Auth & Users, `/events/*/teams/**` to Events) | §1.2 | Guide C6 (Guerra) |
+| Sign-up in Auth & Users or in Keycloak; no `/login` or `/logout` | §1.4, §2 | Guide E1 (Guerra) |
+| Roles and teams reach each service as local copies (`MembershipChanged`, `TeamChanged`), not as token claims | §1.5 | Guide E2 (Guerra) |
+| `GET /accounts?email=` for the FarolAdmin to find who to name EventAdmin | §2 | Guerra (privacy) |
+| First EventAdmin created by Auth & Users when it consumes `EventChanged` | §2, §7.4 | Tomás and Guerra |
+| `UserProfileChanged`, to show names instead of `userId`s | §7.4 | Tomás and Guerra |
+| Badge preferences in Badges instead of Auth & Users (`EngagementPreferences`) | §6 | Tomás and Guerra |
+| Where another user's badges are shown | §6 | Tiago (backlog) |
+| A new map version starts with the previous version's points | §3 | Team |
+| Map files in a volume of the Events service | §3 | Team (ADR-011) |
+| Venue check-in code different from the join link | §3 | Team |
+| `Transport.Edit` may place transport-stop points | §3, §5 | Tiago |
+| US-41 shows buses on their way, not timetables (Porto Digital has none); it still says STCP | §5 | Tiago |
+| Help-request statuses and who marks *Seen*; field-task purposes and `/answer` | §4 | Tiago |
+| `limit` and `cursor` for the other lists | §1.6 | Team |
+| Priority scale | §4.1 | `features.md` §5.2, AI-3 |

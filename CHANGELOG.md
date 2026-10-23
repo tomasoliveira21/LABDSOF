@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · API outline and event catalogue (#123, Bruno Lopes)
+
+**Why:** Sprint A deliverable 7 (assignment §7.1.2; guide C8). The team needs an agreed outline of each service's REST endpoints and of the events between services before writing the OpenAPI contracts and the stories (guide C7).
+
+### Added
+- `Docs/Technical/api-outline.md`: conventions (resource paths under `/api/v1` with `{eventId}`, state changes as `POST /{id}/<action>`, `updatedSince` polling, Problem Details errors, per-event authorisation from local copies); endpoints of Auth & Users, Events, Reports, Transports and Badges with the role or permission and the story; request and response fields of the core flow (help request, triage, field tasks); event catalogue (envelope, one topic exchange per producer, full-state payloads with a version, 12 events with producer, consumers and why, queue bindings); coverage matrix of the Must and Should stories; Could features and open points.
+
+### Changed
+- `architecture-decisions-guide.md`: C8 decided (✅, #123); status date; *Próximos passos*.
+- `architecture.md`: §5 links the outline; the §13 gap now covers only the walking skeleton.
+- `Docs/README.md`: outline added to the index.
+
+### Not changed
+- `domain-model.md`: `EngagementPreferences` stays in Auth & Users until the team accepts moving it to Badges (outline §6, §9.2).
+- `features.md`: US-41 still says STCP; left to its owner (Tiago).
+
 ## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
 
 **Why:** the stories in `features.md` §7 are now GitHub issues, so the backlog can be planned and tracked (assignment §8.2, DoR item "has a GitHub issue").
