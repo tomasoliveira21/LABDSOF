@@ -2,6 +2,17 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · Versioning and release tags (#127, Bruno Lopes)
+
+**Why:** close guide H7 so the pipeline (ADR-010) and the local delivery (ADR-011) know which version a build is and how to go back to an earlier one.
+
+### Changed
+- `architecture-decisions-guide.md`: H7 ✅. One SemVer version for the monorepo, annotated tag `vX.Y.Z` on `main`, images `farol-<service>:X.Y.Z` (other builds `dev`); 0.x during the sprints (`v0.1.0` Sprint A, `v0.2.0` Sprint B, `v1.0.0` Sprint C), PATCH only to fix a release already demonstrated; git tags only, no registry and no GitHub Releases; release notes in this CHANGELOG. *Próximos passos*: H7 moved to done; status date 23 October.
+- `architecture.md`: versioning in §10 and §12; ADR-010 row in §13 says it includes versioning.
+
+### Not changed
+- No new ADR: versioning goes into ADR-010 (CI/CD), still to be written. H6 stays open, although with no registry there are no images to publish.
+
 ## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
 
 **Why:** the stories in `features.md` §7 are now GitHub issues, so the backlog can be planned and tracked (assignment §8.2, DoR item "has a GitHub issue").

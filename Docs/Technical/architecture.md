@@ -171,6 +171,7 @@ Preserved requirements and limits:
 - **One instance per service** initially; independent images and service replacement still demonstrate the microservice boundaries.
 - **Multi-stage Dockerfiles**, Maven, Java 21 and Spring Boot 4.x; **GitHub Actions** checks every service on every PR/merge/tag.
 - The earlier automatic-deploy-to-cloud-production promise is superseded for this delivery scope. Bruno defines reproducible local startup/update and smoke-test handoff; cloud credentials/ACR/provisioning are not prerequisites.
+- **Versioning (guide H7):** one **SemVer** version for the whole monorepo, set by an annotated git tag `vX.Y.Z` on `main`; every service image and the web app get the same version without the `v` (`farol-<service>:0.2.0`), other builds are `dev`. One MINOR release at the end of each sprint (`v0.1.0` Sprint A, `v0.2.0` Sprint B, `v1.0.0` Sprint C), PATCH only to fix a release already demonstrated. Git tags only: no registry and no GitHub Releases; images are built from the tag, rolling back means building the previous tag, and release notes go in the `CHANGELOG.md`.
 - **Flyway** migrations remain compatible with the previous application image (*expand and contract*); rolling back code does not undo database migrations.
 - Local metrics/traces/logs and degraded-mode/integration tests still provide evidence. No cloud HA, managed scaling or cloud recovery result is claimed.
 - Persistent local volumes are not a backup or a guarantee against host/disk loss. Backup scope and observed recovery limits remain explicit.
@@ -192,6 +193,7 @@ Preserved requirements and limits:
 | Live updates | **Polling** |
 | API | Contract-first **OpenAPI**, `/api/v1` |
 | CI/CD | **GitHub Actions**, monorepo, private repository |
+| Versioning | **SemVer**, one version for the monorepo, git tag `vX.Y.Z` per sprint; images `farol-<service>:X.Y.Z`, no registry (§10) |
 | Architecture views | **C4** (all four levels, level 3 for every service) and **4+1** views without scenarios, drawn in **draw.io** |
 | Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** [ADR-011](adr/0011-deployment-and-infrastructure.md); local implementation pending |
 | AI provider and model | **[PROPOSED]** Hosted Mistral Small vs local Ollama comparison; selection gates in [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) |
@@ -216,7 +218,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Accepted |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
-| ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
+| ADR-010 | CI/CD strategy, including versioning (§10, guide H7) | Waits for Bruno's pipeline review; versioning decided |
 | [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; detailed implementation/recovery pending |
 | [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
 

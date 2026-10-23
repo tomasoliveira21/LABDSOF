@@ -1,7 +1,7 @@
 # Decisões Arquiteturais
 
 > LABDSOF 2026/27 · Sprint A · Enunciado §6 (requisitos técnicos), §7.1.2 (entregáveis 7, 8 e 10), §8.4 e §8.5 (contentores e CI/CD)
-> **Estado (22 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
+> **Estado (23 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
 > **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor) e reunião com o professor de 22 de outubro de 2026 ([`2026-10-22-professor-meeting.md`](../Meetings/2026-10-22-professor-meeting.md)).
 
 **Legenda do estado:**
@@ -130,7 +130,7 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 | H4 | **Corre tudo, sempre:** verificações em cada PR, merge e tag para todos os serviços (sem path filters); imagens versionadas e validação/smoke test local. Cloud não é destino obrigatório | ✅ âmbito atualizado; 🔍 automação Bruno |
 | H5 | A expectativa anterior de **deploy automático na produção cloud** é substituída pela entrega local autorizada por custos. Bruno define o procedimento/pipeline de entrega local; não se presume acesso automático à máquina pessoal | ✅ âmbito local; 🔍 automação Bruno |
 | H6 | Autenticação para publicação/entrega de imagens, se aplicável; autenticação de deploy cloud fica adiada com essa alternativa | 🔍 Bruno |
-| H7 | Versionamento e etiquetas | 🔍 Bruno |
+| H7 | **SemVer, uma versão para todo o monorepo.** Tag git anotada `vMAJOR.MINOR.PATCH` em `main`; as imagens dos cinco serviços e do frontend levam a mesma versão sem o `v` (`farol-<serviço>:0.2.0`); builds fora de uma tag ficam `dev`. Fica em **0.x** durante os sprints: fim do Sprint A `v0.1.0` (walking skeleton), Sprint B `v0.2.0`, Sprint C `v1.0.0` (entrega final); **PATCH** só para corrigir uma release já demonstrada. A tag é a única fonte da versão (sem commits de *bump*). **Só tags git:** sem registry nem GitHub Releases; o CI constrói as imagens em cada PR, merge e tag sem as publicar (H4), e localmente constrói-se a partir da tag (rollback = construir a tag anterior, G7). As notas de cada release ficam no [`CHANGELOG.md`](../../CHANGELOG.md). Entra no ADR-010 | ✅ |
 | H8 | Repositório **privado** | ✅ |
 | H9 | Build e distribuição da app mobile na pipeline | 🔍 Bruno (depende de F4) |
 
@@ -172,9 +172,10 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Diagramas C4 e 4+1 em draw.io e ADR-009 (Bruno). A 22/10 saíram o nível 4 da vista física e os seus mapeamentos lógico–físico.
 - ADR-002, ADR-003 e ADR-004 (Bruno) e ADR-007 (Tiago).
 - Deploy **apenas local**, sem cloud por causa dos custos, autorizado pelo professor (G1, G2; Tomás, 22/10, [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). Investigação de deploy, observabilidade e IA no #53 (ADR-005, ADR-011 e ADR-012, propostos).
+- Versionamento e etiquetas (H7, Bruno, 23/10): SemVer único para o monorepo, release no fim de cada sprint, só tags git. Entra no ADR-010.
 
 **Em aberto, com responsável:**
-1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
+1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H9).
 2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
 3. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.**
 4. **Transportes:** valores de x (intervalo do poll) e y (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). **Tiago.**
