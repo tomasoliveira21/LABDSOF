@@ -75,9 +75,59 @@ Owns accounts, the `FarolAdmin` grant, memberships of events and team assignment
 
 Stories: US-06, US-07, US-09 to US-11, US-13, US-16, US-17, US-19 to US-22, US-44, US-45, US-58.
 
+Owns events, teams with their permissions and help categories, map versions and points of interest, announcements and check-ins. Keeps local copies of the memberships and team assignments (`MembershipChanged`) and of the `FarolAdmin` grants (`GlobalRoleChanged`).
+
+**Events**
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
-| | | _To fill in (step 3)_ | | |
+| `POST` | `/events` | Create an event as a draft (`{ name, organiserName, dates, firstEventAdminUserId }`) | FarolAdmin | US-06 |
+| `GET` | `/events` | List every event with its name, dates, organisation, EventAdmins and status only | FarolAdmin | US-07 |
+| `GET` | `/events/{eventId}` | The event's details, status and, once published, its join link (the QR code encodes it) | Member, EventAdmin | US-10, US-11, US-12 |
+| `PATCH` | `/events/{eventId}` | Edit the name, dates or description of a draft or published event | EventAdmin | US-10 |
+| `POST` | `/events/{eventId}/publish` | Publish a draft; generates the join link | EventAdmin | US-11 |
+| `POST` | `/events/{eventId}/close` | Close the event: no more help requests or reports | EventAdmin | US-13 |
+| `POST` | `/events/{eventId}/suspend` | Suspend the event: participants can no longer open it | FarolAdmin | US-09 |
+| `POST` | `/events/{eventId}/reactivate` | Return a suspended event to its previous status | FarolAdmin | US-09 |
+
+**Teams and permissions**
+
+| Method | Path | Purpose | Requires | Story |
+|---|---|---|---|---|
+| `GET` | `/events/{eventId}/teams` | The event's teams with their permissions and help categories | EventAdmin, `HelpRequests.Triage`, `Reports.Review` | US-16, US-29, US-52 |
+| `POST` | `/events/{eventId}/teams` | Create a team (`{ name }`), with no members and no permissions; `409` if the name is taken | EventAdmin | US-16 |
+| `PATCH` | `/events/{eventId}/teams/{teamId}` | Rename a team or set the help categories it handles (`{ name, handledCategories }`) | EventAdmin | US-16, US-17 |
+| `PUT` | `/events/{eventId}/teams/{teamId}/permissions` | Replace the team's permissions (`[{ permission, reportTypes }]`, from the fixed list in `features.md` §4.2); recorded with who and when | EventAdmin | US-17 |
+| `DELETE` | `/events/{eventId}/teams/{teamId}` | Delete a team; Reports returns its routed requests to the control-room queue when it consumes `TeamChanged` | EventAdmin | US-16 |
+
+**Venue map**
+
+| Method | Path | Purpose | Requires | Story |
+|---|---|---|---|---|
+| `POST` | `/events/{eventId}/map-versions` | Upload a map (multipart, image or single-page PDF); a PDF is rendered to PNG ([ADR-007](adr/0007-venue-map-representation.md)); `400` for any other file, and the current map stays | `Map.Edit` | US-19 |
+| `GET` | `/events/{eventId}/map-versions/current` | The current map version with every point of interest (type, name, position) | Member | US-21, US-22 |
+| `GET` | `/events/{eventId}/map-versions/{version}` | An older version, for the requests and reports that refer to it | Member | US-27 |
+| `GET` | `/events/{eventId}/map-versions/{version}/image` | The map's PNG | Member | US-21 |
+| `POST` | `/events/{eventId}/map-versions/{version}/points-of-interest` | Place a point (`{ type, name, position }`) | `Map.Edit` | US-20 |
+| `PATCH` | `/events/{eventId}/map-versions/{version}/points-of-interest/{poiId}` | Move or rename a point | `Map.Edit` | US-20 |
+| `DELETE` | `/events/{eventId}/map-versions/{version}/points-of-interest/{poiId}` | Remove a point | `Map.Edit` | US-20 |
+
+- Filtering by type of place (US-22) happens in the app, over the points the current version already returns.
+- A new map version starts with a copy of the previous version's points, which the team then moves. **[PROPOSED]**
+- The files stay in a volume of the Events service and their references in its database (ADR-011, local deployment). **[PROPOSED]**
+
+**Announcements and check-in**
+
+| Method | Path | Purpose | Requires | Story |
+|---|---|---|---|---|
+| `GET` | `/events/{eventId}/announcements?updatedSince=` | Live list of announcements; removed ones come back once as `removed: true`, so the apps drop them (SC6, 10 s) | Member | US-44, US-45 |
+| `POST` | `/events/{eventId}/announcements` | Publish an announcement (`{ message, expiresAt }`) | `Announcements.Publish` | US-44 |
+| `PATCH` | `/events/{eventId}/announcements/{announcementId}` | Edit it; it shows the time of the edit | `Announcements.Publish` | US-45 |
+| `DELETE` | `/events/{eventId}/announcements/{announcementId}` | Remove it | `Announcements.Publish` | US-45 |
+| `POST` | `/events/{eventId}/check-ins/me` | Check in with the venue QR code (`{ venueCode }`); a second check-in changes nothing; `422` if the event is not running | Member | US-58 |
+
+- The venue QR code is not the join link: it carries a code shown only at the venue, so nobody checks in from home. **[PROPOSED]**
+- Publishes `EventChanged`, `TeamChanged`, `VenueMapVersionPublished`, `PointOfInterestChanged` and `CheckInRecorded` (§7).
 
 ## 4. Reports
 
