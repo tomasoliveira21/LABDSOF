@@ -287,7 +287,7 @@ The 29 stories of 16 October became **62**. Each story is now **one user action,
 
 1. **One action per story.** *Log in* and *log out* are different actions with different tests, so they are two stories (US-01, US-02). The same for publishing, joining and closing an event, or for accepting and resolving a request.
 2. **Separate what is blocked from what can start.** A part that waits for an open decision becomes its own story, so the rest can be *Ready*. Example: account deletion (US-05) waits for guide D7; sign-up (US-03) does not.
-3. **Separate apps and personas.** What the event team does in the backoffice and what the participant sees in the mobile app are different PRs, in different apps (guide F1). Example: the team adds shuttles (US-37), the participant sees them (US-39).
+3. **Separate apps and personas.** What the event team does in the backoffice and what the participant sees are different PRs, on different pages of the web app (guide F1). Example: the team adds shuttles (US-37), the participant sees them (US-39).
 
 | Old story (16 October) | New stories |
 |---|---|
@@ -338,11 +338,11 @@ The 29 stories of 16 October became **62**. Each story is now **one user action,
 
 #### Issue type of each story
 
-README §1 allows four issue types. Rule used in §8.3, from the two-app decision (guide F1):
+README §1 allows four issue types. Rule used in §8.3, from the split between participant pages and event-team pages of the web app (guide F1):
 
-- **[Front Office]**: the participant's mobile app (P1).
-- **[Back Office]**: the event team's work: event management on the web (P3, P4) and the backoffice of the control room and of the field teams (P2, P5). Field-team members work on the phone, but in the backoffice field view (personas, P5), not in the participant app.
-- **[Technicians]**: technical work with no single user screen: login and logout (US-01, US-02, used by both apps), isolation between events (US-14, a test in every service), the import of the transport source (US-40) and the walking skeleton.
+- **[Front Office]**: the participant's pages of the web app, built for the phone (P1).
+- **[Back Office]**: the event team's work: event management on the web (P3, P4) and the backoffice of the control room and of the field teams (P2, P5). Field-team members work on the phone, but in the backoffice field view (personas, P5), not in the participant pages.
+- **[Technicians]**: technical work with no single user screen: login and logout (US-01, US-02, used by every page), isolation between events (US-14, a test in every service), the import of the transport source (US-40) and the walking skeleton.
 
 ### F1 · Login and logout
 
@@ -813,7 +813,7 @@ The goal also covers every Sprint B deliverable of §7.2.2:
 
 | §7.2.2 deliverable | Covered by |
 |---|---|
-| 1 · Functional client application | US-12, US-21, US-23 (mobile app); US-06, US-11, US-16 to US-18 (web app) |
+| 1 · Functional client application | US-12, US-21, US-23 (phone pages); US-06, US-11, US-16 to US-18 (laptop pages) |
 | 2 · Authentication and authorisation | US-01, US-02, US-14, US-16 to US-18 |
 | 3 · Persistent data storage | Every story (PostgreSQL, one database per service, guide D1–D2) |
 | 4 · Documented API contracts | OpenAPI written first for each story (contract-first, guide C7) |

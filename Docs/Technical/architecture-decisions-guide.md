@@ -15,7 +15,7 @@
 | **Guerra** | Identidade e segurança · API gateway · Security & Privacy assessment · simulador da API do Porto Digital (J4) |
 | **Tomás + Guerra** | Modelo de domínio, incluindo o FarolAdmin (P4), as *memberships* por evento e as equipas com permissões |
 | **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto · lista de NFRs |
-| **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos · estimativa de custos (salários + infraestrutura) |
+| **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · eliminação de conta · API outline e catálogo de eventos · estimativa de custos (salários + infraestrutura) |
 
 ## Investigação de deploy, observabilidade e IA (22 de outubro de 2026)
 
@@ -34,8 +34,7 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 | Decisão | Estado |
 |---|---|
 | **Backend em Spring Boot** (Java) | ✅ |
-| **Frontend web simples em React**, só para a gestão de eventos | ✅ |
-| **App mobile em React Native** para todas as outras funcionalidades | ✅ |
+| **Uma só app web React** para todos; cada página é feita para o telemóvel ou para o portátil (F1). A app mobile React Native saiu a 22/10 (reunião com o professor, #125) | ✅ |
 | **Arquitetura distribuída**; o monólito sem fronteiras impostas está excluído | ✅ |
 | **C4 model nos 4 níveis** | ✅ |
 | **Pipeline de CI e CD completa** | ✅ |
@@ -56,7 +55,7 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 |---|---|---|
 | B1 | Diagramas em **draw.io**, feitos com o MCP do draw.io (substitui Mermaid C4 / C4-PlantUML) | ✅ |
 | B2 | **Nível 1:** o Farol (caixa única), as pessoas P1–P5 e os sistemas externos que usamos: **Plataforma Urbana do Porto Digital** (FIWARE NGSI v2), fornecedor de IA (🔍 Tomás) e o IdP se for externo (🔍 Guerra) | ✅ |
-| B3 | **Nível 2:** app web React (gestão de eventos), app mobile React Native, cada serviço, o RabbitMQ e a base de dados de cada serviço; os sistemas externos mantêm-se. Gateway: ver C6 | ✅ |
+| B3 | **Nível 2:** app web React (a única aplicação, F1), cada serviço, o RabbitMQ e a base de dados de cada serviço; os sistemas externos mantêm-se. Gateway: ver C6 | ✅ |
 | B4 | **Nível 3 para todos os serviços.** A documentação de cada serviço (nível 3, nível 4, contratos) fica em `backend/<serviço>/docs/` | ✅ |
 | B5 | **Nível 4** mostra a **arquitetura hexagonal** de cada serviço: `domain`, `application` (casos de uso e portas), `adapters/in` (REST gerado do OpenAPI, consumidores RabbitMQ), `adapters/out` (JPA, publicador do outbox, clientes HTTP externos) | ✅ |
 | B6 | **Vistas do 4+1, sem cenários** (os workflows W1–W8 já os cobrem): lógica (C4 1–3 e modelo de domínio), processos (dinâmicos: pedido de ajuda e triagem assíncrona), desenvolvimento (repositório, módulos Maven, pacotes hexagonais), física (contentores no ambiente local autorizado; diagramas a alinhar pelo responsável) | ✅ |
@@ -101,10 +100,10 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 
 | # | Decisão | Estado |
 |---|---|---|
-| F1 | **Duas aplicações:** web React simples para a gestão de eventos; mobile React Native para o resto | ✅ |
+| F1 | **Uma só aplicação web React.** Cada página é feita para uma utilização: no **telemóvel** (participantes, equipas de terreno) ou no **portátil** (gestão de eventos, sala de controlo). Substitui, desde 22/10, as duas aplicações (web React para a gestão de eventos e mobile React Native para o resto) (reunião com o professor, [ata](../Meetings/2026-10-22-professor-meeting.md); #125; [ADR-002](adr/0002-backend-and-frontend-technology.md)) | ✅ |
 | F2 | App web servida **localmente**; alojamento cloud não é exigido para a entrega autorizada (ADR-011) | ✅ âmbito; 🔍 implementação |
-| F3 | **Mapa do recinto ([ADR-007](adr/0007-venue-map-representation.md)):** na app mobile, **`react-native-svg`** para os marcadores dentro do zoom/pan do **`react-native-zoom-toolkit`** (sobre Gesture Handler e Reanimated); posições em coordenadas normalizadas (`MapPosition`); filtro por tipo (US-22) com estado React. Funciona em iOS e Android, com Expo e com React Native *bare*, por isso não depende do F4. Antes de implementar o mapa, um *spike* confirma o zoom-toolkit com o Gesture Handler 3 num iPhone e num Android reais; se falhar, o zoom/pan escreve-se diretamente com Gesture Handler e Reanimated. A app web usa só `<img>` com marcadores posicionados. **PDF convertido em imagem no upload**, no serviço Events, com Apache PDFBox (só PDFs de uma página; imagem com no máximo 4096 px no lado maior; guarda-se o original e a imagem). Onde ficam os ficheiros depende do G1 | ✅ |
-| F4 | Configuração do React Native (ex.: Expo ou não) e como a app mobile chega aos professores e à demo (§12) | 🔍 Bruno |
+| F3 | **Mapa do recinto ([ADR-007](adr/0007-venue-map-representation.md)), reescrito para a web a 23/10:** a imagem com uma camada **SVG** para os marcadores, dentro do zoom/pan do **`react-zoom-pan-pinch`**; o mesmo componente nas páginas de telemóvel e de portátil; posições em coordenadas normalizadas (`MapPosition`); filtro por tipo (US-22) com estado React. Antes de implementar o mapa, um *spike* confirma o pinch, o pan e o toque num iPhone (Safari) e num Android (Chrome) reais; se falhar, o zoom/pan escreve-se com Pointer Events. **PDF convertido em imagem no upload**, no serviço Events, com Apache PDFBox (só PDFs de uma página; imagem com no máximo 4096 px no lado maior; guarda-se o original e a imagem). Onde ficam os ficheiros depende do G1. A versão de 22/10 era para React Native | 🔍 Tiago (revê a versão web) |
+| F4 | ~~Configuração do React Native (ex.: Expo ou não) e como a app mobile chega aos professores e à demo (§12)~~ Já não se aplica: sem app mobile desde 22/10 (F1, #125) | ✅ fechado |
 
 ## G · Deploy e infraestrutura
 
@@ -132,7 +131,7 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 | H6 | Autenticação para publicação/entrega de imagens, se aplicável; autenticação de deploy cloud fica adiada com essa alternativa | 🔍 Bruno |
 | H7 | Versionamento e etiquetas | 🔍 Bruno |
 | H8 | Repositório **privado** | ✅ |
-| H9 | Build e distribuição da app mobile na pipeline | 🔍 Bruno (depende de F4) |
+| H9 | ~~Build e distribuição da app mobile na pipeline~~ Já não se aplica: sem app mobile desde 22/10 (F1, #125); a app web entra no build como os outros contentores | ✅ fechado |
 
 ## I · Observabilidade (§6.7)
 
@@ -171,12 +170,13 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Resposta do professor (21/10): A4 e a fonte de transportes (A2, B2) fechados; ADR-001 e ADR-008.
 - Diagramas C4 e 4+1 em draw.io e ADR-009 (Bruno). A 22/10 saíram o nível 4 da vista física e os seus mapeamentos lógico–físico.
 - ADR-002, ADR-003 e ADR-004 (Bruno) e ADR-007 (Tiago).
+- A app mobile React Native saiu: **uma só app web React**, com páginas para o telemóvel e para o portátil (F1; reunião com o professor, 22/10; #125). F4 e H9 fecham; ADR-002 atualizado e ADR-007 reescrito para a web (falta a revisão do Tiago).
 - Deploy **apenas local**, sem cloud por causa dos custos, autorizado pelo professor (G1, G2; Tomás, 22/10, [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). Investigação de deploy, observabilidade e IA no #53 (ADR-005, ADR-011 e ADR-012, propostos).
 
 **Em aberto, com responsável:**
-1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
+1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog, revisão do ADR-007 para a web), Bruno (C8, D7, H6, H7).
 2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
-3. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.**
+3. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.** Na mesma passagem, tirar a app mobile dos diagramas (níveis 1–3 e `*-level-4-mobile`; #125).
 4. **Transportes:** valores de x (intervalo do poll) e y (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). **Tiago.**
 5. **Estimativa de custos de operação:** salários + infraestrutura, simples; a parte de infraestrutura usa o G2 (Tomás) e serve também para explicar no relatório e na apresentação porque não há deployment na cloud (entrega apenas local, autorizada pelo professor; [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). **Bruno.**
 6. **Lista de NFRs** para a apresentação. **Tiago.**

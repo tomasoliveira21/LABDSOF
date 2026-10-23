@@ -36,7 +36,7 @@ flowchart LR
     LLM["AI model provider<br/>[PENDING]"]
     IDP["Identity provider<br/>[PENDING: only if external]"]
 
-    P -- "uses the mobile app" --> SYS
+    P -- "uses the web app on the phone" --> SYS
     O -- "handles help requests" --> SYS
     R -- "gets routed requests, updates status" --> SYS
     A -- "manages the event and its teams (web app)" --> SYS
@@ -54,8 +54,7 @@ The five services are deployed independently from Sprint A (§11).
 flowchart LR
     subgraph Clients
         direction TB
-        MOB["Mobile app<br/>(React Native)<br/>participants, event teams"]
-        WEB["Web app<br/>(React)<br/>event management"]
+        WEB["Web app<br/>(React)<br/>phone pages: participants, field teams<br/>laptop pages: event management, control room"]
     end
 
     GW["API gateway<br/>[PENDING: C6]"]
@@ -74,7 +73,6 @@ flowchart LR
     TR["Transport data"]
     LLM["AI model provider"]
 
-    MOB --> GW
     WEB --> GW
     GW --> AU & EV & RE & TS & BA
     AU & EV & RE & TS & BA <-- "domain events [AMQP]" --> MQ
@@ -165,7 +163,7 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 
 **Current scope: local-only deployment/execution.** Tomás reported that the professor authorised proceeding locally **because of cloud-hosting costs**, provided the team explains that reason in the final report/presentation. See the [clarification record](../Meetings/2026-10-22-local-deployment-clarification.md) and [ADR-011](adr/0011-deployment-and-infrastructure.md). The [cloud assessment and dated costs](../Research/architecture-investigation/deployment.md) remain documented evidence and future alternatives, not a requirement to provision cloud resources.
 
-The local topology recommendation is one machine with five independently replaceable backend containers, one RabbitMQ with a persistent volume, one PostgreSQL instance with five separate databases/users and a web-server container for the React app. Gateway, simulator, observability and optional inference add components as needed; the mobile client runs on a device/emulator. Separate database containers are also possible without separate machines. Exact Compose configuration and resource sizing still need implementation/measurement.
+The local topology recommendation is one machine with five independently replaceable backend containers, one RabbitMQ with a persistent volume, one PostgreSQL instance with five separate databases/users and a web-server container for the React app. Gateway, simulator, observability and optional inference add components as needed; phones open the same web app in the browser. Separate database containers are also possible without separate machines. Exact Compose configuration and resource sizing still need implementation/measurement.
 
 Preserved requirements and limits:
 - **One instance per service** initially; independent images and service replacement still demonstrate the microservice boundaries.
@@ -186,7 +184,7 @@ Preserved requirements and limits:
 | Decision | Choice |
 |---|---|
 | Backend | **Java 21 + Spring Boot 4.x**, Maven |
-| Frontend | **React** web app (event management only) · **React Native** mobile app (everything else) |
+| Frontend | **One React web app** for every user; each page is built for the phone (participants, field teams) or for a laptop (event management, control room). The React Native app was removed on 22 October 2026 ([ADR-002](adr/0002-backend-and-frontend-technology.md), #125) |
 | Database | **PostgreSQL**, one database per service; Flyway |
 | Message broker | **RabbitMQ** with Spring AMQP |
 | Live updates | **Polling** |
@@ -198,8 +196,7 @@ Preserved requirements and limits:
 | Observability | **[PROPOSED]** Local Micrometer/OpenTelemetry + Prometheus/Grafana; Azure Monitor retained as cloud alternative. [ADR-012](adr/0012-observability.md) |
 | Identity | **[PENDING]** Guerra |
 | API gateway | **[PENDING]** Guerra |
-| Venue map (React Native) | **`react-native-svg`** markers inside a **`react-native-zoom-toolkit`** zoom/pan container (Gesture Handler + Reanimated); normalised `MapPosition` coordinates; works on iOS and Android, with Expo and bare React Native (to confirm with a spike on real devices before the map is built). The web app uses a plain `<img>` with positioned markers. PDF maps are rendered to a PNG on upload by the Events service (**Apache PDFBox**). See [ADR-007](adr/0007-venue-map-representation.md) |
-| React Native setup and distribution | **[PENDING]** Bruno |
+| Venue map | **[PROPOSED]** The image with an **SVG** overlay for the markers, inside a **`react-zoom-pan-pinch`** zoom/pan container; normalised `MapPosition` coordinates; the same component on phone and laptop pages (to confirm with a spike on a real iPhone and Android phone before the map is built). PDF maps are rendered to a PNG on upload by the Events service (**Apache PDFBox**). See [ADR-007](adr/0007-venue-map-representation.md), waits for Tiago's review |
 
 ## 13. Architecture Decision Records
 
@@ -213,7 +210,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
 | [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) | AI workflow, provider and fallback | Proposed; evaluation/privacy gates pending |
 | ADR-006 | Identity | Waits for Guerra |
-| [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Accepted |
+| [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Proposed; rewritten for the web app on 23 October 2026, waits for Tiago |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
 | ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
@@ -235,3 +232,5 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | Physical **[TO ALIGN: local deployment scope]** | [1](diagrams/physical-view-level-1.drawio.svg) · [2](diagrams/physical-view-level-2.drawio.svg) · [3](diagrams/physical-view-level-3.drawio.svg) |
 | Logical → implementation | [1](diagrams/mapping-logical-implementation-level-1.drawio.svg) · [2](diagrams/mapping-logical-implementation-level-2.drawio.svg) · [3](diagrams/mapping-logical-implementation-level-3.drawio.svg) · [4 mobile](diagrams/mapping-logical-implementation-level-4-mobile.drawio.svg) · [4 web](diagrams/mapping-logical-implementation-level-4-web.drawio.svg) · [4 reports](diagrams/mapping-logical-implementation-level-4-reports.drawio.svg) · [4 transports](diagrams/mapping-logical-implementation-level-4-transports.drawio.svg) |
 | Logical → physical | [1](diagrams/mapping-logical-physical-level-1.drawio.svg) · [2](diagrams/mapping-logical-physical-level-2.drawio.svg) · [3](diagrams/mapping-logical-physical-level-3.drawio.svg) |
+
+> **[TO ALIGN: #125]** The diagrams still show the React Native mobile app, which was removed on 22 October 2026: in levels 1 to 3 and in the `*-level-4-mobile` diagrams. They are updated when the diagrams are next edited (Bruno).
