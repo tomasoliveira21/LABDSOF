@@ -3,7 +3,7 @@
 > Sprint A deliverable 7 (assignment §7.1.2; guide C8). Issue #123. Owner: Bruno.
 > What each service exposes over REST and which domain events it publishes and consumes. This is an **outline**: the complete `openapi.yaml` of each service and the formal event schemas are written per story, contract-first (guide C7, [`spec-driven-development.md`](../Process/spec-driven-development.md)).
 > Stories follow the numbering in [`features.md` §7](../Product/features.md#7-initial-backlog-user-stories) (US-01 to US-62). Entities follow [`domain-model.md`](domain-model.md). Roles and permissions follow [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026).
-> Items marked **[PROPOSED]** wait for the team; items that depend on another owner's open decision name it.
+> Items marked **[WAITS: On]** follow the current proposal and wait for another owner's decision On. The outline's own decisions and those still waiting are in §10.
 
 ## 1. Scope and conventions
 
@@ -16,7 +16,7 @@
 ### 1.2 Paths
 
 - Every path starts with `/api/v1` (guide C7).
-- Paths are **per resource**, with no service prefix: `/api/v1/events/{eventId}/help-requests`. Each path belongs to exactly one service; the gateway routes by path (guide C6, Guerra).
+- Paths are **per resource**, with no service prefix: `/api/v1/events/{eventId}/help-requests`. Each path belongs to exactly one service; the gateway routes by path (guide C6, Guerra). **[WAITS: O1]**
 - Anything that belongs to one event has `{eventId}` in its path, so every service can check membership and filter by event (guide D3, US-14).
 - Resource names are plural and kebab-case, and match the entity names in [`domain-model.md`](domain-model.md).
 
@@ -27,24 +27,24 @@
 
 ### 1.4 Identity
 
-- Login and logout happen in the identity provider (Keycloak); Auth & Users has no `/login` or `/logout` (guide E1, Guerra).
+- Login and logout happen in the identity provider (Keycloak); Auth & Users has no `/login` or `/logout` (guide E1, Guerra). **[WAITS: O2]**
 - `/me` stands for the account of the token's user.
 
 ### 1.5 Authorisation
 
 - Checked **per event**: the user's role in that event (`EventAdmin` or `RegularUser`) and the permissions of their teams there. `FarolAdmin` is global and gives no access to any event's data.
-- Each service decides from its own local copies: memberships and team assignments from Auth & Users (`MembershipChanged`), teams and their permissions from Events (`TeamChanged`). What the token carries is guide E2 (Guerra).
+- Each service decides from its own local copies: memberships and team assignments from Auth & Users (`MembershipChanged`), teams and their permissions from Events (`TeamChanged`). What the token carries is guide E2 (Guerra). **[WAITS: O3]**
 - The tables use: **Authenticated** (any logged-in user), **Member** (any member of the event), **EventAdmin**, **FarolAdmin**, or a permission such as `HelpRequests.Triage`. An `EventAdmin` has every permission of their event.
 
 ### 1.6 Live lists and pagination
 
 - Live lists (backoffice, request status, announcements, reports on the map) are polled. They take **`updatedSince`** (ISO-8601 timestamp) and return only what changed, plus the `serverTime` to send next time.
-- Other lists take `limit` (default 50, max 200) and `cursor`. **[PROPOSED]**
+- Other lists take `limit` (default 50, max 200) and `cursor`.
 
 ### 1.7 Errors
 
 - **Problem Details** (RFC 9457), `application/problem+json`.
-- `400` invalid input, `401` not logged in, `403` no permission, `404` not found **or not a member of the event** (so as not to reveal that the event exists), `409` state conflict (e.g. a field task already accepted), `422` breaks a business rule (e.g. removing the last EventAdmin), `429` too many requests, with `Retry-After` (US-48).
+- `400` invalid input, `401` not logged in, `403` no permission, `404` not found **or not a member of the event** (so as not to reveal that the event exists;), `409` state conflict (e.g. a field task already accepted), `422` breaks a business rule (e.g. removing the last EventAdmin), `429` too many requests, with `Retry-After` (US-48).
 
 ## 2. Auth & Users
 
@@ -57,18 +57,18 @@ Owns accounts, the `FarolAdmin` grant, memberships of events and team assignment
 | — | _identity provider_ | Log in and log out happen in Keycloak; the apps send its token on every call (§1.4) | — | US-01, US-02 |
 | `GET` | `/me` | My account: name, e-mail and global roles (`FarolAdmin`), so the apps know what to show | Authenticated | US-01 |
 | `GET` | `/me/memberships` | The events I am a member of, with my role, my teams and each event's name and status | Authenticated | US-01 |
-| `POST` | `/accounts` | Sign up; refused without `termsAccepted` or if the e-mail is already used. Whether sign-up runs here or in Keycloak depends on guide E1 (Guerra) | Public | US-03 |
+| `POST` | `/accounts` | Sign up; refused without `termsAccepted` or if the e-mail is already used. Whether sign-up runs here or in Keycloak depends on guide E1 (Guerra) **[WAITS: O2]** | Public | US-03 |
 | `PATCH` | `/me` | Change my display name. The password changes in Keycloak | Authenticated | US-04 |
 | `DELETE` | `/me` | Delete my account; `422` if I am the last EventAdmin of an event. Details in the account-deletion issue (guide D7) | Authenticated | US-05 |
-| `GET` | `/accounts?email=` | Find the account to name as EventAdmin | FarolAdmin | US-06, US-08 |
-| `POST` | `/events/{eventId}/members` | Name a user EventAdmin of an event (`{ userId, role: EventAdmin }`); recorded with who and when | FarolAdmin | US-08 |
+| `GET` | `/accounts?email=` | Find the account to name as EventAdmin **[WAITS: O4]** | FarolAdmin | US-06, US-08 |
+| `POST` | `/events/{eventId}/members` | Name a user EventAdmin of an event (`{ userId, role: EventAdmin }`), the first one or a new one; recorded with who and when | FarolAdmin | US-06, US-08 |
 | `POST` | `/events/{eventId}/members/me` | Join the event as RegularUser (QR code or link); `404` if the event is not published in the local copy | Authenticated | US-12 |
 | `GET` | `/events/{eventId}/members` | List the event's members with role and teams; filters `role`, `teamId` | EventAdmin | US-15, US-18 |
 | `PATCH` | `/events/{eventId}/members/{userId}` | Make a member EventAdmin or RegularUser (`{ role }`); `422` for the last EventAdmin; recorded with who and when | EventAdmin | US-15 |
 | `PUT` | `/events/{eventId}/members/{userId}/teams/{teamId}` | Add a member to a team; `404` if the user is not a member or the team is not in the local copy | EventAdmin | US-18 |
 | `DELETE` | `/events/{eventId}/members/{userId}/teams/{teamId}` | Remove a member from a team | EventAdmin | US-18 |
 
-- The first EventAdmin of a new event (US-06) is not created through this API: Auth & Users creates the membership when it consumes `EventChanged` with the `firstEventAdminUserId` (§3). **[PROPOSED]**, to confirm with Tomás and Guerra.
+- The first EventAdmin of a new event (US-06) is named with the same `POST /events/{eventId}/members`, right after the event is created in Events (D3). The event reaches Auth & Users through `EventChanged`; until then the call returns `404` and the web app retries. If it never succeeds, the event shows no EventAdmin in the FarolAdmin's list (US-07), who names one there (US-08).
 - Publishes `MembershipChanged`, `GlobalRoleChanged` and, for account deletion, `UserDeleted` (§7).
 
 ## 3. Events
@@ -81,7 +81,7 @@ Owns events, teams with their permissions and help categories, map versions and 
 
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
-| `POST` | `/events` | Create an event as a draft (`{ name, organiserName, dates, firstEventAdminUserId }`) | FarolAdmin | US-06 |
+| `POST` | `/events` | Create an event as a draft (`{ name, organiserName, dates }`); the FarolAdmin then names its first EventAdmin in Auth & Users (§2) | FarolAdmin | US-06 |
 | `GET` | `/events` | List every event with its name, dates, organisation, EventAdmins and status only | FarolAdmin | US-07 |
 | `GET` | `/events/{eventId}` | The event's details, status and, once published, its join link (the QR code encodes it) | Member, EventAdmin | US-10, US-11, US-12 |
 | `PATCH` | `/events/{eventId}` | Edit the name, dates or description of a draft or published event | EventAdmin | US-10 |
@@ -113,8 +113,8 @@ Owns events, teams with their permissions and help categories, map versions and 
 | `DELETE` | `/events/{eventId}/map-versions/{version}/points-of-interest/{poiId}` | Remove a point | `Map.Edit` | US-20 |
 
 - Filtering by type of place (US-22) happens in the app, over the points the current version already returns.
-- A new map version starts with a copy of the previous version's points, which the team then moves. **[PROPOSED]**
-- The files stay in a volume of the Events service and their references in its database (ADR-011, local deployment). **[PROPOSED]**
+- A new map version starts with a copy of the previous version's points, which the team then moves.
+- The files stay in a volume of the Events service and their references in its database (ADR-011, local deployment).
 
 **Announcements and check-in**
 
@@ -126,7 +126,7 @@ Owns events, teams with their permissions and help categories, map versions and 
 | `DELETE` | `/events/{eventId}/announcements/{announcementId}` | Remove it | `Announcements.Publish` | US-45 |
 | `POST` | `/events/{eventId}/check-ins/me` | Check in with the venue QR code (`{ venueCode }`); a second check-in changes nothing; `422` if the event is not running | Member | US-58 |
 
-- The venue QR code is not the join link: it carries a code shown only at the venue, so nobody checks in from home. **[PROPOSED]**
+- The venue QR code is not the join link: it carries a code shown only at the venue, so nobody checks in from home.
 - Publishes `EventChanged`, `TeamChanged`, `VenueMapVersionPublished`, `PointOfInterestChanged` and `CheckInRecorded` (§7).
 
 ## 4. Reports
@@ -196,7 +196,7 @@ Owns help requests, triage suggestions, community reports, field tasks and their
   "category": "Health",
   "location": { "mapVersion": 3, "x": 0.42, "y": 0.77 },
   "description": "Friend fainted near the bar",
-  "priority": "High",                  // scale: features §5.2, AI-3 [PENDING]
+  "priority": "High",                  // scale: features §5.2, AI-3 [WAITS: O7]
   "status": "Submitted",               // Submitted | Seen | OnTheWay | Resolved | Closed
   "submittedAt": "2027-05-08T23:14:05Z",
   "updatedAt": "2027-05-08T23:14:05Z",
@@ -257,8 +257,8 @@ Owns the event's transport options (shuttles and external bus routes), their dep
 
 - The import from Porto Digital (US-40) is a scheduled job inside Transports, with a timeout and validation; it is never called inside a user's request, and there is no endpoint for it. An invalid import is rejected as a whole and the previous data stays.
 - Shuttles are internal data: they are shown even when the source is down (scenario D2).
-- Porto Digital gives bus positions, not timetables (domain model, `TransportDeparture`). US-41 ("next regular buses") can only show the buses on their way; departure times come from the shuttles entered by the team. To confirm with Tiago.
-- Stops are points of interest of type *transport stop* in Events, so a member with `Transport.Edit` must be able to place them (US-37). **[PROPOSED]**: Events accepts `Transport.Edit` for that type of point.
+- Porto Digital gives bus positions, not timetables (domain model, `TransportDeparture`). US-41 ("next regular buses") can only show the buses on their way; departure times come from the shuttles entered by the team. **[WAITS: O6]**
+- Stops are points of interest of type *transport stop* in Events, so a member with `Transport.Edit` can place them (US-37): Events accepts `Transport.Edit` for that type of point.
 - Publishes nothing.
 
 ## 6. Badges
@@ -272,11 +272,10 @@ Owns each account's badge progress and its badge preferences. Keeps what it need
 | `GET` | `/me/badges` | My badges: *Report history*, *Event attendance* and one *Event reporter* per event, each with its count and tier | Authenticated | US-54, US-55, US-57 |
 | `GET` | `/me/badges/preferences` | Whether I earn badges and whether others can see them | Authenticated | US-56 |
 | `PUT` | `/me/badges/preferences` | Change them (`{ earningEnabled, visibility }`); while earning is off, no new badges are earned | Authenticated | US-56 |
-| `GET` | `/users/{userId}/badges` | Another user's badges; `404` while they are hidden (the default) | Authenticated | US-56 |
 
 - The counts and tiers are computed from the events above; there is no endpoint to change them. Unconfirming a report lowers the count and recalculates the tier (US-54, US-55).
-- The preferences move from Auth & Users (`EngagementPreferences` in the domain model) to Badges, so that Badges decides on its own. **[PROPOSED]**, to confirm with Tomás and Guerra. If they stay in Auth & Users, Auth & Users publishes `EngagementPreferencesChanged` and the two `/me/badges/preferences` endpoints move to `/me/engagement-preferences`.
-- Where another user's badges are shown (a profile, the friends list of F18) is not in any Must or Should story yet. **[PROPOSED]**
+- The preferences move from Auth & Users (`EngagementPreferences` in the domain model) to Badges, so that Badges decides on its own. **[WAITS: O5]** If they stay in Auth & Users, Auth & Users publishes `EngagementPreferencesChanged` and the two `/me/badges/preferences` endpoints move to `/me/engagement-preferences`.
+- There is no endpoint for another user's badges: no Must or Should story shows them (D9). It comes with the story that needs it, e.g. friends (F18), and then respects `visibility`.
 - Publishes nothing.
 
 ## 7. Event catalogue
@@ -315,9 +314,9 @@ Every payload also carries `version` (§7.3). `eventId` is in the envelope.
 |---|---|---|---|
 | `MembershipChanged` · `membership.changed` | Auth & Users | **Events**, **Reports**, **Transports**: decide who may call each endpoint of an event (role and teams, §1.5) and refuse non-members (US-14); Events also lists each event's EventAdmins (US-07) | `userId`, `role` (`EventAdmin` \| `RegularUser`), `status` (`Active` \| `Removed`), `teamIds` |
 | `GlobalRoleChanged` · `global-role.changed` | Auth & Users | **Events**: only the FarolAdmin creates, lists, suspends and reactivates events (US-06, US-07, US-09) | `userId`, `role` (`FarolAdmin`), `granted` |
-| `UserProfileChanged` · `user-profile.changed` **[PROPOSED]** | Auth & Users | **Reports**: the name of who accepted a field task, in the backoffice; **Events**: the names of the EventAdmins (US-07). Without it, both show only the `userId` | `userId`, `displayName` |
+| `UserProfileChanged` · `user-profile.changed` | Auth & Users | **Reports**: the name of who accepted a field task, in the backoffice; **Events**: the names of the EventAdmins (US-07). Without it, both show only the `userId` | `userId`, `displayName` |
 | `UserDeleted` · `user.deleted` | Auth & Users | Every service that keeps personal data. Name reserved; defined in the account-deletion issue (guide D7) | — |
-| `EventChanged` · `event.changed` | Events | **Auth & Users**: creates the first EventAdmin's membership (US-06, **[PROPOSED]**) and accepts joins only to published events (US-12); **Reports**: refuses help requests and reports in a closed or suspended event (US-13, US-09); **Transports**: refuses a suspended event; **Badges**: the event's name on the *Event reporter* badge (US-55) | `name`, `organiserName`, `dates`, `status` (`Draft` \| `Published` \| `Closed` \| `Suspended`), `firstEventAdminUserId` (only when created) |
+| `EventChanged` · `event.changed` | Events | **Auth & Users**: knows the event exists before its first EventAdmin is named (US-06) and accepts joins only to published events (US-12); **Reports**: refuses help requests and reports in a closed or suspended event (US-13, US-09); **Transports**: refuses a suspended event; **Badges**: the event's name on the *Event reporter* badge (US-55) | `name`, `organiserName`, `dates`, `status` (`Draft` \| `Published` \| `Closed` \| `Suspended`) |
 | `TeamChanged` · `team.changed` | Events | **Auth & Users**: a member can only be put in a team of the event (US-18); **Reports**: who triages, reviews and responds, the default team for a category (US-29), the teams the AI may suggest (US-34), and the requests to return to the queue when a team is deleted (US-16); **Transports**: who has `Transport.Edit` (US-37) | `teamId`, `name`, `permissions` (`[{ permission, reportTypes }]`), `handledCategories`, `deleted` |
 | `VenueMapVersionPublished` · `venue-map-version.published` | Events | **Reports**: a help request or report must point to an existing map version of the event (US-23, US-47) | `mapVersion`, `publishedAt` |
 | `PointOfInterestChanged` · `point-of-interest.changed` | Events | **Transports**: a shuttle's stops must be transport-stop points of the event, shown with their names (US-37, US-39) | `poiId`, `mapVersion`, `type`, `name`, `position`, `deleted` |
@@ -358,7 +357,7 @@ Every Must and Should story (US-01 to US-58, except the Could US-46) has at leas
 | US-03 | `POST /accounts` | — |
 | US-04 | `PATCH /me` | — |
 | US-05 | `DELETE /me` | — |
-| US-06 | `GET /accounts`, `POST /events` | `GlobalRoleChanged`, `EventChanged` |
+| US-06 | `GET /accounts`, `POST …/members`, `POST /events` | `GlobalRoleChanged`, `EventChanged` |
 | US-07 | `GET /events` | `MembershipChanged`, `GlobalRoleChanged`, `UserProfileChanged` |
 | US-08 | `GET /accounts`, `POST …/members` | — |
 | US-09 | `POST …/suspend`, `POST …/reactivate` | `GlobalRoleChanged`, `EventChanged` |
@@ -407,7 +406,7 @@ Every Must and Should story (US-01 to US-58, except the Could US-46) has at leas
 | US-53 | `POST …/reports/{reportId}/dispatch`, `POST …/field-tasks/{taskId}/resolve` | — |
 | US-54 | `GET /me/badges` | `ReportConfirmed`, `ReportUnconfirmed` |
 | US-55 | `GET /me/badges` | `EventChanged`, `ReportConfirmed`, `ReportUnconfirmed` |
-| US-56 | `GET /me/badges/preferences`, `PUT /me/badges/preferences`, `GET /users/{userId}/badges` | — |
+| US-56 | `GET /me/badges/preferences`, `PUT /me/badges/preferences` | — |
 | US-57 | `GET /me/badges` | `CheckInRecorded` |
 | US-58 | `POST …/check-ins/me` | — |
 
@@ -417,33 +416,45 @@ Every Must and Should story (US-01 to US-58, except the Could US-46) has at leas
 
 **No service calls another's REST API** (guide C4): every row in §7.4 is a message on RabbitMQ, every consumer in §7.5 reads from its own queue, and each "Requires" column is checked against a local copy. The only outbound HTTP call is Transports → Porto Digital, an external system, from a scheduled job (§5).
 
-## 9. Future (Could) and open points
+## 9. Future (Could features)
 
-### 9.1 Could features, not outlined
+Not outlined; listed by name only.
 
 - F11 · Weak-network mode (US-46)
 - F17 · Entrance status (US-59, US-60)
 - F18 · Friends (US-61, US-62)
 
-### 9.2 Open points
+## 10. Decisions to take
 
-Items marked **[PROPOSED]** above, and the decisions of other owners the outline depends on. When one is decided, this list and the item above are updated.
+### 10.1 Outline decisions (owner: Bruno)
 
-| Point | Where | Waits for |
-|---|---|---|
-| Path routing in the gateway (`/me/badges/**` to Badges before `/me/**` to Auth & Users; `/events/*/members/**` to Auth & Users, `/events/*/teams/**` to Events) | §1.2 | Guide C6 (Guerra) |
-| Sign-up in Auth & Users or in Keycloak; no `/login` or `/logout` | §1.4, §2 | Guide E1 (Guerra) |
-| Roles and teams reach each service as local copies (`MembershipChanged`, `TeamChanged`), not as token claims | §1.5 | Guide E2 (Guerra) |
-| `GET /accounts?email=` for the FarolAdmin to find who to name EventAdmin | §2 | Guerra (privacy) |
-| First EventAdmin created by Auth & Users when it consumes `EventChanged` | §2, §7.4 | Tomás and Guerra |
-| `UserProfileChanged`, to show names instead of `userId`s | §7.4 | Tomás and Guerra |
-| Badge preferences in Badges instead of Auth & Users (`EngagementPreferences`) | §6 | Tomás and Guerra |
-| Where another user's badges are shown | §6 | Tiago (backlog) |
-| A new map version starts with the previous version's points | §3 | Team |
-| Map files in a volume of the Events service | §3 | Team (ADR-011) |
-| Venue check-in code different from the join link | §3 | Team |
-| `Transport.Edit` may place transport-stop points | §3, §5 | Tiago |
-| US-41 shows buses on their way, not timetables (Porto Digital has none); it still says STCP | §5 | Tiago |
-| Help-request statuses and who marks *Seen*; field-task purposes and `/answer` | §4 | Tiago |
-| `limit` and `cursor` for the other lists | §1.6 | Team |
-| Priority scale | §4.1 | `features.md` §5.2, AI-3 |
+Decided on 23 October 2026. The outline above already follows them.
+
+| # | Question | Options | Recommended | Where | Answer |
+|---|---|---|---|---|---|
+| D1 | How are the lists that are not live paginated? | **A.** `limit` (default 50, max 200) and an opaque `cursor` · **B.** `page` and `size` | A: stable when rows are added while paging | §1.6 | **A** |
+| D2 | What does a user who is not a member of the event get? | **A.** `404`, as if the event did not exist · **B.** `403` | A: does not reveal that the event exists (US-14) | §1.7 | **A** |
+| D3 | How is the first EventAdmin of a new event created? | **A.** Auth & Users creates the membership when it consumes `EventChanged` with `firstEventAdminUserId` (one call by the FarolAdmin) · **B.** The FarolAdmin creates the event, then calls `POST /events/{eventId}/members` | A: the event is never left without an EventAdmin if the second call fails | §2, §7.4 | **B**: one flow for the first and later EventAdmins; an event left without one is fixed through US-08 |
+| D4 | Do Reports and Events show people's names, or only their `userId`? | **A.** Names, through `UserProfileChanged` · **B.** Only the `userId` | A: the control room needs to see who is on the way, and the FarolAdmin who the EventAdmins are (US-07) | §7.4 | **A** |
+| D5 | What points does a new map version start with? | **A.** A copy of the previous version's points · **B.** None | A: a corrected map rarely moves every point | §3 | **A** |
+| D6 | Where are the map files kept? | **A.** A volume of the Events service, with the references in its database · **B.** Inside its database | A: keeps the database small; one volume in the local deployment (ADR-011) | §3 | **A** |
+| D7 | What does the venue QR code for check-in carry? | **A.** A venue code, different from the join link · **B.** The join link | A: nobody checks in from home (US-58, `features.md` §6.3) | §3 | **A** |
+| D8 | Who places the temporary transport stops? | **A.** Events, which accepts `Transport.Edit` for transport-stop points · **B.** Transports, which keeps its own stops outside the map | A: stops stay on the venue map with the other points (domain model) | §3, §5 | **A** |
+| D9 | Is there an endpoint for another user's badges? | **A.** No: remove `GET /users/{userId}/badges` until a story needs it · **B.** Yes, `404` while hidden | A: no Must or Should story shows another user's badges, so hiding them (US-56) needs nothing | §6 | **A** |
+| D10 | How does a help request become *Seen*? | **A.** A member with `HelpRequests.Triage` calls `/acknowledge` · **B.** Automatically, when one of them opens it | A: a `GET` changes nothing, and *Seen* is recorded with who saw it | §4 | **A** |
+| D11 | How does a field team answer a report it was sent to check? | **A.** A field task with purpose `Verify` and `/answer` (`found: true \| false`) · **B.** A separate resource for report checks | A: one list and one flow for every field task | §4 | **A** |
+| D12 | Can the app resend a help request or a report safely? | **A.** Yes, with a `clientRequestId` that returns what was already saved · **B.** No idempotency key | A: a resend after a lost answer never creates a duplicate (US-25) | §4 | **A** |
+
+### 10.2 Decisions of other owners
+
+The outline follows the current proposal and marks it **[WAITS: On]**. When the owner decides, the outline is updated in the documentation review.
+
+| # | Decision | What the outline assumes | Owner | Where |
+|---|---|---|---|---|
+| O1 | Gateway routing (guide C6) | One path, one service: `/me/badges/**` to Badges before `/me/**` to Auth & Users; `/events/*/members/**` to Auth & Users and `/events/*/teams/**` to Events | Guerra | §1.2 |
+| O2 | Sign-up and login (guide E1) | Login and logout in Keycloak; sign-up is `POST /accounts` in Auth & Users | Guerra | §1.4, §2 |
+| O3 | What the token carries (guide E2) | Only the identity; roles and teams come from local copies (`MembershipChanged`, `TeamChanged`) | Guerra | §1.5 |
+| O4 | Account lookup by e-mail (privacy) | `GET /accounts?email=`, only for the FarolAdmin | Guerra | §2 |
+| O5 | Where the badge preferences live (domain model) | In Badges (`/me/badges/preferences`); if they stay in Auth & Users, it publishes `EngagementPreferencesChanged` | Tomás and Guerra | §6 |
+| O6 | US-41 and the Porto Digital data (backlog) | Shows the buses on the event's routes, not timetables; the story still says STCP | Tiago | §5 |
+| O7 | Priority scale (`features.md` §5.2, AI-3) | Named levels such as `High`; the values come from AI-3 | Tomás | §4.1 |

@@ -7,7 +7,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 **Why:** Sprint A deliverable 7 (assignment §7.1.2; guide C8). The team needs an agreed outline of each service's REST endpoints and of the events between services before writing the OpenAPI contracts and the stories (guide C7).
 
 ### Added
-- `Docs/Technical/api-outline.md`: conventions (resource paths under `/api/v1` with `{eventId}`, state changes as `POST /{id}/<action>`, `updatedSince` polling, Problem Details errors, per-event authorisation from local copies); endpoints of Auth & Users, Events, Reports, Transports and Badges with the role or permission and the story; request and response fields of the core flow (help request, triage, field tasks); event catalogue (envelope, one topic exchange per producer, full-state payloads with a version, 12 events with producer, consumers and why, queue bindings); coverage matrix of the Must and Should stories; Could features and open points.
+- `Docs/Technical/api-outline.md`: conventions (resource paths under `/api/v1` with `{eventId}`, state changes as `POST /{id}/<action>`, `updatedSince` polling, Problem Details errors, per-event authorisation from local copies); endpoints of Auth & Users, Events, Reports, Transports and Badges with the role or permission and the story; request and response fields of the core flow (help request, triage, field tasks); event catalogue (envelope, one topic exchange per producer, full-state payloads with a version, 12 events with producer, consumers and why, queue bindings); coverage matrix of the Must and Should stories; Could features; §10 decisions: D1–D12 taken by the outline owner on 23 October 2026 (the FarolAdmin names the first EventAdmin with a second call, D3; no endpoint for another user's badges, D9), and O1–O7 waiting for other owners.
 
 ### Changed
 - `architecture-decisions-guide.md`: C8 decided (✅, #123); status date; *Próximos passos*.
@@ -15,7 +15,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `Docs/README.md`: outline added to the index.
 
 ### Not changed
-- `domain-model.md`: `EngagementPreferences` stays in Auth & Users until the team accepts moving it to Badges (outline §6, §9.2).
+- `domain-model.md`: `EngagementPreferences` stays in Auth & Users until the team accepts moving it to Badges (outline §6, decision O5 in §10.2).
 - `features.md`: US-41 still says STCP; left to its owner (Tiago).
 
 ## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
