@@ -2,6 +2,21 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · CI/CD strategy (#131, Bruno Lopes)
+
+**Why:** close guide H4–H8 in one ADR, so the walking skeleton (R0) builds the pipeline from it (assignment §8.4, §8.5; ADR-011 point 5).
+
+### Added
+- `adr/0010-cicd-strategy.md`: `conventions.yml` kept (Dependabot PRs exempt) plus one `ci.yml`. PRs run build, unit and Testcontainers integration tests, Checkstyle, ESLint, the web build and gitleaks; pushes to `main`, tags and manual runs also build the images with Compose, scan them with Trivy and run the `local-delivery.md` smoke test on the runner. Documentation-only and draft PRs skip the code jobs, and older runs of a PR are cancelled, to save the private repository's Actions minutes. Tags run the same pipeline and nothing is published (no registry, no secrets, `contents: read`). Dependabot monthly grouped updates. Required checks: **Conventions** and **CI**. R0 implements all of it; alternatives (everything on every PR, a `dev` branch, GHCR, artefacts, self-hosted runner, paid scanners) recorded.
+
+### Changed
+- `architecture-decisions-guide.md`: section H closed (H4–H8 ✅, H6 does not apply); status date; *Próximos passos* (done, Bruno's open items, walking skeleton).
+- `architecture.md` §10, §12 and §13 (ADR-010 *Accepted*, linked). `ADR-011` status and point 5: CI runs the smoke test on its own runner. `Docs/README.md`: ADR-010 in the index; §6 names the two required checks.
+- `definition-of-ready-and-done.md`: the "deployed to the shared environment" item now asks for a green pipeline on `main` (delivery is local).
+
+### Not changed
+- No workflow file: `ci.yml`, `dependabot.yml` and the Dependabot exemption in `conventions.yml` belong to the walking skeleton (Tomás). The real job durations are measured there.
+
 ## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
 
 **Why:** the stories in `features.md` §7 are now GitHub issues, so the backlog can be planned and tracked (assignment §8.2, DoR item "has a GitHub issue").

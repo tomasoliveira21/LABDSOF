@@ -169,8 +169,8 @@ The local topology recommendation is one machine with five independently replace
 
 Preserved requirements and limits:
 - **One instance per service** initially; independent images and service replacement still demonstrate the microservice boundaries.
-- **Multi-stage Dockerfiles**, Maven, Java 21 and Spring Boot 4.x; **GitHub Actions** checks every service on every PR/merge/tag.
-- The earlier automatic-deploy-to-cloud-production promise is superseded for this delivery scope. Bruno defines reproducible local startup/update and smoke-test handoff; cloud credentials/ACR/provisioning are not prerequisites.
+- **Multi-stage Dockerfiles**, Maven, Java 21 and Spring Boot 4.x. **CI/CD ([ADR-010](adr/0010-cicd-strategy.md)):** GitHub Actions checks every service in every run. Pull requests run the fast part (build, unit and Testcontainers integration tests, Checkstyle, ESLint, gitleaks); pushes to `main`, release tags and manual runs also build the images, scan them with Trivy and run the smoke test with Compose on the runner. Documentation-only and draft PRs skip the code jobs to save Actions minutes. No registry and no credentials: nothing is published.
+- The earlier automatic-deploy-to-cloud-production promise is superseded for this delivery scope. Delivery is building locally from the release tag and running the smoke test; CI never reaches a personal machine. Cloud credentials/ACR/provisioning are not prerequisites.
 - **Flyway** migrations remain compatible with the previous application image (*expand and contract*); rolling back code does not undo database migrations.
 - Local metrics/traces/logs and degraded-mode/integration tests still provide evidence. No cloud HA, managed scaling or cloud recovery result is claimed.
 - Persistent local volumes are not a backup or a guarantee against host/disk loss. Backup scope and observed recovery limits remain explicit.
@@ -191,7 +191,7 @@ Preserved requirements and limits:
 | Message broker | **RabbitMQ** with Spring AMQP |
 | Live updates | **Polling** |
 | API | Contract-first **OpenAPI**, `/api/v1` |
-| CI/CD | **GitHub Actions**, monorepo, private repository |
+| CI/CD | **GitHub Actions**, monorepo, private repository; fast checks on PRs, images + Trivy + Compose smoke test on `main` and tags; no registry ([ADR-010](adr/0010-cicd-strategy.md)) |
 | Architecture views | **C4** (all four levels, level 3 for every service) and **4+1** views without scenarios, drawn in **draw.io** |
 | Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** [ADR-011](adr/0011-deployment-and-infrastructure.md); local implementation pending |
 | AI provider and model | **[PROPOSED]** Hosted Mistral Small vs local Ollama comparison; selection gates in [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) |
@@ -216,7 +216,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Accepted |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
-| ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
+| [ADR-010](adr/0010-cicd-strategy.md) | CI/CD strategy, including versioning (§10, guide H4–H8) | Accepted |
 | [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; detailed implementation/recovery pending |
 | [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
 

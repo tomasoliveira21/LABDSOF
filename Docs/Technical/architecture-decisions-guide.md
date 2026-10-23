@@ -1,7 +1,7 @@
 # Decisões Arquiteturais
 
 > LABDSOF 2026/27 · Sprint A · Enunciado §6 (requisitos técnicos), §7.1.2 (entregáveis 7, 8 e 10), §8.4 e §8.5 (contentores e CI/CD)
-> **Estado (22 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
+> **Estado (23 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
 > **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor) e reunião com o professor de 22 de outubro de 2026 ([`2026-10-22-professor-meeting.md`](../Meetings/2026-10-22-professor-meeting.md)).
 
 **Legenda do estado:**
@@ -120,18 +120,18 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 
 ## H · Pipeline de CI/CD
 
-O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de partida dessa investigação.
+**Fechado a 23 de outubro de 2026 no [ADR-010](adr/0010-cicd-strategy.md)** (#131, Bruno); o Tomás implementa-o no walking skeleton.
 
 | # | Decisão | Estado |
 |---|---|---|
 | H1 | **GitHub Actions** | ✅ |
 | H2 | **Monorepo atual:** `backend/<serviço>/`, `frontend/`, `infra/`, `Docs/` | ✅ |
 | H3 | **Maven**, **Java 21 (LTS)**, **Spring Boot 4.x**; imagens com **Dockerfile multi-stage** | ✅ |
-| H4 | **Corre tudo, sempre:** verificações em cada PR, merge e tag para todos os serviços (sem path filters); imagens versionadas e validação/smoke test local. Cloud não é destino obrigatório | ✅ âmbito atualizado; 🔍 automação Bruno |
-| H5 | A expectativa anterior de **deploy automático na produção cloud** é substituída pela entrega local autorizada por custos. Bruno define o procedimento/pipeline de entrega local; não se presume acesso automático à máquina pessoal | ✅ âmbito local; 🔍 automação Bruno |
-| H6 | Autenticação para publicação/entrega de imagens, se aplicável; autenticação de deploy cloud fica adiada com essa alternativa | 🔍 Bruno |
-| H7 | Versionamento e etiquetas | 🔍 Bruno |
-| H8 | Repositório **privado** | ✅ |
+| H4 | **Todos os serviços em cada run, sem path filters por serviço.** Dois workflows: `conventions.yml` (como está; PRs do Dependabot ficam isentos) e `ci.yml`. **PR:** build, testes unitários e de integração (Testcontainers), Checkstyle, ESLint, build da app web e gitleaks. **Push na `main`, tag e execução manual:** tudo isso mais as imagens com `docker compose build`, o Trivy e o smoke test do [`local-delivery.md`](local-delivery.md) com Compose no runner. Para poupar os minutos do Actions (repo privado): PRs e pushes **só de documentação** (`Docs/`, `*.md`) e PRs em *draft* saltam os jobs de código; runs antigos do mesmo PR são cancelados. A execução manual (`workflow_dispatch`) mostra o pipeline completo ao vivo na apresentação. Um job final `CI` é o check obrigatório. [ADR-010](adr/0010-cicd-strategy.md) | ✅ |
+| H5 | A expectativa anterior de **deploy automático na produção cloud** é substituída pela entrega local autorizada por custos. **Entrega = construir localmente a partir da tag** e correr o smoke test à mão ([`local-delivery.md`](local-delivery.md)); o CI não acede à máquina de ninguém. O CI corre o mesmo smoke test no runner, na `main`, nas tags e na execução manual ([ADR-010](adr/0010-cicd-strategy.md)). Deploy na cloud fora do âmbito (ADR-011) | ✅ |
+| H6 | **Não se aplica:** sem registry (H7) e sem deploy na cloud, o pipeline não precisa de credenciais nem de *secrets*. Workflows com `permissions: contents: read`; o smoke test no CI usa o `infra/.env.example`. Um *secret* futuro (ex.: chave de um fornecedor de IA, K1) vai para os *secrets* do GitHub Actions. [ADR-010](adr/0010-cicd-strategy.md) | ✅ |
+| H7 | **SemVer, uma versão para todo o monorepo.** Tag git anotada `vMAJOR.MINOR.PATCH` em `main`; as imagens dos cinco serviços e da app web levam a mesma versão sem o `v` (`farol-<serviço>:0.2.0`); builds fora de uma tag ficam `dev`. Fica em **0.x** durante os sprints: fim do Sprint A `v0.1.0` (walking skeleton), Sprint B `v0.2.0`, Sprint C `v1.0.0` (entrega final); **PATCH** só para corrigir uma release já demonstrada, com a tag criada em `main` (sem branches de release; o PATCH leva o que já estiver em `main`). A tag é a única fonte da versão (sem commits de *bump*). **Só tags git:** sem registry nem GitHub Releases; o CI constrói as imagens em cada push na `main` e em cada tag sem as publicar (H4) e verifica que a tag está na `main`; localmente constrói-se a partir da tag (rollback = construir a tag anterior, G7). As notas de cada release ficam no [`CHANGELOG.md`](../../CHANGELOG.md). [ADR-010](adr/0010-cicd-strategy.md) | ✅ |
+| H8 | Repositório **privado**. Branch protection na `main` com dois checks obrigatórios, **Conventions** e **CI** (README §6). Sem funcionalidades pagas: gitleaks, Checkstyle/ESLint, Trivy e Dependabot em vez de secret scanning, CodeQL ou SonarCloud | ✅ |
 | H9 | Build e distribuição da app mobile na pipeline | 🔍 Bruno (depende de F4) |
 
 ## I · Observabilidade (§6.7)
@@ -172,10 +172,11 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Diagramas C4 e 4+1 em draw.io e ADR-009 (Bruno). A 22/10 saíram o nível 4 da vista física e os seus mapeamentos lógico–físico.
 - ADR-002, ADR-003 e ADR-004 (Bruno) e ADR-007 (Tiago).
 - Deploy **apenas local**, sem cloud por causa dos custos, autorizado pelo professor (G1, G2; Tomás, 22/10, [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). Investigação de deploy, observabilidade e IA no #53 (ADR-005, ADR-011 e ADR-012, propostos).
+- Pipeline de CI/CD (H4–H8, Bruno, 23/10, #131): `ci.yml` com a parte rápida nos PRs e tudo (imagens, Trivy, smoke test com Compose) na `main`, nas tags e à mão; PRs só de documentação e *drafts* saltam o código; sem registry nem *secrets*. No [ADR-010](adr/0010-cicd-strategy.md).
 
 **Em aberto, com responsável:**
-1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
-2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
+1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7).
+2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. Implementa o pipeline do [ADR-010](adr/0010-cicd-strategy.md) (`ci.yml`, Dependabot, isenção do Dependabot no `conventions.yml`) e mede a duração dos jobs; falta confirmar com o Tomás. **Tomás.**
 3. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.**
 4. **Transportes:** valores de x (intervalo do poll) e y (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). **Tiago.**
 5. **Estimativa de custos de operação:** salários + infraestrutura, simples; a parte de infraestrutura usa o G2 (Tomás) e serve também para explicar no relatório e na apresentação porque não há deployment na cloud (entrega apenas local, autorizada pelo professor; [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). **Bruno.**

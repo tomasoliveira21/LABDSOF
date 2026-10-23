@@ -47,7 +47,7 @@ A story is *Done* when its PR is merged and:
 - [ ] Automated tests cover the acceptance criteria at the appropriate level (unit, integration or end-to-end; assignment §8.3)
 - [ ] Authorisation is tested where the story touches event data: a user from another event cannot read or change it (report §5, technical risks)
 - [ ] Logs for the new behaviour are structured and carry a correlation ID (assignment §6.7)
-- [ ] It is deployed to the shared environment through the pipeline, not by hand (assignment §8.4, §8.5)
+- [ ] The pipeline on `main` is green after the merge, including the image build and the smoke test (assignment §8.4, §8.5; delivery is local, [ADR-010](../Technical/adr/0010-cicd-strategy.md))
 - [ ] The Product Owner has accepted it
 - [ ] The GitHub issue is closed by the PR (`Closes #<issue>`)
 
