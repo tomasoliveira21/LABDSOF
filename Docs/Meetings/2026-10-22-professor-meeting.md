@@ -1,6 +1,6 @@
 # Sprint A · Meeting with the Professor
 
-> **Date:** 2026-10-22 · **Context:** points discussed with the professor: architecture diagrams, AI hosting, degraded modes, the Sprint A deliverables, cost estimation and the walking skeleton.
+> **Date:** 2026-10-22 · **Context:** points discussed with the professor: architecture diagrams, AI hosting, degraded modes, the Sprint A deliverables, cost estimation, the walking skeleton and the mobile app.
 > **Background:** architecture decisions in [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md); earlier meetings in [`2026-10-08-sprint-1-gap-review.md`](2026-10-08-sprint-1-gap-review.md) and [`2026-10-12-sprint-1-presentation-feedback.md`](2026-10-12-sprint-1-presentation-feedback.md); what changed in [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## Points discussed
@@ -15,6 +15,7 @@
 | P6 | **Sprint A documents as one PDF** | Join the Markdown documents of the Sprint A deliverables, which hold the whole scope of Sprint A, into a single PDF |
 | P7 | **Operating cost estimation** | Prepare it with **salaries and infrastructure**. Keep it simple; reasonable assumptions are enough |
 | P8 | **Walking skeleton** | To do (assignment §7.1.2, deliverable 10) |
+| P9 | **Mobile app** | The React Native mobile app is removed. Farol is **one React web app**; each page is built for one use, on the **phone** (participants, field teams) or on a **laptop** (event management, control room). Guide F4 (React Native setup) and H9 (mobile build) no longer apply ([#125](https://github.com/tomasoliveira21/LABDSOF/issues/125)) |
 
 ## Presentation contents
 
@@ -44,11 +45,15 @@ What the professor listed, with the document each section comes from today.
 | Diagrams | Physical level 4 and its logical–physical mappings removed; physical level 3 shows five databases | Removal: diagrams, [ADR-009](../Technical/adr/0009-architecture-documentation.md) and [`architecture.md`](../Technical/architecture.md) §14 (#55). Level 3: Bruno, later |
 | Transport data | Poll every x seconds, store the result, users read only from the database, warning after y | Already in ADR-004 and D2. Values of x and y: guide J1 and D2, Tiago |
 | Cost estimation | Salaries + infrastructure, simple assumptions | New item, owner **Bruno** |
+| Frontend | No mobile app: one React web app with phone pages and laptop pages | Guide §0, F1, F3, F4, H9; [ADR-002](../Technical/adr/0002-backend-and-frontend-technology.md); [ADR-007](../Technical/adr/0007-venue-map-representation.md) rewritten for the web; [`architecture.md`](../Technical/architecture.md); [`features.md`](../Product/features.md) (#125). Diagrams: Bruno, later |
 
 ## Open actions
 
 - [x] **Bruno:** delete `physical-view-level-4-*` and `mapping-logical-physical-level-4-*`; update ADR-009 and `architecture.md` §14 (P1). Done in #55.
 - [ ] **Bruno:** expand `physical-view-level-3` to show the five databases (P1).
+- [x] **Bruno:** remove the mobile app from the documentation (P9). Done in #125, except the diagrams.
+- [ ] **Bruno:** remove the mobile app from the diagrams (levels 1 to 3 and `*-level-4-mobile`) (P9).
+- [ ] **Tiago:** review [ADR-007](../Technical/adr/0007-venue-map-representation.md), rewritten for the web (`react-zoom-pan-pinch` + SVG markers), and accept or change it (P9).
 - [ ] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2).
 - [ ] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2).
 - [ ] **No owner yet, done at the end:** the presentation deck (P5).

@@ -2,6 +2,24 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · Mobile app removed from the documentation (#125, Bruno Lopes)
+
+**Why:** in the meeting with the professor on 22 October 2026 (P9) the React Native mobile app was dropped. Farol is one React web app, and each page is built for the phone or for a laptop.
+
+### Changed
+- `adr/0002-backend-and-frontend-technology.md`: one React web app for every user; React Native moved to *Alternatives considered*; the app-store open point removed.
+- `adr/0007-venue-map-representation.md`: rewritten for the web. The image with an SVG overlay inside `react-zoom-pan-pinch`, a spike on a real iPhone and Android phone, Pointer Events as the fallback. Coordinates, PDFBox conversion and storage unchanged. Back to **Proposed** until Tiago reviews it.
+- `adr/0009-architecture-documentation.md`: level 4 per container without the mobile app; F4 removed from the **[PENDING]** list.
+- `architecture.md`: context and container Mermaid diagrams with one web app, §10, §12 (frontend, venue map; React Native setup row removed), §13 (ADR-007 status) and a **[TO ALIGN]** note in §14 for the diagrams.
+- `architecture-decisions-guide.md`: §0, B3, F1 and F3 updated; F4 and H9 closed (no longer apply); owners and *Próximos passos*.
+- `features.md`: §7.1 (split rule 3 and the issue-type rule) and the Sprint B deliverables table in §8.5 speak of phone pages and laptop pages instead of two apps.
+- `product-vision.md`, `Research/architecture-investigation/README.md`: app stores and mobile setup removed.
+- `2026-10-22-professor-meeting.md`: P9, the decision and the open actions.
+
+### Not changed
+- The draw.io diagrams still show the mobile app (levels 1 to 3 and `*-level-4-mobile`); Bruno updates them later.
+- Earlier meeting notes and CHANGELOG entries, which record what was decided at the time; competitor analyses, where "native apps" describe other products.
+
 ## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
 
 **Why:** the stories in `features.md` §7 are now GitHub issues, so the backlog can be planned and tracked (assignment §8.2, DoR item "has a GitHub issue").

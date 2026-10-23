@@ -25,7 +25,7 @@ Vision statement and pitch **agreed by the team on 8 October 2026**. Updated on 
 
 ### Product name: **Farol** (decided 9 October 2026)
 
-Chosen from the candidates below. Still to check: the name is free on the domain and in the app stores.
+Chosen from the candidates below. Still to check: the name is free on the domain.
 
 | Name | Idea |
 |---|---|
@@ -36,7 +36,7 @@ Chosen from the candidates below. Still to check: the name is free on the domain
 | **Ponto** | "Point" or "meeting point": every feature is a point on the map |
 | **SOS Festa** | Says the safety part out loud, but it may sound like an emergency-only app |
 
-Check before choosing: the name is free on the domain and in the app stores, and it does not tie the product to one festival (it is multi-event).
+Check before choosing: the name is free on the domain, and it does not tie the product to one festival (it is multi-event).
 
 ## 2. Problem in one paragraph
 
