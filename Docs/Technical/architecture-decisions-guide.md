@@ -1,8 +1,8 @@
 # Decisões Arquiteturais
 
 > LABDSOF 2026/27 · Sprint A · Enunciado §6 (requisitos técnicos), §7.1.2 (entregáveis 7, 8 e 10), §8.4 e §8.5 (contentores e CI/CD)
-> **Estado (22 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
-> **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor) e reunião com o professor de 22 de outubro de 2026 ([`2026-10-22-professor-meeting.md`](../Meetings/2026-10-22-professor-meeting.md)).
+> **Estado (23 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
+> **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor) e reunião com o professor de 22 de outubro de 2026 ([`2026-10-22-professor-meeting.md`](../Meetings/2026-10-22-professor-meeting.md)); procedimento de entrega local fechado a 23 de outubro de 2026 (#129).
 
 **Legenda do estado:**
 ✅ Decidido · ⏳ À espera da resposta do professor · 🔍 Em investigação (responsável indicado) · 🔮 Melhoria futura (fora do MVP) · ❗ Por decidir, **sem responsável**
@@ -11,23 +11,23 @@
 
 | Membro | Área |
 |---|---|
-| **Tomás** | Deploy (Azure, ECS ou Vercel) · integração de IA (se é viável fazer deploy de Ollama) · observabilidade · avaliação de Responsible AI e dataset de avaliação da triagem · walking skeleton |
+| **Tomás** | Aplicar o procedimento de entrega local no walking skeleton ([`local-delivery.md`](local-delivery.md)) · integração de IA (se é viável fazer deploy de Ollama) · observabilidade · avaliação de Responsible AI e dataset de avaliação da triagem · walking skeleton |
 | **Guerra** | Identidade e segurança · API gateway · Security & Privacy assessment · simulador da API do Porto Digital (J4) |
 | **Tomás + Guerra** | Modelo de domínio, incluindo o FarolAdmin (P4), as *memberships* por evento e as equipas com permissões |
 | **Tiago** | Resiliência e degradação · início do backlog · biblioteca do mapa do recinto · lista de NFRs |
-| **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos · estimativa de custos (salários + infraestrutura) |
+| **Bruno** | Diagramas (draw.io, com o MCP do draw.io) · depois, avaliação e investigação da pipeline de CI/CD · procedimento de entrega local (G4–G7, H5) · setup e distribuição da app mobile · eliminação de conta · API outline e catálogo de eventos · estimativa de custos (salários + infraestrutura) |
 
 ## Investigação de deploy, observabilidade e IA (22 de outubro de 2026)
 
 **[Issue #53](https://github.com/tomasoliveira21/LABDSOF/issues/53): investigação documentada, propostas para revisão da equipa.** O [relatório e mapa de cobertura](../Research/architecture-investigation/README.md) cobre G1–G7, I1–I3, K1–K2, F2, alojamento do RabbitMQ (C1) e número de servidores PostgreSQL (D2). Inclui comparação de plataformas/custos, observabilidade, avaliação Responsible AI, 100 casos sintéticos e baseline reproduzível.
 
-Propostas de IA e observabilidade: [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) (IA), [ADR-011](adr/0011-deployment-and-infrastructure.md) (infraestrutura), [ADR-012](adr/0012-observability.md) (observabilidade). **As propostas técnicas mantêm os estados 🔍:** a investigação não é aprovação da equipa; a autorização posterior para entrega apenas local está registada abaixo. Faltam validação dos rótulos, medições de modelos/SC3/SC5, dimensionamento local e revisão de privacidade. Orçamento/créditos e quotas de cloud só voltam a ser necessários se essa alternativa for retomada. Não houve deploy nem contratação de serviços. A proposta de recuperação G7 exige rever o âmbito de backup D5 antes de ser aceite.
+Propostas de IA e observabilidade: [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) (IA), [ADR-011](adr/0011-deployment-and-infrastructure.md) (infraestrutura), [ADR-012](adr/0012-observability.md) (observabilidade). **As propostas técnicas mantêm os estados 🔍:** a investigação não é aprovação da equipa; a autorização posterior para entrega apenas local está registada abaixo. Faltam validação dos rótulos, medições de modelos/SC3/SC5, dimensionamento local e revisão de privacidade. Orçamento/créditos e quotas de cloud só voltam a ser necessários se essa alternativa for retomada. Não houve deploy nem contratação de serviços. O G7 fechou a 23/10 sem mexer no D5: só *dumps* de dados sintéticos antes da demo, sem garantia contra perda do disco.
 
 ## Entrega apenas local autorizada pelo professor (registo de 22 de outubro de 2026)
 
 Segundo a informação transmitida pelo **Tomás**, o professor autorizou avançar com **execução/deployment apenas local, sem deployment na cloud, por causa dos custos**. É necessário explicar no relatório e na apresentação que a ausência de deployment na cloud se deve aos custos. O [registo da clarificação](../Meetings/2026-10-22-local-deployment-clarification.md) e o [ADR-011](adr/0011-deployment-and-infrastructure.md) documentam o âmbito e a justificação.
 
-A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidência e alternativa futura**, não como plano de contratação. Os cinco serviços continuam independentes; execução local não exige cinco máquinas nem elimina testes, imagens, integração, observabilidade ou demonstração dos modos degradados. A topologia e a automação local detalhadas continuam por implementar/validar. Esta clarificação substitui a expectativa anterior de deploy automático numa produção cloud em H4/H5.
+A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidência e alternativa futura**, não como plano de contratação. Os cinco serviços continuam independentes; execução local não exige cinco máquinas nem elimina testes, imagens, integração, observabilidade ou demonstração dos modos degradados. A topologia e o procedimento local ficaram definidos a 23/10 em [`local-delivery.md`](local-delivery.md) (#129); falta implementá-los no walking skeleton. Esta clarificação substitui a expectativa anterior de deploy automático numa produção cloud em H4/H5.
 
 ## 0 · Base
 
@@ -113,10 +113,10 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 | G1 | Execução/deployment **apenas local**, sem cloud devido aos custos; autorização do professor reportada pelo Tomás. Comparação das plataformas preservada no relatório de investigação | ✅ âmbito local |
 | G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud. Entra na estimativa de custos de operação (salários + infraestrutura) do Bruno | ✅ justificação registada |
 | G3 | Região cloud não se aplica à entrega local; RGPD e fluxos de dados locais/fornecedores continuam sujeitos à revisão do Guerra | ✅ sem região cloud; 🔍 privacidade |
-| G4 | Desenvolvimento, testes e demo localmente; não é necessário um ambiente cloud de produção | ✅ âmbito; 🔍 configuração |
-| G5 | Especificação local versionada (Compose); Bicep/cloud IaC mantém-se como alternativa estudada, sem provisionamento exigido | 🔍 implementação local |
-| G6 | Execução local com contentores independentes; procedimento reproduzível de arranque/atualização e smoke test (ADR-011) | ✅ alvo local; 🔍 implementação |
-| G7 | Rollback por imagem e recuperação de estado local; volumes não são backups. Plano e medições de RTO/RPO continuam necessários | 🔍 implementação/validação |
+| G4 | Desenvolvimento, testes e demo localmente, sem ambiente cloud. **Demo:** no portátil de um membro, com um segundo portátil de reserva (mesma tag, *dumps* restaurados, smoke test na véspera). Os telemóveis abrem a app web em `http://<IP do portátil na LAN>:<porta>`, num hotspot ou router da equipa; só a porta do `web` fica na LAN; sem HTTPS (o MVP não precisa). Configuração em `infra/.env` (a partir do `infra/.env.example` versionado, sem segredos no repositório); dados de demonstração sintéticos por migrações Flyway só com o perfil `demo`. [`local-delivery.md`](local-delivery.md) §2, §3, §8 | ✅ Bruno define, Tomás aplica |
+| G5 | **Um só `infra/compose.yaml`** com *profiles* opcionais (`ai`, `observability`); **uma instância PostgreSQL com cinco bases de dados e cinco utilizadores** (não cinco contentores); health checks; volumes nomeados para PostgreSQL e RabbitMQ. Bicep/cloud IaC fica como alternativa estudada. [`local-delivery.md`](local-delivery.md) §1 | ✅ Bruno define, Tomás aplica |
+| G6 | **Só comandos `docker compose`** (sem script nem Makefile): arrancar, atualizar para uma tag, substituir um só serviço (`up -d --no-deps`), repor os dados. **Smoke test** é uma checklist de comandos à mão: todos os contentores *healthy* (o health check chama o `/actuator/health`), a app web abre (também num telemóvel), um *round trip* pelo RabbitMQ. A demo usa sempre o simulador J4; D1, D2, broker e serviço em baixo mostram-se com `docker compose stop`. [`local-delivery.md`](local-delivery.md) §4, §5, §7, §8 | ✅ Bruno define, Tomás aplica |
+| G7 | **Rollback = construir a tag anterior** (H7); as migrações Flyway não se desfazem (*expand and contract*). **`pg_dump` das cinco bases antes de cada demo e de cada atualização**, para voltar a um estado conhecido e passá-lo ao portátil de reserva. Volumes não são backup; mensagens em fila e perda do disco não estão cobertas (RPO não garantido); D5 mantém-se 🔮. RTO medido no walking skeleton. [`local-delivery.md`](local-delivery.md) §5, §6 | ✅ Bruno define; 🔍 RTO medido pelo Tomás |
 
 ## H · Pipeline de CI/CD
 
@@ -128,7 +128,7 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 | H2 | **Monorepo atual:** `backend/<serviço>/`, `frontend/`, `infra/`, `Docs/` | ✅ |
 | H3 | **Maven**, **Java 21 (LTS)**, **Spring Boot 4.x**; imagens com **Dockerfile multi-stage** | ✅ |
 | H4 | **Corre tudo, sempre:** verificações em cada PR, merge e tag para todos os serviços (sem path filters); imagens versionadas e validação/smoke test local. Cloud não é destino obrigatório | ✅ âmbito atualizado; 🔍 automação Bruno |
-| H5 | A expectativa anterior de **deploy automático na produção cloud** é substituída pela entrega local autorizada por custos. Bruno define o procedimento/pipeline de entrega local; não se presume acesso automático à máquina pessoal | ✅ âmbito local; 🔍 automação Bruno |
+| H5 | A expectativa anterior de **deploy automático na produção cloud** é substituída pela entrega local autorizada por custos. **Entrega = construir localmente a partir da tag** e correr o smoke test à mão ([`local-delivery.md`](local-delivery.md)); o CI não acede à máquina de ninguém. Correr o smoke test no CI fica para o ADR-010 | ✅ |
 | H6 | Autenticação para publicação/entrega de imagens, se aplicável; autenticação de deploy cloud fica adiada com essa alternativa | 🔍 Bruno |
 | H7 | Versionamento e etiquetas | 🔍 Bruno |
 | H8 | Repositório **privado** | ✅ |
@@ -172,10 +172,11 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Diagramas C4 e 4+1 em draw.io e ADR-009 (Bruno). A 22/10 saíram o nível 4 da vista física e os seus mapeamentos lógico–físico.
 - ADR-002, ADR-003 e ADR-004 (Bruno) e ADR-007 (Tiago).
 - Deploy **apenas local**, sem cloud por causa dos custos, autorizado pelo professor (G1, G2; Tomás, 22/10, [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). Investigação de deploy, observabilidade e IA no #53 (ADR-005, ADR-011 e ADR-012, propostos).
+- Procedimento de entrega local e demo (G4–G7, H5; Bruno, 23/10, #129): um `infra/compose.yaml`, uma instância PostgreSQL com cinco bases, só comandos `docker compose`, smoke test em checklist, telemóveis pelo IP na LAN, `pg_dump` antes da demo. Em [`local-delivery.md`](local-delivery.md) e no ADR-011.
 
 **Em aberto, com responsável:**
-1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
-2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
+1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3, I, K, F2, alojamento do RabbitMQ), Guerra (C6, E, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog), Bruno (C8, D7, F4, H6, H7, H9).
+2. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. Segue o [`local-delivery.md`](local-delivery.md) e acrescenta-lhe o que só se mede com código: RAM mínima, RTO e o comando do *round trip* no smoke test. **Tomás.**
 3. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.**
 4. **Transportes:** valores de x (intervalo do poll) e y (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). **Tiago.**
 5. **Estimativa de custos de operação:** salários + infraestrutura, simples; a parte de infraestrutura usa o G2 (Tomás) e serve também para explicar no relatório e na apresentação porque não há deployment na cloud (entrega apenas local, autorizada pelo professor; [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). **Bruno.**

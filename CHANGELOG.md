@@ -2,6 +2,23 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · Local delivery and demo procedure (#129, Bruno Lopes)
+
+**Why:** delivery is local only (#53). The team needed one written procedure to start, update, roll back, check and demonstrate the system before the walking skeleton is built (guide G4–G7 and H5).
+
+### Added
+- `Docs/Technical/local-delivery.md`: one `infra/compose.yaml` with `ai` and `observability` profiles; one PostgreSQL instance with five databases and five users; `infra/.env.example` versioned and `infra/.env` ignored; synthetic demo data from demo-only Flyway migrations; only `docker compose` commands (no script or Makefile) to start, update, replace one service, roll back (build the previous tag, guide H7) and reset; a manual smoke-test checklist (containers healthy, web app opens, one RabbitMQ round trip); `pg_dump` of the five databases before every demo and update; demo on a team member's laptop with a backup laptop, phones on the laptop's LAN IP over plain HTTP; D1, D2, broker and service outages shown with `docker compose stop`, always using the J4 simulator.
+
+### Changed
+- `architecture-decisions-guide.md`: G4–G7 and H5 decided (Bruno defines, Tomás applies in the walking skeleton); owners table, status date and *Próximos passos* updated. The RTO and the minimum RAM are measured with the walking skeleton.
+- `ADR-011`: status and points 2 and 4–6 now state the decided procedure. One PostgreSQL instance instead of separate containers. The mobile app line is replaced by phones opening the web app (#125).
+- `architecture.md` §10, §12 and §13: link the procedure and summarise it.
+- `deployment.md` (G6): the five-PostgreSQL-containers suggestion is marked as not taken.
+- `2026-10-22-local-deployment-clarification.md`: follow-up line. `Docs/README.md`: the procedure in the index.
+
+### Not changed
+- D5 (retention and backup) stays deferred: the dumps only cover the synthetic demo data. Running the smoke test in CI belongs to ADR-010 (Bruno, not written yet).
+
 ## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
 
 **Why:** the stories in `features.md` §7 are now GitHub issues, so the backlog can be planned and tracked (assignment §8.2, DoR item "has a GitHub issue").

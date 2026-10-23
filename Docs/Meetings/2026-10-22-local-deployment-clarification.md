@@ -22,6 +22,10 @@ Keep the [deployment and cost investigation](../Research/architecture-investigat
 
 Explain the limitation alongside the reason: cloud operation, managed-platform scaling and cloud recovery have not been demonstrated. Show the local topology, startup commands, integration/failure tests and observed results instead of claiming a cloud deployment occurred.
 
+## Follow-up
+
+**23 October 2026 (#129):** Bruno defined the local delivery procedure: startup, update, rollback, smoke test, backup and the demo set-up. See [`local-delivery.md`](../Technical/local-delivery.md).
+
 ## Linked records
 
 [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md) · [Architecture §10](../Technical/architecture.md#10-deployment-view) · [Decisions guide](../Technical/architecture-decisions-guide.md) · [Research overview](../Research/architecture-investigation/README.md).

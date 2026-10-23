@@ -165,15 +165,15 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 
 **Current scope: local-only deployment/execution.** Tomás reported that the professor authorised proceeding locally **because of cloud-hosting costs**, provided the team explains that reason in the final report/presentation. See the [clarification record](../Meetings/2026-10-22-local-deployment-clarification.md) and [ADR-011](adr/0011-deployment-and-infrastructure.md). The [cloud assessment and dated costs](../Research/architecture-investigation/deployment.md) remain documented evidence and future alternatives, not a requirement to provision cloud resources.
 
-The local topology recommendation is one machine with five independently replaceable backend containers, one RabbitMQ with a persistent volume, one PostgreSQL instance with five separate databases/users and a web-server container for the React app. Gateway, simulator, observability and optional inference add components as needed; the mobile client runs on a device/emulator. Separate database containers are also possible without separate machines. Exact Compose configuration and resource sizing still need implementation/measurement.
+**Local delivery procedure (decided 23 October 2026, #129): [`local-delivery.md`](local-delivery.md).** One laptop runs one `infra/compose.yaml`: five independently replaceable backend containers, one RabbitMQ with a persistent volume, **one PostgreSQL instance with five separate databases/users**, a `web` container serving the React app and proxying `/api/`, and the Porto Digital simulator; AI and observability are optional profiles. Only `docker compose` commands are used; a manual smoke-test checklist runs after every start, update or rollback. Phones open the web app at the laptop's LAN address over plain HTTP; a second laptop is kept as a backup. Minimum RAM and recovery times are measured with the walking skeleton.
 
 Preserved requirements and limits:
 - **One instance per service** initially; independent images and service replacement still demonstrate the microservice boundaries.
 - **Multi-stage Dockerfiles**, Maven, Java 21 and Spring Boot 4.x; **GitHub Actions** checks every service on every PR/merge/tag.
-- The earlier automatic-deploy-to-cloud-production promise is superseded for this delivery scope. Bruno defines reproducible local startup/update and smoke-test handoff; cloud credentials/ACR/provisioning are not prerequisites.
+- The earlier automatic-deploy-to-cloud-production promise is superseded for this delivery scope. Delivery is building locally from the release tag and running the smoke test; CI never reaches a personal machine. Cloud credentials/ACR/provisioning are not prerequisites.
 - **Flyway** migrations remain compatible with the previous application image (*expand and contract*); rolling back code does not undo database migrations.
 - Local metrics/traces/logs and degraded-mode/integration tests still provide evidence. No cloud HA, managed scaling or cloud recovery result is claimed.
-- Persistent local volumes are not a backup or a guarantee against host/disk loss. Backup scope and observed recovery limits remain explicit.
+- Persistent local volumes are not a backup or a guarantee against host/disk loss. The five databases are dumped with `pg_dump` before every demo and update; queued messages and disk loss are not covered.
 
 ## 11. Architectural style and its evolution
 
@@ -193,7 +193,7 @@ Preserved requirements and limits:
 | API | Contract-first **OpenAPI**, `/api/v1` |
 | CI/CD | **GitHub Actions**, monorepo, private repository |
 | Architecture views | **C4** (all four levels, level 3 for every service) and **4+1** views without scenarios, drawn in **draw.io** |
-| Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** [ADR-011](adr/0011-deployment-and-infrastructure.md); local implementation pending |
+| Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** One Compose file, one PostgreSQL instance with five databases. [ADR-011](adr/0011-deployment-and-infrastructure.md), [`local-delivery.md`](local-delivery.md); implementation in the walking skeleton |
 | AI provider and model | **[PROPOSED]** Hosted Mistral Small vs local Ollama comparison; selection gates in [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) |
 | Observability | **[PROPOSED]** Local Micrometer/OpenTelemetry + Prometheus/Grafana; Azure Monitor retained as cloud alternative. [ADR-012](adr/0012-observability.md) |
 | Identity | **[PENDING]** Guerra |
@@ -217,7 +217,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
 | ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
-| [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; detailed implementation/recovery pending |
+| [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; procedure decided 23 October 2026 ([`local-delivery.md`](local-delivery.md)); implementation pending |
 | [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
 
 > ⚠️ **GAP: API outline and walking skeleton.** Sprint A also asks for an API outline (item 7; owner: Bruno, with the event catalogue) and a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; later phase, no owner yet).
