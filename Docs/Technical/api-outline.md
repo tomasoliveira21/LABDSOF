@@ -44,7 +44,7 @@
 ### 1.7 Errors
 
 - **Problem Details** (RFC 9457), `application/problem+json`.
-- `400` invalid input, `401` not logged in, `403` no permission, `404` not found **or not a member of the event** (so as not to reveal that the event exists), `409` state conflict (e.g. a field task already accepted), `422` breaks a business rule (e.g. removing the last EventAdmin).
+- `400` invalid input, `401` not logged in, `403` no permission, `404` not found **or not a member of the event** (so as not to reveal that the event exists), `409` state conflict (e.g. a field task already accepted), `422` breaks a business rule (e.g. removing the last EventAdmin), `429` too many requests, with `Retry-After` (US-48).
 
 ## 2. Auth & Users
 
@@ -133,13 +133,110 @@ Owns events, teams with their permissions and help categories, map versions and 
 
 Stories: US-23 to US-36, US-47 to US-53.
 
+Owns help requests, triage suggestions, community reports, field tasks and their audit history. Keeps local copies of the memberships and team assignments (`MembershipChanged`), the teams with their permissions, help categories and report types (`TeamChanged`), the event status (`EventChanged`) and the map versions (`VenueMapVersionPublished`). The AI triage runs inside Reports, through a queue (§7).
+
+**Help requests**
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
-| | | _To fill in (step 3)_ | | |
+| `POST` | `/events/{eventId}/help-requests` | Ask for help with a category and a point on the map (§4.1); `422` if the event is closed or suspended. Sending the same `clientRequestId` again returns the request already saved, so the app can retry safely | Member | US-23, US-25 |
+| `GET` | `/events/{eventId}/help-requests?updatedSince=` | Live list. Each caller sees only what they may: their own requests (`mine=true`), all of the event's (`HelpRequests.Triage`), or those routed to their teams (`HelpRequests.Respond`). Filters `status`, `teamId` | Member | US-24, US-26, US-27, US-31 |
+| `GET` | `/events/{eventId}/help-requests/{requestId}` | One request. The participant sees only its status and the time of the last change; the control room also sees the triage suggestion and the default team | Owner, `HelpRequests.Triage`, routed team | US-24, US-29, US-34 |
+| `PATCH` | `/events/{eventId}/help-requests/{requestId}` | Set the priority (`{ priority }`); recorded with who, when, old and new value | `HelpRequests.Triage` | US-28 |
+| `POST` | `/events/{eventId}/help-requests/{requestId}/acknowledge` | Mark it *Seen* | `HelpRequests.Triage` | US-28 |
+| `POST` | `/events/{eventId}/help-requests/{requestId}/route` | Route it to a team (`{ teamId }`); creates a field task; `422` if the team has no `HelpRequests.Respond` | `HelpRequests.Triage` | US-29 |
+| `POST` | `/events/{eventId}/help-requests/{requestId}/accept-suggestion` | Take the AI's category, priority and team as the request's values; recorded as the member's decision | `HelpRequests.Triage` | US-35 |
+| `POST` | `/events/{eventId}/help-requests/{requestId}/close` | Close it: it leaves the active list | `HelpRequests.Triage` | US-30 |
+| `GET` | `/events/{eventId}/help-requests/{requestId}/history` | Full change history (who, when, old and new values) | `HelpRequests.Triage` | US-28 |
+| `GET` | `/events/{eventId}/triage-status` | Whether the AI triage is available, for the banner of scenario D1 | `HelpRequests.Triage` | US-36 |
+
+**Community reports**
+
+| Method | Path | Purpose | Requires | Story |
+|---|---|---|---|---|
+| `POST` | `/events/{eventId}/reports` | Report a problem (`{ type, location, clientRequestId }`), saved as *Pending*; `429` with `Retry-After` when the participant reports too often | Member | US-47, US-48 |
+| `GET` | `/events/{eventId}/reports?updatedSince=` | Live list. Participants see the confirmed, active reports without the reporter, and their own; reviewers see every report of the types they review | Member | US-47, US-49, US-50 |
+| `POST` | `/events/{eventId}/reports/{reportId}/confirm` | Confirm it: it goes on the map and counts for badges | `Reports.Review` for its type | US-50 |
+| `POST` | `/events/{eventId}/reports/{reportId}/reject` | Reject it | `Reports.Review` for its type | US-50 |
+| `POST` | `/events/{eventId}/reports/{reportId}/unconfirm` | Withdraw the confirmation: it leaves the map and stops counting; recorded with who and when | `Reports.Review` for its type | US-51 |
+| `POST` | `/events/{eventId}/reports/{reportId}/dispatch` | Send it to a team to check or fix (`{ teamId, purpose: Verify \| Fix }`); creates a field task; `422` if the team has no `Reports.Respond` | `Reports.Review` for its type | US-52, US-53 |
+
+- Reports expire on their own, after the time of their type (`features.md` §6.1); there is no endpoint for it.
+
+**Field tasks**
+
+| Method | Path | Purpose | Requires | Story |
+|---|---|---|---|---|
+| `GET` | `/events/{eventId}/field-tasks?updatedSince=` | Live list of the tasks of my teams, each with its request or report and its point on the map | `HelpRequests.Respond`, `Reports.Respond` | US-31, US-52 |
+| `POST` | `/events/{eventId}/field-tasks/{taskId}/accept` | Accept a task; the help request becomes *On the way*; `409` if another member already accepted it | Member of the task's team | US-32 |
+| `POST` | `/events/{eventId}/field-tasks/{taskId}/answer` | Answer a *Verify* task (`{ found: true \| false }`); the answer goes back to the reviewer | Member who accepted it | US-52 |
+| `POST` | `/events/{eventId}/field-tasks/{taskId}/resolve` | Mark the help request, or the report of a *Fix* task, resolved | Member who accepted it | US-33, US-53 |
+
+- Publishes `HelpRequestSubmitted` (for its own triage consumer), `ReportConfirmed` and `ReportUnconfirmed` (§7).
 
 ### 4.1 Core flow: request and response fields
 
-_To fill in (step 3): help request, triage suggestion, field tasks._
+**Ask for help:** `POST /events/{eventId}/help-requests`
+
+```json
+{
+  "clientRequestId": "6f1c…",          // generated by the app; makes a retry safe (US-25)
+  "category": "Health",                // Health | Safety | LostPerson | Theft | Other
+  "location": { "mapVersion": 3, "x": 0.42, "y": 0.77 },  // normalised position on that map version
+  "description": "Friend fainted near the bar"            // optional
+}
+```
+
+**A help request, as the control room sees it:** `GET /events/{eventId}/help-requests/{requestId}`
+
+```json
+{
+  "id": "hr-81…",
+  "eventId": "ev-12…",
+  "category": "Health",
+  "location": { "mapVersion": 3, "x": 0.42, "y": 0.77 },
+  "description": "Friend fainted near the bar",
+  "priority": "High",                  // scale: features §5.2, AI-3 [PENDING]
+  "status": "Submitted",               // Submitted | Seen | OnTheWay | Resolved | Closed
+  "submittedAt": "2027-05-08T23:14:05Z",
+  "updatedAt": "2027-05-08T23:14:05Z",
+  "defaultTeamId": "tm-03…",           // the team that handles the category (US-29)
+  "routedTeamId": null,
+  "triage": {
+    "state": "Suggested",              // Pending | Suggested | NotTriaged | Accepted | Changed
+    "suggestedCategory": "Health",
+    "suggestedPriority": "High",
+    "suggestedTeamId": "tm-03…",
+    "notTriagedReason": null           // Timeout | ProviderError | InvalidOutput (US-36)
+  }
+}
+```
+
+- The participant gets only `id`, `category`, `status` and `updatedAt`, which the app shows as *Sent*, *Seen*, *On the way*, *Resolved* or *Closed* (US-24).
+- The request is saved and shown at once, with `triage.state: Pending`. If no valid suggestion arrives within 30 s it becomes `NotTriaged` (scenario D1, US-36). A suggestion never overwrites a value a member already set, and never lowers the default priority (domain model I4).
+
+**A field task:** `GET /events/{eventId}/field-tasks?updatedSince=`
+
+```json
+{
+  "items": [
+    {
+      "id": "ft-55…",
+      "purpose": "Assist",             // Assist (help request) | Verify | Fix (report)
+      "status": "Open",                // Open | Accepted | Answered | Resolved | Cancelled
+      "teamId": "tm-03…",
+      "target": { "kind": "HelpRequest", "id": "hr-81…", "category": "Health",
+                  "location": { "mapVersion": 3, "x": 0.42, "y": 0.77 } },
+      "acceptedBy": null,
+      "dispatchedAt": "2027-05-08T23:15:10Z",
+      "updatedAt": "2027-05-08T23:15:10Z"
+    }
+  ],
+  "serverTime": "2027-05-08T23:15:12Z"
+}
+```
+
+- A field task targets exactly one help request or report. `Cancelled` covers a team deleted while the task was open: the request goes back to the control-room queue (US-16).
 
 ## 5. Transports
 
