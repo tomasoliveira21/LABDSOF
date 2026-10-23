@@ -309,9 +309,43 @@ Every message carries:
 
 ### 7.4 Events
 
-| Event | Producer | Consumers (why) | Payload |
+Every payload also carries `version` (§7.3). `eventId` is in the envelope.
+
+| Event · routing key | Producer | Consumers (why) | Payload |
 |---|---|---|---|
-| | | _To fill in (step 4)_ | |
+| `MembershipChanged` · `membership.changed` | Auth & Users | **Events**, **Reports**, **Transports**: decide who may call each endpoint of an event (role and teams, §1.5); Events also lists each event's EventAdmins (US-07) | `userId`, `role` (`EventAdmin` \| `RegularUser`), `status` (`Active` \| `Removed`), `teamIds` |
+| `GlobalRoleChanged` · `global-role.changed` | Auth & Users | **Events**: only the FarolAdmin creates, lists, suspends and reactivates events (US-06, US-07, US-09) | `userId`, `role` (`FarolAdmin`), `granted` |
+| `UserProfileChanged` · `user-profile.changed` **[PROPOSED]** | Auth & Users | **Reports**: the name of who accepted a field task, in the backoffice; **Events**: the names of the EventAdmins (US-07). Without it, both show only the `userId` | `userId`, `displayName` |
+| `UserDeleted` · `user.deleted` | Auth & Users | Every service that keeps personal data. Name reserved; defined in the account-deletion issue (guide D7) | — |
+| `EventChanged` · `event.changed` | Events | **Auth & Users**: creates the first EventAdmin's membership (US-06, **[PROPOSED]**) and accepts joins only to published events (US-12); **Reports**: refuses help requests and reports in a closed or suspended event (US-13, US-09); **Transports**: refuses a suspended event; **Badges**: the event's name on the *Event reporter* badge (US-55) | `name`, `organiserName`, `dates`, `status` (`Draft` \| `Published` \| `Closed` \| `Suspended`), `firstEventAdminUserId` (only when created) |
+| `TeamChanged` · `team.changed` | Events | **Auth & Users**: a member can only be put in a team of the event (US-18); **Reports**: who triages, reviews and responds, the default team for a category (US-29), the teams the AI may suggest (US-34), and the requests to return to the queue when a team is deleted (US-16); **Transports**: who has `Transport.Edit` (US-37) | `teamId`, `name`, `permissions` (`[{ permission, reportTypes }]`), `handledCategories`, `deleted` |
+| `VenueMapVersionPublished` · `venue-map-version.published` | Events | **Reports**: a help request or report must point to an existing map version of the event (US-23, US-47) | `mapVersion`, `publishedAt` |
+| `PointOfInterestChanged` · `point-of-interest.changed` | Events | **Transports**: a shuttle's stops must be transport-stop points of the event, shown with their names (US-37, US-39) | `poiId`, `mapVersion`, `type`, `name`, `position`, `deleted` |
+| `CheckInRecorded` · `check-in.recorded` | Events | **Badges**: counts the event as attended, once (US-57) | `userId`, `checkedInAt` |
+| `HelpRequestSubmitted` · `help-request.submitted` | Reports | **Reports** (its own triage consumer): asks the AI for a suggestion and saves it (US-34, §4.1). Published through the outbox, so a saved request is never lost ([`architecture.md`](architecture.md) §6) | `requestId`, `category`, `location`, `description`, `submittedAt` |
+| `ReportConfirmed` · `report.confirmed` | Reports | **Badges**: adds the report to the reporter's counts and recalculates the tiers (US-54, US-55) | `reportId`, `reporterUserId`, `type`, `confirmed: true`, `confirmedAt` |
+| `ReportUnconfirmed` · `report.unconfirmed` | Reports | **Badges**: removes it from the counts and recalculates the tiers, which can go down (US-54, US-55) | `reportId`, `reporterUserId`, `type`, `confirmed: false`, `revokedAt` |
+
+- Transports and Badges publish nothing. The status of a help request reaches the participant by polling (§1.6), not by an event.
+- `ReportConfirmed` and `ReportUnconfirmed` carry the same full state, so Badges keeps one row per report and upserts it; a report confirmed, unconfirmed and confirmed again counts once.
+- If the badge preferences stay in Auth & Users (§6), Auth & Users also publishes `EngagementPreferencesChanged` to Badges.
+
+### 7.5 Queues
+
+| Queue | Bound to (routing keys) |
+|---|---|
+| `auth-users.events-events` | `farol.events`: `event.changed`, `team.changed` |
+| `events.auth-users-events` | `farol.auth-users`: `membership.changed`, `global-role.changed`, `user-profile.changed`, `user.deleted` |
+| `reports.auth-users-events` | `farol.auth-users`: `membership.changed`, `user-profile.changed`, `user.deleted` |
+| `reports.events-events` | `farol.events`: `event.changed`, `team.changed`, `venue-map-version.published` |
+| `reports.reports-events` | `farol.reports`: `help-request.submitted` (triage consumer) |
+| `transports.auth-users-events` | `farol.auth-users`: `membership.changed` |
+| `transports.events-events` | `farol.events`: `event.changed`, `team.changed`, `point-of-interest.changed` |
+| `badges.auth-users-events` | `farol.auth-users`: `user.deleted` |
+| `badges.events-events` | `farol.events`: `event.changed`, `check-in.recorded` |
+| `badges.reports-events` | `farol.reports`: `report.confirmed`, `report.unconfirmed` |
+
+Each queue has its dead-letter queue (`<queue>.dlq`); retries and backoff follow [`architecture.md`](architecture.md) §6.
 
 ## 8. Coverage
 
