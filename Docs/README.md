@@ -8,6 +8,7 @@ Multi-event coordination platform for large academic festivals (pilot case: Quei
 |---|---|---|
 | Problem | [Problem and Opportunity Report](Deliverables/problem-opportunity-report-queima.md) | EN |
 | Market | [Market and Competitor Analysis](Deliverables/market-and-competitor-analysis.md) · [Product-specific annex](Deliverables/market-and-competitor-analysis-product-specific.md) | EN |
+| Costs | [Operating Cost Estimation](Deliverables/operating-cost-estimation.md): salaries and infrastructure, and why delivery is local | EN |
 | Research | [Student survey (Google Forms script)](Research/inquerito-estudantes-google-forms.gs) | EN (questions in PT) |
 | Product | [Product Vision](Product/product-vision.md) · [Personas](Product/personas.md) · [Main Features and Backlog](Product/features.md) · [User Workflows](Product/user-workflows.md) | EN |
 | Process | [Team Roles and Work Process](Process/team-and-process.md) · [Definition of Ready and Done](Process/definition-of-ready-and-done.md) · [Spec-Driven Development rules](Process/spec-driven-development.md) (proposed) | EN |

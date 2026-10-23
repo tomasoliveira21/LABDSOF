@@ -28,7 +28,7 @@ What the professor listed, with the document each section comes from today.
 | Domain model | [`domain-model.md`](../Technical/domain-model.md) | Exists |
 | Architecture & technology | [`architecture.md`](../Technical/architecture.md), ADRs, draw.io diagrams | Exists; diagrams change with P1 |
 | Assumptions & dependencies | Assumptions in [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md); dependencies spread across the ADRs | **Missing** as one list |
-| Operating costs estimation | Infrastructure research in #53 (guide G2) | **Missing**: salaries and the final figure (P7) |
+| Operating costs estimation | [`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md) (#134), with the infrastructure research of #53 (guide G2) | Exists |
 | Prioritised product backlog (epics) | [`features.md`](../Product/features.md) §2 and §7; issues #58 to #121 (§8.3) | Partial: issues created, the board does not exist yet |
 | NFRs | Architecture drivers ([`architecture.md`](../Technical/architecture.md) §1) and success criteria | **Missing** as one list |
 | High-level scope of Sprint 1 | Sprint goals in #45 (`features.md` §8.1, not merged) | Partial |
@@ -53,7 +53,7 @@ What the professor listed, with the document each section comes from today.
 - [ ] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2).
 - [ ] **No owner yet, done at the end:** the presentation deck (P5).
 - [ ] **No owner yet, done at the end:** the single PDF with the Sprint A documents (P6).
-- [ ] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). The infrastructure part can reuse Tomás's research in #53 (G2).
+- [x] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). Done in #134 ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md)), with the infrastructure from #53 (G2).
 - [ ] **Tomás:** the walking skeleton (P8).
 - [ ] **Tiago:** one list of NFRs, for the deck.
 - [ ] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents.

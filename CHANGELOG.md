@@ -2,6 +2,18 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · Operating cost estimation (#134, Bruno Lopes)
+
+**Why:** the professor asked for an operating cost estimation with salaries and infrastructure for the Sprint A presentation (meeting of 22 October 2026, P7), and the report must explain that cost is why the delivery is local (ADR-011).
+
+### Added
+- `Docs/Deliverables/operating-cost-estimation.md`: six roles (one person per role, `team-and-process.md` §2) at Junior or Middle salaries (Teamlyzer, 23 October 2026) plus employer social security (23.75%), from 24 September 2026 to 3 January 2027: about 58,350 € for development, with 179 € of local infrastructure (Copilot only). Maintenance: 1 FTE plus continuous cloud, about 3,400 € per month. Cloud scenario from #53 (prices of 22 October 2026, converted at the ECB rate of that day): about 301 € for the Sprint B and C demo and 358 € per month always on, against a one-off credit of 89 €. AI cost per request from ADR-005. One summary table for the slide.
+
+### Changed
+- `architecture-decisions-guide.md`: status date, G2 points to the estimate, and in *Próximos passos* the cost estimation moved from open to done.
+- `2026-10-22-professor-meeting.md`: the operating costs row of the presentation contents exists; P7 action ticked.
+- `Docs/README.md`: new *Costs* row in the index.
+
 ## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
 
 **Why:** the stories in `features.md` §7 are now GitHub issues, so the backlog can be planned and tracked (assignment §8.2, DoR item "has a GitHub issue").
