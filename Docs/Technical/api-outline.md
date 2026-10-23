@@ -108,7 +108,7 @@ Owns events, teams with their permissions and help categories, map versions and 
 | `GET` | `/events/{eventId}/map-versions/current` | The current map version with every point of interest (type, name, position) | Member | US-21, US-22 |
 | `GET` | `/events/{eventId}/map-versions/{version}` | An older version, for the requests and reports that refer to it | Member | US-27 |
 | `GET` | `/events/{eventId}/map-versions/{version}/image` | The map's PNG | Member | US-21 |
-| `POST` | `/events/{eventId}/map-versions/{version}/points-of-interest` | Place a point (`{ type, name, position }`) | `Map.Edit` | US-20 |
+| `POST` | `/events/{eventId}/map-versions/{version}/points-of-interest` | Place a point (`{ type, name, position }`) | `Map.Edit` (`Transport.Edit` for a transport stop, §5) | US-20, US-37 |
 | `PATCH` | `/events/{eventId}/map-versions/{version}/points-of-interest/{poiId}` | Move or rename a point | `Map.Edit` | US-20 |
 | `DELETE` | `/events/{eventId}/map-versions/{version}/points-of-interest/{poiId}` | Remove a point | `Map.Edit` | US-20 |
 
@@ -242,9 +242,24 @@ Owns help requests, triage suggestions, community reports, field tasks and their
 
 Stories: US-37 to US-43.
 
+Owns the event's transport options (shuttles and external bus routes), their departures, and the bus observations imported from Porto Digital ([ADR-008](adr/0008-transport-data-source.md)). Keeps local copies of the memberships and team assignments (`MembershipChanged`), the teams' permissions (`TeamChanged`), the event status (`EventChanged`) and the transport stops (`PointOfInterestChanged`).
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
-| | | _To fill in (step 3)_ | | |
+| `GET` | `/events/{eventId}/transport-options` | The event's shuttles with their stops, next departures and status (delayed or cancelled, with the time of the change), and the external bus routes | Member | US-39 |
+| `POST` | `/events/{eventId}/transport-options` | Add a shuttle (`{ mode: Shuttle, name, stopPoiIds, departures }`) or an external bus route (`{ mode: ExternalBus, externalRoute, stopPoiIds }`) | `Transport.Edit` | US-37, US-41 |
+| `PATCH` | `/events/{eventId}/transport-options/{optionId}` | Change its name, stops or departures | `Transport.Edit` | US-37 |
+| `DELETE` | `/events/{eventId}/transport-options/{optionId}` | Remove it | `Transport.Edit` | US-37 |
+| `POST` | `/events/{eventId}/transport-options/{optionId}/delay` | Mark a shuttle delayed (`{ delayMinutes, note }`); `0` clears it; stored with the time of the change | `Transport.Edit` | US-38 |
+| `POST` | `/events/{eventId}/transport-options/{optionId}/cancel` | Mark a shuttle cancelled | `Transport.Edit` | US-38 |
+| `GET` | `/events/{eventId}/bus-observations` | Latest bus positions on the event's external routes, with `dataFrom` (time of the data) and `stale: true` when the source is down or the data is older than the freshness limit | Member | US-41, US-42 |
+| `GET` | `/events/{eventId}/transport-source-status` | Whether the Porto Digital source is available, and the time of the last valid import, for the backoffice warning | EventAdmin, `Transport.Edit` | US-43 |
+
+- The import from Porto Digital (US-40) is a scheduled job inside Transports, with a timeout and validation; it is never called inside a user's request, and there is no endpoint for it. An invalid import is rejected as a whole and the previous data stays.
+- Shuttles are internal data: they are shown even when the source is down (scenario D2).
+- Porto Digital gives bus positions, not timetables (domain model, `TransportDeparture`). US-41 ("next regular buses") can only show the buses on their way; departure times come from the shuttles entered by the team. To confirm with Tiago.
+- Stops are points of interest of type *transport stop* in Events, so a member with `Transport.Edit` must be able to place them (US-37). **[PROPOSED]**: Events accepts `Transport.Edit` for that type of point.
+- Publishes nothing.
 
 ## 6. Badges
 
