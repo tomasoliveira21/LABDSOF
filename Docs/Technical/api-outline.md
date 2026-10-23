@@ -265,9 +265,19 @@ Owns the event's transport options (shuttles and external bus routes), their dep
 
 Stories: US-54 to US-57.
 
+Owns each account's badge progress and its badge preferences. Keeps what it needs from the confirmed reports (`ReportConfirmed`, `ReportUnconfirmed`), the check-ins (`CheckInRecorded`) and the events' names (`EventChanged`).
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
-| | | _To fill in (step 3)_ | | |
+| `GET` | `/me/badges` | My badges: *Report history*, *Event attendance* and one *Event reporter* per event, each with its count and tier | Authenticated | US-54, US-55, US-57 |
+| `GET` | `/me/badges/preferences` | Whether I earn badges and whether others can see them | Authenticated | US-56 |
+| `PUT` | `/me/badges/preferences` | Change them (`{ earningEnabled, visibility }`); while earning is off, no new badges are earned | Authenticated | US-56 |
+| `GET` | `/users/{userId}/badges` | Another user's badges; `404` while they are hidden (the default) | Authenticated | US-56 |
+
+- The counts and tiers are computed from the events above; there is no endpoint to change them. Unconfirming a report lowers the count and recalculates the tier (US-54, US-55).
+- The preferences move from Auth & Users (`EngagementPreferences` in the domain model) to Badges, so that Badges decides on its own. **[PROPOSED]**, to confirm with Tomás and Guerra. If they stay in Auth & Users, Auth & Users publishes `EngagementPreferencesChanged` and the two `/me/badges/preferences` endpoints move to `/me/engagement-preferences`.
+- Where another user's badges are shown (a profile, the friends list of F18) is not in any Must or Should story yet. **[PROPOSED]**
+- Publishes nothing.
 
 ## 7. Event catalogue
 
