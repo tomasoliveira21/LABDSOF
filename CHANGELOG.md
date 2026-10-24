@@ -2,6 +2,31 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-24 · Identity and API gateway decided (#46, António Guerra)
+
+**Why:** guide C6 and E1–E4 were open. The team decided them in the meeting of 22 October 2026.
+
+### Added
+
+- `adr/0006-identity-and-access.md` (**Accepted**): Keycloak; tokens carry identity only; roles, teams and permissions reach the services as events; every service validates the JWT and checks the permission in its use cases; `FarolAdmin` global in Auth & Users; Authorization Code + PKCE; one RabbitMQ user per service; secrets in `.env`, GitHub Actions secrets and gitleaks. Also the Keycloak setup, where each permission is checked, and the changes Bruno makes to the API outline (#123) and D7.
+- `adr/0013-api-gateway.md` (**Accepted**): Spring Cloud Gateway Server WebMvc; the route table from the API outline draft (#123); CORS only at the gateway; rate limits per account (120/min, **5 help requests per 10 min**, 20 MB map upload); the report limit stays in Reports (US-48). Numbered 013 because 011 and 012 were taken.
+- `Docs/Meetings/2026-10-22-identity-and-gateway-decisions.md`: the decisions of the meeting, and actions for Bruno and Tiago.
+
+### Changed
+
+- Both decisions follow the decisions of 22 October: one web app, the role model with teams and permissions (`FarolAdmin`, `EventAdmin`, `RegularUser`), services independent from Sprint A, local-only delivery, and the renumbered backlog.
+- Hosting answered "Azure" and recorded within the local-only scope (G1, ADR-011): local `docker compose` for the delivery, Azure Container Apps if the cloud alternative is resumed.
+- Token lifetimes for one web app: 12 h idle session, 30 days with Keycloak's *Remember me* (the accepted values were for two apps).
+- `architecture-decisions-guide.md`: C6, E1–E4 ✅; owners; *Próximos passos* (done; Bruno aligns the API outline, event catalogue and D7; Tiago adds the 429 criterion to US-23).
+- `architecture.md`: Keycloak and the gateway in the container view; §8, §10, §12 and §13 (ADR-006 and ADR-013).
+- `features.md` §8.4: E1 and the E2 part of the role-model blocker closed.
+- `Docs/README.md`: ADR-006, ADR-013 and the meeting record.
+
+### Not changed
+
+- The API outline (#123) and the account-deletion work (D7) are Bruno's; the changes they need are listed in ADR-006.
+- The draw.io diagrams do not show Keycloak yet.
+
 ## [Unreleased] · 2026-10-23 · Mobile app removed from the documentation (#125, Bruno Lopes)
 
 **Why:** in the meeting with the professor on 22 October 2026 (P9) the React Native mobile app was dropped. Farol is one React web app, and each page is built for the phone or for a laptop.
