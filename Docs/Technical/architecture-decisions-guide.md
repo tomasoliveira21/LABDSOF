@@ -179,7 +179,7 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 **Em aberto, com responsável:**
 1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (E5, J4), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (J1–J3, backlog, revisão do ADR-007 para a web), Bruno (C8, D7, H6, H7).
 2. **Alinhar o API outline, o catálogo de eventos e o D7 com o ADR-006:** registo no Keycloak e sem `POST /accounts` (O2); token só com a identidade (O3); O1 fechado pela tabela de rotas do gateway; evento de conta desativada, `UserDeleted` definido e `sub` de quem age no envelope ([ADR-006](adr/0006-identity-and-access.md#changes-for-the-api-outline-and-d7)). **Bruno.**
-3. **Backlog:** critério de aceitação para a resposta 429 na página do pedido de ajuda (US-23; limite de 5 por 10 min, ADR-013) e confirmar o limite de 20 MB no upload do mapa. **Tiago.**
+3. **Backlog:** ✅ feito no #141 (24/10): critério de aceitação para a resposta 429 na página do pedido de ajuda (US-23; limite de 5 por 10 min, ADR-013) e limite de 20 MB no upload do mapa confirmado (US-19). **Tiago.**
 4. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
 5. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.** Na mesma passagem, tirar a app mobile dos diagramas (níveis 1–3 e `*-level-4-mobile`; #125).
 6. **Transportes:** valores de x (intervalo do poll) e y (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). **Tiago.**
