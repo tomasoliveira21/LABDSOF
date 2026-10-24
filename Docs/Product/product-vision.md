@@ -73,17 +73,17 @@ Source: report *Product vision > Value proposition*; market analysis §3 *Differ
 
 | # | Success criterion | Metric | How it is measured | Target |
 |---|---|---|---|---|
-| SC1 | The app opens fast, even on a weak network | Time from scanning the QR code to seeing the venue map, participant already logged in | Automated test with network throttling (slow 3G profile) | ≤ 5 s cold, ≤ 1 s from cache **[PROPOSED]** |
-| SC2 | A help request reaches the event team at once | Time from "submit" on the phone to the request appearing in the backoffice, without reloading | Automated end-to-end test | p95 ≤ 5 s **[PROPOSED]** |
+| SC1 | The app opens fast, even on a weak network | Time from scanning the QR code to seeing the venue map, participant already logged in | Automated test with network throttling (slow 3G profile) | ≤ 5 s cold, ≤ 1 s from cache (confirmed by Tiago, 24 October 2026) |
+| SC2 | A help request reaches the event team at once | Time from "submit" on the phone to the request appearing in the backoffice, without reloading | Automated end-to-end test | p95 ≤ 5 s (confirmed by Tiago, 24 October 2026) |
 | SC3 | **The AI triage routes a request fast** | Time from submission to a stored suggestion of category, priority and team | Timer in the triage worker; load test with the evaluation set | **≤ 30 s** (team decision) |
-| SC4 | The AI triage is correct where it matters | Urgent cases under-prioritised; category accuracy | Evaluation set, compared with the non-AI fallback | 0 urgent cases under-prioritised; category accuracy ≥ 80 % **[PROPOSED]** |
+| SC4 | The AI triage is correct where it matters | Urgent cases under-prioritised; category accuracy | Evaluation set, compared with the non-AI fallback | 0 urgent cases under-prioritised; category accuracy ≥ 80 % (confirmed by Tiago, 24 October 2026) |
 | SC5 | No request is lost when the AI fails | % of requests shown to the operator when the AI is off or slow | Automated test with the AI stopped | 100 %, with the fallback after 30 s |
-| SC6 | Live updates reach participants | Time from publishing an announcement to it appearing on an open participant app | Automated end-to-end test | ≤ 10 s **[PROPOSED]** |
+| SC6 | Live updates reach participants | Time from publishing an announcement to it appearing on an open participant app | Automated end-to-end test | ≤ 15 s (confirmed by Tiago, 24 October 2026: participant pages poll every 10 s, so the worst case is one interval plus the server time) |
 | SC7 | Information shows how fresh it is | % of information items showing their last-update time | Automated UI test | 100 % |
 | SC8 | Each event's data stays private to its team | Cross-event access attempts that succeed | Automated authorisation tests (report §5, technical risks) | 0 |
 | SC9 | Every change to a request is recorded | % of request changes with an audit record (who, when, from, to) | Database query after the test suite | 100 % |
 | SC10 | The app works without network | Map and information shown from cache after the network is cut | Automated offline test. Only if F11 (Could) is built; not a §6.8 scenario | Passes, with "data from HH:MM" |
-| SC11 | Asking for help is quick | Time from opening "Ask for help" to request submitted | Usability test with students | Median ≤ 30 s **[PROPOSED]** |
+| SC11 | Asking for help is quick | Time from opening "Ask for help" to request submitted | Usability test with students | Median ≤ 30 s (confirmed by Tiago, 24 October 2026) |
 
 ### Validation of the problem (not success criteria)
 
@@ -96,8 +96,8 @@ These measure whether the product is worth building, not whether it works. They 
 
 Outcomes the MVP cannot measure (they need a real event): adoption during the event, faster response by the team, less confusion at entrances and transport, positive feedback from event teams (report, *Success criteria*). They stay as long-term outcomes.
 
-> ⚠️ **GAP: targets marked [PROPOSED].** Only SC3 (30 s) was set by the team. Needed: confirm the other numbers.
->
+**Targets:** SC3 (30 s) set by the team on 8 October 2026; SC1, SC2, SC4, SC6 and SC11 confirmed by Tiago on 24 October 2026 (#137), with SC6 raised from 10 s to 15 s to fit the 10 s polling of guide J3.
+
 > ⚠️ **GAP: survey results.** V1 and V2 need the survey results (target of 100+ answers, report §4).
 
 ## 6. MVP boundary

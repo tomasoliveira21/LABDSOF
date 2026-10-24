@@ -14,8 +14,15 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `architecture.md` §1: link to the NFR list.
 - `2026-10-22-professor-meeting.md`: NFR row of *Presentation contents* and Tiago's NFR action ticked.
 
+### Decided (Tiago, 24 October 2026)
+- Success-criteria targets SC1, SC2, SC4, SC6 and SC11 confirmed (`product-vision.md` §5), and the report rate limit of US-48 (`features.md`).
+- **SC6 raised from 10 s to 15 s**, so the 10 s polling of guide J3 fits; US-44 and US-45 (*within 15 s*) and NFR-04 updated.
+- Outbox alert: oldest pending row above **60 s for 2 min** (NFR-34; `observability.md` alert table; `architecture.md` §6 in PR #52).
+- Accessibility (NFR-25): **WCAG 2.1 AA** on the main pages, owner Tiago.
+- Availability and recovery measured locally (NFR-12, NFR-13); weak-network mode stays out while F11 is a Could.
+
 ### Not changed
-- No target was decided here. Differences found between documents (on-time triage 90 % vs 95 %, outbox alert 30 s vs 60 s, 10 s polling vs SC6) are listed as open points, not resolved.
+- On-time AI triage, ≥ 90 % (ADR-005) vs ≥ 95 % in 30 s (observability research): both are Tomás's proposals, left for him to align (K1, I2).
 
 ## [Unreleased] · 2026-10-23 · Mobile app removed from the documentation (#125, Bruno Lopes)
 
