@@ -279,7 +279,7 @@ Rewritten on 9 October 2026 to match the feature list above; checked against the
 | Dependencies identified | No story listed its dependencies | *Depends on* line on every story; blockers in §8.4 |
 | One story = one PR | Several stories held two or more PRs of work | Split (below) |
 | AI fallback | The AI suggestion did not say what happens when the AI fails | *AI fallback* line pointing to US-36 (scenario D1) |
-| On the board | No story had an issue | Issues #58 to #121 created on 22 October 2026 from the user-story form (§8.3). All of them are on the [GitHub Projects board](https://github.com/users/tomasoliveira21/projects/1) (checked 24 October 2026); the DoR box in each issue is still to be ticked |
+| On the board | No story had an issue | Issues #58 to #121 created on 22 October 2026 from the user-story form (§8.3). All of them are on the [GitHub Projects board](https://github.com/users/tomasoliveira21/projects/1) (checked 24 October 2026); the DoR box "On the GitHub Projects board" is ticked in each story issue (24 October 2026) |
 
 #### How the stories were split (22 October 2026)
 

@@ -11,18 +11,19 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `features.md` §8.3: the board link and how its fields are used, approved by Tiago and applied on the board on 24 October 2026: *Status* (*Ready* only when no dependency blocks the story, §8.4), *Priority* (Must in the next sprint's release → P0, other Must → P1, Should and Could → P2), *Size* (from the number of acceptance criteria, one step up for an open or external dependency), sprint from the milestones instead of an *Iteration* field. Result: P0 28, P1 28, P2 7; XS 16, S 22, M 16, L 9; only #58 *Ready*.
 
 ### Changed
-- `definition-of-ready-and-done.md`: the ⚠️ note now says what is done on the board (fields, workflows, issues, README link) and the field values applied, and what remains (DoR box in each issue, board access for the professor).
+- `definition-of-ready-and-done.md`: the ⚠️ note now says what is done on the board (fields, workflows, issues, README link) and the field values applied, and what remains (board access for the professor).
 - `features.md` §7.1: DoR row *On the board* no longer says the board does not exist.
 - `team-and-process.md` (*Tools*), `2026-10-12-sprint-1-presentation-feedback.md` (T1, open action ticked) and `2026-10-22-professor-meeting.md` (backlog row): the board exists, holds the issues and has its fields applied.
 
 ### On the board (approved by Tiago, 24 October 2026)
 - *Priority* and *Size* set on #58 to #121 with the rules of `features.md` §8.3; #58 moved to *Ready*, the other 62 stories stay in *Backlog*.
 - Sprint shown with the milestones, not an *Iteration* field; the *Sprint A* milestone is due on 1 November 2026.
+- DoR box "On the GitHub Projects board" ticked in the 62 story issues (#59 to #121; #58 is a task and has no such box).
 - *Ready* and *Done* options described as "Meets the DoR" and "Meets the DoD", linking to `definition-of-ready-and-done.md`.
 - Old feature issues #2 to #10 and #12 to #16 archived from the board (covered by the stories or out of scope); #11 closed as delivered.
 
 ### Not changed
-- The DoR box "On the GitHub Projects board" in each story issue and the professor's access to the private board (still to do, see `definition-of-ready-and-done.md`).
+- The professor's access to the private board (still to do, see `definition-of-ready-and-done.md`).
 - `features.md` §8.4: still lists all the blockers as open, which is true on 24 October 2026 (its F3 row still points to #44, closed, while ADR-007 waits for Tiago's review).
 
 ## [Unreleased] · 2026-10-23 · Mobile app removed from the documentation (#125, Bruno Lopes)
