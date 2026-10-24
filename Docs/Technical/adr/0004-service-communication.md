@@ -15,7 +15,7 @@
 ## Decision
 
 1. **Broker: RabbitMQ** (C1), used through **Spring AMQP** (C2). *Topic* exchanges for publish-subscribe; a **dead-letter exchange** for messages that keep failing.
-2. **Only events between services** (C4). No service calls another service's REST API. Each service keeps a local copy of what it needs from another (e.g. Reports keeps the response teams from Events; every service keeps the roles per event from Auth & Users).
+2. **Only events between services** (C4). No service calls another service's REST API. Each service keeps a local copy of what it needs from another (e.g. Reports keeps the teams, their permissions and help categories from Events; every service keeps the memberships and team assignments of its events from Auth & Users).
 3. **Delivery guarantees** (C3):
    - **Outbox table** in each service: the business change and the outgoing event are saved in the same transaction; a polling job publishes pending rows to RabbitMQ. An event is never lost and never sent for a change that was rolled back.
    - **At-least-once delivery, idempotent consumers:** each consumer records the `message_id`s it has processed and ignores duplicates.

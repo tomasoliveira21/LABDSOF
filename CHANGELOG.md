@@ -22,6 +22,135 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### To confirm
 - AI timeouts with K1 (Tomás), identity provider values with E1 (Guerra), demo and load-test environment with G1 and G4 (Tomás); the busiest-night figure with the organisers.
 
+## [Unreleased] · 2026-10-23 · Mobile app removed from the documentation (#125, Bruno Lopes)
+
+**Why:** in the meeting with the professor on 22 October 2026 (P9) the React Native mobile app was dropped. Farol is one React web app, and each page is built for the phone or for a laptop.
+
+### Changed
+- `adr/0002-backend-and-frontend-technology.md`: one React web app for every user; React Native moved to *Alternatives considered*; the app-store open point removed.
+- `adr/0007-venue-map-representation.md`: rewritten for the web. The image with an SVG overlay inside `react-zoom-pan-pinch`, a spike on a real iPhone and Android phone, Pointer Events as the fallback. Coordinates, PDFBox conversion and storage unchanged. Back to **Proposed** until Tiago reviews it.
+- `adr/0009-architecture-documentation.md`: level 4 per container without the mobile app; F4 removed from the **[PENDING]** list.
+- `architecture.md`: context and container Mermaid diagrams with one web app, §10, §12 (frontend, venue map; React Native setup row removed), §13 (ADR-007 status) and a **[TO ALIGN]** note in §14 for the diagrams.
+- `architecture-decisions-guide.md`: §0, B3, F1 and F3 updated; F4 and H9 closed (no longer apply); owners and *Próximos passos*.
+- `features.md`: §7.1 (split rule 3 and the issue-type rule) and the Sprint B deliverables table in §8.5 speak of phone pages and laptop pages instead of two apps.
+- `product-vision.md`, `Research/architecture-investigation/README.md`: app stores and mobile setup removed.
+- `2026-10-22-professor-meeting.md`: P9, the decision and the open actions.
+
+### Not changed
+- The draw.io diagrams still show the mobile app (levels 1 to 3 and `*-level-4-mobile`); Bruno updates them later.
+- Earlier meeting notes and CHANGELOG entries, which record what was decided at the time; competitor analyses, where "native apps" describe other products.
+
+## [Unreleased] · 2026-10-22 · Backlog loaded as GitHub issues (#45)
+
+**Why:** the stories in `features.md` §7 are now GitHub issues, so the backlog can be planned and tracked (assignment §8.2, DoR item "has a GitHub issue").
+
+### Added (on GitHub)
+- Issues **#58 to #121**: the walking skeleton (`task`, milestone *Sprint A*) and US-01 to US-62 (`user story`), from the user-story form, with persona, acceptance criteria, linked dependencies, DoR and DoD. Milestones *Sprint B* (27 stories) and *Sprint C* (30); the 5 Could stories have none.
+- Milestones **Sprint B** (due 6 December 2026) and **Sprint C** (due 3 January 2027); label **`user story`**.
+
+### Changed
+- `features.md`: issue numbers in §8.3; walking skeleton in Sprint A, owner Tomás (§8.2, §8.4, §8.5); transport source no longer a blocker (Porto Digital, ADR-008; PoC #48 as reference); §7.1 and the status line say the issues exist.
+- `2026-10-12-sprint-1-presentation-feedback.md`: T1 done; creating the board left as an open action.
+- `2026-10-22-professor-meeting.md`: backlog row points to the issues.
+
+### Not changed
+- The old feature issues #2 to #16 stay open as Sprint A feature discovery. The GitHub Projects board does not exist yet, so the README has no board link.
+
+## [Unreleased] · 2026-10-22 · Meeting with the professor (#55, Bruno Lopes)
+
+**Why:** record the points discussed with the professor on 22 October 2026 and what is still without an owner.
+
+### Added
+- `Docs/Meetings/2026-10-22-professor-meeting.md`: diagrams (physical level 4 and view mappings to delete, five databases in physical level 3), AI hosting (K1, Tomás), degraded modes and the transport poll (x and y), the presentation contents mapped to the existing documents, one PDF with the Sprint A documents, operating cost estimation (salaries + infrastructure), walking skeleton.
+
+### Changed
+- `architecture-decisions-guide.md`: status date, history, owners table, J4 owner (Guerra), G2 linked to the cost estimation, and *Próximos passos* rewritten as done / open with an owner / without an owner (left for the end).
+- `Docs/README.md`: meeting added to the index.
+- Owners assigned: cost estimation (Bruno), walking skeleton (Tomás), NFR list (Tiago), Porto Digital simulator J4 (Guerra). Left for the end, without an owner: the deck, the single PDF and the list of assumptions and dependencies.
+
+### Removed
+- `physical-view-level-4-{mobile,web,reports,transports}` and `mapping-logical-physical-level-4-{mobile,web,reports,transports}` (professor, 22 October 2026: the physical view stops at level 3). ADR-009 and `architecture.md` §14 updated. Showing the five databases in physical level 3 is still to do (Bruno).
+
+### Merged
+- `main` merged (#53: local-only deployment). Conflicts in the guide (G1–G7 from #53; G2 and *Próximos passos* link the local-only scope to the cost estimation), `architecture.md` §14 (no physical level-4 links, label from #53), `Docs/README.md` (both meetings of 22 October) and this CHANGELOG.
+
+## [Unreleased] · 2026-10-22 · Local-only deployment authorised because of costs (#53)
+
+### Changed
+- Recorded Tomás's report that the professor authorised local-only execution because cloud deployment costs are not justified for this project; the report and presentation must explain this reason.
+- Kept the complete hosting/cost evaluation as supporting evidence and a possible future alternative. Cloud provisioning, paid hosting and automatic cloud deployment are not current delivery requirements.
+- Aligned the guide, architecture, ADR-011, research summaries, observability/AI proposals and process notes. Independent service containers, five service-owned databases, build/test evidence and local smoke/failure tests remain in scope.
+- Merged current `main`, preserving the updated backlog, role/team model and ADR-007 alongside the investigation.
+
+### Added
+- `Docs/Meetings/2026-10-22-local-deployment-clarification.md`: source, scope and the cost justification to reuse in the final report/presentation.
+
+## [Unreleased] · 2026-10-22 · Deployment, observability and AI research (#53)
+
+### Added
+- `Docs/Research/architecture-investigation/`: sourced investigation covering guide G1–G7, I1–I3, K1–K2, F2, RabbitMQ hosting (C1) and PostgreSQL server topology (D2), with a dated public Azure price snapshot, budget gates, recovery limitations, SLI/SLO and dashboard/alert specifications.
+- Responsible AI Opportunity Assessment, proposed triage prompt/output schema, 100 synthetic unreviewed cases (20 development / 80 test), offline scorer/checks and deterministic non-AI baseline. No model/provider benchmark or deployed performance is claimed.
+- Proposed ADR-005 (AI), ADR-011 (deployment) and ADR-012 (observability); ADR-010 stays reserved for Bruno's pipeline work.
+
+### Changed
+- Architecture guide, architecture index, product AI checklist and documentation index link the research. Pending team decisions stay pending; no meeting or acceptance is invented.
+
+## [Unreleased] · 2026-10-22 · Documents aligned with the role model (#56)
+
+**Why:** the role, team and permission model of `features.md` §4 (#45, to confirm with the team) was only in `features.md`. The other documents still used the fixed roles (`Owner`, `Admin`, `Operator`, `Responder`, `PlatformAdmin`), the four fixed response teams and, in places, the old story numbers. This closes the *Still to align* list of #45.
+
+### Changed
+- `personas.md`: a *role or job* for each persona. P4 is the **FarolAdmin** (global role). P3 is an EventAdmin, P1 a RegularUser. P2 and P5 are **jobs given by team permissions**, not roles (`HelpRequests.Triage` and `Reports.Review` for P2; `HelpRequests.Respond` and `Reports.Respond` for P5). **PE-5** answered by features §4.1 (only the FarolAdmin creates events); **PE-6** updated (the `Responder` role is dropped). Both stay open only until the team confirms the role model.
+- `domain-model.md` (owners Tomás and Guerra, to review): `EventMembership` with role `EventAdmin` or `RegularUser`, at least one EventAdmin per event; `GlobalRoleGrant` holds `FarolAdmin`; `ResponseTeam` (four fixed teams) replaced by **`Team`** (created per event, with its handled help categories) and **`TeamPermission`** (fixed list, report types for `Reports.Review`). Reports are no longer tied to one responsible team: they go to the members with `Reports.Review` for their type. The draw.io export `domain-model.svg` still shows the old model and is flagged for redrawing.
+- `architecture.md` (§2 context, §3, §4 responsibilities, §7, §8): FarolAdmin and EventAdmin in the context diagram; Auth & Users holds the FarolAdmin grant, memberships and team assignments; Events holds teams, their permissions and help categories; new *Where roles and permissions live* note; authorisation row points to E2.
+- `architecture-decisions-guide.md` (PT, owner Guerra for E2, to review): E2 records the role model and what is still open (what the token carries, where role + teams + permissions are joined); A2, C4 and the domain-model owners row aligned.
+- `user-workflows.md`: W3 *Control room handles a help request* and W4 *FarolAdmin creates an event, EventAdmin sets it up* (teams, permissions and help categories, members join before they are added to teams); actors in W2 and W5 and the W7 steps use the permissions; story numbers added; broken anchors to the old features §4 fixed. The BPMN lanes stay as personas.
+- `product-vision.md`: event team and platform team rows, SC3 wording.
+- `features.md`: "response team" wording in §1, F8, D1 and §5 (AI-2) replaced by the event's teams.
+- `ADR-003`, `ADR-004`: local-copy examples use teams and memberships.
+- Old story numbers: ADR-007 (US-06, US-07, US-08, US-09, US-17, US-18 of 16 October → US-19 to US-23, US-27, US-46, US-47), guide F3 (US-07 → US-22), `architecture.md` §7 (US-09 → US-42, US-43).
+
+### Merged
+- `main` merged into this branch (it was cut from `docs/initial-backlog`, #45): conflicts in `features.md` (§3 and D2: the Porto Digital text from `main`, the role model and new story numbers from #45) and in this CHANGELOG.
+
+### Not changed
+- Meeting notes and earlier CHANGELOG entries keep the old names and numbers: they record what was decided at the time.
+- The architecture diagrams (`Docs/Technical/diagrams/*.drawio.svg`) and the BPMN files name personas (e.g. *Responder (P5)*, *platform admins*), not roles; renaming them needs draw.io and is left to the diagram owner.
+
+## [Unreleased] · 2026-10-22 · Backlog checked against the DoR, role model, sprint plan (#45)
+
+**Why:** teacher feedback T1 ([`2026-10-12-sprint-1-presentation-feedback.md`](Docs/Meetings/2026-10-12-sprint-1-presentation-feedback.md)): every backlog item must meet the DoR before it goes to GitHub Projects. The assignment also asks for sprint objectives and an initial release plan (§7.1.2, item 5). On 22 October Tiago (backlog owner) asked for smaller stories and defined a new role model.
+
+### Changed
+- `features.md` §4: **roles, teams and permissions** (to confirm with the team). Global `FarolAdmin`; per-event `EventAdmin` and `RegularUser`, so the same user can be EventAdmin in one event and RegularUser in another. EventAdmins create their event's teams (e.g. Security, Nursing), give each team permissions from a fixed list (`HelpRequests.Triage`, `HelpRequests.Respond`, `Reports.Review`, `Reports.Respond`, `Announcements.Publish`, `Map.Edit`, `Transport.Edit`, `Entrances.Update`) and add RegularUsers to them. Replaces the fixed roles (`Owner`, `Admin`, `Operator`, `Responder`) and the four fixed response teams of 9 October; suggested pilot set-up in §4.4. §2 (F3, F4, F7), §3 and §6.1–§6.2 aligned.
+- `features.md` §7: every user story checked against the DoR (persona, dependencies, testable criteria, AI fallback), then **split into 62 smaller stories, renumbered US-01 to US-62**, each one action and one PR. Old-to-new table, split rules, new numbers, rewritten criteria and issue types in §7.1.
+- `.github/ISSUE_TEMPLATE/user-story.yml`: persona P5 (responder) added, P4 named FarolAdmin; several personas can be picked.
+- `user-workflows.md` W4: EventAdmin instead of Owner, US-06 instead of US-25.
+- `2026-10-12-sprint-1-presentation-feedback.md`: T1 DoR check done; issue creation left open.
+
+### Proposed (to confirm with the team)
+- `features.md` §8: sprint goals for Sprints B and C, initial release plan (R0 walking skeleton, R1 vertical slice with 27 stories, R2 MVP with 28), the Sprint C cut line, the story-to-issue table and the dependencies that still block *Ready*. §8.5 explains the Sprint B goal (mapped to every §7.2.2 deliverable), capacity and risks, the placement of the stories and the Sprint C cut order. Replaces the backlog GAP note.
+
+### Still to align (other documents)
+- The new role model is not yet in `personas.md` (PE-5, PE-6), `domain-model.md`, `architecture.md` or the architecture decisions guide (E2).
+
+## [Unreleased] · 2026-10-22 · Venue map library and ADR-007 (#44)
+
+**Why:** decisions guide F3 (venue map library, owner Tiago) was the last open item for the map (F5). The app is mainly mobile, the map is an uploaded image with no geo data (D1), and F4 (Expo or bare React Native) is still open, so the choice had to work on iOS and Android, with Expo and with bare React Native.
+
+### Decided
+- Mobile venue map: **`react-native-svg`** markers inside a **`react-native-zoom-toolkit`** zoom/pan container (Gesture Handler + Reanimated), normalised `MapPosition` coordinates, filtering by type with React state. Works on iOS and Android, with Expo and bare React Native.
+- A **spike on real iOS and Android devices** checks `react-native-zoom-toolkit` with Gesture Handler 3 before the map is built; if it fails, pan and zoom are written directly with Gesture Handler and Reanimated.
+- PDF maps (US-06) are **rendered to a PNG on upload** by the Events service with Apache PDFBox: single-page PDFs only, at most 4096 px on the long side; the original file and the rendered image are both kept.
+
+### Added
+- `Docs/Technical/adr/0007-venue-map-representation.md`: ADR-007 (Nygard format + *Alternatives considered*: WebView + Leaflet `CRS.Simple`, image-zoom components, `react-native-zoomable-view`, `react-native-maps`, Skia, PDF conversion on the device).
+
+### Changed
+- `architecture-decisions-guide.md`: F3 marked ✅ with the decision.
+- `architecture.md`: §12 venue map row filled in; §13 ADR-007 marked *Accepted* and linked.
+- `Docs/README.md`: ADR-007 added to the index.
+
 ## [Unreleased] · 2026-10-21 · Architecture diagrams: level 4 split and view mappings (#39, Bruno Lopes)
 
 **Why:** review of the 4+1 diagrams. Legends added noise, separate personas at the top levels added nothing, and each level-4 diagram mixed several containers in one picture.
@@ -87,6 +216,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - `architecture.md` §13: ADR-002, 003 and 004 marked *Accepted* and linked. `Docs/README.md`: ADRs added to the index.
+
 ## [Unreleased] · 2026-10-16 · Move README into Docs
 
 ### Changed

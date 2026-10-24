@@ -25,7 +25,7 @@ Vision statement and pitch **agreed by the team on 8 October 2026**. Updated on 
 
 ### Product name: **Farol** (decided 9 October 2026)
 
-Chosen from the candidates below. Still to check: the name is free on the domain and in the app stores.
+Chosen from the candidates below. Still to check: the name is free on the domain.
 
 | Name | Idea |
 |---|---|
@@ -36,7 +36,7 @@ Chosen from the candidates below. Still to check: the name is free on the domain
 | **Ponto** | "Point" or "meeting point": every feature is a point on the map |
 | **SOS Festa** | Says the safety part out loud, but it may sound like an emergency-only app |
 
-Check before choosing: the name is free on the domain and in the app stores, and it does not tie the product to one festival (it is multi-event).
+Check before choosing: the name is free on the domain, and it does not tie the product to one festival (it is multi-event).
 
 ## 2. Problem in one paragraph
 
@@ -48,10 +48,10 @@ Source: report §2 *Problem Statement* and §4 *Problem Evidence*.
 
 | Group | Role in the product | Interface | Source |
 |---|---|---|---|
-| **Event team** (primary) | Event owner (e.g. FAP) and its team: organisation, PCR, security coordination; operators in the control room and responders in the field | Backoffice | Report §1 |
+| **Event team** (primary) | Event organiser (e.g. FAP) and its team: organisation (EventAdmins), PCR, security coordination; operators in the control room and responders in the field, whose jobs come from the teams each event creates ([`features.md` §4](features.md#4-roles-teams-and-permissions-22-october-2026)) | Backoffice | Report §1 |
 | **Participants** (primary) | Students aged 18–25, mostly in groups, on their phone at night | Participant web app (PWA) | Report §1 |
 | **Operational partners** (secondary) | STCP, Metro do Porto, PSP, Civil Protection: source or destination of information | Not in the MVP | Report §1 |
-| **Platform team** (internal) **[PROPOSED]** | The Farol team: creates events for verified organisations and names their Owner; never sees an event's operational data | Backoffice, platform area | Multi-event scope; [`personas.md`](personas.md) P4 |
+| **Platform team** (internal) **[PROPOSED]** | The Farol team, with the global `FarolAdmin` role: creates events for verified organisations and names their first EventAdmin; never sees an event's operational data | Backoffice, platform area | Multi-event scope; [`personas.md`](personas.md) P4 |
 
 Both primary users carry **the same weight** (unanimous team decision, report §1). Detailed personas: [`personas.md`](personas.md).
 
@@ -75,7 +75,7 @@ Source: report *Product vision > Value proposition*; market analysis §3 *Differ
 |---|---|---|---|---|
 | SC1 | The app opens fast, even on a weak network | Time from scanning the QR code to seeing the venue map, participant already logged in | Automated test with network throttling (slow 3G profile) | ≤ 5 s cold, ≤ 1 s from cache **[PROPOSED]** |
 | SC2 | A help request reaches the event team at once | Time from "submit" on the phone to the request appearing in the backoffice, without reloading | Automated end-to-end test | p95 ≤ 5 s **[PROPOSED]** |
-| SC3 | **The AI triage routes a request fast** | Time from submission to a stored suggestion of category, priority and response team | Timer in the triage worker; load test with the evaluation set | **≤ 30 s** (team decision) |
+| SC3 | **The AI triage routes a request fast** | Time from submission to a stored suggestion of category, priority and team | Timer in the triage worker; load test with the evaluation set | **≤ 30 s** (team decision) |
 | SC4 | The AI triage is correct where it matters | Urgent cases under-prioritised; category accuracy | Evaluation set, compared with the non-AI fallback | 0 urgent cases under-prioritised; category accuracy ≥ 80 % **[PROPOSED]** |
 | SC5 | No request is lost when the AI fails | % of requests shown to the operator when the AI is off or slow | Automated test with the AI stopped | 100 %, with the fallback after 30 s |
 | SC6 | Live updates reach participants | Time from publishing an announcement to it appearing on an open participant app | Automated end-to-end test | ≤ 10 s **[PROPOSED]** |

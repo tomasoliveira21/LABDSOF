@@ -4,6 +4,8 @@
 > **Status (21 October 2026):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PENDING]** wait for an investigation; the owner is in that document. The reference diagrams are drawn in draw.io and listed in §14 ([ADR-009](adr/0009-architecture-documentation.md)); the Mermaid diagrams below are working sketches.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
+> **Research update (22 October 2026, #53):** The [investigation](../Research/architecture-investigation/README.md) supplies recommendations for deployment, observability and AI, including C1 hosting and D2 server topology. ADR-005 and ADR-012 remain **Proposed**. [ADR-011](adr/0011-deployment-and-infrastructure.md) now records the professor-authorised local-only delivery due to costs, as reported by Tomás; the cloud evaluation is retained. Detailed implementation/evidence and diagram alignment remain pending.
+
 ## 1. Architecture drivers
 
 What shapes the design, and where it comes from:
@@ -25,20 +27,20 @@ What shapes the design, and where it comes from:
 ```mermaid
 flowchart LR
     P(["Participant<br/>(P1)"])
-    O(["Control-room operator<br/>(P2)"])
-    R(["Responder in the field<br/>(P5)"])
-    A(["Event admin<br/>(P3)"])
-    PA(["Platform admin<br/>(P4, to confirm in the domain model)"])
+    O(["Control-room operator<br/>(P2: team with HelpRequests.Triage)"])
+    R(["Field-team member<br/>(P5: team with HelpRequests.Respond)"])
+    A(["EventAdmin<br/>(P3)"])
+    PA(["FarolAdmin<br/>(P4, global role)"])
     SYS["Farol"]
     TR["Porto Digital urban platform<br/>(FIWARE NGSI v2, live bus data)"]
     LLM["AI model provider<br/>[PENDING]"]
     IDP["Identity provider<br/>[PENDING: only if external]"]
 
-    P -- "uses the mobile app" --> SYS
+    P -- "uses the web app on the phone" --> SYS
     O -- "handles help requests" --> SYS
-    R -- "gets dispatched requests, updates status" --> SYS
-    A -- "manages the event (web app)" --> SYS
-    PA -- "creates events, names Owners" --> SYS
+    R -- "gets routed requests, updates status" --> SYS
+    A -- "manages the event and its teams (web app)" --> SYS
+    PA -- "creates events, names EventAdmins" --> SYS
     SYS -- "reads transport data" --> TR
     SYS -- "asks for triage suggestions" --> LLM
     SYS -. "authenticates users" .-> IDP
@@ -52,8 +54,7 @@ The five services are deployed independently from Sprint A (§11).
 flowchart LR
     subgraph Clients
         direction TB
-        MOB["Mobile app<br/>(React Native)<br/>participants, operators"]
-        WEB["Web app<br/>(React)<br/>event management"]
+        WEB["Web app<br/>(React)<br/>phone pages: participants, field teams<br/>laptop pages: event management, control room"]
     end
 
     GW["API gateway<br/>[PENDING: C6]"]
@@ -72,7 +73,6 @@ flowchart LR
     TR["Transport data"]
     LLM["AI model provider"]
 
-    MOB --> GW
     WEB --> GW
     GW --> AU & EV & RE & TS & BA
     AU & EV & RE & TS & BA <-- "domain events [AMQP]" --> MQ
@@ -81,23 +81,28 @@ flowchart LR
     RE -- "triage" --> LLM
 ```
 
-Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING]**). Clients get live updates by **polling** (no push in the MVP).
+Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING team acceptance]**; [observability proposal](../Research/architecture-investigation/observability.md)). Clients get live updates by **polling** (no push in the MVP).
 
 ## 4. Responsibilities and data ownership
 
 | Service | Responsibility (features) | Owns (see [`domain-model.md`](domain-model.md)) |
 |---|---|---|
-| **Auth & Users** | Authentication, authorisation, accounts, roles per event, friends (F1, F2, roles of F4, F18) | UserAccount, Membership, TeamMember; friendships |
-| **Events** | Events, venue map and points of interest, response teams, announcements, check-in, entries (F3, teams of F4, F5, F10, F16, F17) | Event, VenueMap, PointOfInterest, ResponseTeam, Announcement; check-ins |
+| **Auth & Users** | Authentication, authorisation, accounts, the global `FarolAdmin` role, memberships of events with their role (`EventAdmin`, `RegularUser`) and team assignments, friends (F1, F2, roles and team members of F4, F18) | UserAccount, GlobalRoleGrant, EventMembership, TeamAssignment; friendships |
+| **Events** | Events, venue map and points of interest, teams with their permissions and help categories, announcements, check-in, entries (F3, teams of F4, F5, F10, F16, F17) | Event, VenueMap, PointOfInterest, Team, TeamPermission, Announcement; check-ins |
 | **Reports** | Community reports and their confirmation, help requests, incident backoffice, AI triage with fallback (F6, F7, F8, F12, F13) | HelpRequest, TriageSuggestion, StatusChange; community reports |
 | **Transports** | External transport integration and event shuttles (F9) | TransportOption |
 | **Badges** | Badges (F14, F15) | Badges |
 
-Entities in lower case are not in the domain model yet; Tomás and Guerra add them, together with the platform admin (P4).
+Entities in lower case are not in the domain model yet; Tomás and Guerra add them.
+
+**Where roles and permissions live** ([`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026), to confirm with the team):
+- **Auth & Users** holds who is who: the `FarolAdmin` grant, each user's membership of each event with its role, and which members are in which team. It publishes a domain event when any of these changes.
+- **Events** holds the teams: their names, permissions (fixed list, with the report types for `Reports.Review`) and help categories. It publishes a domain event when a team or its permissions change.
+- A member's permissions in an event are the union of their teams' permissions; an `EventAdmin` has all of them. Each service that checks a permission keeps a local copy of the memberships, team assignments and team permissions it needs (rules below). Where the check runs and how the token carries it is guide E2 (Guerra).
 
 **Rules:**
 - Each service owns its data and its database; no service reads another service's database.
-- Services talk **only through events**. Each service keeps a local copy of what it needs from another (e.g. Reports keeps the response teams from Events; every service keeps the roles per event from Auth & Users). The cost is eventual consistency.
+- Services talk **only through events**. Each service keeps a local copy of what it needs from another (e.g. Reports keeps the teams, their permissions and help categories from Events; every service keeps the memberships and team assignments of its events from Auth & Users). The cost is eventual consistency.
 - Each service is its own Maven project in `backend/<service>/` and depends only on the others' contracts (OpenAPI and events). Inside, it follows a **hexagonal layout**: `domain`, `application`, `adapters/in`, `adapters/out`.
 - APIs are **contract-first**: hand-written OpenAPI in `backend/<service>/contracts/openapi.yaml`, paths under `/api/v1`, server and client code generated ([`spec-driven-development.md`](../Process/spec-driven-development.md)).
 
@@ -128,7 +133,7 @@ Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end f
 
 | Integration | Purpose | Handling of unavailable, late, incomplete or invalid data (assignment §6.5) |
 |---|---|---|
-| **Transport data**: Porto Digital urban platform (FIWARE NGSI v2, live bus positions; [ADR-008](adr/0008-transport-data-source.md)) | Transport for F9 | Calls with a timeout; data validated on import; data older than its freshness limit counts as late. On any of these, the last valid data is kept and shown with its time and a warning (US-09); event shuttles entered manually are unaffected. A **simulator or recorded real responses** under the team's control (guide J4) is used for automated tests, to cause failures and invalid data in the demo, and as a fallback on presentation day |
+| **Transport data**: Porto Digital urban platform (FIWARE NGSI v2, live bus positions; [ADR-008](adr/0008-transport-data-source.md)) | Transport for F9 | Calls with a timeout; data validated on import; data older than its freshness limit counts as late. On any of these, the last valid data is kept and shown with its time and a warning (US-42, US-43); event shuttles entered manually are unaffected. A **simulator or recorded real responses** under the team's control (guide J4) is used for automated tests, to cause failures and invalid data in the demo, and as a fallback on presentation day |
 | **AI model provider** **[PENDING]** (Tomás; local Ollama is an option) | Triage suggestions (F8) | Timeout, retry and circuit breaker, then fallback (§9.1); the suggestion is never shown as a fact (assignment §5.6.2) |
 
 ## 8. Security, authentication and authorisation
@@ -138,7 +143,7 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 | Concern | Decided |
 |---|---|
 | Accounts | **Login mandatory for every user**, participants included (9 October 2026, DM-1) |
-| Authorisation | Role checked **per event** (invariant I1); authN and authZ live in Auth & Users |
+| Authorisation | Checked **per event** (invariant I1): the user's role in that event (`EventAdmin` or `RegularUser`) and the permissions of their teams there (§4). `FarolAdmin` is the only global role and gives no access to any event's data. Accounts, roles and memberships live in Auth & Users, teams and their permissions in Events; where the token is validated and the permission is checked is **[PENDING]** (guide E2, Guerra) |
 | Isolation between events | `event_id` on every event-scoped table, filtered by the application; each service has an integration test proving that a member of event X cannot read or change event Y |
 | Audit | Every change to a help request recorded (StatusChange, domain model I5) |
 | Rate limiting of help requests | **[PENDING]** with the gateway decision (Guerra) |
@@ -225,14 +230,17 @@ Invalid data comes first because an invalid answer is still a successful HTTP ca
 
 ## 10. Deployment view
 
-**[PENDING]** (Tomás): platform (Azure, ECS or Vercel), where the containers, RabbitMQ and PostgreSQL run, environments, infrastructure as code, local execution, rollback. Azure (Azure for Students) was chosen on 11 October and reopened on 15 October.
+**Current scope: local-only deployment/execution.** Tomás reported that the professor authorised proceeding locally **because of cloud-hosting costs**, provided the team explains that reason in the final report/presentation. See the [clarification record](../Meetings/2026-10-22-local-deployment-clarification.md) and [ADR-011](adr/0011-deployment-and-infrastructure.md). The [cloud assessment and dated costs](../Research/architecture-investigation/deployment.md) remain documented evidence and future alternatives, not a requirement to provision cloud resources.
 
-Already decided:
-- **One instance per service** for now.
-- Images built with **multi-stage Dockerfiles** (Maven, Java 21, Spring Boot 4.x).
-- **GitHub Actions** runs every check on every PR, merge and tag; each merge to `main` is published and deployed to production (**continuous deployment**), followed by a smoke test. The pipeline is being reviewed by Bruno.
-- **Flyway** migrations run at application start and stay compatible with the previous version (*expand and contract*), because a code rollback does not undo them.
-- Retention, backup and caching are **future improvements**.
+The local topology recommendation is one machine with five independently replaceable backend containers, one RabbitMQ with a persistent volume, one PostgreSQL instance with five separate databases/users and a web-server container for the React app. Gateway, simulator, observability and optional inference add components as needed; phones open the same web app in the browser. Separate database containers are also possible without separate machines. Exact Compose configuration and resource sizing still need implementation/measurement.
+
+Preserved requirements and limits:
+- **One instance per service** initially; independent images and service replacement still demonstrate the microservice boundaries.
+- **Multi-stage Dockerfiles**, Maven, Java 21 and Spring Boot 4.x; **GitHub Actions** checks every service on every PR/merge/tag.
+- The earlier automatic-deploy-to-cloud-production promise is superseded for this delivery scope. Bruno defines reproducible local startup/update and smoke-test handoff; cloud credentials/ACR/provisioning are not prerequisites.
+- **Flyway** migrations remain compatible with the previous application image (*expand and contract*); rolling back code does not undo database migrations.
+- Local metrics/traces/logs and degraded-mode/integration tests still provide evidence. No cloud HA, managed scaling or cloud recovery result is claimed.
+- Persistent local volumes are not a backup or a guarantee against host/disk loss. Backup scope and observed recovery limits remain explicit.
 
 ### 10.1 Peak load and scaling (J3)
 
@@ -280,7 +288,7 @@ Why these pass criteria: **p95 < 500 ms** on the server leaves most of SC1's 5 s
 | Decision | Choice |
 |---|---|
 | Backend | **Java 21 + Spring Boot 4.x**, Maven |
-| Frontend | **React** web app (event management only) · **React Native** mobile app (everything else) |
+| Frontend | **One React web app** for every user; each page is built for the phone (participants, field teams) or for a laptop (event management, control room). The React Native app was removed on 22 October 2026 ([ADR-002](adr/0002-backend-and-frontend-technology.md), #125) |
 | Database | **PostgreSQL**, one database per service; Flyway |
 | Message broker | **RabbitMQ** with Spring AMQP |
 | Live updates | **Polling** |
@@ -290,13 +298,12 @@ Why these pass criteria: **p95 < 500 ms** on the server leaves most of SC1's 5 s
 | API | Contract-first **OpenAPI**, `/api/v1` |
 | CI/CD | **GitHub Actions**, monorepo, private repository |
 | Architecture views | **C4** (all four levels, level 3 for every service) and **4+1** views without scenarios, drawn in **draw.io** |
-| Cloud and deployment | **[PENDING]** Tomás |
-| AI provider and model | **[PENDING]** Tomás |
-| Observability | **[PENDING]** Tomás |
+| Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** [ADR-011](adr/0011-deployment-and-infrastructure.md); local implementation pending |
+| AI provider and model | **[PROPOSED]** Hosted Mistral Small vs local Ollama comparison; selection gates in [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) |
+| Observability | **[PROPOSED]** Local Micrometer/OpenTelemetry + Prometheus/Grafana; Azure Monitor retained as cloud alternative. [ADR-012](adr/0012-observability.md) |
 | Identity | **[PENDING]** Guerra |
 | API gateway | **[PENDING]** Guerra |
-| Venue map library (React Native) | **[PENDING]** Tiago |
-| React Native setup and distribution | **[PENDING]** Bruno |
+| Venue map | **[PROPOSED]** The image with an **SVG** overlay for the markers, inside a **`react-zoom-pan-pinch`** zoom/pan container; normalised `MapPosition` coordinates; the same component on phone and laptop pages (to confirm with a spike on a real iPhone and Android phone before the map is built). PDF maps are rendered to a PNG on upload by the Events service (**Apache PDFBox**). See [ADR-007](adr/0007-venue-map-representation.md), waits for Tiago's review |
 
 ## 13. Architecture Decision Records
 
@@ -308,12 +315,14 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-002](adr/0002-backend-and-frontend-technology.md) | Backend and frontend technology | Accepted |
 | [ADR-003](adr/0003-database-and-data-ownership.md) | Database and data ownership | Accepted |
 | [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
-| ADR-005 | AI workflow, provider and fallback | Waits for Tomás |
+| [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) | AI workflow, provider and fallback | Proposed; evaluation/privacy gates pending |
 | ADR-006 | Identity | Waits for Guerra |
-| ADR-007 | Venue map representation | Waits for Tiago |
+| [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Proposed; rewritten for the web app on 23 October 2026, waits for Tiago |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
 | ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
+| [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; detailed implementation/recovery pending |
+| [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
 
 > ⚠️ **GAP: API outline and walking skeleton.** Sprint A also asks for an API outline (item 7; owner: Bruno, with the event catalogue) and a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; later phase, no owner yet).
 
@@ -327,6 +336,8 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | Process: help request and triage | [1](diagrams/process-view-level-1-help-request.drawio.svg) · [2](diagrams/process-view-level-2-help-request.drawio.svg) · [3](diagrams/process-view-level-3-help-request.drawio.svg) · [4](diagrams/process-view-level-4-help-request.drawio.svg) |
 | Process: transport import | [1](diagrams/process-view-level-1-transports.drawio.svg) · [2](diagrams/process-view-level-2-transports.drawio.svg) · [3](diagrams/process-view-level-3-transports.drawio.svg) · [4](diagrams/process-view-level-4-transports.drawio.svg) |
 | Implementation (development) | [1](diagrams/implementation-view-level-1.drawio.svg) · [2](diagrams/implementation-view-level-2.drawio.svg) · [3](diagrams/implementation-view-level-3.drawio.svg) · [4 mobile](diagrams/implementation-view-level-4-mobile.drawio.svg) · [4 web](diagrams/implementation-view-level-4-web.drawio.svg) · [4 reports](diagrams/implementation-view-level-4-reports.drawio.svg) · [4 transports](diagrams/implementation-view-level-4-transports.drawio.svg) |
-| Physical **[PENDING: G1]** | [1](diagrams/physical-view-level-1.drawio.svg) · [2](diagrams/physical-view-level-2.drawio.svg) · [3](diagrams/physical-view-level-3.drawio.svg) · [4 mobile](diagrams/physical-view-level-4-mobile.drawio.svg) · [4 web](diagrams/physical-view-level-4-web.drawio.svg) · [4 reports](diagrams/physical-view-level-4-reports.drawio.svg) · [4 transports](diagrams/physical-view-level-4-transports.drawio.svg) |
+| Physical **[TO ALIGN: local deployment scope]** | [1](diagrams/physical-view-level-1.drawio.svg) · [2](diagrams/physical-view-level-2.drawio.svg) · [3](diagrams/physical-view-level-3.drawio.svg) |
 | Logical → implementation | [1](diagrams/mapping-logical-implementation-level-1.drawio.svg) · [2](diagrams/mapping-logical-implementation-level-2.drawio.svg) · [3](diagrams/mapping-logical-implementation-level-3.drawio.svg) · [4 mobile](diagrams/mapping-logical-implementation-level-4-mobile.drawio.svg) · [4 web](diagrams/mapping-logical-implementation-level-4-web.drawio.svg) · [4 reports](diagrams/mapping-logical-implementation-level-4-reports.drawio.svg) · [4 transports](diagrams/mapping-logical-implementation-level-4-transports.drawio.svg) |
-| Logical → physical | [1](diagrams/mapping-logical-physical-level-1.drawio.svg) · [2](diagrams/mapping-logical-physical-level-2.drawio.svg) · [3](diagrams/mapping-logical-physical-level-3.drawio.svg) · [4 mobile](diagrams/mapping-logical-physical-level-4-mobile.drawio.svg) · [4 web](diagrams/mapping-logical-physical-level-4-web.drawio.svg) · [4 reports](diagrams/mapping-logical-physical-level-4-reports.drawio.svg) · [4 transports](diagrams/mapping-logical-physical-level-4-transports.drawio.svg) |
+| Logical → physical | [1](diagrams/mapping-logical-physical-level-1.drawio.svg) · [2](diagrams/mapping-logical-physical-level-2.drawio.svg) · [3](diagrams/mapping-logical-physical-level-3.drawio.svg) |
+
+> **[TO ALIGN: #125]** The diagrams still show the React Native mobile app, which was removed on 22 October 2026: in levels 1 to 3 and in the `*-level-4-mobile` diagrams. They are updated when the diagrams are next edited (Bruno).
