@@ -29,6 +29,10 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - **Story numbers** (features §7.1, 22 October): the D1 test is US-36 (SC5) and the D2 test US-42 and US-43, instead of SC5 alone and US-15 (now *Make or remove an EventAdmin*).
 - **J4 owner** (#55): WireMock recorded as a proposal for Guerra instead of a closed decision.
 
+### Decided on 24 October 2026 (Tiago, with the NFR list #137)
+- **Outbox alert:** oldest pending row above **60 s for 2 min** (`architecture.md` §6), joining the 60 s of this PR and the 2 min window of the observability research, so a short peak does not alert.
+- **SC6 raised to ≤ 15 s:** participant pages keep polling every 10 s, so the J3 peak (≈ 1,300 req/s) does not change; `architecture.md` §10.1 and load-test scenario L2 updated.
+
 ### Merged
 - `main` merged (#45 backlog issues, #53 local delivery and research, #55 meeting with the professor, #56 role model, #44 ADR-007, #125 mobile app removed). Conflicts in this CHANGELOG (both kept, this entry first), `features.md` §3.1 (#43 values with main's team wording and story numbers), `architecture.md` §7 (AI row from #43, story numbers from main) and the guide (C3 and J from #43, C4 and *Próximos passos* from main).
 
