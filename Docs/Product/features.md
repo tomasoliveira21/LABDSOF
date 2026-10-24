@@ -801,8 +801,8 @@ These dependencies are open on 22 October 2026. A story that needs one stays in 
 | Open dependency | Owner | Blocks |
 |---|---|---|
 | Walking skeleton (R0, #58), in Sprint A; needs the deployment platform (guide G1, #53) | Tomás | Every story (first to be built) |
-| Identity provider (guide E1) | Guerra | US-01, US-03 |
-| Role, team and permission model (§4): team confirmation, then the domain model (Tomás + Guerra) and where permissions are checked (guide E2, Guerra). Replaces personas PE-5 and PE-6 | Team; Tomás + Guerra; Guerra | US-06, US-14, US-15, US-16 |
+| ~~Identity provider (guide E1)~~ Closed on 22 October 2026: Keycloak ([ADR-006](../Technical/adr/0006-identity-and-access.md)) | Guerra | ~~US-01, US-03~~ |
+| Role, team and permission model (§4): team confirmation, then the domain model (Tomás + Guerra). ~~Where permissions are checked (guide E2)~~ closed on 22 October 2026: in each service's use cases, against local copies ([ADR-006](../Technical/adr/0006-identity-and-access.md)). Replaces personas PE-5 and PE-6 | Team; Tomás + Guerra | US-06, US-14, US-15, US-16 |
 | Venue map library (guide F3, ADR-007, #44) | Tiago | US-19 |
 | AI provider and model (guide K1); AI-1 to AI-3 (§5.2) | Tomás, AI lead | US-34 |
 | Resilience values (guide J1, #43) | Tiago | US-42, US-43 |
