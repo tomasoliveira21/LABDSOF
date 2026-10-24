@@ -30,7 +30,7 @@ What the professor listed, with the document each section comes from today.
 | Architecture & technology | [`architecture.md`](../Technical/architecture.md), ADRs, draw.io diagrams | Exists; diagrams change with P1 |
 | Assumptions & dependencies | Assumptions in [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md); dependencies spread across the ADRs | **Missing** as one list |
 | Operating costs estimation | Infrastructure research in #53 (guide G2) | **Missing**: salaries and the final figure (P7) |
-| Prioritised product backlog (epics) | [`features.md`](../Product/features.md) §2 and §7; issues #58 to #121 (§8.3) | Partial: issues created, the board does not exist yet |
+| Prioritised product backlog (epics) | [`features.md`](../Product/features.md) §2 and §7; issues #58 to #121 (§8.3) | Partial: issues created and on the [board](https://github.com/users/tomasoliveira21/projects/1); priority and size proposed in #138 (24 October 2026) |
 | NFRs | Architecture drivers ([`architecture.md`](../Technical/architecture.md) §1) and success criteria | **Missing** as one list |
 | High-level scope of Sprint 1 | Sprint goals in #45 (`features.md` §8.1, not merged) | Partial |
 | People and responsibilities | [`team-and-process.md`](../Process/team-and-process.md) §2 and the guide's owners table | Exists |

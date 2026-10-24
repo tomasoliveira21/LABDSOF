@@ -2,6 +2,23 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-24 · Backlog board linked, field rules proposed (#138, Tiago Teixeira)
+
+**Why:** the GitHub Projects board exists and holds issues #58 to #121, but the documents still said it did not exist. Sprint B (2 November) must be planned from the board, so its fields need rules.
+
+### Added
+- `Docs/README.md`: *Backlog* row with the [board](https://github.com/users/tomasoliveira21/projects/1) link (private, team members only).
+- `features.md` §8.3: the board link and how its fields are used, **[PROPOSED]**, applied once Tiago approves: *Status* (*Ready* only when no dependency blocks the story, §8.4), *Priority* (Must in the next sprint's release → P0, other Must → P1, Should and Could → P2), *Size* (from the number of acceptance criteria, one step up for an open or external dependency), sprint from the milestones instead of an *Iteration* field. Result: P0 28, P1 28, P2 7; XS 16, S 22, M 16, L 9; only #58 *Ready*.
+
+### Changed
+- `definition-of-ready-and-done.md`: the ⚠️ note now says what is done on the board (fields, workflows, issues, README link) and what remains (apply the values, milestones instead of *Iteration*, *Ready*/*Done* descriptions, DoR box in each issue, board access for the professor).
+- `features.md` §7.1: DoR row *On the board* no longer says the board does not exist.
+- `team-and-process.md` (*Tools*), `2026-10-12-sprint-1-presentation-feedback.md` (T1, open action ticked) and `2026-10-22-professor-meeting.md` (backlog row): the board exists and holds the issues.
+
+### Not changed
+- Nothing on the board or on the issues: the priority, size, status and sprint values are a proposal for Tiago to approve first.
+- `features.md` §8.4: still lists all the blockers as open, which is true on 24 October 2026 (its F3 row still points to #44, closed, while ADR-007 waits for Tiago's review).
+
 ## [Unreleased] · 2026-10-23 · Mobile app removed from the documentation (#125, Bruno Lopes)
 
 **Why:** in the meeting with the professor on 22 October 2026 (P9) the React Native mobile app was dropped. Farol is one React web app, and each page is built for the phone or for a laptop.
