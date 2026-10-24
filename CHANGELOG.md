@@ -18,6 +18,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### On the board (approved by Tiago, 24 October 2026)
 - *Priority* and *Size* set on #58 to #121 with the rules of `features.md` §8.3; #58 moved to *Ready*, the other 62 stories stay in *Backlog*.
 - Sprint shown with the milestones, not an *Iteration* field; the *Sprint A* milestone is due on 1 November 2026.
+- Old feature issues #2 to #10 and #12 to #16 archived from the board (covered by the stories or out of scope); #11 closed as delivered.
 
 ### Not changed
 - The DoR box "On the GitHub Projects board" in each story issue, the *Ready*/*Done* option descriptions and the professor's access to the private board (still to do, see `definition-of-ready-and-done.md`).

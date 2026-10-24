@@ -714,7 +714,7 @@ Every merge to `main` is deployed (continuous deployment, guide H5). A *release*
 
 ### 8.3 Stories on the board
 
-Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) stay open as they are.
+Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) stay open, but were archived from the board on 24 October 2026 (#138): each one is covered by the stories below or is out of scope (#6, #8, #10, #14). #11 (Problem and Opportunity Report) was closed as delivered.
 
 **Board:** [GitHub Projects, *LABDSOF*](https://github.com/users/tomasoliveira21/projects/1) (project 1 of `tomasoliveira21`; private, open to the team). Every issue in the table below is on it, with the other open issues of the repository (auto-add workflow). How its fields are used, decided and applied on 24 October 2026 (Tiago, backlog owner, #138); the board is the source of truth for the values (they are not repeated in this table):
 
