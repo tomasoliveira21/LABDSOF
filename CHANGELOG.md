@@ -2,25 +2,38 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] · 2026-10-22 · Resilience, degraded modes and load testing (#43)
+## [Unreleased] · 2026-10-24 · Resilience, degraded modes and load testing (#43)
 
-**Why:** Tiago's investigation of area J (resilience and degradation) and of the retry values left open in C3. It meets assignment §6.8, applies the professor's answer (Porto Digital as the source, with a simulator under the team's control) and prepares the Sprint C performance evidence and degraded-mode demonstration (§7.3.2, items 7 and 8). Every value is recorded with the reason for it.
+**Why:** Tiago's investigation of area J (resilience and degradation) and of the retry values left open in C3. It meets assignment §6.8, applies the professor's answer (Porto Digital as the source, with a simulator under the team's control) and prepares the Sprint C performance evidence and degraded-mode demonstration (§7.3.2, items 7 and 8). It also sets the x and y asked for in the meeting with the professor on 22 October (P4). Every value is recorded with the reason for it.
 
 ### Decided
-- **J1:** **Resilience4j 2.4** (`resilience4j-spring-boot4`) in the outgoing adapters; timeout, retry and circuit-breaker values for the AI provider, the Porto Digital API (import every 30 s, only buses within 2 km of the venue) and the identity provider (if external), each with its reason (SC3's 30 s budget, measured API latency, low traffic at night).
+- **J1:** **Resilience4j 2.4** (`resilience4j-spring-boot4`) in the outgoing adapters; timeout, retry and circuit-breaker values for the AI provider, the Porto Digital API (import every **30 s**, the meeting's *x*; only buses within 2 km of the venue) and the identity provider (if external), each with its reason (SC3's 30 s budget, measured API latency, low traffic at night).
 - **C3:** 4 attempts in the consumer with backoff 1 s → 2 s → 4 s, then one DLQ per queue; DLQ messages are alerted on, never reprocessed automatically, and moved back by hand once the cause is fixed. An AI failure is a fallback, not a message failure.
-- **J2:** D1 and D2 are triggered, in the demo and in the tests, by **WireMock** placed in front of the AI provider and the Porto Digital API (proxy to the real system, failure stubs on demand), with no fault-injection code in the services. Tested on every PR (SC5, US-15). Freshness limit of **5 min** for bus positions; the 24 h proposed for a static GTFS timetable no longer applies. Step-by-step demo script.
-- **J4:** the simulator of the Porto Digital API is **WireMock** (proxy, recorded real responses, failure stubs); it also simulates the AI provider.
-- **J3:** design peak of ≈ 1,300 read requests/s for 10 min plus 1 help request/s, with its sources and assumptions; scaling order under one instance per service (Events scaled out first when C5 changes); load test with **k6**, scenarios L1–L5 and their pass criteria.
+- **J2:** D1 and D2 are triggered, in the demo and in the tests, by **WireMock** placed in front of the AI provider and the Porto Digital API (proxy to the real system, failure stubs on demand), with no fault-injection code in the services. Tested on every PR (US-36 for D1 and SC5; US-42 and US-43 for D2). Freshness limit of **5 min** for bus positions (the meeting's *y*); the 24 h proposed for a static GTFS timetable no longer applies. Step-by-step demo script.
+- **J3:** design peak of ≈ 1,300 read requests/s for 10 min plus 1 help request/s, with its sources and assumptions; scaling order under one instance per service (Events scaled out first when C5 changes); load test with **k6**, scenarios L1–L5 and their pass criteria, run by hand on the local machine.
+
+### Proposed
+- **J4:** **WireMock** as the simulator of the Porto Digital API (proxy, recorded real responses, failure stubs), also used for the AI provider. Guerra, owner of J4 since the meeting of 22 October, confirms or changes it.
 
 ### Changed
-- `architecture-decisions-guide.md`: C3, J1–J4 marked ✅, with a table of values per external call and the reasons for them.
+- `architecture-decisions-guide.md`: C3 and J1–J3 marked ✅, J4 with the WireMock proposal, a table of values per external call and the reasons for them; *Próximos passos*: x and y done, moved to *Feito*.
 - `architecture.md`: §6 retries, dead letters and outbox publisher; §7 AI row; §9.1–9.3 (patterns, values and reasons; how D1 and D2 are triggered, observed and tested; demo script); §10.1 (peak load, scaling, load test, pass criteria); resilience, simulator and load testing in the technology table.
 - `features.md` §3.1: D1 and D2 detection, freshness limit, recovery, demo and test.
-- ADR-004 and ADR-008: retry values, import interval, freshness limit and simulator recorded; their open points on these closed.
+- ADR-004 and ADR-008: retry values, import interval, freshness limit and simulator recorded; their open points on these closed, except the simulator tool (Guerra).
+- `2026-10-22-professor-meeting.md`: Tiago's x and y action ticked (done in #43) and the transport decision row filled in.
+
+### Aligned with `main` (24 October 2026)
+- **Local-only delivery** (#53, ADR-011): the demo and the load test run on the local machine with `docker compose`, WireMock as one more container. The load test no longer runs from GitHub Actions against a deployed environment (a public runner cannot reach a team member's machine); k6 runs from a second computer or with CPU limits on the Farol containers, and the results describe that machine. Local scaling is Compose limits and `--scale`; managed cloud scaling stays an evaluated alternative only. "Production" wording removed.
+- **One React web app** (#125): the demo uses the web app's phone pages instead of the mobile app; polling only while the page is visible.
+- **Observability** (ADR-012, proposed): the dashboard, DLQ alert and degraded-mode panels point to ADR-012, with the Actuator endpoints as the stand-in until it exists.
+- **Story numbers** (features §7.1, 22 October): the D1 test is US-36 (SC5) and the D2 test US-42 and US-43, instead of SC5 alone and US-15 (now *Make or remove an EventAdmin*).
+- **J4 owner** (#55): WireMock recorded as a proposal for Guerra instead of a closed decision.
+
+### Merged
+- `main` merged (#45 backlog issues, #53 local delivery and research, #55 meeting with the professor, #56 role model, #44 ADR-007, #125 mobile app removed). Conflicts in this CHANGELOG (both kept, this entry first), `features.md` §3.1 (#43 values with main's team wording and story numbers), `architecture.md` §7 (AI row from #43, story numbers from main) and the guide (C3 and J from #43, C4 and *Próximos passos* from main).
 
 ### To confirm
-- AI timeouts with K1 (Tomás), identity provider values with E1 (Guerra), demo and load-test environment with G1 and G4 (Tomás); the busiest-night figure with the organisers.
+- AI timeouts with K1 (Tomás), identity provider values with E1 (Guerra), the WireMock proposal for J4 (Guerra), the local Compose set-up for the demo and the load test with G5 and G6 (Tomás); the busiest-night figure with the organisers.
 
 ## [Unreleased] · 2026-10-23 · Mobile app removed from the documentation (#125, Bruno Lopes)
 
