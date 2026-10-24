@@ -22,6 +22,8 @@ What shapes the design, and where it comes from:
 | D8 | **At least one asynchronous workflow** and **one external integration** (or realistic simulator) | Assignment §6.3, §6.5 |
 | D9 | **Small team, three sprints** | Report §5 execution risks |
 
+The measurable quality targets that follow from these drivers, the success criteria and assignment §6 are listed in one place in [`non-functional-requirements.md`](../Product/non-functional-requirements.md).
+
 ## 2. System context
 
 ```mermaid

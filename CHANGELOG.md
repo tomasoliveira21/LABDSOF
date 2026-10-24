@@ -2,6 +2,21 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-24 · Non-functional requirements list (#137, Tiago Teixeira)
+
+**Why:** in the meeting with the professor on 22 October 2026 the NFRs were *missing as one list* for the Sprint A deck (*Presentation contents*); the action was Tiago's.
+
+### Added
+- `Docs/Product/non-functional-requirements.md`: 34 NFRs in one table (ID, ISO/IEC 25010 category, requirement, measurable target, how it is verified, source), collected from the architecture drivers, the success criteria SC1–SC11, assignment §6, the degraded modes D1 and D2, ADR-004, ADR-005, ADR-008, ADR-011, ADR-012 and the architecture research. Values from the open PRs #52 (resilience, #43) and #47 (identity and gateway, #46) are marked as pending those PRs; targets that do not exist yet are **[PENDING]** with their owner. Open points at the end.
+
+### Changed
+- `Docs/README.md`: the page added to the Product row.
+- `architecture.md` §1: link to the NFR list.
+- `2026-10-22-professor-meeting.md`: NFR row of *Presentation contents* and Tiago's NFR action ticked.
+
+### Not changed
+- No target was decided here. Differences found between documents (on-time triage 90 % vs 95 %, outbox alert 30 s vs 60 s, 10 s polling vs SC6) are listed as open points, not resolved.
+
 ## [Unreleased] · 2026-10-23 · Mobile app removed from the documentation (#125, Bruno Lopes)
 
 **Why:** in the meeting with the professor on 22 October 2026 (P9) the React Native mobile app was dropped. Farol is one React web app, and each page is built for the phone or for a laptop.
