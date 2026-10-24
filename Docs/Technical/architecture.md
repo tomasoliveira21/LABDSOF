@@ -57,7 +57,8 @@ flowchart LR
         WEB["Web app<br/>(React)<br/>phone pages: participants, field teams<br/>laptop pages: event management, control room"]
     end
 
-    GW["API gateway<br/>[PENDING: C6]"]
+    GW["API gateway<br/>(Spring Cloud Gateway)<br/>routes · JWT · CORS · rate limits"]
+    KC["Keycloak<br/>(identity provider)"]
 
     subgraph Backend["Backend services (Spring Boot)"]
         direction TB
@@ -74,14 +75,16 @@ flowchart LR
     LLM["AI model provider"]
 
     WEB --> GW
+    WEB -. "login (OIDC, PKCE)" .-> KC
     GW --> AU & EV & RE & TS & BA
+    AU -- "account deletion [Admin API]" --> KC
     AU & EV & RE & TS & BA <-- "domain events [AMQP]" --> MQ
     AU & EV & RE & TS & BA --> DBS
     TS -- "scheduled poll" --> TR
     RE -- "triage" --> LLM
 ```
 
-Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING team acceptance]**; [observability proposal](../Research/architecture-investigation/observability.md)). Clients get live updates by **polling** (no push in the MVP).
+Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING team acceptance]**; [observability proposal](../Research/architecture-investigation/observability.md)). Clients get live updates by **polling** (no push in the MVP). Keycloak keeps its own database on the PostgreSQL server; every service validates the token against Keycloak's keys ([ADR-006](adr/0006-identity-and-access.md)).
 
 ## 4. Responsibilities and data ownership
 
@@ -138,15 +141,17 @@ Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end f
 
 ## 8. Security, authentication and authorisation
 
-Owner: **Guerra** (identity provider, token validation, service-to-service authentication, secrets, Security & Privacy assessment).
+Owner: **Guerra** (identity provider, token validation, service-to-service authentication, secrets, Security & Privacy assessment). Decided by the team on 22 October 2026 ([record](../Meetings/2026-10-22-identity-and-gateway-decisions.md)): [ADR-006](adr/0006-identity-and-access.md) (identity) and [ADR-013](adr/0013-api-gateway.md) (gateway).
 
 | Concern | Decided |
 |---|---|
 | Accounts | **Login mandatory for every user**, participants included (9 October 2026, DM-1) |
-| Authorisation | Checked **per event** (invariant I1): the user's role in that event (`EventAdmin` or `RegularUser`) and the permissions of their teams there (§4). `FarolAdmin` is the only global role and gives no access to any event's data. Accounts, roles and memberships live in Auth & Users, teams and their permissions in Events; where the token is validated and the permission is checked is **[PENDING]** (guide E2, Guerra) |
-| Isolation between events | `event_id` on every event-scoped table, filtered by the application; each service has an integration test proving that a member of event X cannot read or change event Y |
+| Identity provider | **Keycloak**, self-hosted, Authorization Code + PKCE for the web app. The token carries **identity only**; the account is created in Auth & Users at the first `GET /me` (guide E1, ADR-006) |
+| Authorisation | Checked **per event** (invariant I1): the user's role in that event (`EventAdmin` or `RegularUser`) and the permissions of their teams there (§4). `FarolAdmin` is the only global role and gives no access to any event's data. Accounts, roles and memberships live in Auth & Users, teams and their permissions in Events. **Every service validates the JWT** (the gateway too) and checks the permission **in the use case**, against its local copies of memberships and teams; changes reach it as events within ≤ 5 s (guide E2, ADR-006) |
+| Isolation between events | `event_id` on every event-scoped table, filtered by the application; each service has an integration test proving that a member of event X cannot read or change event Y. A non-member gets 404 |
 | Audit | Every change to a help request recorded (StatusChange, domain model I5) |
-| Rate limiting of help requests | **[PENDING]** with the gateway decision (Guerra) |
+| Rate limiting | **Per account, never per IP**, at the gateway: 120 requests/min; **5 help requests per 10 min**. Reports per account (US-48) are a Reports business rule (guide C6, ADR-013) |
+| Service-to-service and secrets | No HTTP between services; one RabbitMQ user per service. Secrets from environment variables (`.env` locally, GitHub Actions secrets in CI); gitleaks on every PR (guide E3, E4) |
 
 > ⚠️ **GAP: Security and Privacy Assessment.** Sprint A deliverable (assignment §7.1.2, item 9). Owner: Guerra.
 
@@ -232,7 +237,7 @@ Invalid data comes first because an invalid answer is still a successful HTTP ca
 
 **Current scope: local-only deployment/execution.** Tomás reported that the professor authorised proceeding locally **because of cloud-hosting costs**, provided the team explains that reason in the final report/presentation. See the [clarification record](../Meetings/2026-10-22-local-deployment-clarification.md) and [ADR-011](adr/0011-deployment-and-infrastructure.md). The [cloud assessment and dated costs](../Research/architecture-investigation/deployment.md) remain documented evidence and future alternatives, not a requirement to provision cloud resources.
 
-The local topology recommendation is one machine with five independently replaceable backend containers, one RabbitMQ with a persistent volume, one PostgreSQL instance with five separate databases/users and a web-server container for the React app. Gateway, simulator, observability and optional inference add components as needed; phones open the same web app in the browser. Separate database containers are also possible without separate machines. Exact Compose configuration and resource sizing still need implementation/measurement.
+The local topology recommendation is one machine with five independently replaceable backend containers, one RabbitMQ with a persistent volume, one PostgreSQL instance with five separate databases/users and a web-server container for the React app. Gateway, simulator, observability and optional inference add components as needed; phones open the same web app in the browser. The API gateway and Keycloak are two of them, the only containers published to the host with the web app ([ADR-013](adr/0013-api-gateway.md), [ADR-006](adr/0006-identity-and-access.md)). Separate database containers are also possible without separate machines. Exact Compose configuration and resource sizing still need implementation/measurement.
 
 Preserved requirements and limits:
 - **One instance per service** initially; independent images and service replacement still demonstrate the microservice boundaries.
@@ -303,8 +308,8 @@ Why these pass criteria: **p95 < 500 ms** on the server leaves most of SC1's 5 s
 | Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** [ADR-011](adr/0011-deployment-and-infrastructure.md); local implementation pending |
 | AI provider and model | **[PROPOSED]** Hosted Mistral Small vs local Ollama comparison; selection gates in [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) |
 | Observability | **[PROPOSED]** Local Micrometer/OpenTelemetry + Prometheus/Grafana; Azure Monitor retained as cloud alternative. [ADR-012](adr/0012-observability.md) |
-| Identity | **[PENDING]** Guerra |
-| API gateway | **[PENDING]** Guerra |
+| Identity | **Keycloak** (OpenID Connect), self-hosted; Spring Security resource server in every service; `oidc-client-ts` in the web app. [ADR-006](adr/0006-identity-and-access.md) |
+| API gateway | **Spring Cloud Gateway (Server WebMvc)**, CORS and Bucket4j rate limits per account. [ADR-013](adr/0013-api-gateway.md) |
 | Venue map | **[PROPOSED]** The image with an **SVG** overlay for the markers, inside a **`react-zoom-pan-pinch`** zoom/pan container; normalised `MapPosition` coordinates; the same component on phone and laptop pages (to confirm with a spike on a real iPhone and Android phone before the map is built). PDF maps are rendered to a PNG on upload by the Events service (**Apache PDFBox**). See [ADR-007](adr/0007-venue-map-representation.md), waits for Tiago's review |
 
 ## 13. Architecture Decision Records
@@ -318,13 +323,14 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-003](adr/0003-database-and-data-ownership.md) | Database and data ownership | Accepted |
 | [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
 | [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) | AI workflow, provider and fallback | Proposed; evaluation/privacy gates pending |
-| ADR-006 | Identity | Waits for Guerra |
+| [ADR-006](adr/0006-identity-and-access.md) | Identity and access control | Accepted |
 | [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Proposed; rewritten for the web app on 23 October 2026, waits for Tiago |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
 | ADR-010 | CI/CD strategy | Waits for Bruno's pipeline review |
 | [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; detailed implementation/recovery pending |
 | [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
+| [ADR-013](adr/0013-api-gateway.md) | API gateway, CORS and rate limiting | Accepted |
 
 > ⚠️ **GAP: API outline and walking skeleton.** Sprint A also asks for an API outline (item 7; owner: Bruno, with the event catalogue) and a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; later phase, no owner yet).
 
