@@ -279,7 +279,7 @@ Rewritten on 9 October 2026 to match the feature list above; checked against the
 | Dependencies identified | No story listed its dependencies | *Depends on* line on every story; blockers in §8.4 |
 | One story = one PR | Several stories held two or more PRs of work | Split (below) |
 | AI fallback | The AI suggestion did not say what happens when the AI fails | *AI fallback* line pointing to US-36 (scenario D1) |
-| On the board | No story had an issue | Issues #58 to #121 created on 22 October 2026 from the user-story form (§8.3). All of them are on the [GitHub Projects board](https://github.com/users/tomasoliveira21/projects/1) (checked 24 October 2026); the box in each issue is ticked when the board fields are applied (#138) |
+| On the board | No story had an issue | Issues #58 to #121 created on 22 October 2026 from the user-story form (§8.3). All of them are on the [GitHub Projects board](https://github.com/users/tomasoliveira21/projects/1) (checked 24 October 2026); the DoR box in each issue is still to be ticked |
 
 #### How the stories were split (22 October 2026)
 
@@ -716,14 +716,14 @@ Every merge to `main` is deployed (continuous deployment, guide H5). A *release*
 
 Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) stay open as they are.
 
-**Board:** [GitHub Projects, *LABDSOF*](https://github.com/users/tomasoliveira21/projects/1) (project 1 of `tomasoliveira21`; private, open to the team). Every issue in the table below is on it, with the other open issues of the repository (auto-add workflow). How its fields are used, **[PROPOSED] 24 October 2026** (Tiago, backlog owner, #138); the values are applied on the board once Tiago approves them, and the board is then the source of truth for them (they are not repeated in this table):
+**Board:** [GitHub Projects, *LABDSOF*](https://github.com/users/tomasoliveira21/projects/1) (project 1 of `tomasoliveira21`; private, open to the team). Every issue in the table below is on it, with the other open issues of the repository (auto-add workflow). How its fields are used, decided and applied on 24 October 2026 (Tiago, backlog owner, #138); the board is the source of truth for the values (they are not repeated in this table):
 
 | Field | Values | Rule |
 |---|---|---|
 | *Status* | Backlog → Ready → In progress → In review → Done | *Ready* only when the story meets the [DoR](../Process/definition-of-ready-and-done.md#definition-of-ready-backlog-item) and none of its dependencies blocks it (§8.4); a dependency on an unblocked story that is not built yet only orders the work. *Done* follows the DoD; the board workflows move closed issues and merged PRs to *Done* |
 | *Priority* | P0, P1, P2 | Must in the release of the next sprint → **P0** (now R1, Sprint B; the walking skeleton #58, R0, is also P0); every other Must → **P1**; Should and Could → **P2**. Re-applied at the start of each sprint |
 | *Size* | XS, S, M, L, XL | From the number of acceptance criteria: 1 → XS, 2 → S, 3 → M, 4 → L, 5 or more → XL. One step up when the story depends on an open or external decision or system (E1, role model, D3, F3, K1, ADR-008, J1, §6.1, D7). One step up for US-21, US-23 and US-26 (first use of the map and of polling, §8.5) and US-46 (offline cache). An XL story is split before it is *Ready* |
-| Sprint | Milestones *Sprint A*, *Sprint B*, *Sprint C* | The issue's milestone (this table's *Sprint* column); board views are grouped or filtered by *Milestone*. No *Iteration* field, so the sprint is kept in one place (proposed instead of the Iteration field of [`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md#in-the-tool)) |
+| Sprint | Milestones *Sprint A*, *Sprint B*, *Sprint C* | The issue's milestone (this table's *Sprint* column); board views are grouped or filtered by *Milestone*. No *Iteration* field, so the sprint is kept in one place (decided on 24 October 2026 instead of the Iteration field of [`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md#in-the-tool)) |
 | *Estimate*, *Start date*, *Target date* | — | Not used for now |
 
 Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 16, **S** 22, **M** 16, **L** 9, **XL** 0. Only #58 is *Ready*: every story waits for at least one open blocker of §8.4 (the identity provider E1 alone blocks 60 of the 62 stories), so it stays in *Backlog* until that blocker is closed.

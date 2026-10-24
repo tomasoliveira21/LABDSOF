@@ -29,5 +29,5 @@
 - [ ] Team confirms the operator / responder split and the `Responder` role (personas **PE-6**).
 - [x] Check every user story against the DoR (T1): done on 16 October 2026, see [`features.md` §7.1](../Product/features.md#71-dor-check-and-split).
 - [x] Create the story issues (#45): #58 to #121, on 22 October 2026, see [`features.md` §8.3](../Product/features.md#83-stories-on-the-board).
-- [x] Create the GitHub Projects board and add the issues to it (repository owner): the [board](https://github.com/users/tomasoliveira21/projects/1) holds #58 to #121 (checked 24 October 2026). Priority, size and *Ready* are proposed in #138.
+- [x] Create the GitHub Projects board and add the issues to it (repository owner): the [board](https://github.com/users/tomasoliveira21/projects/1) holds #58 to #121 (checked 24 October 2026). Priority, size and *Ready* applied in #138 on 24 October 2026.
 - [ ] Next presentation: rewrite the slides in the team's own words (T4); no full BPMN on the slides (T3).
