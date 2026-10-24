@@ -20,6 +20,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Outbox alert: oldest pending row above **60 s for 2 min** (NFR-34; `observability.md` alert table; `architecture.md` §6 in PR #52).
 - Accessibility (NFR-25): **WCAG 2.1 AA** on the main pages, owner Tiago.
 - Availability and recovery measured locally (NFR-12, NFR-13); weak-network mode stays out while F11 is a Could.
+- NFR-15, NFR-17 and NFR-18 take their values from ADR-006 and ADR-013 (identity and gateway, merged with #47 on 24 October 2026) instead of the open PR.
 
 ### Not changed
 - On-time AI triage, ≥ 90 % (ADR-005) vs ≥ 95 % in 30 s (observability research): both are Tomás's proposals, left for him to align (K1, I2).
