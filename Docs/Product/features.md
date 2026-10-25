@@ -63,34 +63,34 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 
 ### 3.1 Degraded-mode scenarios (decided, 9 October 2026)
 
-Two scenarios, no more. Both are demoed by switching off one dependency while the rest of the product keeps working. Assignment §6.8: *"fail safely and communicate limitations clearly to users"*.
+Two scenarios, no more. Both are demoed by breaking one dependency while the rest of the product keeps working. Assignment §6.8: *"fail safely and communicate limitations clearly to users"*.
 
 #### D1 · AI triage unavailable
 
 | | |
 |---|---|
 | **Dependency** | AI model provider used by the triage worker (F8) |
-| **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout, a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker) |
-| **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down, a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
+| **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout (10 s per attempt, 2 attempts), a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker: at least half of the last 10 calls failed or were slow, minimum 4 calls). Values: [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1) |
+| **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down (circuit breaker open), a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
 | **What the operator does** | Sets the priority and team by hand. Nothing else changes in F7 |
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
-| **When the AI comes back** | Requests the operator has not touched may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
-| **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and counted as a metric (fallback rate) |
-| **How it is demoed** | Stop the triage worker, or point it at an invalid provider key, and submit a help request |
-| **Test** | SC5: 100 % of requests are shown to the operator with the AI off |
+| **When the AI comes back** | The banner disappears after the first successful call. Requests from the last 15 min that the operator has not touched are sent to triage once more and may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
+| **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard (proposed in [ADR-012](../Technical/adr/0012-observability.md)) |
+| **How it is demoed** | On the local machine (local-only delivery, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)), the triage worker points at **WireMock** (proposed simulator, guide J4), which normally passes requests to the real AI provider. The presenter makes it drop the connection (or answer late, or return invalid output) and a participant submits help requests from the web app's phone pages; the services carry no fault-injection code. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
+| **Test** | US-36 (SC5): 100 % of requests are shown to the operator with the AI off. Reports integration test on every PR, with WireMock in place of the provider (delay over the timeout, 503, dropped connection, invalid body); also under load in Sprint C (scenario L5) |
 
 #### D2 · Transport source unavailable
 
 | | |
 |---|---|
-| **Dependency** | Porto Digital urban platform (FIWARE NGSI v2 bus API) |
-| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit **[PENDING]** (Tiago, guide J) |
+| **Dependency** | Porto Digital urban platform (FIWARE NGSI v2 bus API, [ADR-008](../Technical/adr/0008-transport-data-source.md)) |
+| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit: **5 min** (decided 22 October 2026; the *y* of the meeting with the professor, P4), so late observations are dropped on import. Bus positions normally arrive about 1 min old, and a bus covers about 2 km in 5 min, so an older position misleads. The 24 h proposed earlier was for a static GTFS timetable, dropped with the professor's answer |
 | **What the participant sees** | The **last valid data**, with *"Data from HH:MM"* and a warning *"Live transport information unavailable"*, plus a link to the operator's website. **Event shuttles and temporary stops entered by the team are not affected**: they are internal data |
 | **What the team sees** | A warning in the backoffice that the transport source is down, with the time of the last successful import |
 | **Invalid data** | Never replaces valid data: the import is rejected as a whole and the previous version stays in use |
-| **Recovery** | Import retried with backoff; the warning disappears after the first valid import |
-| **How it is demoed** | Point Transports at the team's simulator of the Porto Digital API (or recorded real responses, guide J4) and make it fail, answer late or return invalid data, then open the transport screen |
-| **Test** | Automated tests against the simulator (source stopped, late, invalid data): the last data and the warning are shown (US-42, US-43) |
+| **Recovery** | Import every 30 s (the *x* of the meeting with the professor, P4), retried with backoff (3 attempts, 1 s and 2 s apart; after repeated failures the circuit breaker waits 60 s before trying again, so a public service we do not control is not hammered); the warning disappears after the first valid import |
+| **How it is demoed** | On the local machine, Transports points at **WireMock**, the proposed simulator of the Porto Digital API (guide J4), which normally passes requests to the real API. The presenter makes it return invalid data, then drop the connection, and the participant opens the transport screen. Script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
+| **Test** | US-42, US-43: Transports integration test on every PR, with WireMock replaying recorded Porto Digital responses, then a 503, a timeout and an invalid payload, and a fixed clock past the freshness limit: the last valid data, its time and the stale flag are returned, shuttles still shown, invalid data never stored |
 
 ## 4. Roles, teams and permissions (22 October 2026)
 
