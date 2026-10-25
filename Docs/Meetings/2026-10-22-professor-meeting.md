@@ -43,7 +43,7 @@ What the professor listed, with the document each section comes from today.
 | Topic | Decision | Applied in |
 |---|---|---|
 | Diagrams | Physical level 4 and its logical–physical mappings removed; physical level 3 shows five databases | Removal: diagrams, [ADR-009](../Technical/adr/0009-architecture-documentation.md) and [`architecture.md`](../Technical/architecture.md) §14 (#55). Level 3: Bruno, later |
-| Transport data | Poll every x seconds, store the result, users read only from the database, warning after y | Already in ADR-004 and D2. Values of x and y: guide J1 and D2, Tiago |
+| Transport data | Poll every x seconds, store the result, users read only from the database, warning after y | Already in ADR-004 and D2. Values: x = 30 s, y = 5 min (guide J1 and D2, ADR-008; Tiago, #43) |
 | Cost estimation | Salaries + infrastructure, simple assumptions | New item, owner **Bruno** |
 | Frontend | No mobile app: one React web app with phone pages and laptop pages | Guide §0, F1, F3, F4, H9; [ADR-002](../Technical/adr/0002-backend-and-frontend-technology.md); [ADR-007](../Technical/adr/0007-venue-map-representation.md) rewritten for the web; [`architecture.md`](../Technical/architecture.md); [`features.md`](../Product/features.md) (#125). Diagrams: Bruno, later |
 
@@ -55,7 +55,7 @@ What the professor listed, with the document each section comes from today.
 - [ ] **Bruno:** remove the mobile app from the diagrams (levels 1 to 3 and `*-level-4-mobile`) (P9).
 - [ ] **Tiago:** review [ADR-007](../Technical/adr/0007-venue-map-representation.md), rewritten for the web (`react-zoom-pan-pinch` + SVG markers), and accept or change it (P9).
 - [ ] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2).
-- [ ] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2).
+- [x] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2). Done in #43: x = 30 s, y = 5 min.
 - [ ] **No owner yet, done at the end:** the presentation deck (P5).
 - [ ] **No owner yet, done at the end:** the single PDF with the Sprint A documents (P6).
 - [ ] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). The infrastructure part can reuse Tomás's research in #53 (G2).
