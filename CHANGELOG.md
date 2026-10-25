@@ -12,6 +12,67 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Issues #71 and #68: same criteria in their *Acceptance criteria*.
 - `architecture-decisions-guide.md` (*Próximos passos*, item 3) and `2026-10-22-identity-and-gateway-decisions.md` (*Actions*): Tiago's action marked done.
 
+## [Unreleased] · 2026-10-24 · Backlog board linked, field rules applied (#138, Tiago Teixeira)
+
+**Why:** the GitHub Projects board exists and holds issues #58 to #121, but the documents still said it did not exist. Sprint B (2 November) must be planned from the board, so its fields need rules.
+
+### Added
+- `Docs/README.md`: *Backlog* row with the [board](https://github.com/users/tomasoliveira21/projects/1) link (private, team members only).
+- `features.md` §8.3: the board link and how its fields are used, approved by Tiago and applied on the board on 24 October 2026: *Status* (*Ready* only when no dependency blocks the story, §8.4), *Priority* (Must in the next sprint's release → P0, other Must → P1, Should and Could → P2), *Size* (from the number of acceptance criteria, one step up for an open or external dependency), sprint from the milestones instead of an *Iteration* field. Result: P0 28, P1 28, P2 7; XS 16, S 22, M 16, L 9; only #58 *Ready*.
+
+### Changed
+- `definition-of-ready-and-done.md`: the ⚠️ note now says what is done on the board (fields, workflows, issues, README link) and the field values applied, and what remains (board access for the professor).
+- `features.md` §7.1: DoR row *On the board* no longer says the board does not exist.
+- `team-and-process.md` (*Tools*), `2026-10-12-sprint-1-presentation-feedback.md` (T1, open action ticked) and `2026-10-22-professor-meeting.md` (backlog row): the board exists, holds the issues and has its fields applied.
+
+### On the board (approved by Tiago, 24 October 2026)
+- *Priority* and *Size* set on #58 to #121 with the rules of `features.md` §8.3; #58 moved to *Ready*, the other 62 stories stay in *Backlog*.
+- Sprint shown with the milestones, not an *Iteration* field; the *Sprint A* milestone is due on 1 November 2026.
+- DoR box "On the GitHub Projects board" ticked in the 62 story issues (#59 to #121; #58 is a task and has no such box).
+- *Ready* and *Done* options described as "Meets the DoR" and "Meets the DoD", linking to `definition-of-ready-and-done.md`.
+- Old feature issues #2 to #10 and #12 to #16 archived from the board (covered by the stories or out of scope); #11 closed as delivered.
+
+### Not changed
+- The professor's access to the private board (still to do, see `definition-of-ready-and-done.md`).
+- `features.md` §8.4: still lists all the blockers as open, which is true on 24 October 2026 (its F3 row still points to #44, closed, while ADR-007 waits for Tiago's review).
+
+## [Unreleased] · 2026-10-24 · Resilience, degraded modes and load testing (#43)
+
+**Why:** Tiago's investigation of area J (resilience and degradation) and of the retry values left open in C3. It meets assignment §6.8, applies the professor's answer (Porto Digital as the source, with a simulator under the team's control) and prepares the Sprint C performance evidence and degraded-mode demonstration (§7.3.2, items 7 and 8). It also sets the x and y asked for in the meeting with the professor on 22 October (P4). Every value is recorded with the reason for it.
+
+### Decided
+- **J1:** **Resilience4j 2.4** (`resilience4j-spring-boot4`) in the outgoing adapters; timeout, retry and circuit-breaker values for the AI provider, the Porto Digital API (import every **30 s**, the meeting's *x*; only buses within 2 km of the venue) and the identity provider (if external), each with its reason (SC3's 30 s budget, measured API latency, low traffic at night).
+- **C3:** 4 attempts in the consumer with backoff 1 s → 2 s → 4 s, then one DLQ per queue; DLQ messages are alerted on, never reprocessed automatically, and moved back by hand once the cause is fixed. An AI failure is a fallback, not a message failure.
+- **J2:** D1 and D2 are triggered, in the demo and in the tests, by **WireMock** placed in front of the AI provider and the Porto Digital API (proxy to the real system, failure stubs on demand), with no fault-injection code in the services. Tested on every PR (US-36 for D1 and SC5; US-42 and US-43 for D2). Freshness limit of **5 min** for bus positions (the meeting's *y*); the 24 h proposed for a static GTFS timetable no longer applies. Step-by-step demo script.
+- **J3:** design peak of ≈ 1,300 read requests/s for 10 min plus 1 help request/s, with its sources and assumptions; scaling order under one instance per service (Events scaled out first when C5 changes); load test with **k6**, scenarios L1–L5 and their pass criteria, run by hand on the local machine.
+
+### Proposed
+- **J4:** **WireMock** as the simulator of the Porto Digital API (proxy, recorded real responses, failure stubs), also used for the AI provider. Guerra, owner of J4 since the meeting of 22 October, confirms or changes it.
+
+### Changed
+- `architecture-decisions-guide.md`: C3 and J1–J3 marked ✅, J4 with the WireMock proposal, a table of values per external call and the reasons for them; *Próximos passos*: x and y done, moved to *Feito*.
+- `architecture.md`: §6 retries, dead letters and outbox publisher; §7 AI row; §9.1–9.3 (patterns, values and reasons; how D1 and D2 are triggered, observed and tested; demo script); §10.1 (peak load, scaling, load test, pass criteria); resilience, simulator and load testing in the technology table.
+- `features.md` §3.1: D1 and D2 detection, freshness limit, recovery, demo and test.
+- ADR-004 and ADR-008: retry values, import interval, freshness limit and simulator recorded; their open points on these closed, except the simulator tool (Guerra).
+- `2026-10-22-professor-meeting.md`: Tiago's x and y action ticked (done in #43) and the transport decision row filled in.
+
+### Aligned with `main` (24 October 2026)
+- **Local-only delivery** (#53, ADR-011): the demo and the load test run on the local machine with `docker compose`, WireMock as one more container. The load test no longer runs from GitHub Actions against a deployed environment (a public runner cannot reach a team member's machine); k6 runs from a second computer or with CPU limits on the Farol containers, and the results describe that machine. Local scaling is Compose limits and `--scale`; managed cloud scaling stays an evaluated alternative only. "Production" wording removed.
+- **One React web app** (#125): the demo uses the web app's phone pages instead of the mobile app; polling only while the page is visible.
+- **Observability** (ADR-012, proposed): the dashboard, DLQ alert and degraded-mode panels point to ADR-012, with the Actuator endpoints as the stand-in until it exists.
+- **Story numbers** (features §7.1, 22 October): the D1 test is US-36 (SC5) and the D2 test US-42 and US-43, instead of SC5 alone and US-15 (now *Make or remove an EventAdmin*).
+- **J4 owner** (#55): WireMock recorded as a proposal for Guerra instead of a closed decision.
+
+### Decided on 24 October 2026 (Tiago, with the NFR list #137)
+- **Outbox alert:** oldest pending row above **60 s for 2 min** (`architecture.md` §6), joining the 60 s of this PR and the 2 min window of the observability research, so a short peak does not alert.
+- **SC6 raised to ≤ 15 s:** participant pages keep polling every 10 s, so the J3 peak (≈ 1,300 req/s) does not change; `architecture.md` §10.1 and load-test scenario L2 updated.
+
+### Merged
+- `main` merged (#45 backlog issues, #53 local delivery and research, #55 meeting with the professor, #56 role model, #44 ADR-007, #125 mobile app removed). Conflicts in this CHANGELOG (both kept, this entry first), `features.md` §3.1 (#43 values with main's team wording and story numbers), `architecture.md` §7 (AI row from #43, story numbers from main) and the guide (C3 and J from #43, C4 and *Próximos passos* from main).
+
+### To confirm
+- AI timeouts with K1 (Tomás), identity provider values with E1 (Guerra), the WireMock proposal for J4 (Guerra), the local Compose set-up for the demo and the load test with G5 and G6 (Tomás); the busiest-night figure with the organisers.
+
 ## [Unreleased] · 2026-10-24 · Identity and API gateway decided (#46, António Guerra)
 
 **Why:** guide C6 and E1–E4 were open. The team decided them in the meeting of 22 October 2026.

@@ -64,4 +64,7 @@ A story is *Done* when its PR is merged and:
 | DoD, Level 2 (story) | Checklist pre-filled in every user-story issue, ticked before the item moves to "Done" |
 | Board | GitHub Projects *Status* field: `Backlog → Ready → In progress → In review → Done`. The *Ready* option is described as "Meets the DoR" and *Done* as "Meets the DoD", both linking to this page |
 
-> ⚠️ **Still to do in GitHub (repository owner):** create the board with the *Status* options above, the *Iteration* field for Sprints A, B and C and the built-in workflows (auto-add issues, *Item added → Backlog*, *Pull request merged → Done*, *Item closed → Done*), then add its link to the README.
+> ⚠️ **Board status (checked 24 October 2026, #138).**
+> **Done:** the [board](https://github.com/users/tomasoliveira21/projects/1) exists with the *Status* options above, the *Priority* (P0–P2) and *Size* (XS–XL) fields, and the built-in workflows on (auto-add, item added, item closed, pull request linked, pull request merged); issues #58 to #121 are on it, and its link is in the [README](../README.md). The DoR box "On the GitHub Projects board" is ticked in the 62 story issues. *Priority*, *Size* and *Status* applied to #58 to #121 with the rules of [`features.md` §8.3](../Product/features.md#83-stories-on-the-board) (approved by Tiago, backlog owner, 24 October 2026). The sprint is the issue's milestone (*Sprint A*, *B*, *C*) instead of an *Iteration* field; *Sprint A* is due on 1 November 2026. The *Ready* and *Done* options are described as "Meets the DoR" and "Meets the DoD", with a link to this page.
+> **Still to do:**
+> - The board is private: give the professor access, or make it public (repository owner).
