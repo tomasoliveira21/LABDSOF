@@ -455,6 +455,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 *Persona:* P3 · *Depends on:* US-06; venue map library (guide F3, ADR-007, #44)
 - Given I upload a valid image or PDF, when I save, then it becomes the event's current map version.
 - Given I upload a file that is not an image or PDF, when I save, then it is refused with a message and the current map stays.
+- Given I upload a file larger than 20 MB, when I save, then it is refused with a message giving the limit, and the current map stays (ADR-013, L-4).
 
 **US-20** · As an **EventAdmin** (or a member with `Map.Edit`), I want to place, edit and remove points of interest on the map, so that people find entrances, stages, WC, first aid and transport stops.
 *Persona:* P3 · *Depends on:* US-19
@@ -477,6 +478,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 *Persona:* P1 · *Depends on:* US-14, US-21
 - Given I choose a category and mark a location, when I submit, then I see a confirmation.
 - Given I submitted a request, then my location is visible only to members with `HelpRequests.Triage`, to EventAdmins and to the team it is routed to.
+- Given I have sent 5 help requests in the last 10 minutes, when I submit another, then it is refused with a message saying when I can ask again, and the first-aid points are shown on the map (ADR-013, L-2: answer 429 with `Retry-After`).
 
 **US-24** · As a **participant**, I want to follow the status of my help request, so that I know whether help is coming.
 *Persona:* P1 · *Depends on:* US-23

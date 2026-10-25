@@ -2,6 +2,16 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-24 · Backlog criteria for the gateway limits (#141, Tiago Teixeira)
+
+**Why:** the team meeting of 22 October 2026 on identity and the API gateway ([record](Docs/Meetings/2026-10-22-identity-and-gateway-decisions.md), ADR-013) left Tiago two backlog actions: tell a participant what to do when the help-request limit answers 429, and confirm the 20 MB limit on the venue-map upload.
+
+### Changed
+- `features.md` §7, **US-23** (#71): new criterion: after 5 help requests in 10 minutes, the next one is refused with a message saying when the participant can ask again, and the first-aid points are shown on the map (ADR-013 L-2, 429 with `Retry-After`).
+- `features.md` §7, **US-19** (#68): the **20 MB** upload limit is confirmed, with a criterion for a file that is too large (ADR-013 L-4).
+- Issues #71 and #68: same criteria in their *Acceptance criteria*.
+- `architecture-decisions-guide.md` (*Próximos passos*, item 3) and `2026-10-22-identity-and-gateway-decisions.md` (*Actions*): Tiago's action marked done.
+
 ## [Unreleased] · 2026-10-24 · Backlog board linked, field rules applied (#138, Tiago Teixeira)
 
 **Why:** the GitHub Projects board exists and holds issues #58 to #121, but the documents still said it did not exist. Sprint B (2 November) must be planned from the board, so its fields need rules.

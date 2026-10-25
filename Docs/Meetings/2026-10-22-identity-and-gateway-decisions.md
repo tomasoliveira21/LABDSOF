@@ -35,7 +35,7 @@ Decision: [ADR-006](../Technical/adr/0006-identity-and-access.md)
 | Action | Owner |
 |---|---|
 | Update the API outline (O1, O2, O3), the event catalogue and D7 as listed in [ADR-006](../Technical/adr/0006-identity-and-access.md#changes-for-the-api-outline-and-d7) | Bruno |
-| Acceptance criterion for the 429 answer on the help-request page (US-23); confirm the 20 MB map upload limit | Tiago |
+| Acceptance criterion for the 429 answer on the help-request page (US-23); confirm the 20 MB map upload limit | Tiago: done in #141 (24 October 2026) |
 | Keycloak, its realm export and the gateway in the walking skeleton | Guerra, with Tomás (walking skeleton) |
 | Security and Privacy Assessment (E5) | Guerra |
 
