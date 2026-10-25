@@ -2,6 +2,33 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-25 · Security and Privacy Assessment (António Guerra)
+
+**Why:** Sprint A deliverable 9 (assignment §7.1.2: initial threat model, sensitive data, access-control requirements, data-minimisation measures, retention considerations) was the open guide item E5, owned by Guerra since 8 October 2026. Assignment §6.4 and §6.6 also ask for retention, deletion, audit records and consent management, and US-03 to US-05 waited for it to write the sign-up terms.
+
+### Added
+- `Docs/Technical/security-and-privacy-assessment.md`: scope and method; trust boundaries TB1–TB8; inventory of the personal data per service, with help requests as possible special-category data (GDPR art. 9); STRIDE threat model T1–T21; access-control requirements AC-1–AC-11, with who may read and change each object inside an event; data-minimisation measures M-1–M-14; proposed retention periods and what each service does on `UserDeleted`; lawful basis, help-request consent and what the sign-up terms must say; a checklist before a hosted AI provider receives real text (ADR-005, item 5); the local demo environment; 15 findings with who decides; the security tests; known limitations. Every new control and number is marked **[PROPOSED]**.
+
+### Proposed (to review with the team)
+- **T4:** grant the bootstrap `FarolAdmin` only when the token says `email_verified: true`. Without it, whoever first signs up with the bootstrap e-mail becomes FarolAdmin, because e-mails are not verified. Amends ADR-006.
+- **§9:** HTTPS for the local demo (e.g. mkcert), because phones on Wi-Fi would send tokens in clear text and the browser does not allow PKCE on plain-HTTP pages.
+- **T11 / M-5:** the triage message carries only `requestId`, so the help-request text and map point never sit in RabbitMQ or a dead-letter queue (change to the API outline draft, #123).
+- **T6:** a within-event case in the isolation test of US-14 (a participant opening another participant's help request).
+- **AC-7:** operational actions need a login in the last 12 h (`auth_time`, RFC 9470 step-up), so a lost field-team phone with a 30-day session cannot act on help requests.
+- **AC-9:** answer to outline O4, the FarolAdmin's account lookup by e-mail (exact match, id and name only, audited, confirmed with the organisation outside Farol).
+- **§7:** help-request content deleted 30 days after the event closes, then anonymous statistics; Keycloak events 30 days; logs 14 days; traces 7 days.
+- **§8.3:** help-request consent asked when joining an event (US-12), with 112 and the first-aid points shown if it is declined.
+
+### Changed
+- `architecture-decisions-guide.md`: E5 written (✅, team review 🔍); G3 privacy points to the assessment; owners table, *Feito* and *Em aberto* item 1 updated.
+- `architecture.md` §8: the *GAP* note replaced by a link to the assessment.
+- `features.md` §8.5: the sign-up terms follow the assessment §8.
+- `2026-10-22-identity-and-gateway-decisions.md` (*Actions*): E5 written.
+- `Docs/README.md`: *Security and privacy* row.
+
+### Not changed
+- ADR-006, ADR-007, the API outline draft (#123), the domain model and the stories: the changes the assessment proposes for them are listed in its §10, with who decides each.
+
 ## [Unreleased] · 2026-10-24 · Backlog criteria for the gateway limits (#141, Tiago Teixeira)
 
 **Why:** the team meeting of 22 October 2026 on identity and the API gateway ([record](Docs/Meetings/2026-10-22-identity-and-gateway-decisions.md), ADR-013) left Tiago two backlog actions: tell a participant what to do when the help-request limit answers 429, and confirm the 20 MB limit on the venue-map upload.

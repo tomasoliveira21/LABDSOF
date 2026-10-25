@@ -153,7 +153,7 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 | Rate limiting | **Per account, never per IP**, at the gateway: 120 requests/min; **5 help requests per 10 min**. Reports per account (US-48) are a Reports business rule (guide C6, ADR-013) |
 | Service-to-service and secrets | No HTTP between services; one RabbitMQ user per service. Secrets from environment variables (`.env` locally, GitHub Actions secrets in CI); gitleaks on every PR (guide E3, E4) |
 
-> ⚠️ **GAP: Security and Privacy Assessment.** Sprint A deliverable (assignment §7.1.2, item 9). Owner: Guerra.
+**Security and Privacy Assessment** (Sprint A deliverable 9, guide E5): [`security-and-privacy-assessment.md`](security-and-privacy-assessment.md), written on 25 October 2026, to review with the team. It holds the initial threat model, the sensitive data, the access-control requirements, the data-minimisation measures, retention and deletion, consent and the local demo environment, plus the findings that change the design before Sprint B (§10 there).
 
 ## 9. Degraded modes
 

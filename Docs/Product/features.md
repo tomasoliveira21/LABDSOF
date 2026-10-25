@@ -873,7 +873,7 @@ Sprint B must already have an *initial external-system integration* (§7.2.2, it
 
 - Mocked authentication is allowed for the MVP (assignment §6.6, footnote 1), so seeded test accounts are enough for the help-request journey; log in and log out (US-01, US-02) are in Sprint B.
 - Sign-up is not a step of that journey.
-- The terms and consent text should follow the Security & Privacy assessment (guide E5, Guerra), which is not done yet.
+- The terms and consent text follow the [Security & Privacy assessment](../Technical/security-and-privacy-assessment.md) §8 (guide E5, Guerra; written on 25 October 2026, to review with the team).
 - US-03 to US-05 all handle personal data, so they are built and tested together.
 
 #### Why the FarolAdmin's other stories (US-07 to US-09) are in Sprint C
