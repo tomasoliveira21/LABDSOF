@@ -143,6 +143,8 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 | I2 | SLIs e SLOs | 🔍 Tomás |
 | I3 | Dashboard e alertas | 🔍 Tomás |
 
+**Alinhamento documental (26/10, #145):** [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145), ADR-012, a observabilidade e o avaliador passam a usar a proposta **≥95% de sugestões válidas guardadas em ≤30 s**, com janela operacional de 1 h. As populações offline/operacional e o tratamento de falhas/abstenções estão explícitos. A discrepância de 90%/95% fica corrigida nas fontes para o NFR-03 da PR #139; I1–I3 e K1–K2 continuam em investigação/revisão, não implementados nem medidos. [Estado do que existe e do que falta](../Research/architecture-investigation/README.md#ai-and-observability-status-26-october-2026-145).
+
 ## J · Resiliência e degradação (§6.8)
 
 | # | Decisão | Estado |

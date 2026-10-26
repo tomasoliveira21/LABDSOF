@@ -33,6 +33,19 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 - [Evaluation instructions and limitations](evaluation/README.md), [system prompt](evaluation/system-prompt.txt), [output schema](evaluation/output.schema.json), dataset and offline baseline report.
 - [Azure price snapshot](azure-price-snapshot.json): dated evidence, not a subscription quote.
 
+## AI and observability status (26 October 2026, #145)
+
+| Area | Documented/delivered | Still pending |
+|---|---|---|
+| Target discrepancy | ADR-005, ADR-012, observability, assessment, evaluation instructions and scorer now agree on the **proposed ≥95% within 30 s**; operational window is 1 h, with explicit cohort accounting and separate offline denominator | Team review/acceptance; this is not a measured result |
+| K1: provider/model | Hosted-versus-local assessment and candidate comparison plan | Actual provider/model selection, repeated runs on local hardware, deadline/retry fit with J1, privacy/provider clearance where applicable |
+| K2: evaluation | Responsible AI assessment, draft prompt/schema, 100 synthetic cases and honest no-AI baseline; scorer boundary checks | Independent labels/fresh holdout, actual model outputs, reason review, event-specific eligible-team contract/tests and SC3/SC5 integration evidence |
+| I1: instrumentation | Local Micrometer/OpenTelemetry + Prometheus/Grafana proposal | Application instrumentation, exporter/configuration and a correlated HTTP → queue → stored-result trace |
+| I2: measurements | SLI/SLO definitions and aligned coverage target | Actual end-to-end measurements on the local target, counters/denominators and no-data/degraded-window reporting |
+| I3: dashboard/alerts | Panel and trigger/runbook specification | Provisioned local dashboard/alerts and trigger/resolve drills |
+
+**NFR handoff:** [PR #139](https://github.com/tomasoliveira21/LABDSOF/pull/139) already uses 95% for NFR-03. Once this source correction is merged/reviewed, its owner can remove the obsolete 90%/95% discrepancy note and reference [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145). That closes this documentation mismatch; it does not prove the NFR is implemented or that all other open NFR decisions are resolved. No edits/merge to the NFR owner's branch are made by this task.
+
 ## Dependencies and handoff
 
 Guerra owns identity, gateway, secrets and Security & Privacy (#46). Tiago owns retry/circuit-breaker values, message redelivery and load tests (#43). Bruno owns pipeline authentication, tags and API/event contracts. This research gives constraints and acceptance checks without replacing their decisions. The joint domain-model work with Guerra is outside #53.
