@@ -31,6 +31,49 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Merged
 - `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (procedure added to main's *Technical* row), `architecture.md` §10 (procedure from #129, gateway and Keycloak sentence from main) and the guide (status date, G3, Guerra's row and *Em aberto* from main; G4–G7, Tomás's row and the procedure in *Feito* from #129; G4–G7 removed from Tomás's areas, local delivery added to Bruno's).
 - `main` merged again (#134 operating cost estimation). Conflicts in this CHANGELOG (both kept) and the guide's *Feito* (both items kept). The cost estimation's two `local-delivery.md` mentions, marked "proposed in #130", are links again.
+- `main` merged a third time (#145 AI triage coverage, #124 API outline). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (local delivery and API outline both in the *Technical* row) and the guide's *Em aberto* (item 2 from main; G4–G7 out of Tomás's areas, C8 and H6 out of Bruno's).
+
+## [Unreleased] · 2026-10-23 · API outline and event catalogue (#123, Bruno Lopes)
+
+**Why:** Sprint A deliverable 7 (assignment §7.1.2; guide C8). The team needs an agreed outline of each service's REST endpoints and of the events between services before writing the OpenAPI contracts and the stories (guide C7).
+
+### Added
+- `Docs/Technical/api-outline.md`: conventions (resource paths under `/api/v1` with `{eventId}`, state changes as `POST /{id}/<action>`, `updatedSince` polling, Problem Details errors, per-event authorisation from local copies); endpoints of Auth & Users, Events, Reports, Transports and Badges with the role or permission and the story; request and response fields of the core flow (help request, triage, field tasks); event catalogue (envelope, one topic exchange per producer, full-state payloads with a version, 12 events with producer, consumers and why, queue bindings); coverage matrix of the Must and Should stories; Could features; §10 decisions: D1–D12 taken by the outline owner on 23 October 2026 (the FarolAdmin names the first EventAdmin with a second call, D3; no endpoint for another user's badges, D9), and O1–O7 waiting for other owners.
+
+### Changed
+- `architecture-decisions-guide.md`: C8 decided (✅, #123); status date; *Próximos passos*.
+- `architecture.md`: §5 links the outline; the §13 gap now covers only the walking skeleton.
+- `Docs/README.md`: outline added to the index.
+
+### Not changed
+- `domain-model.md`: `EngagementPreferences` stays in Auth & Users until the team accepts moving it to Badges (outline §6, decision O5 in §10.2).
+- `features.md`: US-41 still says STCP; left to its owner (Tiago).
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (outline added to main's *Technical* row) and the guide (status date and *Em aberto* from main, C8 removed from Bruno's areas; outline added to *Feito*). The outline is then aligned with ADR-006 and ADR-013 (next section).
+- `main` merged again (#134 operating cost estimation, #145 AI triage coverage). Conflict only in this CHANGELOG (both kept, this entry first).
+
+### Aligned with ADR-006, ADR-013 and the Security and Privacy Assessment (26 October 2026)
+**Why:** guide *Em aberto* item 2 and the action for Bruno in the [meeting of 22 October 2026](Docs/Meetings/2026-10-22-identity-and-gateway-decisions.md): the outline still followed the proposals that ADR-006 and ADR-013 decided.
+
+- **O1–O3 closed:** paths follow ADR-013's route table; sign-up, login and logout in Keycloak, `POST /accounts` removed and the account created at the first `GET /me` (US-03); the token carries only the identity, and `userId` is the token's `sub`.
+- **O4 closed:** `GET /accounts?email=` follows the assessment's AC-9 (exact match, id and display name only, audited; the FarolAdmin confirms the account with the organisation outside Farol).
+- **Limits and errors:** ADR-013 rate limits in §1.7; `429` after 5 help requests in 10 minutes, `413` for a map over 20 MB, `503` with `Retry-After`.
+- **Event catalogue:** new `UserStatusChanged` (`Active` | `Disabled`), so every service refuses a disabled account at once; `UserDeleted` defined (`userId`, `deletedAt`, consumed by Events, Reports, Transports and Badges); `UserProfileChanged` also at account creation; `actorUserId` (the acting user's `sub`) in the envelope, for audit. Queue bindings updated; 13 events.
+- **Account deletion flow** (ADR-006) in §2: refused for the last EventAdmin, Keycloak then Auth & Users, retried while Keycloak is down. What each service deletes or anonymises stays with D7 (account-deletion issue).
+- **M-5 decided (Bruno):** `HelpRequestSubmitted` carries only `requestId`; the triage worker reads the request from Reports' database, so no help-request text or location sits in RabbitMQ. The assessment's M-5 and finding 3 marked decided.
+- `architecture-decisions-guide.md`: C8 row and *Em aberto* item 2 (✅). `2026-10-22-identity-and-gateway-decisions.md`: Bruno's action done.
+- *Not changed:* O5–O7 still wait for their owners; the assessment's other proposals (AC-7, T6) are not in the outline.
+
+## [Unreleased] · 2026-10-26 · Align AI triage coverage and observability (#145)
+
+### Changed
+- ADR-005 and the evaluation package use **≥95% valid suggestions stored within 30 s**, replacing the earlier 90% proposal and matching observability/NFR-03 in PR #139. The operational cohort is one hour; offline expected abstentions use a separate denominator and check.
+- ADR-005 defines deadline/window accounting, failure/abstention misses, semantic validity, no-data handling and the independent zero-urgent-failure / SC5 visibility checks; ADR-012 and research documents reference it.
+- The research overview and decisions guide distinguish delivered research from pending model choice, independent labels, runtime measurement, instrumentation, dashboards/alerts and team acceptance. The NFR branch remains with its owner.
+
+### Verified
+- Offline scorer regression checks exercise exact 95% coverage, below-threshold coverage, the inclusive 30 s deadline and invalid semantic outputs. Original synthetic inputs, prompt/schema and baseline evidence are preserved; no model or operational compliance result is claimed.
 
 ## [Unreleased] · 2026-10-23 · Operating cost estimation (#134, Bruno Lopes)
 
