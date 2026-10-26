@@ -10,6 +10,10 @@ LEVEL = {"Low": 0, "Medium": 1, "High": 2, "Critical": 3}
 TEAM = {"Health": "Medical", "Safety": "Security", "LostPerson": "PCR", "Theft": "Security", "Other": "PCR"}
 FLOOR = {"Health": "Medium", "Safety": "High", "LostPerson": "Medium", "Theft": "Medium", "Other": "Low"}
 SCHEMA = json.loads((HERE / "output.schema.json").read_text())
+# ADR-005 coverage definition, aligned with observability in #145.
+MIN_SUGGESTION_COVERAGE = 0.95
+MIN_ON_TIME_COVERAGE = 0.95
+DEADLINE_MS = 30000
 
 
 def read_jsonl(path):
@@ -77,7 +81,7 @@ def score(cases, predictions, mode="predictions"):
         valid = valid_output(output)
         ms = row.get("elapsed_ms")
         timing_valid = type(ms) in (int, float) and math.isfinite(ms) and ms >= 0
-        on_time = timing_valid and ms <= 30000
+        on_time = timing_valid and ms <= DEADLINE_MS
         e = case["expected"]
         usable = valid and not output["abstain"]
         urgent = not e["abstain"] and LEVEL[e["minimum_priority"]] >= LEVEL["High"]
@@ -105,16 +109,16 @@ def score(cases, predictions, mode="predictions"):
                 "reference_abstention_cases": len(abstain), "correct_reference_abstentions": sum(x["abstain_correct"] for x in abstain),
                 "priority_floor_violations": sum(x["floor_violation"] for x in group), "category_team_inconsistencies": sum(x["semantic_violation"] for x in group),
                 "latency_samples": len(times), "latency_p95_ms_nearest_rank": times[math.ceil(.95 * len(times)) - 1] if times else None,
-                "valid_on_time_coverage": ratio(sum(x["valid"] and x["coverage"] and x["on_time"] for x in semantic), len(semantic)) if times else None,
+                "valid_on_time_coverage": ratio(sum(x["valid"] and x["coverage"] and not x["floor_violation"] and not x["semantic_violation"] and x["on_time"] for x in semantic), len(semantic)) if times else None,
                 "urgent_late_or_missing_timing": sum(x["urgent"] and not x["on_time"] for x in group)}
     overall = aggregate(rows)
     quality = (overall["urgent_failures_including_abstention_or_missing"] == 0
                and overall["category_accuracy"] is not None and overall["category_accuracy"] >= .8
-               and overall["team_accuracy"] >= .8 and overall["suggestion_coverage"] >= .9
+               and overall["team_accuracy"] >= .8 and overall["suggestion_coverage"] >= MIN_SUGGESTION_COVERAGE
                and overall["correct_reference_abstentions"] == overall["reference_abstention_cases"]
                and overall["priority_floor_violations"] == 0 and overall["category_team_inconsistencies"] == 0)
     timing = (overall["latency_samples"] == len(cases) and overall["urgent_late_or_missing_timing"] == 0
-              and overall["valid_on_time_coverage"] is not None and overall["valid_on_time_coverage"] >= .9)
+              and overall["valid_on_time_coverage"] is not None and overall["valid_on_time_coverage"] >= MIN_ON_TIME_COVERAGE)
     return {"kind": mode, "dataset_labels": "synthetic draft, not independently reviewed", "split": sorted({x["split"] for x in cases}),
             "hashes_sha256": {name: hashlib.sha256((HERE / name).read_bytes()).hexdigest() for name in ["cases.jsonl", "system-prompt.txt", "output.schema.json"]},
             "overall": overall, "slices": {tag: aggregate([x for x in rows if tag in x["tags"]]) for tag in sorted({t for x in rows for t in x["tags"]})},
@@ -150,6 +154,40 @@ def self_test(cases):
     assert not valid_output({**oracle[0]["output"], "reason": "x" * 241})
     assert not valid_output({**oracle[0]["output"], "abstain": "false"})
     assert not valid_output({**oracle[0]["output"], "extra": 1})
+    # A small non-urgent fixture makes exactly 95% representable: 19/20.
+    # It tests policy boundaries, never model quality or runtime performance.
+    template = next(c for c in cases if not c["expected"]["abstain"] and LEVEL[c["expected"]["minimum_priority"]] < LEVEL["High"])
+    boundary_cases = []
+    boundary_predictions = []
+    for i in range(20):
+        case = copy.deepcopy(template); case["id"] = f"BOUNDARY-{i:02}"
+        boundary_cases.append(case)
+        expected = case["expected"]
+        boundary_predictions.append({"id": case["id"], "elapsed_ms": DEADLINE_MS,
+                                     "output": {"category": expected["category"], "priority": max((expected["minimum_priority"], case["input"]["current_priority"]), key=LEVEL.get),
+                                                "team": expected["team"], "reason": "Synthetic threshold fixture only", "abstain": False}})
+    at_deadline = score(boundary_cases, boundary_predictions)
+    assert at_deadline["overall"]["valid_on_time_coverage"] == 1.0
+    one_late = copy.deepcopy(boundary_predictions); one_late[0]["elapsed_ms"] = DEADLINE_MS + 1
+    assert score(boundary_cases, one_late)["overall"]["valid_on_time_coverage"] == .95
+    assert score(boundary_cases, one_late)["reported_timing_gate"]
+    two_late = copy.deepcopy(one_late); two_late[1]["elapsed_ms"] = DEADLINE_MS + 1
+    assert not score(boundary_cases, two_late)["reported_timing_gate"]
+    one_invalid = copy.deepcopy(boundary_predictions); one_invalid[0]["output"] = None
+    assert score(boundary_cases, one_invalid)["offline_quality_gate"]
+    assert score(boundary_cases, one_invalid)["reported_timing_gate"]
+    two_invalid = copy.deepcopy(one_invalid); two_invalid[1]["output"] = None
+    assert not score(boundary_cases, two_invalid)["offline_quality_gate"]
+    assert not score(boundary_cases, two_invalid)["reported_timing_gate"]
+    inconsistent = copy.deepcopy(boundary_predictions)
+    inconsistent[0]["output"]["team"] = next(t for t in set(TEAM.values()) if t != inconsistent[0]["output"]["team"])
+    assert score(boundary_cases, inconsistent)["overall"]["valid_on_time_coverage"] == .95
+    below_floor = copy.deepcopy(boundary_predictions); below_floor[0]["output"]["priority"] = "Low"
+    assert score(boundary_cases, below_floor)["overall"]["valid_on_time_coverage"] == .95
+    untimed = copy.deepcopy(boundary_predictions)
+    for row in untimed: row.pop("elapsed_ms")
+    assert score(boundary_cases, untimed)["overall"]["valid_on_time_coverage"] is None
+    assert not score(boundary_cases, untimed)["reported_timing_gate"]
     print("Dataset and scorer checks passed; fixtures are NOT model results.")
 
 
