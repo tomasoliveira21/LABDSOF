@@ -103,7 +103,7 @@ E1–E4 decididos na reunião da equipa de 22/10 ([registo](../Meetings/2026-10-
 | # | Decisão | Estado |
 |---|---|---|
 | F1 | **Uma só aplicação web React.** Cada página é feita para uma utilização: no **telemóvel** (participantes, equipas de terreno) ou no **portátil** (gestão de eventos, sala de controlo). Substitui, desde 22/10, as duas aplicações (web React para a gestão de eventos e mobile React Native para o resto) (reunião com o professor, [ata](../Meetings/2026-10-22-professor-meeting.md); #125; [ADR-002](adr/0002-backend-and-frontend-technology.md)) | ✅ |
-| F2 | App web servida **localmente**; alojamento cloud não é exigido para a entrega autorizada (ADR-011) | ✅ âmbito; 🔍 implementação |
+| F2 | React servido localmente em contentor web, `WEB_PORT=3000`; R0 no browser localhost/modo responsivo. Gateway 8080 e Keycloak 8180; telefone real por HTTPS é integração posterior com Guerra | ✅ documentado; implementação pendente |
 | F3 | **Mapa do recinto ([ADR-007](adr/0007-venue-map-representation.md)), reescrito para a web a 23/10:** a imagem com uma camada **SVG** para os marcadores, dentro do zoom/pan do **`react-zoom-pan-pinch`**; o mesmo componente nas páginas de telemóvel e de portátil; posições em coordenadas normalizadas (`MapPosition`); filtro por tipo (US-22) com estado React. Antes de implementar o mapa, um *spike* confirma o pinch, o pan e o toque num iPhone (Safari) e num Android (Chrome) reais; se falhar, o zoom/pan escreve-se com Pointer Events. **PDF convertido em imagem no upload**, no serviço Events, com Apache PDFBox (só PDFs de uma página; imagem com no máximo 4096 px no lado maior; guarda-se o original e a imagem). Onde ficam os ficheiros depende do G1. A versão de 22/10 era para React Native | 🔍 Tiago (revê a versão web) |
 | F4 | ~~Configuração do React Native (ex.: Expo ou não) e como a app mobile chega aos professores e à demo (§12)~~ Já não se aplica: sem app mobile desde 22/10 (F1, #125) | ✅ fechado |
 
@@ -114,10 +114,10 @@ E1–E4 decididos na reunião da equipa de 22/10 ([registo](../Meetings/2026-10-
 | G1 | Execução/deployment **apenas local**, sem cloud devido aos custos; autorização do professor reportada pelo Tomás. Comparação das plataformas preservada no relatório de investigação | ✅ âmbito local |
 | G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud. **Estimativa de custos de operação feita a 23/10** ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md), #134, Bruno): 6 roles a tempo inteiro ≈ 58 510 € no desenvolvimento (infraestrutura local 341 €, só o Copilot Business, nocional: a equipa usa-o grátis pelo GitHub Education) e ≈ 3 410 €/mês de manutenção (1 FTE + cloud 730 h). A cloud custaria ≈ 301 € na demo dos Sprints B e C e 358 €/mês sempre ligada, contra 89 € de crédito único | ✅ |
 | G3 | Região cloud não se aplica à entrega local; RGPD e fluxos de dados locais/fornecedores revistos no E5 ([assessment](security-and-privacy-assessment.md) §3, §8; checklist do fornecedor de IA na §8.5) | ✅ sem região cloud; 🔍 privacidade: revisão do E5 pela equipa |
-| G4 | Desenvolvimento, testes e demo localmente; não é necessário um ambiente cloud de produção | ✅ âmbito; 🔍 configuração |
-| G5 | Especificação local versionada (Compose); Bicep/cloud IaC mantém-se como alternativa estudada, sem provisionamento exigido | 🔍 implementação local |
-| G6 | Execução local com contentores independentes; procedimento reproduzível de arranque/atualização e smoke test (ADR-011) | ✅ alvo local; 🔍 implementação |
-| G7 | Rollback por imagem e recuperação de estado local; volumes não são backups. Plano e medições de RTO/RPO continuam necessários | 🔍 implementação/validação |
+| G4 | Ambientes **dev/test/demo locais** e isolados por projeto Compose/volumes; teste efémero em CI, demo a partir da tag revista. Sem produção cloud. Contrato no [documento de decisões](plans/local-walking-skeleton.md) | ✅ documentado; execução por validar |
+| G5 | **Compose v2, Dockerfiles, bootstrap PostgreSQL e realm Keycloak versionados**. Sem Terraform/Bicep na entrega; Bicep só na alternativa cloud preservada | ✅ escolha documentada; ficheiros por implementar |
+| G6 | Um `infra/compose.yaml`, perfis opcionais `ai` e `observability`, comandos de arranque/smoke/update no [documento de decisões](plans/local-walking-skeleton.md). Seis DBs numa instância PostgreSQL, contando a identidade | ✅ documentado; execução por validar |
+| G7 | Rollback reconstruindo a tag anterior; migrações expand/contract; dumps consistentes das seis DBs antes da demo/update. RPO = último dump; sem garantia de perda zero em falha do disco. Metas de RTO 10/60 min são metas de ensaio, não medições | ✅ procedimento documentado; ensaio pendente |
 
 ## H · Pipeline de CI/CD
 
@@ -211,3 +211,5 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Apresentação (deck) com as secções pedidas pelo professor.
 - PDF único com os documentos dos entregáveis do Sprint A.
 - Lista de pressupostos e dependências, juntada a partir dos outros documentos.
+
+**Walking skeleton documentado (26/10, #58):** [fatia mínima baseada nos slides e decisões G1–G7/F2/C1](plans/local-walking-skeleton.md). Um botão grava um pedido sintético e mostra o estado persistido; IA, despacho e transportes ficam nas fatias seguintes. Documentação pronta para revisão; implementação e resultados de execução não são dados como concluídos.

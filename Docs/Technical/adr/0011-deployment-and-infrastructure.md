@@ -2,7 +2,7 @@
 
 ## Status
 
-**Local-only delivery authorised by the professor, as reported by Tomás on 22 October 2026.** Source: [recorded clarification](../../Meetings/2026-10-22-local-deployment-clarification.md), [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53). This records the authorised delivery scope; the detailed container/operational implementation below remains a recommendation for team review. No completed deployment, model benchmark or cloud resource provisioning is claimed. ADR-010 remains Bruno's CI/CD strategy.
+**Local-only delivery authorised by the professor, as reported by Tomás on 22 October 2026.** Source: [recorded clarification](../../Meetings/2026-10-22-local-deployment-clarification.md), [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53). This records the authorised delivery scope; the detailed local decisions are now specified by the owner in [walking-skeleton and delivery decisions](../plans/local-walking-skeleton.md), dated 26 October, for PR review; their implementation/evidence remains separate. No completed deployment, model benchmark or cloud resource provisioning is claimed. ADR-010 remains Bruno's CI/CD strategy.
 
 This supersedes this ADR's initial proposal to validate Azure as the current deployment target. The complete [cloud investigation and cost model](../../Research/architecture-investigation/deployment.md) remain available as evidence and a future alternative.
 
@@ -13,7 +13,7 @@ Five services are independently deployable from Sprint A (ADR-001), each with it
 ## Decision and proposed implementation
 
 1. **Current scope: deploy and demonstrate locally.** No cloud platform, subscription, remote VM or managed-service purchase is required. Preserve the cost evaluation; include the cost reason and the professor's authorisation in the final report/presentation.
-2. Keep the five backend services independently built and replaceable as containers on one local machine. A proposed minimum topology has five backend containers, RabbitMQ, a PostgreSQL instance with five separate databases/users, and a container serving the React web assets (eight containers). Gateway, simulator, observability and optional local inference add components as needed; the mobile app runs on a device/emulator. Exact resource sizing remains to be measured.
+2. Keep the five backend services independently built and replaceable as containers on one local machine. A proposed minimum topology has five backend containers, RabbitMQ, a PostgreSQL instance with five separate databases/users, and a container serving the React web assets. Gateway, Keycloak (with its sixth owned PostgreSQL database), WireMock, observability and optional local inference add components to that baseline; there is one responsive React web app, no mobile app. Resource budgets, environments, ports and recovery procedure are fixed in the linked delivery decision; actual sizing is measured later.
 3. Preserve service/database ownership and denied cross-service access. Sharing a PostgreSQL server or physical host does not permit shared tables or code dependencies. Separate local PostgreSQL containers are an alternative if stronger process isolation helps testing; neither option requires separate machines.
 4. Use a versioned Compose specification, pinned images, local env/secrets, database health checks and named volumes for PostgreSQL/RabbitMQ. Missing AI or broker must not block a durable request save/outbox entry. These remain implementation acceptance checks, not delivered application behaviour.
 5. CI still builds/tests and produces versioned images. Replace the old cloud-production-deploy-on-every-merge expectation with a reproducible local startup/update and smoke-test procedure. Bruno defines pipeline/local handoff in ADR-010; no automatic access from public CI to a personal machine is implied.
@@ -37,3 +37,7 @@ Five services are independently deployable from Sprint A (ADR-001), each with it
 ## Evidence still pending
 
 Compose/skeleton implementation, repeatable local startup, independent update/restart, authorised smoke tests, event isolation, AI/broker failure tests and observed recovery/resource use. AI choice/privacy and detailed observability proposals remain separately reviewable. No cloud benchmark is necessary to claim local delivery; do not claim one was performed.
+
+## Documentary closure (26 October 2026, #58)
+
+G1–G7, F2 and C1 now have explicit owner choices in the [decision document](../plans/local-walking-skeleton.md#3-answers-to-g1g7-f2-and-c1): local Compose, no cloud region/provisioning, dev/test/demo isolation, local web/broker, six PostgreSQL databases including identity, tag-based builds/rollback and consistent demo dumps. The course-slide-based R0 is a minimal persisted request, not the complete MVP. Review does not certify runtime checks or measured minimum RAM/RTO.
