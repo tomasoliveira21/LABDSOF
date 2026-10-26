@@ -13,6 +13,12 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Not changed
 - No new ADR: versioning goes into ADR-010 (CI/CD), still to be written. H6 stays open, although with no registry there are no images to publish.
 
+### Aligned with `main` (26 October 2026)
+- **API gateway** (ADR-013): versioned with the services and the web app, so seven images of ours share the version.
+- **Third-party images** (Keycloak from ADR-006, PostgreSQL, RabbitMQ, WireMock from #43, the observability stack): not versioned with Farol; exact versions pinned in the Compose file (ADR-011, point 4), changed only in a PR.
+- **Releases:** `v0.1.0`, `v0.2.0` and `v1.0.0` are R0, R1 and R2 of `features.md` §8.2.
+- Same changes in `architecture.md` §10 and §12.
+
 ### Merged
 - `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first) and the guide (status date and *Em aberto* from main, H7 removed from Bruno's areas; H7 added to *Feito*).
 
