@@ -37,3 +37,7 @@ Five services are independently deployable from Sprint A (ADR-001), each with it
 ## Evidence still pending
 
 Compose/skeleton implementation following [`local-delivery.md`](../local-delivery.md), minimum RAM of the demo laptop, measured RTO, repeatable local startup, independent update/restart, authorised smoke tests, event isolation, AI/broker failure tests and observed recovery/resource use. AI choice/privacy and detailed observability proposals remain separately reviewable. No cloud benchmark is necessary to claim local delivery; do not claim one was performed.
+
+## Walking-skeleton documentary completion (26 October 2026, #58)
+
+The [course-slide-based R0 and local decision detail](../plans/local-walking-skeleton.md) apply Bruno's accepted local procedure. R0 sends one synthetic minimal request through the authenticated web/gateway/Reports path, persists it and displays stored state; a real broker round trip completes the technical slice without AI. The document adds environment separation, local resource experiment budgets, explicit smoke acceptance and timed recovery targets. It does not replace the Compose-only/manual local runbook with a custom startup script or claim measured RAM/RTO.

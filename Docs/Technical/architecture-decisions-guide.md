@@ -103,7 +103,7 @@ E1–E4 decididos na reunião da equipa de 22/10 ([registo](../Meetings/2026-10-
 | # | Decisão | Estado |
 |---|---|---|
 | F1 | **Uma só aplicação web React.** Cada página é feita para uma utilização: no **telemóvel** (participantes, equipas de terreno) ou no **portátil** (gestão de eventos, sala de controlo). Substitui, desde 22/10, as duas aplicações (web React para a gestão de eventos e mobile React Native para o resto) (reunião com o professor, [ata](../Meetings/2026-10-22-professor-meeting.md); #125; [ADR-002](adr/0002-backend-and-frontend-technology.md)) | ✅ |
-| F2 | App web servida **localmente**; alojamento cloud não é exigido para a entrega autorizada (ADR-011) | ✅ âmbito; 🔍 implementação |
+| F2 | React servido localmente em contentor web, `WEB_PORT=3000`; R0 no browser localhost/modo responsivo. Gateway 8080 e Keycloak 8180; telefone real por HTTPS é integração posterior com Guerra | ✅ documentado; implementação pendente |
 | F3 | **Mapa do recinto ([ADR-007](adr/0007-venue-map-representation.md)), reescrito para a web a 23/10:** a imagem com uma camada **SVG** para os marcadores, dentro do zoom/pan do **`react-zoom-pan-pinch`**; o mesmo componente nas páginas de telemóvel e de portátil; posições em coordenadas normalizadas (`MapPosition`); filtro por tipo (US-22) com estado React. Antes de implementar o mapa, um *spike* confirma o pinch, o pan e o toque num iPhone (Safari) e num Android (Chrome) reais; se falhar, o zoom/pan escreve-se com Pointer Events. **PDF convertido em imagem no upload**, no serviço Events, com Apache PDFBox (só PDFs de uma página; imagem com no máximo 4096 px no lado maior; guarda-se o original e a imagem). Onde ficam os ficheiros depende do G1. A versão de 22/10 era para React Native | 🔍 Tiago (revê a versão web) |
 | F4 | ~~Configuração do React Native (ex.: Expo ou não) e como a app mobile chega aos professores e à demo (§12)~~ Já não se aplica: sem app mobile desde 22/10 (F1, #125) | ✅ fechado |
 
@@ -214,3 +214,5 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Apresentação (deck) com as secções pedidas pelo professor.
 - PDF único com os documentos dos entregáveis do Sprint A.
 - Lista de pressupostos e dependências, juntada a partir dos outros documentos.
+
+**Walking skeleton documentado (26/10, #58):** [fatia mínima baseada nos slides e detalhe G1–G7/F2/C1](plans/local-walking-skeleton.md), aplicando o procedimento do Bruno já aceite. Um botão grava um pedido sintético e mostra o estado persistido; IA, despacho e transportes ficam nas fatias seguintes. Documentação pronta para revisão; implementação e medições continuam pendentes. R0 usa localhost/modo responsivo; HTTPS nos telemóveis mantém-se com Guerra.
