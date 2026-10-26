@@ -7,7 +7,7 @@
 
 | # | Feedback | Action | Status |
 |---|---|---|---|
-| T1 | **DoR:** it is the set of criteria for an issue to start being worked on. When the backlog is built, **every issue must meet the DoR** | When the user stories (US-01 to US-26) go to GitHub Projects, each one is checked against the DoR before it is moved to *Ready*. The issue form already asks for the DoR fields ([`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md)) | Done: DoR check on 16 October 2026 ([`features.md` §7.1](../Product/features.md#71-dor-check-and-split)); issues #58 to #121 created on 22 October 2026 ([`features.md` §8.3](../Product/features.md#83-stories-on-the-board)). The board does not exist yet |
+| T1 | **DoR:** it is the set of criteria for an issue to start being worked on. When the backlog is built, **every issue must meet the DoR** | When the user stories (US-01 to US-26) go to GitHub Projects, each one is checked against the DoR before it is moved to *Ready*. The issue form already asks for the DoR fields ([`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md)) | Done: DoR check on 16 October 2026 ([`features.md` §7.1](../Product/features.md#71-dor-check-and-split)); issues #58 to #121 created on 22 October 2026 ([`features.md` §8.3](../Product/features.md#83-stories-on-the-board)), all on the [board](https://github.com/users/tomasoliveira21/projects/1); moving them to *Ready* waits for the blockers of `features.md` §8.4 (#138) |
 | T2 | The **main workflows and user journeys need a BPMN diagram**, showing a complete journey: what happens from start to end | Two BPMN diagrams, one lane per actor: help request (W2 + W3) and community report (W7) | Done: [`user-workflows.md`, *Complete journeys*](../Product/user-workflows.md#complete-journeys-bpmn), files in `Docs/Product/bpmn/` |
 | T3 | **Be careful with BPMN in the presentation**: it is hard to read on a slide | BPMN stays in the documentation. If a journey goes on a slide, it is a simplified version | Agreed |
 | T4 | **Change the presentations so they do not look so AI-made** | Applies to the next presentation. The first deck is not changed (see *Decisions*) | Open: next presentation |
@@ -29,5 +29,5 @@
 - [ ] Team confirms the operator / responder split and the `Responder` role (personas **PE-6**).
 - [x] Check every user story against the DoR (T1): done on 16 October 2026, see [`features.md` §7.1](../Product/features.md#71-dor-check-and-split).
 - [x] Create the story issues (#45): #58 to #121, on 22 October 2026, see [`features.md` §8.3](../Product/features.md#83-stories-on-the-board).
-- [ ] Create the GitHub Projects board and add the issues to it (repository owner).
+- [x] Create the GitHub Projects board and add the issues to it (repository owner): the [board](https://github.com/users/tomasoliveira21/projects/1) holds #58 to #121 (checked 24 October 2026). Priority, size and *Ready* applied in #138 on 24 October 2026.
 - [ ] Next presentation: rewrite the slides in the team's own words (T4); no full BPMN on the slides (T3).
