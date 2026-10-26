@@ -7,14 +7,15 @@
 ## Context
 
 - The assignment asks for an automated pipeline that compiles, tests, runs static analysis and dependency or security checks, builds container images and deploys to a suitable environment, with rapid and visible feedback when a change breaks something (§8.5). Builds must be reproducible, secrets handled securely and rollback documented (§8.4).
-- Five Spring Boot services, each its own Maven project in `backend/<service>/` with its own Dockerfile (ADR-001, ADR-002), and one React web app in `frontend/`, all in one private repository (guide H2, H8). The only workflow today is `.github/workflows/conventions.yml` (branch name, PR title, linked issue on every PR).
+- Five Spring Boot services and the API gateway ([ADR-013](0013-api-gateway.md), `backend/gateway/`), each its own Maven project in `backend/<name>/` with its own Dockerfile (ADR-001, ADR-002), and one React web app in `frontend/`, all in one private repository (guide H2, H8). The only workflow today is `.github/workflows/conventions.yml` (branch name, PR title, linked issue on every PR).
 - Delivery is **local only**, because cloud hosting costs were not justified ([ADR-011](0011-deployment-and-infrastructure.md)). The earlier "deploy to a cloud production environment on every merge" (guide H4, H5) no longer applies. Delivery means building from the release tag on a laptop with `docker compose` and running the smoke test by hand ([`local-delivery.md`](../local-delivery.md)). CI never reaches anyone's machine.
 - Versioning (guide H7): one SemVer version for the monorepo, an annotated tag `vX.Y.Z` on `main`, images `farol-<service>:X.Y.Z` (other builds `dev`), **no registry** and no GitHub Releases. Rolling back means building the previous tag.
+- The [Security and Privacy Assessment](../security-and-privacy-assessment.md) found no dependency or image scanning (finding 12, threat T18) and left the answer to this ADR.
 - The repository is **private**, so GitHub Actions minutes are limited (2,000 per month on GitHub Free, 3,000 on Pro). Four people open many pull requests, and during Sprint A almost all of them only change documentation. CodeQL, GitHub secret scanning and SonarCloud are paid for private repositories.
 
 ## Decision
 
-1. **Tool and layout (H1, H2, H3, H8).** **GitHub Actions** in the private monorepo. **Maven** with **Java 21** and **Spring Boot 4.x** for every service; every image is built from a **multi-stage Dockerfile** in its own folder (`backend/<service>/Dockerfile`, `frontend/Dockerfile`).
+1. **Tool and layout (H1, H2, H3, H8).** **GitHub Actions** in the private monorepo. **Maven** with **Java 21** and **Spring Boot 4.x** for every service; every image is built from a **multi-stage Dockerfile** in its own folder (`backend/<name>/Dockerfile`, `frontend/Dockerfile`).
 
 2. **Two workflows.**
    - `conventions.yml`, unchanged, on every PR. Dependabot PRs are exempt, because Dependabot cannot follow the branch, title and issue conventions.
@@ -26,9 +27,9 @@
    |---|---|---|---|---|
    | `changes` | Decides whether the change is documentation only | ✓ | ✓ | not needed: always everything |
    | `secrets` | **gitleaks** over the PR's commits; fails on any secret | ✓ (also docs) | | |
-   | `backend` (matrix, one entry per service) | `mvn -B verify`: compile, unit tests, integration tests with **Testcontainers** (PostgreSQL, RabbitMQ), **Checkstyle** (Google rules, fails the build) | ✓ | ✓ | ✓ |
+   | `backend` (matrix, one entry per service and the gateway) | `mvn -B verify`: compile, unit tests, integration tests with **Testcontainers** (PostgreSQL, RabbitMQ), **Checkstyle** (Google rules, fails the build) | ✓ | ✓ | ✓ |
    | `web` | `npm ci`, **ESLint**, tests, `npm run build` | ✓ | ✓ | ✓ |
-   | `delivery` | Builds the six images with `docker compose -f infra/compose.yaml build` (`VERSION` is `X.Y.Z` on a tag, `dev` otherwise), scans them with **Trivy**, starts them with `up -d --wait` from `infra/.env.example`, runs the smoke test of [`local-delivery.md`](../local-delivery.md) §7 without the phone (all containers healthy, web app answers HTTP 200, one RabbitMQ round trip), then `down -v` | | ✓ | ✓ |
+   | `delivery` | Builds the seven images (five services, gateway, web app) with `docker compose -f infra/compose.yaml build` (`VERSION` is `X.Y.Z` on a tag, `dev` otherwise), scans them with **Trivy**, starts them with `up -d --wait` from `infra/.env.example`, runs the smoke test of [`local-delivery.md`](../local-delivery.md) §7 without the phone and the login (all containers healthy, web app answers HTTP 200, the gateway answers `401` without a token, one RabbitMQ round trip), then `down -v` | | ✓ | ✓ |
    | `CI` | Required check: fails if any job above failed or was cancelled | ✓ | ✓ | ✓ |
 
    - **Pull requests get the fast part:** compile, tests, static analysis and secrets. **`main`, tags and manual runs get everything**, including images, the image scan and the smoke test. A Dockerfile or Compose error is found on `main` right after the merge; whoever merged fixes it forward straight away (`main` stays deployable).
@@ -46,10 +47,11 @@
    - **Dependabot** (`.github/dependabot.yml`): security alerts and security update PRs on; version update PRs **monthly**, one grouped PR per ecosystem (Maven per service, npm, Docker, GitHub Actions), so they do not eat the Actions minutes.
    - **Trivy** in `delivery`: fails on a CRITICAL vulnerability that has a fix available; the others are reported in the job log.
    - **gitleaks** in `secrets`, on every PR.
+   - **Dependabot and Trivy answer finding 12 of the [security assessment](../security-and-privacy-assessment.md#10-findings-and-proposed-actions)** (T18, no dependency or image scanning): Dependabot covers the dependencies of every ecosystem, Trivy the images, including the pinned third-party ones (Keycloak, PostgreSQL, RabbitMQ). Guerra marks the finding as answered in the assessment.
 
 8. **Branch protection (H8, README §6).** Active on `main`: the required checks are **Conventions** and **CI**, plus the review rules of README §5 and §6.
 
-9. **Walking skeleton (R0, Tomás).** R0 implements all of the above for the services it creates (at least two, to show independent deployment): `ci.yml`, the Dependabot file, the Dependabot exemption in `conventions.yml` and the round-trip command in the smoke test. Every new service is added to the `backend` matrix and to `infra/compose.yaml` when it is created. The first tag is `v0.1.0` at the end of Sprint A.
+9. **Walking skeleton (R0, Tomás). Proposed scope, to agree with Tomás:** R0 implements all of the above for the services it creates (at least two, to show independent deployment): `ci.yml`, the Dependabot file, the Dependabot exemption in `conventions.yml` and the round-trip command in the smoke test. Every new service is added to the `backend` matrix and to `infra/compose.yaml` when it is created. The first tag is `v0.1.0` at the end of Sprint A.
 
 ## Consequences
 
