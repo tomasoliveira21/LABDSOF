@@ -19,7 +19,19 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `features.md`: US-41 still says STCP; left to its owner (Tiago).
 
 ### Merged
-- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (outline added to main's *Technical* row) and the guide (status date and *Em aberto* from main, C8 removed from Bruno's areas; outline added to *Feito*). The outline is not yet aligned with ADR-006 and ADR-013: that is guide *Em aberto* item 2.
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (outline added to main's *Technical* row) and the guide (status date and *Em aberto* from main, C8 removed from Bruno's areas; outline added to *Feito*). The outline is then aligned with ADR-006 and ADR-013 (next section).
+
+### Aligned with ADR-006, ADR-013 and the Security and Privacy Assessment (26 October 2026)
+**Why:** guide *Em aberto* item 2 and the action for Bruno in the [meeting of 22 October 2026](Docs/Meetings/2026-10-22-identity-and-gateway-decisions.md): the outline still followed the proposals that ADR-006 and ADR-013 decided.
+
+- **O1–O3 closed:** paths follow ADR-013's route table; sign-up, login and logout in Keycloak, `POST /accounts` removed and the account created at the first `GET /me` (US-03); the token carries only the identity, and `userId` is the token's `sub`.
+- **O4 closed:** `GET /accounts?email=` follows the assessment's AC-9 (exact match, id and display name only, audited; the FarolAdmin confirms the account with the organisation outside Farol).
+- **Limits and errors:** ADR-013 rate limits in §1.7; `429` after 5 help requests in 10 minutes, `413` for a map over 20 MB, `503` with `Retry-After`.
+- **Event catalogue:** new `UserStatusChanged` (`Active` | `Disabled`), so every service refuses a disabled account at once; `UserDeleted` defined (`userId`, `deletedAt`, consumed by Events, Reports, Transports and Badges); `UserProfileChanged` also at account creation; `actorUserId` (the acting user's `sub`) in the envelope, for audit. Queue bindings updated; 13 events.
+- **Account deletion flow** (ADR-006) in §2: refused for the last EventAdmin, Keycloak then Auth & Users, retried while Keycloak is down. What each service deletes or anonymises stays with D7 (account-deletion issue).
+- **M-5 decided (Bruno):** `HelpRequestSubmitted` carries only `requestId`; the triage worker reads the request from Reports' database, so no help-request text or location sits in RabbitMQ. The assessment's M-5 and finding 3 marked decided.
+- `architecture-decisions-guide.md`: C8 row and *Em aberto* item 2 (✅). `2026-10-22-identity-and-gateway-decisions.md`: Bruno's action done.
+- *Not changed:* O5–O7 still wait for their owners; the assessment's other proposals (AC-7, T6) are not in the outline.
 
 ## [Unreleased] · 2026-10-25 · Security and Privacy Assessment (António Guerra)
 
