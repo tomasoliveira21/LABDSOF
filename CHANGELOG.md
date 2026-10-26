@@ -2,6 +2,12 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-26 · Complete walking-skeleton and local delivery decisions (#58)
+
+### Changed
+- Replaced the broad draft plan with the concrete Scenario A-style thin slice from the supplied course slides: fixed synthetic request, real persistence and displayed stored state; AI/dispatch/transport business functionality remains in later increments.
+- Answered G1–G7, F2 and C1: local Compose, no cloud region/provisioning, dev/test/demo isolation, local React/RabbitMQ, six owned databases including Keycloak, tag-based delivery and consistent dump/rollback procedure. Retained the original cloud/cost evidence.
+- Defined the minimum R0 cut, endpoint/data/smoke contract, resource planning budgets and recovery targets. No runtime, model or measured sizing result is fabricated; executable #58 remains open for evidence.
 ## [Unreleased] · 2026-10-23 · Local delivery and demo procedure (#129, Bruno Lopes)
 
 **Why:** delivery is local only (#53). The team needed one written procedure to start, update, roll back, check and demonstrate the system before the walking skeleton is built (guide G4–G7 and H5).
