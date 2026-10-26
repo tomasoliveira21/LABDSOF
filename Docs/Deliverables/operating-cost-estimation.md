@@ -12,14 +12,14 @@ All amounts in euros, without VAT, rounded to the euro.
 
 | Phase | Salaries | Infrastructure | Total |
 |---|---:|---:|---:|
-| **Development, per month** (6 roles, full time) | 17,360 | 54 (local; Copilot only) | **17,414** |
-| **Development, whole project** (24 Sep 2026 – 3 Jan 2027, 3.35 months) | 58,170 | 179 | **58,349** |
-| *Same, if the demo ran in the cloud* (Azure, 100 h/month, Sprint B and C) | *58,170* | *480* | *58,650* |
-| **Maintenance, per month** (1 FTE, production in the cloud, 730 h) | 3,029 | 368 | **3,397** |
-| **Maintenance, first year** (12 months) | 36,348 | 4,422 | **40,770** |
-| **Development + first year** | | | **≈ 99,120** |
+| **Development, per month** (6 roles, full time) | 17,360 | 102 (local; Copilot only) | **17,462** |
+| **Development, whole project** (24 Sep 2026 – 3 Jan 2027, 3.35 months) | 58,170 | 341 | **58,511** |
+| *Same, if the demo ran in the cloud* (Azure, 100 h/month, Sprint B and C) | *58,170* | *642* | *58,812* |
+| **Maintenance, per month** (1 FTE, production in the cloud, 730 h) | 3,029 | 377 | **3,406** |
+| **Maintenance, first year** (12 months) | 36,348 | 4,518 | **40,866** |
+| **Development + first year** | | | **≈ 99,380** |
 
-**Why local:** salaries are a notional cost for a student team; infrastructure is the only cost the team would actually pay. Running locally costs 0 € extra. The cloud demo would cost about 301 €, and continuous cloud operation 358 € per month, against a one-off Azure for Students credit of 89 € ($100). See §5.
+**Why local:** salaries are a notional cost for a student team; infrastructure is the only cost the team would actually pay. Running locally costs 0 € beyond Copilot, which is the same in both scenarios. The cloud demo would cost about 301 €, and continuous cloud operation 358 € per month, against a one-off Azure for Students credit of 89 € ($100). See §5.
 
 ## 2. Assumptions
 
@@ -32,7 +32,7 @@ All amounts in euros, without VAT, rounded to the euro.
 | A5 | Gross salary, Middle | **2,380 € per month**, paid 14 times a year | Same source as A4 |
 | A6 | Level per role | **Middle:** Tech lead/architect, Product Owner (they decide the architecture and the product). **Junior:** Scrum Master, QA, DevOps, AI lead | Team decision for this estimate: a newly created startup |
 | A7 | Employer cost | Gross × 14 / 12 × **1.2375** (employer social security, TSU 23.75%) | Portuguese general regime. Meal allowance, insurance and equipment are not included |
-| A8 | Region | National average used for Porto | Porto is 1% above the national average in the same source (2,447 € vs 2,434 €): negligible |
+| A8 | Region | National average used for Porto | Porto is 0.5% above the national average in the same source (2,447 € vs 2,434 €): negligible |
 | A9 | Maintenance team | **1 FTE**: 0.5 DevOps (Junior) + 0.5 Tech lead (Middle) | Fixes, dependency updates and operation. Team decision for this estimate |
 | A10 | Currency | USD → EUR at **1.1205 USD per euro** | [ECB reference rate](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html) of 22 Oct 2026, the date of the price snapshot |
 | A11 | Taxes | All amounts **without VAT** | The cloud prices in the snapshot are pre-tax retail prices |
@@ -58,17 +58,17 @@ Employer cost per month (A4, A5, A7): Junior 1,816 × 14 / 12 × 1.2375 = **2,62
 
 ### 4.1 Local scenario (what is actually used)
 
-Delivery is local only ([ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)): everything runs with Docker Compose on one team member's laptop, with a second laptop as a backup for the demo, and the phones open the web app over the LAN ([`local-delivery.md`](../Technical/local-delivery.md), #129).
+Delivery is local only ([ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)): everything runs with Docker Compose on one team member's laptop, with a second laptop as a backup for the demo, and the phones open the web app over the LAN (`local-delivery.md`, proposed in #130).
 
 | Item | Per month | Assumption |
 |---|---:|---|
 | Laptops (demo and backup), Docker, PostgreSQL (one instance, five databases), RabbitMQ | 0 € | Equipment the team already owns. Electricity and wear are not measured, so they are not zero, only not counted (ADR-011) |
-| Container registry | 0 € | No registry: images are built locally from the git tag (guide H7, #127) |
+| Container registry | 0 € | No registry: images built locally from the git tag (proposed in #127; guide H7 still open) |
 | App stores, mobile builds | 0 € | No mobile app: one React web app (guide F1, #125) |
-| GitHub Free, private repository, GitHub Actions | 0 € | 2,000 Actions minutes per month; the pipeline is designed to fit them and uses no paid feature ([ADR-010](../Technical/adr/0010-cicd-strategy.md), #131) |
+| GitHub Free, private repository, GitHub Actions | 0 € | 2,000 Actions minutes per month; the pipeline is designed to fit them and uses no paid feature (ADR-010, proposed in #132) |
 | AI triage with local Ollama | 0 € | No API charges; runs on the demo laptop if guide K1 picks it ([`responsible-ai.md`](../Research/architecture-investigation/responsible-ai.md)) |
-| GitHub Copilot Pro (automatic code review, README §5) | 6 × $10 = $60 = **54 €** | List price $10 per user per month ([pricing guide](https://userjot.com/blog/github-copilot-pricing-guide-2025), checked 23 Oct 2026), one licence per person (A1) |
-| **Total per month** | **54 €** | × 3.35 months (A2) = **179 €** |
+| GitHub Copilot Business (automatic code review, README §5) | 6 × $19 = $114 = **102 €** | Copilot Business, the plan for organisations, $19 per user per month ([GitHub plans](https://docs.github.com/en/copilot/get-started/plans), checked 26 Oct 2026), one licence per person (A1). Notional, like the salaries: the team uses Copilot Pro free through GitHub Education, so the real cost is 0 € |
+| **Total per month** | **102 €** | × 3.35 months (A2) = **341 €** |
 
 ### 4.2 Cloud scenario (researched in #53, not used)
 
@@ -76,10 +76,10 @@ Azure Container Apps for the five services, Azure Database for PostgreSQL Flexib
 
 | Scenario | USD per month | EUR per month (A10) | Used for |
 |---|---:|---:|---|
-| **Demo, 100 h/month** of application time; database, broker and registry always on | 162.84 | **145** | Development: Sprint B and C, × 2.07 months (A3) = **301 €**, plus Copilot (179 €) = 480 € |
+| **Demo, 100 h/month** of application time; database, broker and registry always on | 162.84 | **145** | Development: Sprint B and C, × 2.07 months (A3) = **301 €**, plus Copilot (341 €) = 642 € |
 | **Continuous, 730 h/month** | 400.98 | **358** | Maintenance: a production system runs all the time |
 
-Both include $30 of unquoted allowances (disks, networking, telemetry). They do **not** include AI, VAT, an API gateway, overlapping revisions or private-network charges (deployment.md), so the real bill would be higher. In the cloud scenario a registry is needed, because the platform pulls images from it; the "no registry" decision (#127) applies to local delivery.
+Both include $30 of unquoted allowances (disks, networking, telemetry). They do **not** include AI, VAT, an API gateway, overlapping revisions or private-network charges (deployment.md), so the real bill would be higher. In the cloud scenario a registry is needed, because the platform pulls images from it; the "no registry" proposal (#127) is for local delivery.
 
 ### 4.3 AI (ADR-005)
 
@@ -96,18 +96,18 @@ Even at hosted prices the AI is negligible next to hosting. The choice of provid
 | Item | Per month |
 |---|---:|
 | Cloud, continuous (730 h) | 358 € |
-| GitHub Copilot Pro, 1 licence (A9) | 9 € |
+| GitHub Copilot Business, 1 licence (A9) | 17 € |
 | Hosted AI, 10,000 requests | 2 € |
-| **Total infrastructure** | **368 €** (× 12 = 4,422 €) |
+| **Total infrastructure** | **377 €** (× 12 = 4,518 €) |
 
 ## 5. Why the delivery is local
 
 1. **Salaries are notional; infrastructure is real money.** The team is not paid, so the only cash it would spend is on infrastructure. That is the part that decides where the system runs.
 2. **The cloud does not fit the available credit.** Azure for Students gives a one-off credit of $100 (89 €), not $100 per month ([`deployment.md`](../Research/architecture-investigation/deployment.md)). The reduced demo would cost about 301 € over Sprint B and C, 3.4 times the credit; continuous operation would cost 358 € every month, 4 times the credit, with costs still missing from the quote (§4.2).
-3. **Locally the extra cost is 0 €.** The same five independent services, five databases and RabbitMQ run on a laptop the team already has, which shows independent deployment without a cloud bill.
+3. **Locally the extra cost is 0 € beyond Copilot**, which is the same in both scenarios (and free for the team through GitHub Education). The same five independent services, five databases and RabbitMQ run on a laptop the team already has, which shows independent deployment without a cloud bill.
 4. **The professor agreed.** After discussing these costs, the professor authorised local delivery, provided the report and presentation explain that cost is the reason ([clarification](../Meetings/2026-10-22-local-deployment-clarification.md), ADR-011).
 
-**What this costs the project:** cloud operation, managed scaling and cloud recovery are not demonstrated. The local topology, the smoke test and the degraded-mode tests are shown instead ([`local-delivery.md`](../Technical/local-delivery.md)).
+**What this costs the project:** cloud operation, managed scaling and cloud recovery are not demonstrated. The local topology, the smoke test and the degraded-mode tests are shown instead (`local-delivery.md`, proposed in #130).
 
 ## 6. Limits of this estimate
 

@@ -1,7 +1,7 @@
 # Decisões Arquiteturais
 
 > LABDSOF 2026/27 · Sprint A · Enunciado §6 (requisitos técnicos), §7.1.2 (entregáveis 7, 8 e 10), §8.4 e §8.5 (contentores e CI/CD)
-> **Estado (26 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
+> **Estado (25 de outubro de 2026):** registo de **todas** as decisões arquiteturais da equipa. **Todas as decisões aqui registadas foram tomadas pela equipa**, não por um membro em particular. Quando uma decisão fica final, passa para um ADR e para o [`architecture.md`](architecture.md).
 > **Histórico:** reuniões de 11 e 15 de outubro de 2026 ([`2026-10-08-sprint-1-gap-review.md`](../Meetings/2026-10-08-sprint-1-gap-review.md)) e resposta do professor de 21 de outubro de 2026 ao email de 15/10 (§Respostas do professor) e reunião com o professor de 22 de outubro de 2026 ([`2026-10-22-professor-meeting.md`](../Meetings/2026-10-22-professor-meeting.md)) e reunião da equipa de 22 de outubro de 2026 sobre identidade e API gateway ([`2026-10-22-identity-and-gateway-decisions.md`](../Meetings/2026-10-22-identity-and-gateway-decisions.md)).
 
 **Legenda do estado:**
@@ -112,7 +112,7 @@ E1–E4 decididos na reunião da equipa de 22/10 ([registo](../Meetings/2026-10-
 | # | Pergunta | Estado |
 |---|---|---|
 | G1 | Execução/deployment **apenas local**, sem cloud devido aos custos; autorização do professor reportada pelo Tomás. Comparação das plataformas preservada no relatório de investigação | ✅ âmbito local |
-| G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud. **Estimativa de custos de operação feita a 23/10** ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md), #134, Bruno): 6 roles a tempo inteiro ≈ 58 350 € no desenvolvimento (infraestrutura local 179 €, só o Copilot) e ≈ 3 400 €/mês de manutenção (1 FTE + cloud 730 h). A cloud custaria ≈ 301 € na demo dos Sprints B e C e 358 €/mês sempre ligada, contra 89 € de crédito único | ✅ |
+| G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud. **Estimativa de custos de operação feita a 23/10** ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md), #134, Bruno): 6 roles a tempo inteiro ≈ 58 510 € no desenvolvimento (infraestrutura local 341 €, só o Copilot Business, nocional: a equipa usa-o grátis pelo GitHub Education) e ≈ 3 410 €/mês de manutenção (1 FTE + cloud 730 h). A cloud custaria ≈ 301 € na demo dos Sprints B e C e 358 €/mês sempre ligada, contra 89 € de crédito único | ✅ |
 | G3 | Região cloud não se aplica à entrega local; RGPD e fluxos de dados locais/fornecedores revistos no E5 ([assessment](security-and-privacy-assessment.md) §3, §8; checklist do fornecedor de IA na §8.5) | ✅ sem região cloud; 🔍 privacidade: revisão do E5 pela equipa |
 | G4 | Desenvolvimento, testes e demo localmente; não é necessário um ambiente cloud de produção | ✅ âmbito; 🔍 configuração |
 | G5 | Especificação local versionada (Compose); Bicep/cloud IaC mantém-se como alternativa estudada, sem provisionamento exigido | 🔍 implementação local |
@@ -194,7 +194,7 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Resiliência e degradação (Tiago, #43): C3, J1, J2 e J3 decididos, alinhados com a entrega apenas local e com a app web. **Transportes: x = 30 s** (intervalo do poll) e **y = 5 min** (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). WireMock proposto para o J4.
 - Identidade e API gateway decididos pela equipa (C6, E1–E4; reunião da equipa, 22/10, [registo](../Meetings/2026-10-22-identity-and-gateway-decisions.md)): Keycloak, token só com a identidade, permissões verificadas em cada serviço, Spring Cloud Gateway com CORS e rate limiting por conta. [ADR-006](adr/0006-identity-and-access.md) e [ADR-013](adr/0013-api-gateway.md) (o 011 e o 012 já estavam ocupados).
 - Security & Privacy assessment escrito (E5; Guerra, 25/10): [`security-and-privacy-assessment.md`](security-and-privacy-assessment.md). Falta a revisão da equipa e as ações da sua §10.
-- Estimativa de custos de operação, salários + infraestrutura (G2; Bruno, 23/10, #134): ≈ 58 350 € no desenvolvimento e ≈ 3 400 €/mês de manutenção; explica porque a entrega é local. Em [`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md).
+- Estimativa de custos de operação, salários + infraestrutura (G2; Bruno, 23/10, #134): ≈ 58 510 € no desenvolvimento e ≈ 3 410 €/mês de manutenção; explica porque a entrega é local. Em [`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md).
 
 **Em aberto, com responsável:**
 1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (J4: confirmar ou mudar o WireMock; E5: levar o assessment à revisão da equipa), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (backlog, revisão do ADR-007 para a web; valores do J1 para a IA com o K1 e para o Keycloak com o E1), Bruno (C8, D7, H6, H7).
