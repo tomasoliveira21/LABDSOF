@@ -2,6 +2,16 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-26 · Align AI triage coverage and observability (#145)
+
+### Changed
+- ADR-005 and the evaluation package use **≥95% valid suggestions stored within 30 s**, replacing the earlier 90% proposal and matching observability/NFR-03 in PR #139. The operational cohort is one hour; offline expected abstentions use a separate denominator and check.
+- ADR-005 defines deadline/window accounting, failure/abstention misses, semantic validity, no-data handling and the independent zero-urgent-failure / SC5 visibility checks; ADR-012 and research documents reference it.
+- The research overview and decisions guide distinguish delivered research from pending model choice, independent labels, runtime measurement, instrumentation, dashboards/alerts and team acceptance. The NFR branch remains with its owner.
+
+### Verified
+- Offline scorer regression checks exercise exact 95% coverage, below-threshold coverage, the inclusive 30 s deadline and invalid semantic outputs. Original synthetic inputs, prompt/schema and baseline evidence are preserved; no model or operational compliance result is claimed.
+
 ## [Unreleased] · 2026-10-23 · Operating cost estimation (#134, Bruno Lopes)
 
 **Why:** the professor asked for an operating cost estimation with salaries and infrastructure for the Sprint A presentation (meeting of 22 October 2026, P7), and the report must explain that cost is why the delivery is local (ADR-011).

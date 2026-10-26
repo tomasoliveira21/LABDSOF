@@ -16,7 +16,7 @@ The asynchronous triage spans queueing, inference and persistence. Fallback must
 2. Prometheus/Grafana locally; Azure Monitor/Application Insights, Log Analytics and platform metrics for the proposed Azure target, after export is proven. Collect RabbitMQ Prometheus metrics through an explicit private scraper/export path.
 3. Bounded labels and structured redacted logs; no personal request/prompt content, tokens, exact coordinates or high-cardinality identifiers in metric labels.
 4. Proposed dashboard covers API success/latency, durable-request visibility, triage/fallback, outbox/queues/DLQ, broker/resources, transport freshness and cost. Alert on missing visibility, stalled queues, broker alarms, repeated probes and budget consumption, each with a runbook.
-5. Use product SC3/SC5 as mandatory acceptance evidence; proposed operational targets are reviewed after load/degraded-mode measurements. No-data windows must not appear healthy.
+5. Use product SC3/SC5 as mandatory acceptance evidence. The useful-triage target is **≥95% valid suggestions stored within 30 s over a one-hour submission cohort**, following the canonical [ADR-005 coverage definition](0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145) (aligned 26 October 2026, #145). Retain failures/abstentions in the operational denominator and finalise after the cohort deadlines; SC5 visibility remains 100%. Proposed targets still need review and runtime/load/degraded-mode evidence. No-data windows must not appear healthy.
 
 ## Consequences
 
