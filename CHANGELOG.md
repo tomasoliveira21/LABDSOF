@@ -2,6 +2,26 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · Operating cost estimation (#134, Bruno Lopes)
+
+**Why:** the professor asked for an operating cost estimation with salaries and infrastructure for the Sprint A presentation (meeting of 22 October 2026, P7), and the report must explain that cost is why the delivery is local (ADR-011).
+
+### Added
+- `Docs/Deliverables/operating-cost-estimation.md`: six roles (one person per role, `team-and-process.md` §2) at Junior or Middle salaries (Teamlyzer, 23 October 2026) plus employer social security (23.75%), from 24 September 2026 to 3 January 2027: about 58,510 € for development, with 341 € of local infrastructure (Copilot Business only, notional: the team uses Copilot free through GitHub Education). Maintenance: 1 FTE plus continuous cloud, about 3,410 € per month. Cloud scenario from #53 (prices of 22 October 2026, converted at the ECB rate of that day): about 301 € for the Sprint B and C demo and 358 € per month always on, against a one-off credit of 89 €. AI cost per request from ADR-005. One summary table for the slide.
+
+### Changed
+- `architecture-decisions-guide.md`: G2 points to the estimate, and in *Próximos passos* the cost estimation moved from open to done.
+- `2026-10-22-professor-meeting.md`: the operating costs row of the presentation contents exists; P7 action ticked.
+- `Docs/README.md`: new *Costs* row in the index.
+
+### Review fixes
+- Copilot priced as Copilot Business ($19 per user per month, GitHub's official plans page) instead of Pro from a third-party blog; marked as notional, real cost 0 € through GitHub Education.
+- "0 € extra" locally now says "0 € beyond Copilot, which is the same in both scenarios"; A8 Porto difference 0.5%, not 1%.
+- Links to `local-delivery.md` and ADR-010 marked "proposed in #130" and "proposed in #132" until those PRs are merged; the "no registry" row marked "proposed in #127" (guide H7 is still open).
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), the professor meeting record (cost row from #134, backlog row from main) and the guide (G2 and the cost item in *Feito* from #134; status date 25 October, G3, *Feito* and *Em aberto* from main, with the cost item removed from *Em aberto*).
+
 ## [Unreleased] · 2026-10-25 · Security and Privacy Assessment (António Guerra)
 
 **Why:** Sprint A deliverable 9 (assignment §7.1.2: initial threat model, sensitive data, access-control requirements, data-minimisation measures, retention considerations) was the open guide item E5, owned by Guerra since 8 October 2026. Assignment §6.4 and §6.6 also ask for retention, deletion, audit records and consent management, and US-03 to US-05 waited for it to write the sign-up terms.
