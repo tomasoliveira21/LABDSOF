@@ -160,7 +160,7 @@ The permission model is decided in [ADR-006](adr/0006-identity-and-access.md) (*
 | M-2 | The help-request text is **optional, at most 500 characters**, with a hint above it: *"Describe what is happening. Do not write names or phone numbers."* | **[PROPOSED]** (500, as in the Responsible AI assessment) |
 | M-3 | The requester sees only the status of their request; its location goes only to the people who handle it (AC-3) | *Decided* (US-23, US-24) |
 | M-4 | The AI gets only the category, the sanitised text and the priority floor: no account or event id, no location, no names (ADR-005). **[PROPOSED]:** before sending, phone numbers, e-mail addresses and document numbers are replaced with a placeholder. Redaction is not anonymisation: the text can still say something sensitive | *Proposed in ADR-005*; redaction **[PROPOSED]** |
-| M-5 | **The triage message carries only `requestId`.** Producer and consumer are both Reports, so the worker can read the request from its own database: no personal text in RabbitMQ, in dead-letter queues or in message traces. An exception to the outline's full-state rule for one internal queue | **[PROPOSED]** (change to the outline's `HelpRequestSubmitted`) |
+| M-5 | **The triage message carries only `requestId`.** Producer and consumer are both Reports, so the worker can read the request from its own database: no personal text in RabbitMQ, in dead-letter queues or in message traces. An exception to the outline's full-state rule for one internal queue | *Decided* (Bruno, API outline §7.3, #123, 26 October 2026) |
 | M-6 | **The account holds an e-mail and a display name only.** No phone number, birth date, student number, photo or university. The display name can be a nickname | **[PROPOSED]** |
 | M-7 | Names are copied only where they are shown: `userId` and display name, to Reports and Events (`UserProfileChanged`); Badges and Transports get no names | *Decided* in the API outline draft (#123, its decision D4) |
 | M-8 | Other participants never see who made a report; Badges receives the reporter, type and status of a report, not its location | *Decided* (US-49; `ReportConfirmed` in the API outline draft) |
@@ -273,7 +273,7 @@ Who decides follows the owners in the [decisions guide](architecture-decisions-g
 |---|---|---|---|---|
 | 1 | FarolAdmin bootstrap trusts an unverified e-mail (T4) | Grant only with `email_verified: true`; amend ADR-006 | Guerra | Walking skeleton, and before sign-up opens (US-03) |
 | 2 | Phones and plain HTTP: tokens exposed and PKCE login broken (§9) | Local HTTPS with mkcert, or device mode | Guerra, with Tomás (Compose, G5–G6) | First demo on phones, Sprint B |
-| 3 | Help-request text and location travel through RabbitMQ (T11) | Triage message with `requestId` only (M-5) | Bruno (API outline and event catalogue) | Before US-34 |
+| 3 | Help-request text and location travel through RabbitMQ (T11) | Triage message with `requestId` only (M-5) | Bruno (API outline and event catalogue): ✅ decided in #123 (26 October 2026) | Before US-34 |
 | 4 | Object access inside an event is not tested (T6) | Within-event case in US-14 | Tiago (backlog) | Sprint B planning |
 | 5 | WireMock admin API and recordings (T11, T16) | Admin API only on the demo machine; never record the AI provider | Guerra (J4) | With J4 |
 | 6 | 30-day sessions on field-team phones (T13) | AC-7: login in the last 12 h for operational actions | Guerra (ADR-006) | US-17, Sprint B |

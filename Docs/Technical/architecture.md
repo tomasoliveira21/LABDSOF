@@ -118,6 +118,8 @@ Entities in lower case are not in the domain model yet; Tomás and Guerra add th
 | Service → service | **Asynchronous only** (RabbitMQ, Spring AMQP, *topic* exchanges) | A service that is down does not stop the others |
 | Transports → transport data | Scheduled poll | The external source may be slow or down; never called inside a user's request |
 
+The endpoints of each service and the events each one publishes and consumes are in the [API outline and event catalogue](api-outline.md).
+
 ## 6. The asynchronous workflow: help-request triage
 
 Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end flow: [`user-workflows.md`, W2](../Product/user-workflows.md#w2--participant-asks-for-help-core-journey).
@@ -332,7 +334,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
 | [ADR-013](adr/0013-api-gateway.md) | API gateway, CORS and rate limiting | Accepted |
 
-> ⚠️ **GAP: API outline and walking skeleton.** Sprint A also asks for an API outline (item 7; owner: Bruno, with the event catalogue) and a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; later phase, no owner yet).
+> ⚠️ **GAP: walking skeleton.** Sprint A also asks for a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; owner: Tomás). The API outline (item 7) is in [`api-outline.md`](api-outline.md).
 
 ## 14. Architecture diagrams
 
