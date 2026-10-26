@@ -2,6 +2,13 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-26 · Simplify local demonstration tools (#153)
+
+### Changed
+- At Tomás's request, reduce local observability to Prometheus/Grafana, Actuator health/metrics and correlated Docker logs. Grafana-managed rules replace the separate Alertmanager; Collector/Tempo and distributed tracing become optional future extensions. Assignment §6.7's correlation-or-trace requirement is mapped to concrete minimum demo evidence.
+- Keep one Ollama/model and one evaluation on the existing 20/80 dataset split; repeated/cross-provider/concurrency studies and a new blinded dataset are optional extensions. Preserve label/reason review, human control and the 95%/30 s and SC5 targets.
+- Remove the fixed 24 GiB machine planning assumption from demo acceptance; use and measure the existing local machine. No runtime, capacity or quality result is fabricated; team review remains required.
+
 ## [Unreleased] · 2026-10-26 · Complete walking-skeleton and local delivery decisions (#58)
 
 ### Changed
