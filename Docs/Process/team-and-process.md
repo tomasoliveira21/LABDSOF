@@ -65,7 +65,7 @@ The team meets **twice a week**:
 | Tool | Use | Status |
 |---|---|---|
 | GitHub (`tomasoliveira21/LABDSOF`) | Code, documentation, issues, pull requests, reviews | In use |
-| **GitHub Projects** | Backlog, sprints, decisions, sprint goals, investor feedback (the "Jira or equivalent" of assignment §8.2) | Chosen on 8 October 2026; link to add to the README |
+| **GitHub Projects** | Backlog, sprints, decisions, sprint goals, investor feedback (the "Jira or equivalent" of assignment §8.2) | Chosen on 8 October 2026; in use: [board](https://github.com/users/tomasoliveira21/projects/1), linked from the README; field rules in [`features.md` §8.3](../Product/features.md#83-stories-on-the-board) |
 | GitHub Copilot | Automatic PR review | Defined in README §5 |
 
 ### Deployment scope clarification (recorded 22 October 2026)
