@@ -63,34 +63,34 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 
 ### 3.1 Degraded-mode scenarios (decided, 9 October 2026)
 
-Two scenarios, no more. Both are demoed by switching off one dependency while the rest of the product keeps working. Assignment §6.8: *"fail safely and communicate limitations clearly to users"*.
+Two scenarios, no more. Both are demoed by breaking one dependency while the rest of the product keeps working. Assignment §6.8: *"fail safely and communicate limitations clearly to users"*.
 
 #### D1 · AI triage unavailable
 
 | | |
 |---|---|
 | **Dependency** | AI model provider used by the triage worker (F8) |
-| **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout, a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker) |
-| **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down, a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
+| **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout (10 s per attempt, 2 attempts), a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker: at least half of the last 10 calls failed or were slow, minimum 4 calls). Values: [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1) |
+| **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down (circuit breaker open), a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
 | **What the operator does** | Sets the priority and team by hand. Nothing else changes in F7 |
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
-| **When the AI comes back** | Requests the operator has not touched may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
-| **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and counted as a metric (fallback rate) |
-| **How it is demoed** | Stop the triage worker, or point it at an invalid provider key, and submit a help request |
-| **Test** | SC5: 100 % of requests are shown to the operator with the AI off |
+| **When the AI comes back** | The banner disappears after the first successful call. Requests from the last 15 min that the operator has not touched are sent to triage once more and may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
+| **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard (proposed in [ADR-012](../Technical/adr/0012-observability.md)) |
+| **How it is demoed** | On the local machine (local-only delivery, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)), the triage worker points at **WireMock** (proposed simulator, guide J4), which normally passes requests to the real AI provider. The presenter makes it drop the connection (or answer late, or return invalid output) and a participant submits help requests from the web app's phone pages; the services carry no fault-injection code. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
+| **Test** | US-36 (SC5): 100 % of requests are shown to the operator with the AI off. Reports integration test on every PR, with WireMock in place of the provider (delay over the timeout, 503, dropped connection, invalid body); also under load in Sprint C (scenario L5) |
 
 #### D2 · Transport source unavailable
 
 | | |
 |---|---|
-| **Dependency** | Porto Digital urban platform (FIWARE NGSI v2 bus API) |
-| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit **[PENDING]** (Tiago, guide J) |
+| **Dependency** | Porto Digital urban platform (FIWARE NGSI v2 bus API, [ADR-008](../Technical/adr/0008-transport-data-source.md)) |
+| **Detected when** | The import fails (no answer, HTTP error), the feed is invalid or incomplete (fails validation on import), or the data is older than its freshness limit: **5 min** (decided 22 October 2026; the *y* of the meeting with the professor, P4), so late observations are dropped on import. Bus positions normally arrive about 1 min old, and a bus covers about 2 km in 5 min, so an older position misleads. The 24 h proposed earlier was for a static GTFS timetable, dropped with the professor's answer |
 | **What the participant sees** | The **last valid data**, with *"Data from HH:MM"* and a warning *"Live transport information unavailable"*, plus a link to the operator's website. **Event shuttles and temporary stops entered by the team are not affected**: they are internal data |
 | **What the team sees** | A warning in the backoffice that the transport source is down, with the time of the last successful import |
 | **Invalid data** | Never replaces valid data: the import is rejected as a whole and the previous version stays in use |
-| **Recovery** | Import retried with backoff; the warning disappears after the first valid import |
-| **How it is demoed** | Point Transports at the team's simulator of the Porto Digital API (or recorded real responses, guide J4) and make it fail, answer late or return invalid data, then open the transport screen |
-| **Test** | Automated tests against the simulator (source stopped, late, invalid data): the last data and the warning are shown (US-42, US-43) |
+| **Recovery** | Import every 30 s (the *x* of the meeting with the professor, P4), retried with backoff (3 attempts, 1 s and 2 s apart; after repeated failures the circuit breaker waits 60 s before trying again, so a public service we do not control is not hammered); the warning disappears after the first valid import |
+| **How it is demoed** | On the local machine, Transports points at **WireMock**, the proposed simulator of the Porto Digital API (guide J4), which normally passes requests to the real API. The presenter makes it return invalid data, then drop the connection, and the participant opens the transport screen. Script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
+| **Test** | US-42, US-43: Transports integration test on every PR, with WireMock replaying recorded Porto Digital responses, then a 503, a timeout and an invalid payload, and a fixed clock past the freshness limit: the last valid data, its time and the stale flag are returned, shuttles still shown, invalid data never stored |
 
 ## 4. Roles, teams and permissions (22 October 2026)
 
@@ -279,7 +279,7 @@ Rewritten on 9 October 2026 to match the feature list above; checked against the
 | Dependencies identified | No story listed its dependencies | *Depends on* line on every story; blockers in §8.4 |
 | One story = one PR | Several stories held two or more PRs of work | Split (below) |
 | AI fallback | The AI suggestion did not say what happens when the AI fails | *AI fallback* line pointing to US-36 (scenario D1) |
-| On the board | No story had an issue | Issues #58 to #121 created on 22 October 2026 from the user-story form (§8.3). The GitHub Projects board does not exist yet; the box stays unticked until the issues are on it |
+| On the board | No story had an issue | Issues #58 to #121 created on 22 October 2026 from the user-story form (§8.3). All of them are on the [GitHub Projects board](https://github.com/users/tomasoliveira21/projects/1) (checked 24 October 2026); the DoR box "On the GitHub Projects board" is ticked in each story issue (24 October 2026) |
 
 #### How the stories were split (22 October 2026)
 
@@ -287,7 +287,7 @@ The 29 stories of 16 October became **62**. Each story is now **one user action,
 
 1. **One action per story.** *Log in* and *log out* are different actions with different tests, so they are two stories (US-01, US-02). The same for publishing, joining and closing an event, or for accepting and resolving a request.
 2. **Separate what is blocked from what can start.** A part that waits for an open decision becomes its own story, so the rest can be *Ready*. Example: account deletion (US-05) waits for guide D7; sign-up (US-03) does not.
-3. **Separate apps and personas.** What the event team does in the backoffice and what the participant sees in the mobile app are different PRs, in different apps (guide F1). Example: the team adds shuttles (US-37), the participant sees them (US-39).
+3. **Separate apps and personas.** What the event team does in the backoffice and what the participant sees are different PRs, on different pages of the web app (guide F1). Example: the team adds shuttles (US-37), the participant sees them (US-39).
 
 | Old story (16 October) | New stories |
 |---|---|
@@ -338,11 +338,11 @@ The 29 stories of 16 October became **62**. Each story is now **one user action,
 
 #### Issue type of each story
 
-README §1 allows four issue types. Rule used in §8.3, from the two-app decision (guide F1):
+README §1 allows four issue types. Rule used in §8.3, from the split between participant pages and event-team pages of the web app (guide F1):
 
-- **[Front Office]**: the participant's mobile app (P1).
-- **[Back Office]**: the event team's work: event management on the web (P3, P4) and the backoffice of the control room and of the field teams (P2, P5). Field-team members work on the phone, but in the backoffice field view (personas, P5), not in the participant app.
-- **[Technicians]**: technical work with no single user screen: login and logout (US-01, US-02, used by both apps), isolation between events (US-14, a test in every service), the import of the transport source (US-40) and the walking skeleton.
+- **[Front Office]**: the participant's pages of the web app, built for the phone (P1).
+- **[Back Office]**: the event team's work: event management on the web (P3, P4) and the backoffice of the control room and of the field teams (P2, P5). Field-team members work on the phone, but in the backoffice field view (personas, P5), not in the participant pages.
+- **[Technicians]**: technical work with no single user screen: login and logout (US-01, US-02, used by every page), isolation between events (US-14, a test in every service), the import of the transport source (US-40) and the walking skeleton.
 
 ### F1 · Login and logout
 
@@ -455,6 +455,7 @@ README §1 allows four issue types. Rule used in §8.3, from the two-app decisio
 *Persona:* P3 · *Depends on:* US-06; venue map library (guide F3, ADR-007, #44)
 - Given I upload a valid image or PDF, when I save, then it becomes the event's current map version.
 - Given I upload a file that is not an image or PDF, when I save, then it is refused with a message and the current map stays.
+- Given I upload a file larger than 20 MB, when I save, then it is refused with a message giving the limit, and the current map stays (ADR-013, L-4).
 
 **US-20** · As an **EventAdmin** (or a member with `Map.Edit`), I want to place, edit and remove points of interest on the map, so that people find entrances, stages, WC, first aid and transport stops.
 *Persona:* P3 · *Depends on:* US-19
@@ -477,6 +478,7 @@ README §1 allows four issue types. Rule used in §8.3, from the two-app decisio
 *Persona:* P1 · *Depends on:* US-14, US-21
 - Given I choose a category and mark a location, when I submit, then I see a confirmation.
 - Given I submitted a request, then my location is visible only to members with `HelpRequests.Triage`, to EventAdmins and to the team it is routed to.
+- Given I have sent 5 help requests in the last 10 minutes, when I submit another, then it is refused with a message saying when I can ask again, and the first-aid points are shown on the map (ADR-013, L-2: answer 429 with `Retry-After`).
 
 **US-24** · As a **participant**, I want to follow the status of my help request, so that I know whether help is coming.
 *Persona:* P1 · *Depends on:* US-23
@@ -701,7 +703,7 @@ Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 and u
 
 ### 8.2 Initial release plan
 
-Every merge to `main` is deployed (continuous deployment, guide H5). A *release* is the version shown at a review.
+Every merge to `main` is built and tested (guide H4). Delivery is local: a *release* is a git tag (guide H7), built and run on a laptop for the review ([`local-delivery.md`](../Technical/local-delivery.md), guide H5).
 
 | Release | When | What it contains | Assignment |
 |---|---|---|---|
@@ -714,7 +716,19 @@ Every merge to `main` is deployed (continuous deployment, guide H5). A *release*
 
 ### 8.3 Stories on the board
 
-Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) stay open as they are.
+Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) stay open, but were archived from the board on 24 October 2026 (#138): each one is covered by the stories below or is out of scope (#6, #8, #10, #14). #11 (Problem and Opportunity Report) was closed as delivered.
+
+**Board:** [GitHub Projects, *LABDSOF*](https://github.com/users/tomasoliveira21/projects/1) (project 1 of `tomasoliveira21`; private, open to the team). Every issue in the table below is on it, with the other open issues of the repository (auto-add workflow). How its fields are used, decided and applied on 24 October 2026 (Tiago, backlog owner, #138); the board is the source of truth for the values (they are not repeated in this table):
+
+| Field | Values | Rule |
+|---|---|---|
+| *Status* | Backlog → Ready → In progress → In review → Done | *Ready* only when the story meets the [DoR](../Process/definition-of-ready-and-done.md#definition-of-ready-backlog-item) and none of its dependencies blocks it (§8.4); a dependency on an unblocked story that is not built yet only orders the work. *Done* follows the DoD; the board workflows move closed issues and merged PRs to *Done* |
+| *Priority* | P0, P1, P2 | Must in the release of the next sprint → **P0** (now R1, Sprint B; the walking skeleton #58, R0, is also P0); every other Must → **P1**; Should and Could → **P2**. Re-applied at the start of each sprint |
+| *Size* | XS, S, M, L, XL | From the number of acceptance criteria: 1 → XS, 2 → S, 3 → M, 4 → L, 5 or more → XL. One step up when the story depends on an open or external decision or system (E1, role model, D3, F3, K1, ADR-008, J1, §6.1, D7). One step up for US-21, US-23 and US-26 (first use of the map and of polling, §8.5) and US-46 (offline cache). An XL story is split before it is *Ready* |
+| Sprint | Milestones *Sprint A*, *Sprint B*, *Sprint C* | The issue's milestone (this table's *Sprint* column); board views are grouped or filtered by *Milestone*. No *Iteration* field, so the sprint is kept in one place (decided on 24 October 2026 instead of the Iteration field of [`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md#in-the-tool)) |
+| *Estimate*, *Start date*, *Target date* | — | Not used for now |
+
+Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 16, **S** 22, **M** 16, **L** 9, **XL** 0. Only #58 is *Ready*: every story waits for at least one open blocker of §8.4 (the identity provider E1 alone blocks 60 of the 62 stories), so it stays in *Backlog* until that blocker is closed.
 
 | Story | Issue | Type | Sprint |
 |---|---|---|---|
@@ -789,8 +803,8 @@ These dependencies are open on 22 October 2026. A story that needs one stays in 
 | Open dependency | Owner | Blocks |
 |---|---|---|
 | Walking skeleton (R0, #58), in Sprint A; needs the deployment platform (guide G1, #53) | Tomás | Every story (first to be built) |
-| Identity provider (guide E1) | Guerra | US-01, US-03 |
-| Role, team and permission model (§4): team confirmation, then the domain model (Tomás + Guerra) and where permissions are checked (guide E2, Guerra). Replaces personas PE-5 and PE-6 | Team; Tomás + Guerra; Guerra | US-06, US-14, US-15, US-16 |
+| ~~Identity provider (guide E1)~~ Closed on 22 October 2026: Keycloak ([ADR-006](../Technical/adr/0006-identity-and-access.md)) | Guerra | ~~US-01, US-03~~ |
+| Role, team and permission model (§4): team confirmation, then the domain model (Tomás + Guerra). ~~Where permissions are checked (guide E2)~~ closed on 22 October 2026: in each service's use cases, against local copies ([ADR-006](../Technical/adr/0006-identity-and-access.md)). Replaces personas PE-5 and PE-6 | Team; Tomás + Guerra | US-06, US-14, US-15, US-16 |
 | Venue map library (guide F3, ADR-007, #44) | Tiago | US-19 |
 | AI provider and model (guide K1); AI-1 to AI-3 (§5.2) | Tomás, AI lead | US-34 |
 | Resilience values (guide J1, #43) | Tiago | US-42, US-43 |
@@ -813,7 +827,7 @@ The goal also covers every Sprint B deliverable of §7.2.2:
 
 | §7.2.2 deliverable | Covered by |
 |---|---|
-| 1 · Functional client application | US-12, US-21, US-23 (mobile app); US-06, US-11, US-16 to US-18 (web app) |
+| 1 · Functional client application | US-12, US-21, US-23 (phone pages); US-06, US-11, US-16 to US-18 (laptop pages) |
 | 2 · Authentication and authorisation | US-01, US-02, US-14, US-16 to US-18 |
 | 3 · Persistent data storage | Every story (PostgreSQL, one database per service, guide D1–D2) |
 | 4 · Documented API contracts | OpenAPI written first for each story (contract-first, guide C7) |
@@ -859,7 +873,7 @@ Sprint B must already have an *initial external-system integration* (§7.2.2, it
 
 - Mocked authentication is allowed for the MVP (assignment §6.6, footnote 1), so seeded test accounts are enough for the help-request journey; log in and log out (US-01, US-02) are in Sprint B.
 - Sign-up is not a step of that journey.
-- The terms and consent text should follow the Security & Privacy assessment (guide E5, Guerra), which is not done yet.
+- The terms and consent text follow the [Security & Privacy assessment](../Technical/security-and-privacy-assessment.md) §8 (guide E5, Guerra; written on 25 October 2026, to review with the team).
 - US-03 to US-05 all handle personal data, so they are built and tested together.
 
 #### Why the FarolAdmin's other stories (US-07 to US-09) are in Sprint C

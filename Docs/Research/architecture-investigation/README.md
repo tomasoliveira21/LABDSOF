@@ -35,6 +35,6 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 
 ## Dependencies and handoff
 
-Guerra owns identity, gateway, secrets and Security & Privacy (#46). Tiago owns retry/circuit-breaker values, message redelivery and load tests (#43). Bruno owns pipeline authentication, tags, mobile setup and API/event contracts. This research gives constraints and acceptance checks without replacing their decisions. The joint domain-model work with Guerra is outside #53.
+Guerra owns identity, gateway, secrets and Security & Privacy (#46). Tiago owns retry/circuit-breaker values, message redelivery and load tests (#43). Bruno owns pipeline authentication, tags and API/event contracts. This research gives constraints and acceptance checks without replacing their decisions. The joint domain-model work with Guerra is outside #53.
 
 The local-only scope is recorded separately from the remaining proposals. The team can review AI, observability and detailed local implementation independently; do not treat the professor's cloud exemption as acceptance of all technical recommendations. A future implementation issue should cover the deployment skeleton, telemetry and model comparison; closing this research issue does not mean those systems exist.

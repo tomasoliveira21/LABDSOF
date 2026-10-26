@@ -5,16 +5,18 @@ Multi-event coordination platform for large academic festivals (pilot case: Quei
 ## Documentation
 
 | Area | Document | Language |
-|---|---|---|
+| --- | --- | --- |
 | Problem | [Problem and Opportunity Report](Deliverables/problem-opportunity-report-queima.md) | EN |
 | Market | [Market and Competitor Analysis](Deliverables/market-and-competitor-analysis.md) · [Product-specific annex](Deliverables/market-and-competitor-analysis-product-specific.md) | EN |
 | Research | [Student survey (Google Forms script)](Research/inquerito-estudantes-google-forms.gs) | EN (questions in PT) |
 | Product | [Product Vision](Product/product-vision.md) · [Personas](Product/personas.md) · [Main Features and Backlog](Product/features.md) · [User Workflows](Product/user-workflows.md) | EN |
 | Process | [Team Roles and Work Process](Process/team-and-process.md) · [Definition of Ready and Done](Process/definition-of-ready-and-done.md) · [Spec-Driven Development rules](Process/spec-driven-development.md) (proposed) | EN |
-| Technical | [Domain Model](Technical/domain-model.md) · [High-Level Architecture](Technical/architecture.md) · [Local delivery and demo](Technical/local-delivery.md) · ADRs: [001](Technical/adr/0001-architectural-style.md) · [002](Technical/adr/0002-backend-and-frontend-technology.md) · [003](Technical/adr/0003-database-and-data-ownership.md) · [004](Technical/adr/0004-service-communication.md) · [007](Technical/adr/0007-venue-map-representation.md) · [008](Technical/adr/0008-transport-data-source.md) · [009](Technical/adr/0009-architecture-documentation.md) · [Diagrams](Technical/architecture.md#14-architecture-diagrams) | EN |
+| Backlog | [Backlog board (GitHub Projects)](https://github.com/users/tomasoliveira21/projects/1) (private, team members only) · how its fields are used: [`features.md` §8.3](Product/features.md#83-stories-on-the-board) | EN |
+| Technical | [Domain Model](Technical/domain-model.md) · [High-Level Architecture](Technical/architecture.md) · [Local delivery and demo](Technical/local-delivery.md) · ADRs: [001](Technical/adr/0001-architectural-style.md) · [002](Technical/adr/0002-backend-and-frontend-technology.md) · [003](Technical/adr/0003-database-and-data-ownership.md) · [004](Technical/adr/0004-service-communication.md) · [006](Technical/adr/0006-identity-and-access.md) · [007](Technical/adr/0007-venue-map-representation.md) · [008](Technical/adr/0008-transport-data-source.md) · [009](Technical/adr/0009-architecture-documentation.md) · [013](Technical/adr/0013-api-gateway.md) · [Diagrams](Technical/architecture.md#14-architecture-diagrams) | EN |
+| Security and privacy | [Security and Privacy Assessment](Technical/security-and-privacy-assessment.md): threat model, sensitive data, access control, data minimisation, retention, consent | EN |
 | Architecture research | [Deployment, observability and AI](Research/architecture-investigation/README.md) · [Responsible AI assessment](Research/architecture-investigation/responsible-ai.md) · [Triage evaluation](Research/architecture-investigation/evaluation/README.md) · ADRs: [005, proposed](Technical/adr/0005-ai-triage-provider-and-evaluation.md), [011, local delivery scope](Technical/adr/0011-deployment-and-infrastructure.md), [012, proposed](Technical/adr/0012-observability.md) | EN |
 | Technical (working document) | [Architecture decisions](Technical/architecture-decisions-guide.md): every architecture decision taken by the team, its status and owner, and next steps | PT |
-| Meetings | [2026-10-08 Sprint A gap review and decisions](Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Meetings/2026-10-12-sprint-1-presentation-feedback.md) · [2026-10-22 Local deployment clarification](Meetings/2026-10-22-local-deployment-clarification.md) · [2026-10-22 Meeting with the professor](Meetings/2026-10-22-professor-meeting.md) | EN |
+| Meetings | [2026-10-08 Sprint A gap review and decisions](Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Meetings/2026-10-12-sprint-1-presentation-feedback.md) · [2026-10-22 Local deployment clarification](Meetings/2026-10-22-local-deployment-clarification.md) · [2026-10-22 Meeting with the professor](Meetings/2026-10-22-professor-meeting.md) · [2026-10-22 Identity and API gateway decisions](Meetings/2026-10-22-identity-and-gateway-decisions.md) | EN |
 | History | [CHANGELOG](../CHANGELOG.md) | EN |
 
 # Contributing Guidelines
@@ -40,7 +42,7 @@ Format: `<prefix>/<short-description>`
 - Lowercase, kebab-case, short and descriptive.
 
 | Prefix | Use for |
-|---|---|
+| --- | --- |
 | `feature/` | New features or enhancements |
 | `bugfix/` | Bug fixes |
 | `refactor/` | Code restructuring with no behaviour change |
@@ -62,7 +64,7 @@ Format:
 ```
 
 | Rule | Detail |
-|---|---|
+| --- | --- |
 | Prefix | Same as the branch prefix, without the slash (`feature`, `bugfix`, `refactor`, `test`, `docs`, `ci`, `chore`) |
 | Issue | GitHub Issue number in parentheses, e.g. `(#1)` |
 | Title | At most **50 characters**, first letter capitalised, imperative mood ("Add", not "Added"), no trailing full stop |
@@ -73,7 +75,7 @@ Example: `docs (#1): Add conventions chapter to global report`
 ## 4. Pull requests
 
 | Item | Convention |
-|---|---|
+| --- | --- |
 | Target | `main` |
 | Title | `<Prefix>: <Concise description>` (capitalised prefix), e.g. `Docs: Add conventions to global report` |
 | Description | Must reference the issue with `Closes #<issue>` so the issue closes automatically on merge. Include a summary of the changes and how they were tested |
@@ -87,6 +89,7 @@ A pull request can only be merged after **two reviews**:
 2. **A team member**: 1 approval from someone other than the author.
 
 ### As the author
+
 - One issue per PR. Keep it small.
 - Review your own diff and wait for CI to pass before asking for a review.
 - Address every Copilot comment: fix it, or reply explaining why not.
@@ -94,6 +97,7 @@ A pull request can only be merged after **two reviews**:
 - Merge the PR yourself (squash) once both reviews are done.
 
 ### As the reviewer
+
 - Review within **1 working day**.
 - Read Copilot's comments first. Copilot helps, but does not replace your review.
 - Be respectful: comment on the code, not the person.
