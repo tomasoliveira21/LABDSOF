@@ -17,7 +17,7 @@ One Compose file, `infra/compose.yaml`. Images are built from the repository: th
 | `web` | Serves the React app, image `farol-web:${VERSION}`. The app calls the gateway and Keycloak directly | default | `0.0.0.0:${WEB_PORT}` |
 | `postgres` | **One** PostgreSQL instance with **six databases and six users**: one per service and one for Keycloak. No user can read another's database (ADR-003) | default | none |
 | `rabbitmq` | The broker, with a fixed node name, a named volume and one user per service (ADR-006) | default | `127.0.0.1:15672` (management UI) |
-| `wiremock` | WireMock in front of Porto Digital and of a hosted AI provider: proxy, recorded responses and failure stubs (guide J2; J4 proposal, Guerra confirms). Transports and Reports point at it by default | default | `127.0.0.1:8090` (admin API) |
+| `wiremock` | WireMock in front of Porto Digital and of a hosted AI provider: proxy, recorded responses and failure stubs (guide J2, J4). Its root is [`infra/wiremock/`](../../infra/wiremock/README.md), mounted at `/home/wiremock`, with the recorded Porto Digital stubs. Transports and Reports point at it by default | default | `127.0.0.1:8090` (admin API) |
 | `ai` | Local model (e.g. Ollama) if guide K1 picks one | `ai` | none |
 | `prometheus`, `grafana` | Observability stack, if ADR-012 is accepted | `observability` | `127.0.0.1` only |
 
@@ -116,5 +116,5 @@ The same checks may later run in CI with Compose. That belongs to ADR-010 (Bruno
 - The minimum RAM of the demo laptop, and the measured RTO for rollback and restore: measured with the walking skeleton (Tomás).
 - The exact round-trip command in the smoke test: walking skeleton (Tomás).
 - HTTPS for the phones, which the PKCE login needs (§8): Guerra, with Tomás (assessment §9, finding 2).
-- The AI container or provider: guide K1 (Tomás). WireMock as the J4 simulator: Guerra confirms. The degraded-mode script and the values of x and y: J1, J2 (Tiago).
+- The AI container or provider: guide K1 (Tomás). The degraded-mode script and the values of x and y: J1, J2 (Tiago).
 - Running the smoke test in CI: ADR-010 (Bruno).

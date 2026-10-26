@@ -159,7 +159,7 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 
 ## 9. Degraded modes
 
-**Decided (9 October 2026):** the §6.8 scenarios are **AI unavailable (D1)** and **transport source unavailable (D2)** ([`features.md` §3.1](../Product/features.md#31-degraded-mode-scenarios-decided-9-october-2026)). **Decided (22 October 2026):** the resilience patterns and values (§9.1), how D1 and D2 are triggered, observed and tested (§9.2), and the demo script (§9.3), all run on the local machine of the authorised local-only delivery ([ADR-011](adr/0011-deployment-and-infrastructure.md)). Guide items J1 and J2. **WireMock** as the simulator of guide J4 is Tiago's proposal from J2; Guerra, owner of J4, confirms or changes it.
+**Decided (9 October 2026):** the §6.8 scenarios are **AI unavailable (D1)** and **transport source unavailable (D2)** ([`features.md` §3.1](../Product/features.md#31-degraded-mode-scenarios-decided-9-october-2026)). **Decided (22 October 2026):** the resilience patterns and values (§9.1), how D1 and D2 are triggered, observed and tested (§9.2), and the demo script (§9.3), all run on the local machine of the authorised local-only delivery ([ADR-011](adr/0011-deployment-and-infrastructure.md)). Guide items J1 and J2. **WireMock** is the simulator of guide J4: Tiago's proposal from J2, confirmed by Guerra, owner of J4, on 26 October 2026 (#155), after replaying recorded Porto Digital responses through it ([`infra/wiremock/`](../../infra/wiremock/README.md)).
 
 | Unavailable | What the user sees |
 |---|---|
@@ -204,10 +204,10 @@ Timeouts are set on the HTTP client (`RestClient`), not with a Resilience4j `Tim
 | **Observed in operations** | Metrics: `resilience4j.circuitbreaker.state{name=ai-provider}`, `farol.triage.fallback{reason}`. Log line per fallback with the reason and the correlation id. Shown on the local dashboard proposed in [ADR-012](adr/0012-observability.md) (triage/fallback panel) | Metrics: `resilience4j.circuitbreaker.state{name=transport-source}`, `farol.transport.import{result}`, `farol.transport.data.age` (seconds). Log line per failed import. Shown on the local dashboard proposed in [ADR-012](adr/0012-observability.md) (transport freshness panel) |
 | **Automated test** | **US-36** (SC5), Reports integration test, on every PR. WireMock replaces the provider and answers with a delay over the timeout, a 503, a dropped connection and an invalid body; 20 requests per case. Pass: 100 % shown to the operator as "Not triaged" within 30 s, fallback reason recorded, circuit opens and WireMock receives no more calls; after recovery, a new request gets a suggestion and an operator's priority is kept | **US-42, US-43**, Transports integration test, on every PR. WireMock replays recorded Porto Digital responses: one valid import, then a 503, a timeout and an invalid payload; a fixed `Clock` moves past the freshness limit. Pass: the API returns the last valid data with `dataAsOf` and `stale=true`, shuttles still returned, invalid data never stored; after a valid import, `stale=false` |
 
-**Simulator and demo trigger (guide J4, proposed; Guerra confirms): WireMock in front of each external system.** In the tests and in the local demo run, the AI provider URL and the Porto Digital URL (both configuration, [ADR-004](adr/0004-service-communication.md)) point at a **WireMock** container, one more service in the local Compose file:
+**Simulator and demo trigger (guide J4, confirmed on 26 October 2026, #155): WireMock in front of each external system.** In the tests and in the local demo run, the AI provider URL and the Porto Digital URL (both configuration, [ADR-004](adr/0004-service-communication.md)) point at a **WireMock** container, one more service in the local Compose file:
 
 - **Normal operation:** WireMock *proxies* every request to the real system, so the demo starts with real AI suggestions and live buses.
-- **Recorded responses:** WireMock records real Porto Digital responses (*record and playback*); the automated tests replay them, and on presentation day they replace the real API if it is down.
+- **Recorded responses:** WireMock replays real Porto Digital responses (*record and playback*): 300 recorded on 25 October 2026, one a minute, kept in [`infra/wiremock/`](../../infra/wiremock/README.md) with the script that turns them into stubs. Each stub holds only the buses within 2 km of the venue, as the geo-query would; every position's time is rendered relative to *now*, so the data passes the 5 min freshness limit with each bus's real delay; and each snapshot answers two imports, so the buses move at their real speed. The automated tests replay them, and on presentation day they replace the real API if it is down.
 - **Failure:** the presenter adds, through WireMock's admin API, a higher-priority stub that drops the connection, answers later than the timeout or returns invalid data, and removes it to recover.
 - **Without WireMock:** in a local run that does not need failures, the URLs point straight at the real systems. WireMock is never part of a service image.
 
@@ -304,7 +304,7 @@ Why these pass criteria: **p95 < 500 ms** on the server leaves most of SC1's 5 s
 | Message broker | **RabbitMQ** with Spring AMQP |
 | Live updates | **Polling** |
 | Resilience | **Resilience4j 2.4** (timeouts, retry, circuit breaker); message retries in Spring AMQP |
-| Simulator of external systems (tests and demo) | **[PROPOSED]** **WireMock** (guide J2; J4 owner Guerra confirms) |
+| Simulator of external systems (tests and demo) | **WireMock** (guide J2, J4; confirmed on 26 October 2026, tested with 3.13.2). Recorded Porto Digital responses and their stubs in [`infra/wiremock/`](../../infra/wiremock/README.md) |
 | Load testing | **k6** |
 | API | Contract-first **OpenAPI**, `/api/v1` |
 | CI/CD | **GitHub Actions**, monorepo, private repository |

@@ -62,4 +62,4 @@ What the professor listed, with the document each section comes from today.
 - [ ] **Tomás:** the walking skeleton (P8).
 - [ ] **Tiago:** one list of NFRs, for the deck.
 - [ ] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents.
-- [ ] **Guerra:** simulator of the Porto Digital API or recorded responses (guide J4).
+- [x] **Guerra:** simulator of the Porto Digital API or recorded responses (guide J4). Done in #155 (26 October 2026): WireMock, replaying the responses recorded on 25 October 2026 ([`infra/wiremock/`](../../infra/wiremock/README.md)).
