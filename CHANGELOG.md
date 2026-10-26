@@ -25,6 +25,8 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Merged (26 October 2026)
 - `main` merged (#43 resilience, #134 cost estimation, #138 board, #141 gateway limits, #143 Security and Privacy Assessment, #145 triage coverage). Conflicts in this CHANGELOG (both kept, this entry first) and in the *Presentation contents* of `2026-10-22-professor-meeting.md` (costs and backlog rows from `main`, NFR row from this PR).
 - On-time AI triage: Tomás aligned ADR-005 and the observability research at **≥ 95 % within 30 s** over a one-hour window (#145). NFR-03 now links that definition, and the open point on 90 % vs 95 % is removed.
+- Resilience values (#43, PR #52 merged on 25 October 2026): checked against `architecture.md` §6, §9.1 and §10.1, all unchanged. The *(PR #52)* marks and their *otherwise [PENDING]* removed from NFR-02, NFR-04, NFR-05, NFR-07, NFR-08, NFR-10, NFR-11, NFR-17, NFR-31 and NFR-34, with links to those sections instead of the PR; the AI values of NFR-11 stay to confirm with K1 (Tomás), as in §9.1. The *Merge PR #52* open point removed.
+- NFR-19 takes the **[PROPOSED]** retention periods, help-request consent and account data of the Security and Privacy Assessment (#143, §6–§8): help-request content 30 days after the event closes, logs 14 days, traces 7 days, Keycloak login events 30 days. Its open point now says they wait for the team's review.
 
 ## [Unreleased] · 2026-10-26 · Align AI triage coverage and observability (#145)
 
