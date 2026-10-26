@@ -201,7 +201,7 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 2. **Alinhar o API outline, o catálogo de eventos e o D7 com o ADR-006:** registo no Keycloak e sem `POST /accounts` (O2); token só com a identidade (O3); O1 fechado pela tabela de rotas do gateway; evento de conta desativada, `UserDeleted` definido e `sub` de quem age no envelope ([ADR-006](adr/0006-identity-and-access.md#changes-for-the-api-outline-and-d7)). **Bruno.**
 3. **Backlog:** ✅ feito no #141 (24/10): critério de aceitação para a resposta 429 na página do pedido de ajuda (US-23; limite de 5 por 10 min, ADR-013) e limite de 20 MB no upload do mapa confirmado (US-19). **Tiago.**
 4. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
-5. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.** Na mesma passagem, tirar a app mobile dos diagramas (níveis 1–3 e `*-level-4-mobile`; #125).
+5. **Nível 3 da vista física:** ✅ feito a 26/10 (#<issue>): uma máquina, um contentor por serviço e um servidor PostgreSQL com seis bases (cinco serviços e Keycloak). Na mesma passagem saiu a app mobile de todos os diagramas (#125) e entraram o API gateway e o Keycloak. **Bruno.**
 6. **Lista de NFRs** para a apresentação. **Tiago.**
 7. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar. **Quem fecha a área.**
 

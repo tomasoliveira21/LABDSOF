@@ -2,6 +2,23 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-26 · Architecture diagrams updated (#<issue>, Bruno Lopes)
+
+**Why:** the diagrams still showed the React Native app (removed on 22 October 2026, #125), had no API gateway or Keycloak (ADR-006, ADR-013) and showed a cloud platform still to choose. The professor asked for physical level 3 with the databases (meeting of 22 October 2026; guide *Em aberto* item 5).
+
+### Changed
+- **Physical view:** levels 1–3 show the local delivery (ADR-011, `local-delivery.md`). Level 3 has one machine with the web app, the API gateway, Keycloak, the five services (one instance each), RabbitMQ, WireMock and one PostgreSQL container with six databases, one user each (five services and Keycloak, Keycloak's marked third-party); the optional local AI model (K1) and Prometheus/Grafana (ADR-012) are dashed; a browser (phone or laptop) outside the machine; the AI provider and Porto Digital reached through WireMock. No ports and no HTTPS note (kept in `local-delivery.md`).
+- **Logical view:** no mobile app; one web app with phone and laptop pages used by all five personas; API gateway (Spring Cloud Gateway) without `[PENDING]`; Keycloak and its database as containers from level 2 (not external, so not in level 1); account deletion through the Admin API. Level 4 web has every persona, phone and laptop pages, data and polling, login (`oidc-client-ts`) and the API client.
+- **Implementation view:** the web app is `frontend/` itself (guide H2, ADR-010), `backend/gateway/` added, `infra/` holds the Compose file, the Keycloak realm and the PostgreSQL init script; "deploys" removed (local delivery). Level 4 is now *frontend/* with `pages/`, `data/`, `auth/` and `api/` (layout still `[PENDING]`).
+- **Process view, help request:** the request goes through the gateway (JWT, rate limit); the event carries only the request id and triage reads the request from Reports' database (assessment M-5); outbox every 1 s; an AI failure ends in the "Not triaged" fallback and an acknowledgement, while a processing failure gets 4 attempts (1 s, 2 s, 4 s) and then the dead-letter queue, moved back by hand (`architecture.md` §6).
+- **Process view, transports:** web app instead of mobile app; import every 30 s and freshness limit 5 min (J1); bus positions and event shuttles instead of "regular lines" (ADR-008, API outline §5).
+- **Role names** in every diagram: Field-team member, EventAdmin, FarolAdmin (`features.md` §4).
+- **Mappings** rebuilt from the updated views; logical → physical links the AI provider and Porto Digital to WireMock and to the real system.
+- `architecture.md` §14 without the mobile links and the *TO ALIGN* notes; §2 explains why Keycloak is not in the system context. ADR-009: 32 diagrams, physical view and identity-provider open points closed. ADR-003: one PostgreSQL server with six databases (open point closed). Guide *Em aberto* item 5 ✅.
+
+### Removed
+- `logical-view-level-4-mobile`, `implementation-view-level-4-mobile` and `mapping-logical-implementation-level-4-mobile`.
+
 ## [Unreleased] · 2026-10-23 · Operating cost estimation (#134, Bruno Lopes)
 
 **Why:** the professor asked for an operating cost estimation with salaries and infrastructure for the Sprint A presentation (meeting of 22 October 2026, P7), and the report must explain that cost is why the delivery is local (ADR-011).
