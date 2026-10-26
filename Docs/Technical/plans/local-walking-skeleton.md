@@ -55,7 +55,7 @@ The slide's absence of business validation is about slicing, **not permission to
 
 Five service containers + gateway + web + Keycloak + one PostgreSQL + RabbitMQ + WireMock form the planned default topology. PostgreSQL has **six databases/users: five domain-service databases and one Keycloak database**, not six database machines. Three domain services may be health-only scaffolds in R0. Runtime/user secrets remain in ignored local configuration. No database, AMQP, model or scrape endpoint is published to the LAN.
 
-The local baseline is the [delivery procedure proposed in PR #130](https://github.com/tomasoliveira21/LABDSOF/pull/130); CI/tag semantics follow [PR #132](https://github.com/tomasoliveira21/LABDSOF/pull/132) and [PR #128](https://github.com/tomasoliveira21/LABDSOF/pull/128): **build locally from tags, no registry, CI never connects to anyone's laptop**. The chosen R0 implements this contract; there is no unresolved registry-versus-pull decision here. Integrating those owners' documentation is separate from choosing this approach.
+The local baseline is the accepted [delivery procedure](../local-delivery.md) (PR #130); CI details follow [PR #132](https://github.com/tomasoliveira21/LABDSOF/pull/132), and accepted tag semantics follow PR #128: **build locally from tags, no registry, CI never connects to anyone's laptop**. The chosen R0 implements this contract; there is no unresolved registry-versus-pull decision here. This applies the accepted local runbook; automated CI job implementation follows Bruno's pipeline work.
 
 **Capacity planning, not a measured minimum:** budget a 16 GiB host and 8 GiB for Docker for base delivery/telemetry; full simultaneous local inference may require a larger allocation/host, so budget 24 GiB host/12 GiB Docker for that demo profile and measure before release. Inspection on 26 October found a 16 GiB host and Docker configured with about 4 GiB RAM/8 CPUs; settings were not changed. That is an environment observation, not proof the target stack fits. R0 does not start the AI profile. Reduce concurrent optional profiles or use another local team machine if the measured host limit is exceeded; do not silently replace local hosting with a paid cloud machine.
 
@@ -68,10 +68,10 @@ cp infra/.env.example infra/.env
 # Set local secrets, PUBLIC_HOST=localhost, WEB_PORT=3000 and VERSION=dev.
 docker compose --env-file infra/.env -f infra/compose.yaml -p farol-dev build
 docker compose --env-file infra/.env -f infra/compose.yaml -p farol-dev up -d --wait
-python3 scripts/smoke_local.py --base-url http://localhost:3000 --gateway-url http://localhost:8080
+docker compose --env-file infra/.env -f infra/compose.yaml -p farol-dev ps
 ```
 
-The smoke script's exact checks are fixed: all required containers healthy; web HTTP 200; gateway `/api/v1/me` answers 401 without a token; browser logs in through Keycloak; clicking the synthetic request button yields a stored id; an authenticated read returns the same row; duplicate submission does not duplicate it; the outbox notification is consumed once logically. CI automates infrastructure/negative-auth/queue checks and integration fixtures; manual browser login and the actual demo laptop are checked separately. CI success is not a phone/LAN test.
+Follow the accepted runbook using Compose commands and a manual browser checklist, without a startup script or Makefile. The R0 smoke checks are: all required containers healthy; web HTTP 200; gateway `/api/v1/me` answers 401 without a token; browser logs in through Keycloak; clicking the synthetic request button yields a stored id; an authenticated read returns the same row; duplicate submission does not duplicate it; the outbox notification is consumed once logically. CI automates infrastructure/negative-auth/queue checks and integration fixtures; manual browser login and the actual demo laptop are checked separately. CI success is not a phone/LAN test.
 
 **Update one service:** build `reports`, then `up -d --no-deps reports`; other service processes keep their existing images. **Stop:** `down` without `-v`, preserving local volumes. **Reset synthetic demo only:** explicit `down -v`, then reseed; never use this as routine rollback.
 
