@@ -22,6 +22,12 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Availability and recovery measured locally (NFR-12, NFR-13); weak-network mode stays out while F11 is a Could.
 - NFR-15, NFR-17 and NFR-18 take their values from ADR-006 and ADR-013 (identity and gateway, merged with #47 on 24 October 2026) instead of the open PR.
 
+### Validated with the team (26 October 2026)
+- Tiago went through every **[PROPOSED]** target with Tomás, Guerra and Bruno; all confirmed (`non-functional-requirements.md` §5): NFR-03 (≥ 95 % in 30 s over 1 h; **abstentions count as misses**, also on a request with no text), NFR-06, NFR-11 (AI call values, whatever model K1 picks), NFR-12, NFR-13 (rollback and restore targets), NFR-19 (help-request consent, account data, retention periods), NFR-31 (WireMock) and NFR-33 (observability stack).
+- Still **[PENDING]**, because there is no value to confirm: backup scope (NFR-13; G7, D5), the local procedure (NFR-30; PR #130), the other alerts (NFR-34; I3) and the hosted AI provider review (NFR-20). Listed in §3 with their owners.
+- `architecture-decisions-guide.md`: D5 (retention), E5, G7, I1, I2, J4 and K1 record the confirmation; I3 records the outbox alert; *Feito* and *Em aberto* updated.
+- Not changed: ADR-005, ADR-012, the observability research, the Security and Privacy Assessment and `architecture.md` §9.2 still mark these values as proposed; their owners update them.
+
 ### Merged (26 October 2026)
 - `main` merged (#43 resilience, #134 cost estimation, #138 board, #141 gateway limits, #143 Security and Privacy Assessment, #145 triage coverage). Conflicts in this CHANGELOG (both kept, this entry first) and in the *Presentation contents* of `2026-10-22-professor-meeting.md` (costs and backlog rows from `main`, NFR row from this PR).
 - On-time AI triage: Tomás aligned ADR-005 and the observability research at **≥ 95 % within 30 s** over a one-hour window (#145). NFR-03 now links that definition, and the open point on 90 % vs 95 % is removed.
