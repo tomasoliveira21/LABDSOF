@@ -32,6 +32,29 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (procedure added to main's *Technical* row), `architecture.md` §10 (procedure from #129, gateway and Keycloak sentence from main) and the guide (status date, G3, Guerra's row and *Em aberto* from main; G4–G7, Tomás's row and the procedure in *Feito* from #129; G4–G7 removed from Tomás's areas, local delivery added to Bruno's).
 - `main` merged again (#134 operating cost estimation). Conflicts in this CHANGELOG (both kept) and the guide's *Feito* (both items kept). The cost estimation's two `local-delivery.md` mentions, marked "proposed in #130", are links again.
 - `main` merged a third time (#145 AI triage coverage, #124 API outline). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (local delivery and API outline both in the *Technical* row) and the guide's *Em aberto* (item 2 from main; G4–G7 out of Tomás's areas, C8 and H6 out of Bruno's).
+- `main` merged a fourth time (#128 versioning). Conflicts in this CHANGELOG (both kept, this entry first), `architecture.md` §12 (local delivery sentence from #129, versioning bullet from main) and §13 (ADR-010 row from main, ADR-011 row from #129), and the guide (H5 and H6 from #129, H7 from main; *Feito* keeps both items; Bruno's areas now only D7).
+
+## [Unreleased] · 2026-10-23 · Versioning and release tags (#127, Bruno Lopes)
+
+**Why:** close guide H7 so the pipeline (ADR-010) and the local delivery (ADR-011) know which version a build is and how to go back to an earlier one.
+
+### Changed
+- `architecture-decisions-guide.md`: H7 ✅. One SemVer version for the monorepo, annotated tag `vX.Y.Z` on `main`, images `farol-<service>:X.Y.Z` (other builds `dev`); 0.x during the sprints (`v0.1.0` Sprint A, `v0.2.0` Sprint B, `v1.0.0` Sprint C), PATCH only to fix a release already demonstrated, tagged on `main` with no release branches; git tags only, no registry and no GitHub Releases; release notes in this CHANGELOG. *Próximos passos*: H7 moved to done.
+- `architecture.md`: versioning in §10 and §12; ADR-010 row in §13 says it includes versioning.
+
+### Not changed
+- No new ADR: versioning goes into ADR-010 (CI/CD), still to be written. H6 stays open, although with no registry there are no images to publish.
+
+### Aligned with `main` (26 October 2026)
+- **API gateway** (ADR-013): versioned with the services and the web app, so seven images of ours share the version.
+- **Third-party images** (Keycloak from ADR-006, PostgreSQL, RabbitMQ, WireMock from #43, the observability stack): not versioned with Farol; exact versions pinned in the Compose file (ADR-011, point 4), changed only in a PR.
+- **Releases:** `v0.1.0`, `v0.2.0` and `v1.0.0` are R0, R1 and R2 of `features.md` §8.2.
+- Same changes in `architecture.md` §10 and §12.
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first) and the guide (status date and *Em aberto* from main, H7 removed from Bruno's areas; H7 added to *Feito*).
+- `main` merged again (#134 operating cost estimation, #145 AI triage coverage). Conflicts in this CHANGELOG (both kept, this entry first) and the guide's *Feito* (both items kept).
+- `main` merged a third time (#124 API outline). Conflicts in this CHANGELOG (both kept, this entry first) and the guide's *Em aberto* (item 2 from main; C8 and H7 both removed from Bruno's areas).
 
 ## [Unreleased] · 2026-10-23 · API outline and event catalogue (#123, Bruno Lopes)
 
