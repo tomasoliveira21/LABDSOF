@@ -2,6 +2,38 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · Local delivery and demo procedure (#129, Bruno Lopes)
+
+**Why:** delivery is local only (#53). The team needed one written procedure to start, update, roll back, check and demonstrate the system before the walking skeleton is built (guide G4–G7 and H5).
+
+### Added
+- `Docs/Technical/local-delivery.md`: one `infra/compose.yaml` with `ai` and `observability` profiles; one PostgreSQL instance with five databases and five users; `infra/.env.example` versioned and `infra/.env` ignored; synthetic demo data from demo-only Flyway migrations; only `docker compose` commands (no script or Makefile) to start, update, replace one service, roll back (build the previous tag, guide H7) and reset; a manual smoke-test checklist (containers healthy, web app opens, one RabbitMQ round trip); `pg_dump` of the five databases before every demo and update; demo on a team member's laptop with a backup laptop, phones on the laptop's LAN IP over plain HTTP; D1, D2, broker and service outages shown with `docker compose stop`, always using the J4 simulator.
+
+### Changed
+- `architecture-decisions-guide.md`: G4–G7 and H5 decided (Bruno defines, Tomás applies in the walking skeleton); owners table, status date and *Próximos passos* updated. The RTO and the minimum RAM are measured with the walking skeleton.
+- `ADR-011`: status and points 2 and 4–6 now state the decided procedure. One PostgreSQL instance instead of separate containers. The mobile app line is replaced by phones opening the web app (#125).
+- `architecture.md` §10, §12 and §13: link the procedure and summarise it.
+- `deployment.md` (G6): the five-PostgreSQL-containers suggestion is marked as not taken.
+- `2026-10-22-local-deployment-clarification.md`: follow-up line. `Docs/README.md`: the procedure in the index.
+
+### Not changed
+- D5 (retention and backup) stays deferred: the dumps only cover the synthetic demo data. Running the smoke test in CI belongs to ADR-010 (Bruno, not written yet).
+
+### Aligned with `main` (26 October 2026)
+- **Gateway and Keycloak** (ADR-013, ADR-006) added to the Compose file; the `web` container no longer proxies `/api/`: the app calls the gateway and Keycloak directly. **Six databases** on the one PostgreSQL instance (Keycloak's added), dumped before every demo; one RabbitMQ user per service.
+- **Ports:** only the gateway, Keycloak and the web app reach the network (ADR-013); RabbitMQ management, WireMock's admin API and Grafana are published on `127.0.0.1` only; full-disk encryption on the demo laptop (assessment §9).
+- **HTTPS for the phones left open for Guerra** (assessment §9, finding 2): over plain HTTP the PKCE login fails off `localhost` and tokens are readable on the network. The mkcert and device-mode proposals are listed; until Guerra decides, the phone pages are shown in device mode on `localhost`.
+- **WireMock** (#43, J2; J4 proposal) replaces the generic simulator, in front of Porto Digital and a hosted AI provider; D1 and D2 shown with its failure stubs.
+- **Smoke test:** the gateway answers 401 without a token; login works (on a phone once HTTPS is decided).
+- **H6 closed** (✅): with no registry there is nothing to publish and no publishing credential.
+- `ADR-011` points 2 (eleven containers, ports, HTTPS open), 5 and 6; guide G4, G5, G6, G7, H6, *Feito* and Bruno's areas; `architecture.md` §10 and §12; `features.md` §8.2 no longer says every merge to `main` is deployed.
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (procedure added to main's *Technical* row), `architecture.md` §10 (procedure from #129, gateway and Keycloak sentence from main) and the guide (status date, G3, Guerra's row and *Em aberto* from main; G4–G7, Tomás's row and the procedure in *Feito* from #129; G4–G7 removed from Tomás's areas, local delivery added to Bruno's).
+- `main` merged again (#134 operating cost estimation). Conflicts in this CHANGELOG (both kept) and the guide's *Feito* (both items kept). The cost estimation's two `local-delivery.md` mentions, marked "proposed in #130", are links again.
+- `main` merged a third time (#145 AI triage coverage, #124 API outline). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (local delivery and API outline both in the *Technical* row) and the guide's *Em aberto* (item 2 from main; G4–G7 out of Tomás's areas, C8 and H6 out of Bruno's).
+- `main` merged a fourth time (#128 versioning). Conflicts in this CHANGELOG (both kept, this entry first), `architecture.md` §12 (local delivery sentence from #129, versioning bullet from main) and §13 (ADR-010 row from main, ADR-011 row from #129), and the guide (H5 and H6 from #129, H7 from main; *Feito* keeps both items; Bruno's areas now only D7).
+
 ## [Unreleased] · 2026-10-23 · Versioning and release tags (#127, Bruno Lopes)
 
 **Why:** close guide H7 so the pipeline (ADR-010) and the local delivery (ADR-011) know which version a build is and how to go back to an earlier one.

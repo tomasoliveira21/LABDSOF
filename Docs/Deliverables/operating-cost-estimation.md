@@ -58,7 +58,7 @@ Employer cost per month (A4, A5, A7): Junior 1,816 × 14 / 12 × 1.2375 = **2,62
 
 ### 4.1 Local scenario (what is actually used)
 
-Delivery is local only ([ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)): everything runs with Docker Compose on one team member's laptop, with a second laptop as a backup for the demo, and the phones open the web app over the LAN (`local-delivery.md`, proposed in #130).
+Delivery is local only ([ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)): everything runs with Docker Compose on one team member's laptop, with a second laptop as a backup for the demo, and the phones open the web app over the LAN ([`local-delivery.md`](../Technical/local-delivery.md), #129).
 
 | Item | Per month | Assumption |
 |---|---:|---|
@@ -107,7 +107,7 @@ Even at hosted prices the AI is negligible next to hosting. The choice of provid
 3. **Locally the extra cost is 0 € beyond Copilot**, which is the same in both scenarios (and free for the team through GitHub Education). The same five independent services, five databases and RabbitMQ run on a laptop the team already has, which shows independent deployment without a cloud bill.
 4. **The professor agreed.** After discussing these costs, the professor authorised local delivery, provided the report and presentation explain that cost is the reason ([clarification](../Meetings/2026-10-22-local-deployment-clarification.md), ADR-011).
 
-**What this costs the project:** cloud operation, managed scaling and cloud recovery are not demonstrated. The local topology, the smoke test and the degraded-mode tests are shown instead (`local-delivery.md`, proposed in #130).
+**What this costs the project:** cloud operation, managed scaling and cloud recovery are not demonstrated. The local topology, the smoke test and the degraded-mode tests are shown instead ([`local-delivery.md`](../Technical/local-delivery.md)).
 
 ## 6. Limits of this estimate
 
