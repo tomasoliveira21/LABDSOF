@@ -82,7 +82,7 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 | D2 | **Uma base de dados por serviço**, a que só esse serviço acede | ✅ (n.º de servidores: 🔍 Tomás) |
 | D3 | **`event_id` + filtro na aplicação** em todas as tabelas com dados de um evento. Cada serviço tem um teste de integração que prova que um membro do evento X não lê nem altera dados do evento Y | ✅ |
 | D4 | Cache para o pico de leituras | 🔮 |
-| D5 | Retenção e backup. **Retenção decidida a 26/10** ([NFRs §5](../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026)): conteúdo dos pedidos de ajuda apagado 30 dias depois do fim do evento, logs 14 dias, traces 7 dias, eventos de login do Keycloak 30 dias ([assessment](security-and-privacy-assessment.md) §7; NFR-19). Backup continua para depois | ✅ retenção; 🔮 backup |
+| D5 | Retenção e backup. **Retenção decidida a 26/10** ([NFRs §5](../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026)): conteúdo dos pedidos de ajuda apagado 30 dias depois do fim do evento, logs 14 dias, traces 7 dias, eventos de login do Keycloak 30 dias ([assessment](security-and-privacy-assessment.md) §7; NFR-19). **Backup decidido a 26/10** (NFR-13): dump das seis bases de dados antes de cada demo e de cada atualização (PR #130, `local-delivery.md` §6), guardado no máximo 30 dias; as mensagens nas filas não ficam cobertas | ✅ |
 | D6 | **Flyway**, no arranque da aplicação. Migrações compatíveis com a versão anterior (*expand and contract*) | ✅ |
 | D7 | Eliminação de conta (F2, Must): se entra no MVP e como funciona, sem política de retenção | 🔍 Bruno |
 
@@ -116,8 +116,8 @@ E1–E4 decididos na reunião da equipa de 22/10 ([registo](../Meetings/2026-10-
 | G3 | Região cloud não se aplica à entrega local; RGPD e fluxos de dados locais/fornecedores revistos no E5 ([assessment](security-and-privacy-assessment.md) §3, §8; checklist do fornecedor de IA na §8.5) | ✅ sem região cloud; 🔍 privacidade: revisão do E5 pela equipa |
 | G4 | Desenvolvimento, testes e demo localmente; não é necessário um ambiente cloud de produção | ✅ âmbito; 🔍 configuração |
 | G5 | Especificação local versionada (Compose); Bicep/cloud IaC mantém-se como alternativa estudada, sem provisionamento exigido | 🔍 implementação local |
-| G6 | Execução local com contentores independentes; procedimento reproduzível de arranque/atualização e smoke test (ADR-011) | ✅ alvo local; 🔍 implementação |
-| G7 | Rollback por imagem e recuperação de estado local; volumes não são backups. **Metas confirmadas a 26/10** (NFR-13): rollback ≤ 10 min, restauro ≤ 60 min, um reinício não perde linhas confirmadas. Âmbito do backup e RPO de perda do disco por definir (D5). Plano e medições continuam necessários | ✅ metas; 🔍 implementação/validação |
+| G6 | Execução local com contentores independentes; procedimento reproduzível de arranque/atualização e smoke test (ADR-011). **Procedimento e smoke test da PR #130 confirmados a 26/10, sem limite de tempo** (NFR-30) | ✅ alvo e procedimento; 🔍 implementação |
+| G7 | Rollback por imagem e recuperação de estado local; volumes não são backups. **Metas confirmadas a 26/10** (NFR-13): rollback ≤ 10 min, restauro ≤ 60 min, um reinício não perde linhas confirmadas. Backup (D5): dump antes de cada demo e atualização; se o disco se perder, recupera-se o último dump. Plano e medições continuam necessários | ✅ metas; 🔍 implementação/validação |
 
 ## H · Pipeline de CI/CD
 
@@ -141,7 +141,7 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 |---|---|---|
 | I1 | Stack: **Micrometer/OpenTelemetry com Prometheus/Grafana, local** ([ADR-012](adr/0012-observability.md)); confirmado a 26/10 (NFR-33) | ✅ stack; 🔍 implementação (Tomás) |
 | I2 | SLIs e SLOs, confirmados a 26/10 ([NFRs §5](../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026)): **≥ 95 % de sugestões válidas guardadas em 30 s** numa janela de 1 h, com as abstenções a contar como falha, também num pedido sem texto (NFR-03); guardar um pedido de ajuda com **p95 ≤ 2 s** em 15 min (NFR-06); **≥ 99,5 %** de pedidos criados com sucesso em 7 dias (NFR-12) | ✅ SLOs; 🔍 medição (Tomás) |
-| I3 | Dashboard e alertas. Alerta do outbox decidido (linha pendente mais antiga acima de 60 s durante 2 min, 24/10); os outros alertas estão por definir (NFR-34) | 🔍 Tomás |
+| I3 | Dashboard e alertas. Alerta do outbox decidido a 24/10 (linha pendente mais antiga acima de 60 s durante 2 min). **Os outros seis alertas da [investigação](../Research/architecture-investigation/observability.md#dashboard-and-alert-specification-i3), com os gatilhos propostos, confirmados a 26/10** (NFR-34): só no Grafana do portátil da demo, sem notificações externas; sem alerta de gastos (entrega local) | ✅ alertas; 🔍 implementação (Tomás) |
 
 **Alinhamento documental (26/10, #145):** [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145), ADR-012, a observabilidade e o avaliador passam a usar a proposta **≥95% de sugestões válidas guardadas em ≤30 s**, com janela operacional de 1 h. As populações offline/operacional e o tratamento de falhas/abstenções estão explícitos. A discrepância de 90%/95% fica corrigida nas fontes para o NFR-03 da PR #139; I1–I3 e K1–K2 continuam em investigação/revisão, não implementados nem medidos. [Estado do que existe e do que falta](../Research/architecture-investigation/README.md#ai-and-observability-status-26-october-2026-145).
 
@@ -175,7 +175,7 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 
 | # | Pergunta | Estado |
 |---|---|---|
-| K1 | Fornecedor e modelo; viabilidade do deploy de Ollama. Os valores das chamadas à IA (ligar 2 s, resposta 10 s, 2 tentativas; J1) ficam confirmados a 26/10, seja qual for o modelo (NFR-11) | 🔍 Tomás (modelo) |
+| K1 | Fornecedor e modelo; viabilidade do deploy de Ollama. **Ollama local, para já** (26/10; NFR-20): nenhum texto sai do portátil. Os valores das chamadas à IA (ligar 2 s, resposta 10 s, 2 tentativas; J1) foram confirmados a 26/10 (NFR-11) | ✅ Ollama local; 🔍 modelo (Tomás) |
 | K2 | Avaliação de Responsible AI e dataset de avaliação da triagem | 🔍 Tomás |
 
 ## Respostas do professor
@@ -197,7 +197,7 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Identidade e API gateway decididos pela equipa (C6, E1–E4; reunião da equipa, 22/10, [registo](../Meetings/2026-10-22-identity-and-gateway-decisions.md)): Keycloak, token só com a identidade, permissões verificadas em cada serviço, Spring Cloud Gateway com CORS e rate limiting por conta. [ADR-006](adr/0006-identity-and-access.md) e [ADR-013](adr/0013-api-gateway.md) (o 011 e o 012 já estavam ocupados).
 - Security & Privacy assessment escrito (E5; Guerra, 25/10): [`security-and-privacy-assessment.md`](security-and-privacy-assessment.md). Retenção e consentimento confirmados pela equipa a 26/10; falta rever o resto e as ações da sua §10.
 - Estimativa de custos de operação, salários + infraestrutura (G2; Bruno, 23/10, #134): ≈ 58 510 € no desenvolvimento e ≈ 3 410 €/mês de manutenção; explica porque a entrega é local. Em [`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md).
-- NFRs validados com a equipa (Tiago, com Tomás, Guerra e Bruno, 26/10, [NFRs §5](../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026)): todas as metas propostas confirmadas (I1, I2, J4, valores da IA do K1, metas do G7, retenção e consentimento do E5). As abstenções contam como falha nos 95 % da triagem. Ficam por definir o âmbito do backup (D5, G7), o procedimento local (PR #130) e os outros alertas (I3).
+- NFRs validados com a equipa (Tiago, com Tomás, Guerra e Bruno, 26/10, [NFRs §5](../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026)): todas as metas propostas confirmadas (I1, I2, J4, valores da IA do K1, metas do G7, retenção e consentimento do E5). As abstenções contam como falha nos 95 % da triagem. No mesmo dia: backup e procedimento local da PR #130 (D5, G6, G7; sem limite de tempo), os outros alertas (I3) e Ollama local para já (K1). Nenhuma meta dos NFRs fica por definir.
 
 **Em aberto, com responsável:**
 1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (E5: levar à revisão da equipa o resto do assessment e as ações da §10), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (backlog, revisão do ADR-007 para a web; valores do J1 para o Keycloak com o E1), Bruno (C8, D7, H6, H7).
