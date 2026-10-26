@@ -22,6 +22,10 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Availability and recovery measured locally (NFR-12, NFR-13); weak-network mode stays out while F11 is a Could.
 - NFR-15, NFR-17 and NFR-18 take their values from ADR-006 and ADR-013 (identity and gateway, merged with #47 on 24 October 2026) instead of the open PR.
 
+### Aligned with Tomás's plans (26 October 2026)
+- NFR-19, NFR-20, NFR-33 and NFR-34 follow the merged observability plan (#148) and AI evaluation plan (#149), which Tiago chose as the reference: traces 24 h, container logs rotated at 10 MiB × 2 with exports deleted within 14 days, metrics 7 days or 2 GiB; Tempo, Collector and Alertmanager in the stack; the alert rules of the plan §4 (create-failure alert dropped; useful triage, urgent failure, missing telemetry and stale transport added); local Ollama for now, final choice through #149. Recorded in `non-functional-requirements.md` §5 and in guide D5, I1, I3 and K1.
+- Not changed: the Security and Privacy Assessment §7 still says logs 14 days and traces 7 days (Guerra).
+
 ### Merged again (26 October 2026)
 - `main` merged (#58 walking skeleton, #123 API outline, #127 versioning, #129 local delivery, #148 observability plan, #149 AI evaluation plan). Conflicts: this CHANGELOG (both kept, this entry first); `observability.md` (outbox row from this PR); the guide's header, G4–G7, I1–I3, *Feito* and *Em aberto* (rows from `main` with the confirmations of 26 October added; J4 and the Keycloak J1 values no longer open).
 - `local-delivery.md` is now in `main`: NFR-13 and NFR-30 link it instead of PR #130, and the PR #130 open point is removed. NFR-13 and guide G7 say, as `local-delivery.md` §6 does, that on disk loss the last dump is recovered and what came after it is lost (no RPO guaranteed). Guide D5: retention and local backup decided, backup in production still 🔮.
