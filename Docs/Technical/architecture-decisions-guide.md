@@ -143,7 +143,7 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 | I2 | Métricas, populações e janelas definidas: triagem ≥95% em ≤30 s por coorte de 1 h, sem excluir falhas; SC5 separado a 100%. Scrape/avaliação 15 s; no-data explícito | ✅ documentado; medições pendentes |
 | I3 | Um dashboard Farol local com seis grupos de painéis; regras e resolução especificadas, outbox >60 s por 2 min; Alertmanager sem destinatários externos | ✅ documentado; configuração/ensaios pendentes |
 
-**Alinhamento documental (26/10, #145):** [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145), ADR-012, a observabilidade e o avaliador passam a usar a proposta **≥95% de sugestões válidas guardadas em ≤30 s**, com janela operacional de 1 h. As populações offline/operacional e o tratamento de falhas/abstenções estão explícitos. A discrepância de 90%/95% fica corrigida nas fontes para o NFR-03 da PR #139; As escolhas I1–I3 ficam documentadas no #148; K1–K2 são fechadas documentalmente no #149. Revisão, implementação e resultados medidos são estados separados. [Estado do que existe e do que falta](../Research/architecture-investigation/README.md#ai-and-observability-status-26-october-2026-145).
+**Alinhamento documental (26/10, #145):** [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145), ADR-012, a observabilidade e o avaliador passam a usar a proposta **≥95% de sugestões válidas guardadas em ≤30 s**, com janela operacional de 1 h. As populações offline/operacional e o tratamento de falhas/abstenções estão explícitos. A discrepância de 90%/95% fica corrigida nas fontes para o NFR-03 da PR #139; As escolhas I1–I3 ficam documentadas no #148; K1–K2 são fechadas documentalmente no #153 (continuação de #149/#152). Revisão, implementação e resultados medidos são estados separados. [Estado do que existe e do que falta](../Research/architecture-investigation/README.md#ai-and-observability-status-26-october-2026-145).
 
 ## J · Resiliência e degradação (§6.8)
 
@@ -158,9 +158,11 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 
 | Chamada externa | Timeout | Retry | Circuit breaker | Quando falha |
 |---|---|---|---|---|
-| **Fornecedor de IA** (Reports, worker de triagem) | ligação 2 s, resposta 10 s | 2 tentativas, espera de 2 s; só em timeout, erro de ligação, 5xx e 429; nunca em 4xx nem em resposta inválida | últimas 10 chamadas, mínimo 4; abre com ≥ 50 % de falhas ou de chamadas lentas (> 8 s); 30 s aberto; 1 chamada de teste | Fallback D1. Pior caso ≈ 22 s, dentro dos 30 s do SC3. **A confirmar com K1:** um modelo local (Ollama em CPU) pode precisar de resposta 20 s e de 1 só tentativa |
+| **Fornecedor alojado de IA, alternativa** (Reports, worker de triagem) | ligação 2 s, resposta 10 s | 2 tentativas, espera de 2 s; só em timeout, erro de ligação, 5xx e 429; nunca em 4xx nem em resposta inválida | últimas 10 chamadas, mínimo 4; abre com ≥ 50 % de falhas ou de chamadas lentas (> 8 s); 30 s aberto; 1 chamada de teste | Fallback D1. Pior caso ≈ 22 s, dentro dos 30 s do SC3. **A confirmar com K1:** um modelo local (Ollama em CPU) pode precisar de resposta 20 s e de 1 só tentativa |
 | **Porto Digital** (Transports, importação agendada a cada 30 s: o *x* da reunião com o professor de 22/10) | ligação 3 s, resposta 5 s | 3 tentativas, esperas de 1 s e 2 s; não repete com o circuito aberto | últimas 6 chamadas, mínimo 3; abre com ≥ 50 % de falhas; 60 s aberto; 1 chamada de teste | D2. Só os autocarros a menos de 2 km do recinto (consulta geográfica NGSI: 10 KB em vez de 190–300 KB, medido a 22/10) |
 | **IdP**, se for externo (chaves JWKS, em todos os serviços) | ligação 2 s, resposta 3 s | não | não | Chaves em cache (5 min, renovadas quando chega um `kid` desconhecido); se a renovação falha, continua com as chaves em cache. **A confirmar com E1** (com autenticação simulada não há chamada externa) |
+
+**Perfil local da IA (26/10, #153, continuação de #149):** para revisão conjunta com Tiago, K1 escolhe ligação 2 s, resposta 20 s, uma tentativa sem retry; circuito de 10 chamadas/mínimo 4, >=50% falhas/lentas (>16 s), aberto 30 s, uma chamada de teste. A admissão e o prazo global continuam limitados aos 30 s desde a submissão. Este perfil substitui os valores do fornecedor alojado acima na entrega local; as medições continuam pendentes.
 
 **Porquê destes valores** (detalhe em [`architecture.md`](architecture.md) §9.1):
 
@@ -175,8 +177,8 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 
 | # | Pergunta | Estado |
 |---|---|---|
-| K1 | Fornecedor e modelo; viabilidade do deploy de Ollama | 🔍 Tomás |
-| K2 | Avaliação de Responsible AI e dataset de avaliação da triagem | 🔍 Tomás |
+| K1 | [Decisão local documentada](plans/ai-provider-evaluation.md): Ollama + qwen3:4b Q4_K_M, sem API paga, limites e orçamento de execução definidos | 🔍 Revisão da equipa e medições; escolha de Tomás concluída |
+| K2 | [Responsible AI, contrato por evento e avaliação documentados](plans/ai-provider-evaluation.md): dataset sintético 20/80, revisão independente e gates explícitos | 🔍 Revisão dos rótulos e execução; documentação concluída |
 
 ## Respostas do professor
 
