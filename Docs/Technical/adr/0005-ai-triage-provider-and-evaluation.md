@@ -12,10 +12,10 @@ F8 suggests category, priority and response team; an operator decides. F7 must w
 
 ## Proposed decision
 
-1. Select local Ollama `qwen3:4b` Q4_K_M, private Compose AI profile, cloud features disabled and no paid API fallback. Use the fixed runtime settings, single 20 s attempt, event-specific contract and repeated evaluation in the [implementation decision](../plans/ai-provider-evaluation.md). Retain hosted `mistral-small-2603` and cloud GPU as assessed alternatives; no provisioning is authorised.
+1. Select local Ollama `qwen3:4b` Q4_K_M, private Compose AI profile, cloud features disabled and no paid API fallback. Use the fixed runtime settings, single 20 s attempt, event-specific contract and single-model, single-run demo evaluation in the [implementation decision](../plans/ai-provider-evaluation.md). Retain hosted `mistral-small-2603` and cloud GPU as assessed alternatives; no provisioning is authorised.
 2. Minimise input to participant category, sanitised optional text and current priority floor. Fixed categories/priorities, event-derived eligible team IDs, a short operator-facing reason and abstention; no tools, identifiers, exact location or autonomous dispatch.
 3. Enforce schema/semantic validation, immediate F7 visibility and a total 30 s inference budget. Late/error/abstained results become fallback. Protect operator updates and clamp stored priorities atomically; measure raw predictions separately so safety guards cannot conceal errors.
-4. Require zero urgent under-prioritisations on the reviewed holdout, proposed category/team accuracy ≥80%, valid on-time coverage ≥95% within 30 s (the operational target uses a one-hour window), reason review and an AI-off integration test. The supplied labels require independent review; a passing synthetic set cannot establish clinical safety.
+4. Require zero urgent under-prioritisations on the reviewed holdout, proposed category/team accuracy ≥80%, valid on-time coverage ≥95% within 30 s (the operational target uses a one-hour window), reason review and an AI-off integration test. The supplied labels require documented team review; a passing synthetic set cannot establish clinical safety.
 5. Synthetic data only until Guerra confirms actual endpoint, processing/retention/training controls and privacy assessment. Freeze versions/settings and log metadata rather than request bodies.
 
 ## Coverage definition (aligned 26 October 2026, #145)
@@ -45,4 +45,4 @@ The dataset run and a one-hour operational cohort have different populations and
 
 ## Acceptance evidence pending
 
-Independent labels and fresh holdout; repeated candidate runs; deployed SC3/SC5 evidence; privacy review for real data; team acceptance. Paid-provider clearance/spend applies only if a hosted alternative is reconsidered. Research artefacts and offline baseline are linked in the [evaluation package](../../Research/architecture-investigation/evaluation/README.md).
+Documented label review and one local model evaluation; deployed SC3/SC5 evidence; privacy review for real data; team acceptance. Paid-provider clearance/spend applies only if a hosted alternative is reconsidered. Research artefacts and offline baseline are linked in the [evaluation package](../../Research/architecture-investigation/evaluation/README.md).

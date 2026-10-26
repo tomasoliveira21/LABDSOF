@@ -139,9 +139,9 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 
 | # | Pergunta | Estado |
 |---|---|---|
-| I1 | **Local:** Micrometer/Actuator + Prometheus/Grafana; OpenTelemetry Collector → **Tempo**; Alertmanager na UI local, logs estruturados Docker. [Decisão concreta](plans/local-observability.md) | ✅ documentado; revisão/execução pendentes |
+| I1 | **Local:** Micrometer/Actuator + **Prometheus/Grafana (dois contentores)**; logs Docker com correlationId; alertas no próprio Grafana, sem Collector/Tempo/Alertmanager separado. [Decisão concreta](plans/local-observability.md) | ✅ documentado; revisão/execução pendentes |
 | I2 | Métricas, populações e janelas definidas: triagem ≥95% em ≤30 s por coorte de 1 h, sem excluir falhas; SC5 separado a 100%. Scrape/avaliação 15 s; no-data explícito | ✅ documentado; medições pendentes |
-| I3 | Um dashboard Farol local com seis grupos de painéis; regras e resolução especificadas, outbox >60 s por 2 min; Alertmanager sem destinatários externos | ✅ documentado; configuração/ensaios pendentes |
+| I3 | Um dashboard Farol local com quatro grupos e três alertas base no Grafana; restantes sinais na inspeção/checklist; outbox >60 s por 2 min; sem notificações externas | ✅ documentado; configuração/ensaios pendentes |
 
 **Alinhamento documental (26/10, #145):** [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145), ADR-012, a observabilidade e o avaliador passam a usar a proposta **≥95% de sugestões válidas guardadas em ≤30 s**, com janela operacional de 1 h. As populações offline/operacional e o tratamento de falhas/abstenções estão explícitos. A discrepância de 90%/95% fica corrigida nas fontes para o NFR-03 da PR #139; As escolhas I1–I3 ficam documentadas no #148; K1–K2 são fechadas documentalmente no #153 (continuação de #149/#152). Revisão, implementação e resultados medidos são estados separados. [Estado do que existe e do que falta](../Research/architecture-investigation/README.md#ai-and-observability-status-26-october-2026-145).
 
