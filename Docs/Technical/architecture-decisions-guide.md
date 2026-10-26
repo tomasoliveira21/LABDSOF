@@ -112,7 +112,7 @@ E1–E4 decididos na reunião da equipa de 22/10 ([registo](../Meetings/2026-10-
 | # | Pergunta | Estado |
 |---|---|---|
 | G1 | Execução/deployment **apenas local**, sem cloud devido aos custos; autorização do professor reportada pelo Tomás. Comparação das plataformas preservada no relatório de investigação | ✅ âmbito local |
-| G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud. Entra na estimativa de custos de operação (salários + infraestrutura) do Bruno | ✅ justificação registada |
+| G2 | Avaliação de custos preservada; explicar no relatório/apresentação que o custo motivou não fazer deploy na cloud. **Estimativa de custos de operação feita a 23/10** ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md), #134, Bruno): 6 roles a tempo inteiro ≈ 58 510 € no desenvolvimento (infraestrutura local 341 €, só o Copilot Business, nocional: a equipa usa-o grátis pelo GitHub Education) e ≈ 3 410 €/mês de manutenção (1 FTE + cloud 730 h). A cloud custaria ≈ 301 € na demo dos Sprints B e C e 358 €/mês sempre ligada, contra 89 € de crédito único | ✅ |
 | G3 | Região cloud não se aplica à entrega local; RGPD e fluxos de dados locais/fornecedores revistos no E5 ([assessment](security-and-privacy-assessment.md) §3, §8; checklist do fornecedor de IA na §8.5) | ✅ sem região cloud; 🔍 privacidade: revisão do E5 pela equipa |
 | G4 | Desenvolvimento, testes e demo localmente; não é necessário um ambiente cloud de produção | ✅ âmbito; 🔍 configuração |
 | G5 | Especificação local versionada (Compose); Bicep/cloud IaC mantém-se como alternativa estudada, sem provisionamento exigido | 🔍 implementação local |
@@ -142,6 +142,8 @@ O Bruno vai avaliar e investigar a pipeline; as decisões abaixo são o ponto de
 | I1 | Stack | 🔍 Tomás |
 | I2 | SLIs e SLOs | 🔍 Tomás |
 | I3 | Dashboard e alertas | 🔍 Tomás |
+
+**Alinhamento documental (26/10, #145):** [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145), ADR-012, a observabilidade e o avaliador passam a usar a proposta **≥95% de sugestões válidas guardadas em ≤30 s**, com janela operacional de 1 h. As populações offline/operacional e o tratamento de falhas/abstenções estão explícitos. A discrepância de 90%/95% fica corrigida nas fontes para o NFR-03 da PR #139; I1–I3 e K1–K2 continuam em investigação/revisão, não implementados nem medidos. [Estado do que existe e do que falta](../Research/architecture-investigation/README.md#ai-and-observability-status-26-october-2026-145).
 
 ## J · Resiliência e degradação (§6.8)
 
@@ -195,6 +197,7 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 - Resiliência e degradação (Tiago, #43): C3, J1, J2 e J3 decididos, alinhados com a entrega apenas local e com a app web. **Transportes: x = 30 s** (intervalo do poll) e **y = 5 min** (limite de frescura, aviso ao utilizador) (professor, 22/10; J1 e D2). WireMock proposto para o J4.
 - Identidade e API gateway decididos pela equipa (C6, E1–E4; reunião da equipa, 22/10, [registo](../Meetings/2026-10-22-identity-and-gateway-decisions.md)): Keycloak, token só com a identidade, permissões verificadas em cada serviço, Spring Cloud Gateway com CORS e rate limiting por conta. [ADR-006](adr/0006-identity-and-access.md) e [ADR-013](adr/0013-api-gateway.md) (o 011 e o 012 já estavam ocupados).
 - Security & Privacy assessment escrito (E5; Guerra, 25/10): [`security-and-privacy-assessment.md`](security-and-privacy-assessment.md). Falta a revisão da equipa e as ações da sua §10.
+- Estimativa de custos de operação, salários + infraestrutura (G2; Bruno, 23/10, #134): ≈ 58 510 € no desenvolvimento e ≈ 3 410 €/mês de manutenção; explica porque a entrega é local. Em [`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md).
 
 **Em aberto, com responsável:**
 1. **Cada responsável fecha a sua área** e regista aqui a decisão da equipa: Tomás (G3–G7 na entrega local, I, K, F2, alojamento do RabbitMQ), Guerra (J4: confirmar ou mudar o WireMock; E5: levar o assessment à revisão da equipa), Tomás + Guerra (modelo de domínio, incluindo o FarolAdmin), Tiago (backlog, revisão do ADR-007 para a web; valores do J1 para a IA com o K1 e para o Keycloak com o E1), Bruno (D7, H6, H7).
@@ -202,9 +205,8 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 3. **Backlog:** ✅ feito no #141 (24/10): critério de aceitação para a resposta 429 na página do pedido de ajuda (US-23; limite de 5 por 10 min, ADR-013) e limite de 20 MB no upload do mapa confirmado (US-19). **Tiago.**
 4. **Walking skeleton** (entregável 10): implementação mínima de ponta a ponta, com build automático, um teste inicial e deploy em contentor. Pedido de novo pelo professor a 22/10. **Tomás.**
 5. **Nível 3 da vista física:** mostrar as cinco bases de dados, uma por serviço (professor, 22/10). **Bruno.** Na mesma passagem, tirar a app mobile dos diagramas (níveis 1–3 e `*-level-4-mobile`; #125).
-6. **Estimativa de custos de operação:** salários + infraestrutura, simples; a parte de infraestrutura usa o G2 (Tomás) e serve também para explicar no relatório e na apresentação porque não há deployment na cloud (entrega apenas local, autorizada pelo professor; [registo](../Meetings/2026-10-22-local-deployment-clarification.md)). **Bruno.**
-7. **Lista de NFRs** para a apresentação. **Tiago.**
-8. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar. **Quem fecha a área.**
+6. **Lista de NFRs** para a apresentação. **Tiago.**
+7. **Manter o [`architecture.md`](architecture.md) alinhado** com este documento sempre que uma área fechar. **Quem fecha a área.**
 
 **Sem responsável, ficam para o fim** ❗ (reunião com o professor, 22/10, [ata](../Meetings/2026-10-22-professor-meeting.md)):
 - Apresentação (deck) com as secções pedidas pelo professor.
