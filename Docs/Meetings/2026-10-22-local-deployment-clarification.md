@@ -26,6 +26,8 @@ Explain the limitation alongside the reason: cloud operation, managed-platform s
 
 **23 October 2026 (#129):** Bruno defined the local delivery procedure: startup, update, rollback, smoke test, backup and the demo set-up. See [`local-delivery.md`](../Technical/local-delivery.md).
 
+**26 October 2026 — simplification requested by Tomás (not a new professor/team decision):** use the most basic tools that demonstrate the assignment points. Proposed minimum observability is two local containers (Prometheus/Grafana), Actuator health/metrics, Docker JSON logs and correlation IDs; Grafana handles its own alerts. No separate trace/collector/alert container is required because assignment §6.7 allows correlation **or** trace identifiers. Keep one local Ollama/model and one evaluation on the existing test split; repeated/cross-provider studies are optional. See the [minimum demo specification](../Technical/plans/local-observability.md) and [AI evaluation decision](../Technical/plans/ai-provider-evaluation.md). Product SLOs and human/privacy safeguards are retained; no runtime compliance is claimed.
+
 ## Linked records
 
 [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md) · [Architecture §10](../Technical/architecture.md#10-deployment-view) · [Decisions guide](../Technical/architecture-decisions-guide.md) · [Research overview](../Research/architecture-investigation/README.md).

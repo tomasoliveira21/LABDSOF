@@ -25,6 +25,14 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Merged
 - `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #134 operating cost estimation, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (ADR-010 added to main's *Technical* row) and the guide (status date, H9 and *Feito*/*Em aberto* from main; H4–H8 and the pipeline item in *Feito* from #131; H6 and H7 removed from Bruno's areas).
 - `main` merged again (#127 versioning, #129 local delivery, #123 API outline, #145 AI triage coverage, #58 walking-skeleton decisions). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (ADR-010 added to main's *Technical* row), `ADR-011` (status and points 2–4 and 6 from #129; point 5 from #129 with the CI sentence from #131), `architecture.md` §12 (CI/CD bullet and row from #131, versioning bullet and row from #127) and §13 (ADR-010 row from #131, ADR-011 row from #129), and the guide (H4–H6 and H8 from #131; H7 from #127 with the CI sentence from #131; *Em aberto* items 1 and 2 from main, item 4 from main plus the pipeline). `local-delivery.md`, the research overview and the cost estimation now link ADR-010 instead of calling it not written.
+- `main` merged a third time (#153 simplified local demo tools). Conflict only in this CHANGELOG (both kept, this entry first).
+
+## [Unreleased] · 2026-10-26 · Simplify local demonstration tools (#153)
+
+### Changed
+- At Tomás's request, reduce local observability to Prometheus/Grafana, Actuator health/metrics and correlated Docker logs. Grafana-managed rules replace the separate Alertmanager; Collector/Tempo and distributed tracing become optional future extensions. Assignment §6.7's correlation-or-trace requirement is mapped to concrete minimum demo evidence.
+- Keep one Ollama/model and one evaluation on the existing 20/80 dataset split; repeated/cross-provider/concurrency studies and a new blinded dataset are optional extensions. Preserve label/reason review, human control and the 95%/30 s and SC5 targets.
+- Remove the fixed 24 GiB machine planning assumption from demo acceptance; use and measure the existing local machine. No runtime, capacity or quality result is fabricated; team review remains required.
 
 ## [Unreleased] · 2026-10-26 · Complete walking-skeleton and local delivery decisions (#58)
 
