@@ -65,7 +65,7 @@ Delivery is local only ([ADR-011](../Technical/adr/0011-deployment-and-infrastru
 | Laptops (demo and backup), Docker, PostgreSQL (one instance, five databases), RabbitMQ | 0 € | Equipment the team already owns. Electricity and wear are not measured, so they are not zero, only not counted (ADR-011) |
 | Container registry | 0 € | No registry: images built locally from the git tag (proposed in #127; guide H7 still open) |
 | App stores, mobile builds | 0 € | No mobile app: one React web app (guide F1, #125) |
-| GitHub Free, private repository, GitHub Actions | 0 € | 2,000 Actions minutes per month; the pipeline is designed to fit them and uses no paid feature (ADR-010, proposed in #132) |
+| GitHub Free, private repository, GitHub Actions | 0 € | 2,000 Actions minutes per month; the pipeline is designed to fit them and uses no paid feature ([ADR-010](../Technical/adr/0010-cicd-strategy.md)) |
 | AI triage with local Ollama | 0 € | No API charges; runs on the demo laptop if guide K1 picks it ([`responsible-ai.md`](../Research/architecture-investigation/responsible-ai.md)) |
 | GitHub Copilot Business (automatic code review, README §5) | 6 × $19 = $114 = **102 €** | Copilot Business, the plan for organisations, $19 per user per month ([GitHub plans](https://docs.github.com/en/copilot/get-started/plans), checked 26 Oct 2026), one licence per person (A1). Notional, like the salaries: the team uses Copilot Pro free through GitHub Education, so the real cost is 0 € |
 | **Total per month** | **102 €** | × 3.35 months (A2) = **341 €** |

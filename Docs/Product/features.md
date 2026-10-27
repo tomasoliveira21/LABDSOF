@@ -106,7 +106,7 @@ Defined on 22 October 2026 by Tiago Teixeira (backlog owner), to confirm with th
 
 - Roles belong to a user's **membership of an event**, not to the account. The same person can be **EventAdmin in one event and RegularUser in another**.
 - A user who is not a member of an event has no access to its data (US-14). `FarolAdmin` is the only global role, and it gives no access to any event's data.
-- An event always keeps **at least one EventAdmin**: the last one cannot be removed or demoted.
+- An event always keeps **at least one EventAdmin**: the last one cannot be removed or demoted, nor delete their account (US-05; guide D7).
 
 ### 4.2 Teams and permissions
 
@@ -325,7 +325,7 @@ The 29 stories of 16 October became **62**. Each story is now **one user action,
 
 | Number | Story | Why |
 |---|---|---|
-| **5 reports in 10 minutes** per account | US-48 | A participant can see several problems at once (a queue, a broken WC, broken glass), so 5 allows a real burst. More than that in 10 minutes looks like spam or badge farming, which §6.4 must prevent. Reports expire after 20–60 minutes (§6.1), so 10 minutes is shorter than any expiry. It is a setting, to tune with real data |
+| **5 reports in 10 minutes** per account | US-48 | A participant can see several problems at once (a queue, a broken WC, broken glass), so 5 allows a real burst. More than that in 10 minutes looks like spam or badge farming, which §6.4 must prevent. Reports expire after 20–60 minutes (§6.1), so 10 minutes is shorter than any expiry. It is a setting, to tune with real data. Confirmed by Tiago on 24 October 2026 (#137) |
 | **≤ 5 s** until a routed request appears on a responder's phone | US-31 | Same target as SC2 for the control room: the responder is on the critical path of a help request. With polling (guide C5) it needs a refresh every 2–3 s on the open screen, which one instance per service can serve at the expected load |
 
 #### Why these criteria were rewritten
@@ -587,12 +587,12 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 **US-44** · As an **EventAdmin** (or a member with `Announcements.Publish`), I want to publish an announcement (e.g. "Gate 3 closed, use Gate 1"), so that participants find out immediately.
 *Persona:* P3 · *Depends on:* US-12
-- Given I publish an announcement, then participants with the app open see it within 10 s without reloading, with its publication time (SC6).
+- Given I publish an announcement, then participants with the app open see it within 15 s without reloading, with its publication time (SC6).
 - Given I do not have `Announcements.Publish`, when I try to publish, then it is refused.
 
 **US-45** · As an **EventAdmin** (or a member with `Announcements.Publish`), I want to edit or remove an announcement, so that wrong or old information disappears.
 *Persona:* P3 · *Depends on:* US-44
-- Given I edit or remove an announcement, then participants see the change within 10 s, and an edited one shows the time of the edit.
+- Given I edit or remove an announcement, then participants see the change within 15 s, and an edited one shows the time of the edit.
 
 ### F11 · Weak-network mode (Could)
 
@@ -609,7 +609,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 **US-48** · As a **participant**, I want a clear message when I report too often, so that I know when I can report again.
 *Persona:* P1 · *Depends on:* US-47
-- Given I have sent 5 reports in the last 10 minutes **[PROPOSED]**, when I send another, then it is refused with a message saying when I can report again.
+- Given I have sent 5 reports in the last 10 minutes, when I send another, then it is refused with a message saying when I can report again.
 
 **US-49** · As a **participant**, I want to see the confirmed reports on the map, so that I avoid queues and broken services.
 *Persona:* P1 · *Depends on:* US-50

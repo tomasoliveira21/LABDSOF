@@ -22,6 +22,8 @@ What shapes the design, and where it comes from:
 | D8 | **At least one asynchronous workflow** and **one external integration** (or realistic simulator) | Assignment §6.3, §6.5 |
 | D9 | **Small team, three sprints** | Report §5 execution risks |
 
+The measurable quality targets that follow from these drivers, the success criteria and assignment §6 are listed in one place in [`non-functional-requirements.md`](../Product/non-functional-requirements.md).
+
 ## 2. System context
 
 ```mermaid
@@ -33,8 +35,7 @@ flowchart LR
     PA(["FarolAdmin<br/>(P4, global role)"])
     SYS["Farol"]
     TR["Porto Digital urban platform<br/>(FIWARE NGSI v2, live bus data)"]
-    LLM["AI model provider<br/>[PENDING]"]
-    IDP["Identity provider<br/>[PENDING: only if external]"]
+    LLM["AI model provider<br/>(local Ollama, qwen3:4b)"]
 
     P -- "uses the web app on the phone" --> SYS
     O -- "handles help requests" --> SYS
@@ -43,8 +44,9 @@ flowchart LR
     PA -- "creates events, names EventAdmins" --> SYS
     SYS -- "reads transport data" --> TR
     SYS -- "asks for triage suggestions" --> LLM
-    SYS -. "authenticates users" .-> IDP
 ```
+
+The identity provider, Keycloak, is self-hosted inside Farol ([ADR-006](adr/0006-identity-and-access.md)), so it is not an external system at this level (guide B2); it appears from logical level 2.
 
 ## 3. Container view
 
@@ -84,7 +86,7 @@ flowchart LR
     RE -- "triage" --> LLM
 ```
 
-Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; stack **[PENDING team acceptance]**; [observability proposal](../Research/architecture-investigation/observability.md)). Clients get live updates by **polling** (no push in the MVP). Keycloak keeps its own database on the PostgreSQL server; every service validates the token against Keycloak's keys ([ADR-006](adr/0006-identity-and-access.md)).
+Not drawn: every container sends logs, metrics and health checks to the observability stack (assignment §6.7; Prometheus/Grafana, Actuator and Docker logs; [ADR-012](adr/0012-observability.md), [local observability decisions](plans/local-observability.md)). Clients get live updates by **polling** (no push in the MVP). Keycloak keeps its own database on the PostgreSQL server; every service validates the token against Keycloak's keys ([ADR-006](adr/0006-identity-and-access.md)).
 
 ## 4. Responsibilities and data ownership
 
@@ -170,19 +172,20 @@ Owner: **Guerra** (identity provider, token validation, service-to-service authe
 
 ### 9.1 Resilience patterns and values (J1)
 
-**Library: Resilience4j 2.4** (`resilience4j-spring-boot4`, which supports Spring Boot 4 since March 2026), used only in the outgoing adapters (`adapters/out`). It is the only mature option with a circuit breaker for Spring Boot 4, it is configured in `application.yml`, and it publishes Micrometer metrics and its state in the health check, which the dashboard proposed in [ADR-012](adr/0012-observability.md) needs (assignment §6.7). Alternatives considered: Spring Framework 7 core retry (no circuit breaker; Spring AMQP uses it for message retries, §6), Spring Cloud Circuit Breaker (an extra layer over Resilience4j, tied to the Spring Cloud release train) and Failsafe (no Spring Boot auto-configuration or metrics).
+**Library: Resilience4j 2.4** (`resilience4j-spring-boot4`, which supports Spring Boot 4 since March 2026), used only in the outgoing adapters (`adapters/out`). It is the only mature option with a circuit breaker for Spring Boot 4, it is configured in `application.yml`, and it publishes Micrometer metrics and its state in the health check, which the dashboard of [ADR-012](adr/0012-observability.md) needs (assignment §6.7). Alternatives considered: Spring Framework 7 core retry (no circuit breaker; Spring AMQP uses it for message retries, §6), Spring Cloud Circuit Breaker (an extra layer over Resilience4j, tied to the Spring Cloud release train) and Failsafe (no Spring Boot auto-configuration or metrics).
 
 Timeouts are set on the HTTP client (`RestClient`), not with a Resilience4j `TimeLimiter`, because the calls are blocking and a client timeout also frees the connection. Retry wraps the circuit breaker, so every attempt counts for the circuit, and nothing is retried while the circuit is open. External calls never run inside a user's request: the AI is called by the triage worker and the transport source by a scheduled import.
 
 | External call | Timeout | Retry | Circuit breaker | When it fails |
 |---|---|---|---|---|
-| **Selected local AI profile, for review** | connect 2 s, response 20 s; entire call <=22 s and remaining overall deadline | One attempt; no retry | last 10, minimum 4; >=50% failures/slow (>16 s); open 30 s; one probe | D1 fallback; at most 5 s admission wait, start with >=23 s remaining. Original submission-to-storage deadline remains 30 s. See [complete contract](plans/ai-provider-evaluation.md) |
-| **Hosted AI alternative** (Reports, triage worker) | connect 2 s, response 10 s | 2 attempts, 2 s apart; only on timeout, connection error, 5xx and 429; never on other 4xx or invalid output | last 10 calls, at least 4; opens at ≥ 50 % failed or slow (> 8 s) calls; open 30 s; 1 trial call | D1 fallback. Worst case ≈ 22 s, inside the 30 s of SC3. **To confirm with K1** (Tomás): a local model (Ollama on CPU) may need a 20 s response timeout and a single attempt |
+| **Local AI** (Reports, triage worker; K1: Ollama with `qwen3:4b`) | connect 2 s, response 20 s; entire call ≤ 22 s and within the remaining overall deadline | One attempt; no retry | last 10, minimum 4; ≥ 50 % failures or slow (> 16 s) calls; open 30 s; one probe | D1 fallback; at most 5 s admission wait, start only with ≥ 23 s remaining. Original submission-to-storage deadline remains 30 s. **Accepted by Tiago on 27 October 2026**, following Tomás's [complete contract](plans/ai-provider-evaluation.md) (#153; NFR-11) |
+| **Hosted AI alternative** (Reports, triage worker) | connect 2 s, response 10 s | 2 attempts, 2 s apart; only on timeout, connection error, 5xx and 429; never on other 4xx or invalid output | last 10 calls, at least 4; opens at ≥ 50 % failed or slow (> 8 s) calls; open 30 s; 1 trial call | D1 fallback. Worst case ≈ 22 s, inside the 30 s of SC3. Not used while K1 is local; a hosted provider needs a new cost and privacy approval and an ADR-005 update |
 | **Porto Digital** (Transports, scheduled import every 30 s: the *x* of the meeting with the professor on 22 October, P4) | connect 3 s, response 5 s | 3 attempts, 1 s and 2 s apart | last 6 calls, at least 3; opens at ≥ 50 % failed calls; open 60 s; 1 trial call | D2. Only buses within 2 km of the venue, with an NGSI geo-query (`georel=near;maxDistance:2000`): 10 KB instead of 190–300 KB for the whole city (measured on 22 October) |
-| **Identity provider**, only if external (JWKS keys, every service) | connect 2 s, response 3 s | none | none | Keys cached for 5 min and refreshed when an unknown `kid` arrives; if the refresh fails, the cached keys stay in use. **To confirm with E1** (Guerra); mocked authentication has no external call |
+| **Identity provider: Keycloak**, self-hosted in the local Compose (E1, [ADR-006](adr/0006-identity-and-access.md); JWKS keys, every service) | connect 2 s, response 3 s | none | none | Keys fetched from the Keycloak container (`keycloak:8080`) only when a token arrives, cached for 5 min and refreshed when an unknown `kid` arrives (ADR-006); if the refresh fails, the cached keys stay in use. **Confirmed with Guerra on 26 October 2026** |
 
 **Why these values:**
 
+- **Local AI, 20 s response and one attempt:** a small model on the demo laptop's CPU is slower than a hosted one, so it gets a longer response time; two attempts of 20 s would not fit in the 30 s of SC3, so there is only one. The admission limit (at most 5 s waiting, start only with ≥ 23 s left) keeps a late call from passing the 30 s, and slow calls (> 16 s, 80 % of the timeout) open the circuit. The real time is measured on the demo machine ([plan](plans/ai-provider-evaluation.md)).
 - **Hosted AI alternative, 10 s response and 2 attempts (not the selected local profile):** the most that fits in the 30 s of SC3: 10 s + 2 s + 10 s = 22 s, leaving about 8 s for the outbox (≤ 1 s), the queue and saving the suggestion. A third attempt would not fit (34 s). A hosted model answers a short classification prompt with a small JSON output in a few seconds, so 10 s is a generous margin. Connect 2 s: a reachable provider accepts a connection in well under a second; waiting longer only delays the fallback.
 - **AI, retry only transient failures:** a timeout, a dropped connection, a 5xx or a 429 can succeed a moment later. Other 4xx (wrong key, malformed request) fail the same way every time. Invalid output is not retried either: the same prompt tends to fail the same way, the fallback is safe, and it keeps the worst case short.
 - **AI, a small circuit (10 calls, at least 4, 50 %, open 30 s):** at night only a few help requests arrive per minute. With a large window, many requests would each wait 22 s before the circuit opened; with this one, it opens after 2 failed requests (2 attempts each). 50 % tolerates an isolated invalid answer. Slow calls (> 8 s, close to the timeout) count as failures, so a provider that is degrading opens the circuit before it starts failing. 30 s open is short enough that triage returns quickly after the provider recovers (at most one or two requests miss it), and long enough to stop paying 22 s per request during an outage. One trial call is enough evidence at this traffic level.
@@ -201,12 +204,12 @@ Timeouts are set on the HTTP client (`RestClient`), not with a Resilience4j `Tim
 | **Freshness limit** | — | **5 min** for bus positions (the *y* of the meeting with the professor on 22 October, P4); older observations are dropped on import, which also covers *late* data (assignment §6.5). Why: positions normally arrive about 1 min old, and a bus in the city covers about 2 km in 5 min, so an older position misleads. It replaces the 24 h proposed for a static GTFS timetable, dropped with the professor's answer ([ADR-008](adr/0008-transport-data-source.md)) |
 | **Recovery** | Circuit closes after a successful trial call; the banner disappears. Untouched "Not triaged" requests from the last 15 min are sent to triage once more; a late suggestion never overwrites an operator's decision (I4). Why 15 min and once: an older request has almost certainly been handled by an operator, and a single pass cannot loop | First valid import clears the warnings; invalid data never replaces valid data |
 | **Observed in the UI** | Request in the backoffice **at once**, with the participant's category and the label *"Not triaged"*; banner | *"Data from HH:MM"*, warning *"Live transport information unavailable"*, event shuttles still shown; backoffice warning with the time of the last good import |
-| **Observed in operations** | Metrics: `resilience4j.circuitbreaker.state{name=ai-provider}`, `farol.triage.fallback{reason}`. Log line per fallback with the reason and the correlation id. Shown on the local dashboard proposed in [ADR-012](adr/0012-observability.md) (triage/fallback panel) | Metrics: `resilience4j.circuitbreaker.state{name=transport-source}`, `farol.transport.import{result}`, `farol.transport.data.age` (seconds). Log line per failed import. Shown on the local dashboard proposed in [ADR-012](adr/0012-observability.md) (transport freshness panel) |
+| **Observed in operations** | Metrics: `resilience4j.circuitbreaker.state{name=ai-provider}`, `farol.triage.fallback{reason}`. Log line per fallback with the reason and the correlation id. Shown on the local dashboard of [ADR-012](adr/0012-observability.md) (triage/fallback panel) | Metrics: `resilience4j.circuitbreaker.state{name=transport-source}`, `farol.transport.import{result}`, `farol.transport.data.age` (seconds). Log line per failed import. Shown on the local dashboard of [ADR-012](adr/0012-observability.md) (transport freshness panel) |
 | **Automated test** | **US-36** (SC5), Reports integration test, on every PR. WireMock replaces the provider and answers with a delay over the timeout, a 503, a dropped connection and an invalid body; 20 requests per case. Pass: 100 % shown to the operator as "Not triaged" within 30 s, fallback reason recorded, circuit opens and WireMock receives no more calls; after recovery, a new request gets a suggestion and an operator's priority is kept | **US-42, US-43**, Transports integration test, on every PR. WireMock replays recorded Porto Digital responses: one valid import, then a 503, a timeout and an invalid payload; a fixed `Clock` moves past the freshness limit. Pass: the API returns the last valid data with `dataAsOf` and `stale=true`, shuttles still returned, invalid data never stored; after a valid import, `stale=false` |
 
-**Simulator and demo trigger (guide J4, confirmed on 26 October 2026, #155): WireMock in front of each external system.** In the tests and in the local demo run, the AI provider URL and the Porto Digital URL (both configuration, [ADR-004](adr/0004-service-communication.md)) point at a **WireMock** container, one more service in the local Compose file:
+**Simulator and demo trigger (guide J4, confirmed by the team on 26 October 2026, #155, NFR-31): WireMock in front of each external system.** In the tests and in the local demo run, the AI provider URL and the Porto Digital URL (both configuration, [ADR-004](adr/0004-service-communication.md)) point at a **WireMock** container, one more service in the local Compose file:
 
-- **Normal operation:** WireMock *proxies* every request to the real system, so the demo starts with real AI suggestions and live buses.
+- **Normal operation:** WireMock *proxies* every request to the real system (the local Ollama container for the AI, K1), so the demo starts with real AI suggestions and live buses.
 - **Recorded responses:** WireMock replays real Porto Digital responses (*record and playback*): 300 recorded on 25 October 2026, one a minute, kept in [`infra/wiremock/`](../../infra/wiremock/README.md) with the script that turns them into stubs. Each stub holds only the buses within 2 km of the venue, as the geo-query would; every position's time is rendered relative to *now*, so the data passes the 5 min freshness limit with each bus's real delay; and each snapshot answers two imports, so the buses move at their real speed. The automated tests replay them, and on presentation day they replace the real API if it is down.
 - **Failure:** the presenter adds, through WireMock's admin API, a higher-priority stub that drops the connection, answers later than the timeout or returns invalid data, and removes it to recover.
 - **Without WireMock:** in a local run that does not need failures, the URLs point straight at the real systems. WireMock is never part of a service image.
@@ -215,7 +218,7 @@ Why: the services carry no fault-injection code, the professor's request for a s
 
 ### 9.3 Demo script (D1 and D2, about 5 minutes)
 
-Before the demo: Farol running on the local machine with `docker compose` ([ADR-011](adr/0011-deployment-and-infrastructure.md)); WireMock in proxy mode in front of the AI provider and Porto Digital; one published event with a venue map, points of interest and an event shuttle; three windows side by side: **participant** (the web app's phone pages, on a phone or a phone-sized browser window, logged in, event open), **operator** (backoffice, laptop pages), **dashboard** (circuit breaker state, fallbacks, transport data age: the local Grafana dashboard proposed in [ADR-012](adr/0012-observability.md); until it exists, the Actuator `health` and `metrics` endpoints). Each failure is one prepared `curl` command to WireMock's admin API.
+Before the demo: Farol running on the local machine with `docker compose` ([ADR-011](adr/0011-deployment-and-infrastructure.md)); WireMock in proxy mode in front of the AI provider and Porto Digital; one published event with a venue map, points of interest and an event shuttle; three windows side by side: **participant** (the web app's phone pages, on a phone or a phone-sized browser window, logged in, event open), **operator** (backoffice, laptop pages), **dashboard** (circuit breaker state, fallbacks, transport data age: the local Grafana dashboard of [ADR-012](adr/0012-observability.md); until it exists, the Actuator `health` and `metrics` endpoints). Each failure is one prepared `curl` command to WireMock's admin API.
 
 **D1 · AI unavailable**
 
@@ -244,7 +247,7 @@ Invalid data comes first because an invalid answer is still a successful HTTP ca
 
 Preserved requirements and limits:
 - **One instance per service** initially; independent images and service replacement still demonstrate the microservice boundaries.
-- **Multi-stage Dockerfiles**, Maven, Java 21 and Spring Boot 4.x; **GitHub Actions** checks every service on every PR/merge/tag.
+- **Multi-stage Dockerfiles**, Maven, Java 21 and Spring Boot 4.x. **CI/CD ([ADR-010](adr/0010-cicd-strategy.md)):** GitHub Actions checks every service in every run. Pull requests run the fast part (build, unit and Testcontainers integration tests, Checkstyle, ESLint, gitleaks); pushes to `main`, release tags and manual runs also build the images, scan them with Trivy and run the smoke test with Compose on the runner. Documentation-only and draft PRs skip the code jobs to save Actions minutes. No registry and no credentials: nothing is published.
 - The earlier automatic-deploy-to-cloud-production promise is superseded for this delivery scope. Delivery is building locally from the release tag and running the smoke test; CI never reaches a personal machine. Cloud credentials/ACR/provisioning are not prerequisites.
 - **Versioning (guide H7):** one **SemVer** version for the whole monorepo, set by an annotated git tag `vX.Y.Z` on `main`; our seven images (the five services, the API gateway of ADR-013 and the web app) get the same version without the `v` (`farol-<service>:0.2.0`), other builds are `dev`. Third-party images (Keycloak, PostgreSQL, RabbitMQ, WireMock, the observability stack) keep their own exact version, pinned in the Compose file (ADR-011) and changed only in a PR. One MINOR release at the end of each sprint, one per release of `features.md` §8.2 (`v0.1.0` Sprint A = R0, `v0.2.0` Sprint B = R1, `v1.0.0` Sprint C = R2), PATCH only to fix a release already demonstrated, tagged on `main` (no release branches, so a PATCH also ships whatever is already on `main`). Git tags only: no registry and no GitHub Releases; images are built from the tag, rolling back means building the previous tag, and release notes go in the `CHANGELOG.md`.
 - **Flyway** migrations remain compatible with the previous application image (*expand and contract*); rolling back code does not undo database migrations.
@@ -307,7 +310,7 @@ Why these pass criteria: **p95 < 500 ms** on the server leaves most of SC1's 5 s
 | Simulator of external systems (tests and demo) | **WireMock** (guide J2, J4; confirmed on 26 October 2026, tested with 3.13.2). Recorded Porto Digital responses and their stubs in [`infra/wiremock/`](../../infra/wiremock/README.md) |
 | Load testing | **k6** |
 | API | Contract-first **OpenAPI**, `/api/v1` |
-| CI/CD | **GitHub Actions**, monorepo, private repository |
+| CI/CD | **GitHub Actions**, monorepo, private repository; fast checks on PRs, images + Trivy + Compose smoke test on `main` and tags; no registry ([ADR-010](adr/0010-cicd-strategy.md)) |
 | Versioning | **SemVer**, one version for the monorepo, git tag `vX.Y.Z` per sprint; our seven images `farol-<service>:X.Y.Z`, third-party images pinned; no registry (§10) |
 | Architecture views | **C4** (all four levels, level 3 for every service) and **4+1** views without scenarios, drawn in **draw.io** |
 | Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** One Compose file, one PostgreSQL instance with six databases (five services and Keycloak). [ADR-011](adr/0011-deployment-and-infrastructure.md), [`local-delivery.md`](local-delivery.md); implementation in the walking skeleton |
@@ -332,7 +335,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Proposed; rewritten for the web app on 23 October 2026, waits for Tiago |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
-| ADR-010 | CI/CD strategy, including versioning (§10, guide H7) | Waits for Bruno's pipeline review; versioning decided |
+| [ADR-010](adr/0010-cicd-strategy.md) | CI/CD strategy, including versioning (§10, guide H4–H8) | Accepted |
 | [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; procedure decided 23 October 2026 ([`local-delivery.md`](local-delivery.md)); implementation pending |
 | [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
 | [ADR-013](adr/0013-api-gateway.md) | API gateway, CORS and rate limiting | Accepted |
@@ -345,12 +348,14 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 
 | View | Levels |
 |---|---|
-| Logical | [1](diagrams/logical-view-level-1.drawio.svg) · [2](diagrams/logical-view-level-2.drawio.svg) · [3](diagrams/logical-view-level-3.drawio.svg) · [4 mobile](diagrams/logical-view-level-4-mobile.drawio.svg) · [4 web](diagrams/logical-view-level-4-web.drawio.svg) · [4 reports](diagrams/logical-view-level-4-reports.drawio.svg) · [4 transports](diagrams/logical-view-level-4-transports.drawio.svg) |
+| Logical | [1](diagrams/logical-view-level-1.drawio.svg) · [2](diagrams/logical-view-level-2.drawio.svg) · [3](diagrams/logical-view-level-3.drawio.svg) · [3 web](diagrams/logical-view-level-3-web.drawio.svg) · [4 reports](diagrams/logical-view-level-4-reports.drawio.svg) · [4 transports](diagrams/logical-view-level-4-transports.drawio.svg) |
 | Process: help request and triage | [1](diagrams/process-view-level-1-help-request.drawio.svg) · [2](diagrams/process-view-level-2-help-request.drawio.svg) · [3](diagrams/process-view-level-3-help-request.drawio.svg) · [4](diagrams/process-view-level-4-help-request.drawio.svg) |
 | Process: transport import | [1](diagrams/process-view-level-1-transports.drawio.svg) · [2](diagrams/process-view-level-2-transports.drawio.svg) · [3](diagrams/process-view-level-3-transports.drawio.svg) · [4](diagrams/process-view-level-4-transports.drawio.svg) |
-| Implementation (development) | [1](diagrams/implementation-view-level-1.drawio.svg) · [2](diagrams/implementation-view-level-2.drawio.svg) · [3](diagrams/implementation-view-level-3.drawio.svg) · [4 mobile](diagrams/implementation-view-level-4-mobile.drawio.svg) · [4 web](diagrams/implementation-view-level-4-web.drawio.svg) · [4 reports](diagrams/implementation-view-level-4-reports.drawio.svg) · [4 transports](diagrams/implementation-view-level-4-transports.drawio.svg) |
-| Physical **[TO ALIGN: local deployment scope]** | [1](diagrams/physical-view-level-1.drawio.svg) · [2](diagrams/physical-view-level-2.drawio.svg) · [3](diagrams/physical-view-level-3.drawio.svg) |
-| Logical → implementation | [1](diagrams/mapping-logical-implementation-level-1.drawio.svg) · [2](diagrams/mapping-logical-implementation-level-2.drawio.svg) · [3](diagrams/mapping-logical-implementation-level-3.drawio.svg) · [4 mobile](diagrams/mapping-logical-implementation-level-4-mobile.drawio.svg) · [4 web](diagrams/mapping-logical-implementation-level-4-web.drawio.svg) · [4 reports](diagrams/mapping-logical-implementation-level-4-reports.drawio.svg) · [4 transports](diagrams/mapping-logical-implementation-level-4-transports.drawio.svg) |
+| Implementation (development) | [1](diagrams/implementation-view-level-1.drawio.svg) · [2](diagrams/implementation-view-level-2.drawio.svg) · [3](diagrams/implementation-view-level-3.drawio.svg) · [3 frontend](diagrams/implementation-view-level-3-web.drawio.svg) · [4 reports](diagrams/implementation-view-level-4-reports.drawio.svg) · [4 transports](diagrams/implementation-view-level-4-transports.drawio.svg) |
+| Physical (local delivery) | [1](diagrams/physical-view-level-1.drawio.svg) · [2](diagrams/physical-view-level-2.drawio.svg) · [3](diagrams/physical-view-level-3.drawio.svg) |
+| Logical → implementation | [1](diagrams/mapping-logical-implementation-level-1.drawio.svg) · [2](diagrams/mapping-logical-implementation-level-2.drawio.svg) · [3](diagrams/mapping-logical-implementation-level-3.drawio.svg) · [3 web](diagrams/mapping-logical-implementation-level-3-web.drawio.svg) · [4 reports](diagrams/mapping-logical-implementation-level-4-reports.drawio.svg) · [4 transports](diagrams/mapping-logical-implementation-level-4-transports.drawio.svg) |
 | Logical → physical | [1](diagrams/mapping-logical-physical-level-1.drawio.svg) · [2](diagrams/mapping-logical-physical-level-2.drawio.svg) · [3](diagrams/mapping-logical-physical-level-3.drawio.svg) |
 
-> **[TO ALIGN: #125]** The diagrams still show the React Native mobile app, which was removed on 22 October 2026: in levels 1 to 3 and in the `*-level-4-mobile` diagrams. They are updated when the diagrams are next edited (Bruno).
+Updated on 26 October 2026 (#133): one web app and no mobile app, the API gateway and Keycloak in the logical, implementation and physical views, and the physical view of the local delivery: one machine, one container per service and one PostgreSQL server with six databases (five services and Keycloak). WireMock appears only in the physical view; logically, Reports and Transports talk to the AI provider and Porto Digital.
+
+Updated on 27 October 2026 (#133): the web app is opened at level 3 (*3 web*: the level-3 diagram with the web app's components, or `frontend/`'s folders, instead of one box), replacing the level-4 web diagrams; logical level 3 has one Person; the AI provider is the local Ollama model (qwen3:4b, guide K1), with a hosted provider dashed as the alternative in the physical view; Prometheus/Grafana and event contracts (`contracts/events/`, one JSON Schema per event) without `[PENDING]`; every diagram centred. The only marker left is the `frontend/` folder layout (Tomás).
