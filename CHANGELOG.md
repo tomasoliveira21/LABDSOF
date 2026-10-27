@@ -22,6 +22,12 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Availability and recovery measured locally (NFR-12, NFR-13); weak-network mode stays out while F11 is a Could.
 - NFR-15, NFR-17 and NFR-18 take their values from ADR-006 and ADR-013 (identity and gateway, merged with #47 on 24 October 2026) instead of the open PR.
 
+### Merged a third time and aligned with the simplified plans (27 October 2026)
+- `main` merged (#131 CI/CD strategy, #153 simplified local demo tools and local AI). Conflicts: this CHANGELOG (both kept, this entry first); `architecture.md` §9.1 (the local AI row and its *why* bullet from #153, plus the hosted alternative); the guide's I1–I3, K1–K2 and *Feito* (rows from `main` with the confirmations of 26 October added).
+- Tiago keeps the NFRs following Tomás's plans (`non-functional-requirements.md` §5): **NFR-11** takes the local AI profile (response 20 s, one attempt, slow above 16 s, at most 5 s waiting, start only with ≥ 23 s left) instead of 10 s and 2 attempts; **NFR-20** Ollama with `qwen3:4b`, no hosted fallback; **NFR-33** only Prometheus and Grafana, correlation IDs instead of tracing; **NFR-34** three Grafana alerts, the other signals as dashboard and acceptance checks; **NFR-19** metrics 1 day or 512 MiB, no traces stored.
+- `architecture.md` §9.1: the local AI profile accepted by Tiago on 27 October 2026; the hosted row no longer says *to confirm with K1*. Guide: J1 and J2 status, the J1 table (hosted AI and Keycloak rows) and the local AI profile no longer wait for K1, E1 or Guerra's J4 confirmation; D5 takes the new telemetry retention.
+- Not changed: ADR-005 and ADR-012 keep *Proposed* until the team review the plans ask for; the Security and Privacy Assessment §7 still says logs 14 days and traces 7 days (Guerra).
+
 ### Aligned with Tomás's plans (26 October 2026)
 - NFR-19, NFR-20, NFR-33 and NFR-34 follow the merged observability plan (#148) and AI evaluation plan (#149), which Tiago chose as the reference: traces 24 h, container logs rotated at 10 MiB × 2 with exports deleted within 14 days, metrics 7 days or 2 GiB; Tempo, Collector and Alertmanager in the stack; the alert rules of the plan §4 (create-failure alert dropped; useful triage, urgent failure, missing telemetry and stale transport added); local Ollama for now, final choice through #149. Recorded in `non-functional-requirements.md` §5 and in guide D5, I1, I3 and K1.
 - Not changed: the Security and Privacy Assessment §7 still says logs 14 days and traces 7 days (Guerra).
@@ -43,6 +49,38 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - On-time AI triage: Tomás aligned ADR-005 and the observability research at **≥ 95 % within 30 s** over a one-hour window (#145). NFR-03 now links that definition, and the open point on 90 % vs 95 % is removed.
 - Resilience values (#43, PR #52 merged on 25 October 2026): checked against `architecture.md` §6, §9.1 and §10.1, all unchanged. The *(PR #52)* marks and their *otherwise [PENDING]* removed from NFR-02, NFR-04, NFR-05, NFR-07, NFR-08, NFR-10, NFR-11, NFR-17, NFR-31 and NFR-34, with links to those sections instead of the PR; the AI values of NFR-11 stay to confirm with K1 (Tomás), as in §9.1. The *Merge PR #52* open point removed.
 - NFR-19 takes the **[PROPOSED]** retention periods, help-request consent and account data of the Security and Privacy Assessment (#143, §6–§8): help-request content 30 days after the event closes, logs 14 days, traces 7 days, Keycloak login events 30 days. Its open point now says they wait for the team's review.
+
+## [Unreleased] · 2026-10-23 · CI/CD strategy (#131, Bruno Lopes)
+
+**Why:** close guide H4–H8 in one ADR, so the walking skeleton (R0) builds the pipeline from it (assignment §8.4, §8.5; ADR-011 point 5).
+
+### Added
+- `adr/0010-cicd-strategy.md`: `conventions.yml` kept (Dependabot PRs exempt) plus one `ci.yml`. PRs run build, unit and Testcontainers integration tests, Checkstyle, ESLint, the web build and gitleaks; pushes to `main`, tags and manual runs also build the images with Compose, scan them with Trivy and run the `local-delivery.md` smoke test on the runner. Documentation-only and draft PRs skip the code jobs, and older runs of a PR are cancelled, to save the private repository's Actions minutes. Tags run the same pipeline and nothing is published (no registry, no secrets, `contents: read`). Dependabot monthly grouped updates. Required checks: **Conventions** and **CI**. R0 implements all of it; alternatives (everything on every PR, a `dev` branch, GHCR, artefacts, self-hosted runner, paid scanners) recorded.
+
+### Changed
+- `architecture-decisions-guide.md`: section H closed (H4–H8 ✅, H6 does not apply); status date; *Próximos passos* (done, Bruno's open items, walking skeleton).
+- `architecture.md` §10, §12 and §13 (ADR-010 *Accepted*, linked). `ADR-011` status and point 5: CI runs the smoke test on its own runner. `Docs/README.md`: ADR-010 in the index; §6 names the two required checks.
+- `definition-of-ready-and-done.md`: the "deployed to the shared environment" item now asks for a green pipeline on `main` (delivery is local).
+
+### Not changed
+- No workflow file: `ci.yml`, `dependabot.yml` and the Dependabot exemption in `conventions.yml` belong to the walking skeleton (Tomás). The real job durations are measured there.
+
+### Aligned with `main` (26 October 2026)
+- **API gateway** (ADR-013): built and tested like the services (`backend` matrix); `delivery` builds seven images and the CI smoke test also checks that the gateway answers `401` without a token.
+- **Security assessment, finding 12 (T18):** ADR-010 point 7 and guide H8 say that Dependabot and Trivy answer it; Guerra marks it in the assessment.
+- **R0 scope** (point 9) marked as a proposal to agree with Tomás; guide *Em aberto* item 4 says the same.
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #134 operating cost estimation, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (ADR-010 added to main's *Technical* row) and the guide (status date, H9 and *Feito*/*Em aberto* from main; H4–H8 and the pipeline item in *Feito* from #131; H6 and H7 removed from Bruno's areas).
+- `main` merged again (#127 versioning, #129 local delivery, #123 API outline, #145 AI triage coverage, #58 walking-skeleton decisions). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (ADR-010 added to main's *Technical* row), `ADR-011` (status and points 2–4 and 6 from #129; point 5 from #129 with the CI sentence from #131), `architecture.md` §12 (CI/CD bullet and row from #131, versioning bullet and row from #127) and §13 (ADR-010 row from #131, ADR-011 row from #129), and the guide (H4–H6 and H8 from #131; H7 from #127 with the CI sentence from #131; *Em aberto* items 1 and 2 from main, item 4 from main plus the pipeline). `local-delivery.md`, the research overview and the cost estimation now link ADR-010 instead of calling it not written.
+- `main` merged a third time (#153 simplified local demo tools). Conflict only in this CHANGELOG (both kept, this entry first).
+
+## [Unreleased] · 2026-10-26 · Simplify local demonstration tools (#153)
+
+### Changed
+- At Tomás's request, reduce local observability to Prometheus/Grafana, Actuator health/metrics and correlated Docker logs. Grafana-managed rules replace the separate Alertmanager; Collector/Tempo and distributed tracing become optional future extensions. Assignment §6.7's correlation-or-trace requirement is mapped to concrete minimum demo evidence.
+- Keep one Ollama/model and one evaluation on the existing 20/80 dataset split; repeated/cross-provider/concurrency studies and a new blinded dataset are optional extensions. Preserve label/reason review, human control and the 95%/30 s and SC5 targets.
+- Remove the fixed 24 GiB machine planning assumption from demo acceptance; use and measure the existing local machine. No runtime, capacity or quality result is fabricated; team review remains required.
 
 ## [Unreleased] · 2026-10-26 · Complete walking-skeleton and local delivery decisions (#58)
 

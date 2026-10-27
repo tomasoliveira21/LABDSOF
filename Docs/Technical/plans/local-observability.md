@@ -4,39 +4,32 @@
 
 **I1–I3 documentary choices complete for review.** This document selects the local software, data paths, endpoints, storage bounds, SLIs, dashboard and alert rules. Instrumentation, configuration files, live panels and measured compliance remain implementation/evidence, not an unanswered architectural choice or a result fabricated by this PR.
 
-## 1. I1: selected stack and deployment
+## 1. I1: minimum local demonstration stack
 
-Use the shared `infra/compose.yaml` from [walking skeleton PR #150](https://github.com/tomasoliveira21/LABDSOF/pull/150), with an **observability profile**. No separate cloud account or duplicated application stack.
+Assignment §6.7 (PDF pp.10–11) requires structured logs, health checks, relevant metrics, **correlation or trace identifiers**, error reporting and a small dashboard. Therefore correlation IDs satisfy the identification requirement; a distributed tracing platform is unnecessary for this academic demo. This simplification supersedes the earlier Collector/Tempo/separate Alertmanager proposal from #151.
 
-| Component | Selected role | Network/access | Storage decision |
-|---|---|---|---|
-| Micrometer + Spring Boot Actuator | HTTP/JVM/business metrics from each Java service/gateway | `/actuator/prometheus` on private management port 8081; no LAN mapping | Application emits, Prometheus stores |
-| Prometheus | Scrape metrics and evaluate metric/alert rules | `127.0.0.1:9090`; private scrape network | Named volume; 7 days **and** 2 GiB cap; first limit reached applies |
-| Grafana | One Farol operations dashboard; metric and trace exploration | `127.0.0.1:3001`, leaving web port 3000 free; configured local admin secret | Datasources/dashboard provisioned from versioned files, settings in a volume |
-| OpenTelemetry Collector | Receive application OTLP spans, batch/filter/export | OTLP gRPC 4317 / HTTP 4318 only inside Compose; no host mapping | Bounded memory/queue; no raw incident payload capture |
-| **Grafana Tempo, single binary** | **Selected local trace backend**; Grafana queries it | Private HTTP 3200, OTLP receiver private to the collector | Local named volume; 24 h retention, 2 GiB planning disk budget |
-| Alertmanager | Group and show Prometheus alerts | `127.0.0.1:9093`; no external integration | Small named state volume; local receiver with no email/Slack/webhook configuration |
-| Docker structured console logs | Initial log inspection using Compose tooling; **no Loki in current scope** | Local operator only | Rotation 10 MiB × 2 files/container; export only sanitised evidence and delete exports within 14 days |
+Use the shared `infra/compose.yaml` and optional `observability` profile. **Only two extra containers: Prometheus and Grafana.**
 
-RabbitMQ's `rabbitmq_prometheus` plugin is scraped privately on 15692; its management API remains a separate localhost-only administration surface. Services expose only the required health/prometheus endpoints on the private management listener; domain API authorisation is not replaced by scrape access.
+| Tool | Minimum use | Access/storage |
+|---|---|---|
+| Spring Boot Actuator + Micrometer | Existing Java processes expose health, HTTP/JVM and a few business metrics | Private management port 8081; `/actuator/health` and `/actuator/prometheus`; no LAN management mapping |
+| Prometheus | Scrape service and RabbitMQ metrics every 15 s | UI `127.0.0.1:9090`, private scrape network; named volume, 1-day retention and 512 MiB cap |
+| Grafana | One small dashboard and Grafana-managed alert rules using Prometheus | `127.0.0.1:3001`; local credentials; built-in alert handling, no external receiver or separate Alertmanager container |
+| Docker console logs | Structured errors and correlation across the request path | `docker compose logs`; rotation 10 MiB × 2 files/container; sanitised evidence exports deleted within 14 days |
 
-The Collector exports to Tempo; Grafana has **Prometheus and Tempo** datasources. Use **one OpenTelemetry Java agent** for traces, with default payload/body capture disabled. Micrometer owns the metrics path; disable duplicate agent metric/log exporters. Explicitly propagate W3C context in RabbitMQ headers and link producer/consumer spans; do not assume every framework automatically instruments the outbox.
+Enable RabbitMQ's private `rabbitmq_prometheus` plugin on 15692. No separate log store, trace backend, OpenTelemetry agent/Collector, Tempo, Jaeger, cloud account or notification integration is required. The previous larger stack remains an optional future alternative, not a demo dependency. [Grafana's built-in Alertmanager](https://grafana.com/docs/grafana/latest/alerting/set-up/configure-alertmanager/) handles Grafana-managed rules; operators inspect firing/resolved states in the UI. This demonstrates local error/alert reporting, not delivery of email/Slack notifications.
 
-Use 100% trace sampling for the small **synthetic local demonstration**, with bounded export queues and the 24 h store; do not advertise it as a production sampling policy. If capacity is exceeded, record dropped spans and lower a documented rate rather than hiding the loss. Instrumentation/configuration versions are pinned as implementation inputs in the Compose/agent lock changes, not mutable `latest` tags.
+Start with the existing laptop; record `docker stats --no-stream` during the demo. No 24 GiB machine or extra fixed RAM reservation is an acceptance requirement. Actual capacity is measured, not guaranteed. Pin compatible image versions when creating the implementation; do not use mutable `latest` in its committed Compose.
 
-**Resource planning:** reserve up to about 2 GiB extra Docker RAM and 5 GiB disk for this profile; these are planning budgets, not benchmarked minima. The demo should be checked on the same machine/tag as the application; do not claim performance on a different/cloud machine. Retention limits concern operational telemetry, not deleting business audit rows or replacing Guerra's personal-data policy.
+## 2. Small configuration and correlation contract
 
-Why these choices: Prometheus/Grafana already match ADR-012; Tempo supplies the previously unspecified trace store without adding another dashboard; the Collector decouples application exporters; Alertmanager provides local alert state without paid notifications. Loki/ELK and cloud Application Insights add stores/operational cost not needed to demonstrate I1–I3 locally. See [Tempo configuration](https://grafana.com/docs/tempo/latest/configuration/) and [Prometheus alert rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/).
+Version one `infra/observability/prometheus.yml`, Grafana's Prometheus datasource and one dashboard JSON. Create the three core Grafana rules through the UI, then export their provisioning configuration into Git so the demo can be reproduced; no plugin or external alert service. Secrets stay in ignored `infra/.env`. These are files to implement, not configuration claimed to exist already.
 
-## 2. Data and configuration contract
-
-Version `infra/observability/{prometheus.yml,rules.yml,alertmanager.yml,otel-collector.yml,tempo.yml}` and `infra/observability/grafana/{datasources.yml,dashboards.yml,farol-operations.json}`. Put local passwords in ignored `infra/.env`; no SaaS keys are needed. Bind receiver listeners to the private container interface, not merely container localhost, while exposing only the explicit loopback admin ports above.
-
-- Scrape and rule evaluation every **15 s**; private targets for all implemented service management endpoints and RabbitMQ. A missing target produces **no data/down**, never a green empty graph.
-- JSON logs carry UTC time, severity, service, environment, release, trace/correlation id and outcome; never text/prompt/completion, coordinates, names, tokens or credentials. No user/request/event/correlation IDs in metric labels. Bound labels to service, environment, operation, outcome and fixed category/provider identifiers.
-- Persist request submission, commit, operator visibility and suggestion-stored timestamps in the owning service. Trace spans connect HTTP → database/outbox → RabbitMQ → worker/model → validation/store. A direct provider span is not end-to-end SC3.
-- Emit counters for attempts, fallbacks/errors, DLQ additions and semantic violations; histograms for API/provider/end-to-end latency; gauges for pending age, queue depths, freshness and resource usage.
-- Alerts have severity, service, environment and a runbook URL, not personal data. Local UI is the selected notification destination; external recipients are not configured by this decision.
+- Generate a random `correlationId` at ingress. Preserve it in the HTTP response, structured service logs and AMQP `correlation_id`; reject/replace invalid or excessive incoming values. A log entry records time, level, service, operation, outcome and this ID. Show the same ID on submit, outbox publication, consumption and final outcome. This is **log correlation**, not a claimed distributed trace.
+- Never log incident text, prompt/completion, coordinates, names, tokens or credentials. IDs are log fields, never metric labels. Bound labels to service, environment, operation and outcome.
+- Persist submission/commit/suggestion timestamps in Reports; compute the full submission-to-storage latency from those milestones, not provider-only timing. Counters cover failures/fallbacks; gauges expose outbox age and cohort counts.
+- Read errors with `docker compose --env-file infra/.env -f infra/compose.yaml logs --tail=100 reports`; filter the displayed logs by the correlation ID when demonstrating one request. No separate log viewer is needed.
+- Down/no-data is displayed explicitly; an empty graph is not evidence of a healthy service.
 
 ## 3. I2: exact indicators and targets
 
@@ -58,14 +51,14 @@ Show the full cohort count/ratio and degraded periods together. Empty cohorts di
 
 ## 4. I3: one dashboard and the alert rules
 
-**Dashboard: Farol local operations**, variables environment/release/service, six rows:
+**One dashboard, four groups of panels:**
 
-1. API traffic, successful durable writes, 4xx/5xx and p50/p95/p99 latency; last successful synthetic probe.
-2. Committed/visible/pending requests, oldest pending age, ≥95% triage ratio with numerator/denominator, fallback reasons and deadline violations.
-3. Model attempt/end-to-end latency, semantic/schema failures, operator acceptance/correction counts and local model up/resource state.
-4. Outbox oldest age/count, ready/unacknowledged messages, consumers, DLQ and broker alarms.
-5. Transport import result, last-valid-data age and circuit state; invalid data rejected rather than replacing valid rows.
-6. JVM/host/container CPU/RAM, restarts, database pools/disk, scrape health and Collector/Tempo dropped spans.
+1. Service health, request/error counts and HTTP latency.
+2. Saved requests, AI useful/on-time numerator/denominator, fallback counts and end-to-end latency.
+3. Outbox age, RabbitMQ queue/DLQ depth and broker health.
+4. Transport data age and JVM memory. Inspect container CPU/RAM with `docker stats`; no host exporter needed.
+
+**Three core alerts** are enough for the small demonstration: service/telemetry down, outbox stalled and useful triage below target. Keep the additional product signals below as dashboard/manual acceptance checks; they do not require a separate alert rule for every row.
 
 | Rule | Trigger/window | Severity and local response |
 |---|---|---|
@@ -80,10 +73,23 @@ Show the full cohort count/ratio and degraded periods together. Empty cohorts di
 | Telemetry missing | Expected target/collector produces no sample for 2 min | Warning: monitoring failure, separate from application success/failure |
 | Transport stale | Last valid data age >5 min | Warning: show stale-data notice; preserve last valid rows and event shuttles |
 
-Each rule resolves automatically when its condition clears; stale/no-data is an explicit state. Alertmanager groups by environment/service/rule (30 s group wait, 5 min grouping interval, 1 h repeat). No email, Slack or paid receiver is required. Runbooks use the local startup/rollback procedure; identify the dependency rather than asking the model to fix it.
+Grafana evaluates the three core rules every 15 s, with the thresholds/windows above: expected service down for 2 min, outbox >60 s for 2 min, and the mature one-hour triage ratio <95% for 5 min with >=20 eligible submissions. Configure no-data/error as a visible degraded state. The remaining table rows guide inspection and acceptance tests. View firing and recovery in Grafana; no email, Slack or paid receiver is configured.
 
 ## 5. Verification and documentary closure
 
-The implementation must demonstrate: healthy scrape targets and live provisioned panels; a correlated HTTP-to-stored-outcome trace; exact synthetic cohort ratios at 95% and below; no-data behaviour; trigger and resolution of broker/DLQ/provider alerts; SC5 with the model stopped; redacted logs; actual host usage and retention bounds. Record exact versions, tag, machine and window/counts.
+| Assignment §6.7 point | Smallest evidence to show |
+|---|---|
+| Structured application logs | One JSON log entry from Reports |
+| Health checks | Actuator health plus Compose service status |
+| Relevant metrics | A request changes a Prometheus counter |
+| Correlation or trace identifiers | The same correlation ID in HTTP/outbox/consumer log entries |
+| Error reporting | Stop a dependency: error/fallback log and Grafana alert state |
+| Small operational dashboard | The four-group Farol dashboard |
+| Meaningful SLIs | Display counts/latency and the defined 95%/30 s cohort, with honest no-data/window state |
 
-**No architectural question is left undecided in I1–I3 by this document:** stack, trace backend, collection, dashboard, notification destination, thresholds and windows are selected. Software compatibility, fitting on the machine and SLO achievement are test results to obtain during implementation. They cannot honestly be marked measured just because documentation is complete. ADR-012 remains subject to PR/team review; no acceptance is invented.
+
+Minimum evidence: (1) healthy services and one live metric/dashboard, (2) the same correlation ID in submit/outbox/consumer/outcome logs, (3) stop/restart a service to show an alert firing and resolving, (4) with AI off the saved request stays visible and fallback increases, and (5) sanitised logs plus observed container usage. Record the tag/machine and screenshots or a short run record. Demonstrate an outbox delay with the broker stopped as part of the existing resilience demo.
+
+The >=95%/30 s target and one-hour cohort remain the product specification. A short demonstration, a small sample or a provider-only benchmark cannot establish an hour-long SLO; show actual counts/window and no-data until the cohort is mature. SC5 still requires 100% visibility in its AI-off test.
+
+**I1–I3 have explicit answers with two added containers.** More panels, distributed tracing, centralised log storage and external alert routing are optional extensions. Runtime files and results remain implementation evidence, separate from this documentary decision; no team acceptance or runtime success is invented.

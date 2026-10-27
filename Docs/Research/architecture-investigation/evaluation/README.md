@@ -6,7 +6,7 @@
 
 ## Dataset and rubric
 
-[cases.jsonl](cases.jsonl) contains 100 distinct inputs with stable IDs: 20 development and 80 test. Development examples may inform the prompt; test cases may not. The split is deterministic (every fifth ID is development), not a random or blinded real-world sample. Labels remain visible in the repository, so do not train/tune on the test file or present it as an independent benchmark. A second reviewer must adjudicate the labels and add a new held-out sample before release.
+[cases.jsonl](cases.jsonl) contains 100 distinct inputs with stable IDs: 20 development and 80 test. Development examples may inform the prompt; test cases may not. The split is deterministic (every fifth ID is development), not a random or blinded real-world sample. Labels remain visible in the repository, so do not train/tune on the test file or present it as an independent benchmark. A teammate reviews/adjudicates labels before accepted quality claims. For the basic academic demonstration, keep the existing split; a fresh blinded holdout is a future improvement, not a required new dataset.
 
 Each row records input category/text/current-priority, expected category, **minimum** acceptable priority, expected team, abstention, split and slice tags. Operational priorities/routing and their limits are in the [assessment](../responsible-ai.md#input-output-and-proposed-priority-rubric). The `urgent` tag is descriptive; scoring derives urgent status from a non-abstention reference with minimum High/Critical. Never claim a lower raw prediction passed merely because a later guard clamped it.
 
@@ -26,14 +26,14 @@ The baseline preserves participant category and uses deterministic category defa
 
 The scorer checks the precise simple object schema shipped here (required keys, types, enums, lengths, no extras). It is not a general-purpose JSON Schema implementation. Missing/invalid output is failure; duplicate/unknown IDs abort scoring. Valid JSON with inconsistent category/team is also a semantic failure. Free-text reason safety requires independent human review and is not certified by the scorer.
 
-## Future provider run
+## Selected local provider run
 
-1. Freeze exact model/version or digest, runtime version, prompt/schema/dataset hashes, temperature/settings, region/hardware and request limits in a run manifest. Use development cases only to change prompts; freeze before running test. Make at least three runs/candidate and report every run, not just the best.
-2. Pass the fixed [system prompt](system-prompt.txt), [schema](output.schema.json) and each row's **input only**. Never send reference labels, split or tags to the model. No credentials or external API calls are required by this package. Provider runs are a later, explicitly budgeted action using synthetic data.
+1. Freeze exact model/version or digest, runtime version, prompt/schema/dataset hashes, temperature/settings, region/hardware and request limits in a run manifest. Use development cases only to change prompts; freeze before running test. For the minimum local demonstration, run the selected model once on the test split and report every case. Repeated/cross-provider comparisons are optional extensions.
+2. Pass the fixed [system prompt](system-prompt.txt), [schema](output.schema.json) and each row's **input only**. Never send reference labels, split or tags to the model. No credentials or external API calls are required by this package. The selected provider is local Ollama `qwen3:4b` Q4_K_M with no paid API; use the [fixed settings, dataset review and routing acceptance contract](../../../Technical/plans/ai-provider-evaluation.md). Actual runs remain execution work using synthetic data.
 3. Save one JSONL wrapper per selected case: `{"id":"T001","elapsed_ms":1234,"output":{"category":"Health","priority":"Critical","team":"Medical","reason":"Requer revisão imediata pela equipa.","abstain":false}}`. A timeout/refusal/transport error is represented by `output:null` with observed elapsed time, not a fabricated valid fallback prediction. Only include IDs from the selected split.
 4. `elapsed_ms` must represent submission-to-stored-valid-suggestion time including queue and persistence for SC3. A direct model-call benchmark can score quality but must omit `elapsed_ms` here and record `provider_ms` separately in its manifest; it does not establish deployed SC3. Scoring an asserted elapsed value cannot verify the measurement instrument.
 5. Run `python3 Docs/Research/architecture-investigation/evaluation/evaluate.py --predictions /path/to/test-predictions.jsonl --split test --out /path/to/run-report.json`.
-6. Compare with the baseline. Review reasons, all urgent misses, language/injection slices, cold/warm/concurrent runs and actual token/cost usage. A provider benchmark, labels, privacy review and an AI-off end-to-end test remain pending.
+6. Compare with the baseline. Review reasons, all urgent misses, language/injection slices, observed latency/memory and any actual usage. A provider benchmark, labels, privacy review and an AI-off end-to-end test remain pending.
 
 ## Proposed gates
 
@@ -41,4 +41,4 @@ On non-abstention reference cases, category/team accuracy ≥80% and suggestion 
 
 **Alignment (26 October 2026, #145):** the ≥95% proposal is shared with [ADR-005](../../../Technical/adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145) and observability. Offline denominators are the non-abstention reference cases; the operational denominator is all AI-eligible submissions in a one-hour cohort, with failures/abstentions retained and the final 30 s deadlines allowed to expire before finalising. Report both populations separately. Valid on-time output must also respect category/team consistency and the raw priority floor; event-specific team eligibility remains an integration check, because this fixture has fixed team names. The self-test covers 19/20 (95%, pass) versus 18/20 (90%, fail) and the inclusive 30,000 ms boundary. The baseline has no inference or latency samples and is not evidence that the target has been met.
 
-These offline gates cannot establish production readiness: independent labels, review of reasons, real end-to-end SC3 timing, SC5 visibility with AI off and Guerra's provider/privacy assessment are separate checks.
+These offline gates cannot establish production readiness: reviewed labels, review of reasons, real end-to-end SC3 timing, SC5 visibility with AI off and Guerra's provider/privacy assessment are separate checks.
