@@ -29,7 +29,7 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 ## Review package
 
 - [Deployment research](deployment.md), [observability research](observability.md), [Responsible AI Opportunity Assessment](responsible-ai.md).
-- [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md), [ADR-012](../../Technical/adr/0012-observability.md). ADR-010 remains Bruno's pipeline decision.
+- [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md), [ADR-012](../../Technical/adr/0012-observability.md). The pipeline is in [ADR-010](../../Technical/adr/0010-cicd-strategy.md).
 - [Evaluation instructions and limitations](evaluation/README.md), [system prompt](evaluation/system-prompt.txt), [output schema](evaluation/output.schema.json), dataset and offline baseline report.
 - [Azure price snapshot](azure-price-snapshot.json): dated evidence, not a subscription quote.
 

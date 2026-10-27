@@ -2,6 +2,31 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-23 · CI/CD strategy (#131, Bruno Lopes)
+
+**Why:** close guide H4–H8 in one ADR, so the walking skeleton (R0) builds the pipeline from it (assignment §8.4, §8.5; ADR-011 point 5).
+
+### Added
+- `adr/0010-cicd-strategy.md`: `conventions.yml` kept (Dependabot PRs exempt) plus one `ci.yml`. PRs run build, unit and Testcontainers integration tests, Checkstyle, ESLint, the web build and gitleaks; pushes to `main`, tags and manual runs also build the images with Compose, scan them with Trivy and run the `local-delivery.md` smoke test on the runner. Documentation-only and draft PRs skip the code jobs, and older runs of a PR are cancelled, to save the private repository's Actions minutes. Tags run the same pipeline and nothing is published (no registry, no secrets, `contents: read`). Dependabot monthly grouped updates. Required checks: **Conventions** and **CI**. R0 implements all of it; alternatives (everything on every PR, a `dev` branch, GHCR, artefacts, self-hosted runner, paid scanners) recorded.
+
+### Changed
+- `architecture-decisions-guide.md`: section H closed (H4–H8 ✅, H6 does not apply); status date; *Próximos passos* (done, Bruno's open items, walking skeleton).
+- `architecture.md` §10, §12 and §13 (ADR-010 *Accepted*, linked). `ADR-011` status and point 5: CI runs the smoke test on its own runner. `Docs/README.md`: ADR-010 in the index; §6 names the two required checks.
+- `definition-of-ready-and-done.md`: the "deployed to the shared environment" item now asks for a green pipeline on `main` (delivery is local).
+
+### Not changed
+- No workflow file: `ci.yml`, `dependabot.yml` and the Dependabot exemption in `conventions.yml` belong to the walking skeleton (Tomás). The real job durations are measured there.
+
+### Aligned with `main` (26 October 2026)
+- **API gateway** (ADR-013): built and tested like the services (`backend` matrix); `delivery` builds seven images and the CI smoke test also checks that the gateway answers `401` without a token.
+- **Security assessment, finding 12 (T18):** ADR-010 point 7 and guide H8 say that Dependabot and Trivy answer it; Guerra marks it in the assessment.
+- **R0 scope** (point 9) marked as a proposal to agree with Tomás; guide *Em aberto* item 4 says the same.
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #134 operating cost estimation, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (ADR-010 added to main's *Technical* row) and the guide (status date, H9 and *Feito*/*Em aberto* from main; H4–H8 and the pipeline item in *Feito* from #131; H6 and H7 removed from Bruno's areas).
+- `main` merged again (#127 versioning, #129 local delivery, #123 API outline, #145 AI triage coverage, #58 walking-skeleton decisions). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (ADR-010 added to main's *Technical* row), `ADR-011` (status and points 2–4 and 6 from #129; point 5 from #129 with the CI sentence from #131), `architecture.md` §12 (CI/CD bullet and row from #131, versioning bullet and row from #127) and §13 (ADR-010 row from #131, ADR-011 row from #129), and the guide (H4–H6 and H8 from #131; H7 from #127 with the CI sentence from #131; *Em aberto* items 1 and 2 from main, item 4 from main plus the pipeline). `local-delivery.md`, the research overview and the cost estimation now link ADR-010 instead of calling it not written.
+- `main` merged a third time (#153 simplified local demo tools). Conflict only in this CHANGELOG (both kept, this entry first).
+
 ## [Unreleased] · 2026-10-26 · Simplify local demonstration tools (#153)
 
 ### Changed
