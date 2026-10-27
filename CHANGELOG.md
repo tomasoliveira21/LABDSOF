@@ -2,6 +2,25 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-27 · Account deletion and data ownership (#135, Bruno Lopes)
+
+**Why:** guide D7 was the last open data decision. The team needs to know whether account deletion (F2, US-05) is in the MVP and how a deleted user's data leaves each service. ADR-006 had fixed the flow, but left what each service does on `UserDeleted` to D7, and the assessment's proposal (§7) said Transports does nothing, while the outline has it consuming `UserDeleted`.
+
+### Changed
+- `architecture-decisions-guide.md`: D7 decided (✅). Account deletion is in the MVP: US-05 is Must (R2), and the GDPR gives the right to erasure (NFR-19). Also updated the flow, the per-service actions and what stays open; *Próximos passos*; status date.
+- `api-outline.md`: §2 has the deletion flow in five steps: `422` for the last EventAdmin and for the last `FarolAdmin`; account disabled at once with `UserStatusChanged`; Keycloak, then Auth & Users, then `UserDeleted` through the outbox; a tombstone with only the `sub` in every service. §1.4: no just-in-time account for a deleted `sub`. §7.4: what each consumer of `UserDeleted` deletes or anonymises; `UserStatusChanged` is also published at the deletion request; `ReportConfirmed` and `ReportUnconfirmed` with no reporter are ignored by Badges.
+- `security-and-privacy-assessment.md` §7: the per-service table is decided and no longer **[PROPOSED]**. A deleted user's help requests and reports lose their text and map point at once, not after 30 days; open help requests are closed; Transports deletes its membership copies.
+- `adr/0003-database-and-data-ownership.md`: decision 5 (each service deletes or anonymises its own data and keeps a tombstone); open point closed.
+- `features.md` §4.1: the last EventAdmin cannot delete their account either.
+
+### Not changed
+- `architecture.md` and the diagrams: the *account deletion [Admin API]* arrow from Auth & Users to Keycloak is already right.
+- `domain-model.md`: the pending deletion is a state of `AccountStatus`, whose values the model does not list.
+- Retention and backups (guide D5), out of scope; dead-letter messages and Keycloak login events that mention the `sub` expire within the D5 periods.
+
+### Merged
+- `main` merged (#133 architecture diagrams). Conflicts in this CHANGELOG (both kept, this entry first) and ADR-003 *Open points* (PostgreSQL servers closed from `main`, account deletion closed from this branch).
+
 ## [Unreleased] · 2026-10-27 · Architecture diagrams updated (#133, Bruno Lopes)
 
 **Why:** the diagrams still showed the React Native app (removed on 22 October 2026, #125), had no API gateway or Keycloak (ADR-006, ADR-013) and showed a cloud platform still to choose. The professor asked for physical level 3 with the databases (meeting of 22 October 2026; guide *Em aberto* item 5).
