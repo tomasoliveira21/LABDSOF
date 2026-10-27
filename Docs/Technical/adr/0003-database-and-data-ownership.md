@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted**: decided by the team on 15 October 2026. Updated on 21 October 2026: no modular-monolith phase (guide A4). Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) D1, D2, D3 and D6.
+**Accepted**: decided by the team on 15 October 2026. Updated on 21 October 2026: no modular-monolith phase (guide A4). Updated on 27 October 2026: account deletion (guide D7, #135). Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) D1, D2, D3, D6 and D7.
 
 ## Context
 
@@ -18,6 +18,7 @@
 2. **One database per service**, which only that service reads and writes (D2). Data that a service needs from another arrives through events and is kept as a local copy ([ADR-004](0004-service-communication.md)). This applies from Sprint A: there is no shared-database monolith phase (guide A4).
 3. **Per-event isolation:** every table that holds data of an event has an `event_id` column, and the application filters by it on every query (D3). **Each service has an integration test** that proves a member of event X cannot read or change data of event Y.
 4. **Flyway** runs the migrations when the service starts (D6). Every migration stays compatible with the previous version of the service (*expand and contract*): add first, switch the code, remove in a later release.
+5. **Account deletion** (D7): each service deletes or anonymises its own data about the user, local copies included, when it consumes `UserDeleted`, and keeps a tombstone with only the opaque `sub`, so the account is refused and late events do not bring a copy back. Audit entries keep the opaque `sub` without a name. What each service does is in the [API outline §7.4](../api-outline.md#74-events).
 
 ## Consequences
 
@@ -41,5 +42,5 @@
 ## Open points
 
 - Number of PostgreSQL servers and where they run: guide D2 and G1, Tomás.
-- Account deletion (anonymise or delete per service): guide D7, Bruno.
+- ~~Account deletion (anonymise or delete per service): guide D7, Bruno.~~ Closed on 27 October 2026 (decision 5, #135).
 - Cache for read peaks (D4) and retention and backup (D5): future improvements, outside the MVP.

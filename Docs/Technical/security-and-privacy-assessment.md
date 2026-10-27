@@ -189,15 +189,15 @@ The guide lists retention and backup (D5) as a future improvement. Assignment §
 | Backups | None in the MVP (ADR-011: volumes are not backups) | — | Deletion is immediate. If backups are added (D5), they expire within 30 days so deletions reach them |
 | User-research data | Survey answers are anonymous and stay outside the repository | Deleted when the course ends | Only the published summaries are needed |
 
-**Account deletion** (US-05; the flow in ADR-006 is Bruno's, guide D7). Auth & Users deletes the user in Keycloak, then its own data, then publishes `UserDeleted`. **[PROPOSED]** what each service does with it:
+**Account deletion** (US-05). *Decided* (Bruno, guide D7, #135, 27 October 2026), from the proposal of this section; flow in the [API outline §2](api-outline.md#2-auth--users). The account is refused at once (`UserStatusChanged`, `Disabled`); Auth & Users deletes the user in Keycloak, then its own data, then publishes `UserDeleted`. Every service keeps a tombstone with only the opaque `sub`, so the account stays refused and late events do not bring a copy back. What each service does with it:
 
 | Service | On `UserDeleted` |
 |---|---|
-| Auth & Users | Deletes the account, memberships, team assignments, friendships and consent records |
-| Reports | Removes the requester from their help requests and the reporter from their reports; these stay for the event's record until the 30 days above, then become statistics. Deletes the copied display name. Audit entries keep the opaque `sub`, which no longer points to anyone once the account is gone |
-| Events | Deletes the user's check-ins and the copied display name |
-| Badges | Deletes progress and preferences |
-| Transports | Nothing: no personal data |
+| Auth & Users | Deletes the account, the `FarolAdmin` grant, memberships, team assignments, friendships and consent records. Refuses the deletion (`422`) while the user is the last EventAdmin of an event or the last `FarolAdmin` |
+| Reports | Closes the user's open help requests. Removes the requester from their help requests and the reporter from their reports, and deletes their text and map point **at once**, not after the 30 days above: only category or type, priority, status, times and team stay, as statistics. Deletes the copied display name and membership copies. Audit entries, `acceptedBy` and field tasks keep the opaque `sub`, which no longer points to anyone once the account is gone |
+| Events | Deletes the user's check-ins and the copies of memberships, `FarolAdmin` grant and display name; audit entries keep the opaque `sub` |
+| Badges | Deletes progress, preferences and the copies of reports and check-ins |
+| Transports | Deletes the membership copies (corrected: it keeps them to check `Transport.Edit`, outline §7.5) |
 
 ## 8. Consent, transparency and the sign-up terms
 

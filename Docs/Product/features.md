@@ -106,7 +106,7 @@ Defined on 22 October 2026 by Tiago Teixeira (backlog owner), to confirm with th
 
 - Roles belong to a user's **membership of an event**, not to the account. The same person can be **EventAdmin in one event and RegularUser in another**.
 - A user who is not a member of an event has no access to its data (US-14). `FarolAdmin` is the only global role, and it gives no access to any event's data.
-- An event always keeps **at least one EventAdmin**: the last one cannot be removed or demoted.
+- An event always keeps **at least one EventAdmin**: the last one cannot be removed or demoted, nor delete their account (US-05; guide D7).
 
 ### 4.2 Teams and permissions
 

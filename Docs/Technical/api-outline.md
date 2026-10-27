@@ -5,6 +5,7 @@
 > Stories follow the numbering in [`features.md` §7](../Product/features.md#7-initial-backlog-user-stories) (US-01 to US-62). Entities follow [`domain-model.md`](domain-model.md). Roles and permissions follow [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026).
 > Items marked **[WAITS: On]** follow the current proposal and wait for another owner's decision On. The outline's own decisions and those still waiting are in §10.
 > Aligned on 26 October 2026 with [ADR-006](adr/0006-identity-and-access.md) (identity and access), [ADR-013](adr/0013-api-gateway.md) (gateway, rate limits) and the [Security and Privacy Assessment](security-and-privacy-assessment.md) (AC-9, M-5).
+> 27 October 2026: account deletion (guide D7, #135) in §1.4, §2 and §7.4.
 
 ## 1. Scope and conventions
 
@@ -29,7 +30,7 @@
 ### 1.4 Identity
 
 - Login, logout and sign-up happen in Keycloak; Auth & Users has no `/login`, `/logout` or sign-up endpoint ([ADR-006](adr/0006-identity-and-access.md), guide E1).
-- The account is created **just in time**, at the user's first authenticated `GET /me`; Auth & Users then publishes `UserProfileChanged` (§7.4).
+- The account is created **just in time**, at the user's first authenticated `GET /me`; Auth & Users then publishes `UserProfileChanged` (§7.4). Never for a deleted `sub` (tombstone, §2): a token issued before the deletion gets `401`.
 - `/me` stands for the account of the token's user. A user's `userId` is the token's `sub`.
 
 ### 1.5 Authorisation
@@ -61,7 +62,7 @@ Owns accounts, the `FarolAdmin` grant, memberships of events and team assignment
 | `GET` | `/me` | My account: name, e-mail and global roles (`FarolAdmin`), so the web app knows what to show. The first call creates the account (§1.4) | Authenticated | US-01, US-03 |
 | `GET` | `/me/memberships` | The events I am a member of, with my role, my teams and each event's name and status | Authenticated | US-01 |
 | `PATCH` | `/me` | Change my display name. The password changes in Keycloak | Authenticated | US-04 |
-| `DELETE` | `/me` | Delete my account; `422` if I am the last EventAdmin of an event. `202` while the deletion is pending (flow below) | Authenticated | US-05 |
+| `DELETE` | `/me` | Delete my account; `422` if I am the last EventAdmin of an event or the last `FarolAdmin`. `202` while the deletion is pending (flow below) | Authenticated | US-05 |
 | `GET` | `/accounts?email=` | Find the account to name as EventAdmin: exact match only, no partial search and no list; answers only the account id and display name; audited (assessment AC-9) | FarolAdmin | US-06, US-08 |
 | `POST` | `/events/{eventId}/members` | Name a user EventAdmin of an event (`{ userId, role: EventAdmin }`), the first one or a new one; recorded with who and when | FarolAdmin | US-06, US-08 |
 | `POST` | `/events/{eventId}/members/me` | Join the event as RegularUser (QR code or link); `404` if the event is not published in the local copy | Authenticated | US-12 |
@@ -72,7 +73,13 @@ Owns accounts, the `FarolAdmin` grant, memberships of events and team assignment
 
 - The first EventAdmin of a new event (US-06) is named with the same `POST /events/{eventId}/members`, right after the event is created in Events (D3). The event reaches Auth & Users through `EventChanged`; until then the call returns `404` and the web app retries. If it never succeeds, the event shows no EventAdmin in the FarolAdmin's list (US-07), who names one there (US-08).
 - E-mails are not verified (ADR-006), so before naming an account EventAdmin the FarolAdmin confirms with the organisation, outside Farol, that it is theirs (assessment AC-9).
-- **Account deletion** (ADR-006, guide D7): refused with `422` while the user is the last EventAdmin of an event. Otherwise Auth & Users deletes the user in Keycloak (Admin API, client credentials), deletes its own data, then publishes `UserDeleted`. If Keycloak is down, the deletion stays pending and is retried. What each other service deletes or anonymises is decided in the account-deletion issue (guide D7; proposal in the assessment §7).
+- **Account deletion** (ADR-006, guide D7, #135). In the MVP: US-05 is Must and the GDPR gives the right to erasure.
+  1. Refused with `422` while the user is the last EventAdmin of an event (`features.md` §4.1; they name another first, US-15, or the FarolAdmin does, US-08), or the last `FarolAdmin`. Checked in the same transaction that changes memberships, so an event is never left without an EventAdmin.
+  2. Otherwise Auth & Users marks the account *pending deletion*, refuses it, and publishes `UserStatusChanged` (`Disabled`), so every service refuses it at once.
+  3. Deletes the user in Keycloak (Admin API, client credentials), which also ends its sessions. If Keycloak is down, answers `202`, and a scheduled job retries.
+  4. In one transaction: deletes the account, the `FarolAdmin` grant, memberships, team assignments, friendships (both sides) and consent records; keeps a **tombstone** (only the `sub` and `deletedAt`); writes `UserDeleted` to the outbox. The audit records only that a deletion happened, and when (assessment AC-10).
+  5. Each consumer deletes or anonymises what it keeps (§7.4) and keeps its own tombstone.
+- **Tombstone:** Keycloak's `sub` is a UUID that is never reused and, once the account is gone, points to no one. It refuses a token issued before the deletion (still valid for up to 5 min) and makes late events about that `sub` (e.g. a retried `MembershipChanged`) be ignored, so no deleted copy comes back.
 - Publishes `MembershipChanged`, `GlobalRoleChanged`, `UserProfileChanged`, `UserStatusChanged` and `UserDeleted` (§7).
 
 ## 3. Events
@@ -321,8 +328,8 @@ Every payload except `HelpRequestSubmitted` also carries `version` (§7.3). `eve
 | `MembershipChanged` · `membership.changed` | Auth & Users | **Events**, **Reports**, **Transports**: decide who may call each endpoint of an event (role and teams, §1.5) and refuse non-members (US-14); Events also lists each event's EventAdmins (US-07) | `userId`, `role` (`EventAdmin` \| `RegularUser`), `status` (`Active` \| `Removed`), `teamIds` |
 | `GlobalRoleChanged` · `global-role.changed` | Auth & Users | **Events**: only the FarolAdmin creates, lists, suspends and reactivates events (US-06, US-07, US-09) | `userId`, `role` (`FarolAdmin`), `granted` |
 | `UserProfileChanged` · `user-profile.changed` | Auth & Users | **Reports**: the name of who accepted a field task, in the backoffice; **Events**: the names of the EventAdmins (US-07). Without it, both show only the `userId`. Also published when the account is created (§1.4) | `userId`, `displayName` |
-| `UserStatusChanged` · `user-status.changed` | Auth & Users | **Events**, **Reports**, **Transports**, **Badges**: refuse a disabled account at once, without waiting for its token to expire (ADR-006; assessment AC-6) | `userId`, `status` (`Active` \| `Disabled`) |
-| `UserDeleted` · `user.deleted` | Auth & Users | **Events**, **Reports**, **Transports**, **Badges**: refuse the account and delete or anonymise what they keep about it, local copies included. What each one does is decided in the account-deletion issue (guide D7). Published after Keycloak and Auth & Users have deleted it (§2) | `userId`, `deletedAt` |
+| `UserStatusChanged` · `user-status.changed` | Auth & Users | **Events**, **Reports**, **Transports**, **Badges**: refuse a disabled account at once, without waiting for its token to expire (ADR-006; assessment AC-6). Also published with `Disabled` when the user asks to delete the account (§2) | `userId`, `status` (`Active` \| `Disabled`) |
+| `UserDeleted` · `user.deleted` | Auth & Users | Every consumer keeps a tombstone of the `userId`, refuses it and ignores later events about it (§2), then: **Reports**: closes the user's open help requests (system action, empty `actorUserId`) and cancels their open field tasks; removes the requester from their help requests and the reporter from their reports, and deletes their text and map point, so only category or type, priority, status, times and team stay, as statistics; in audit entries, `acceptedBy` and field tasks, keeps the opaque `userId` and deletes the copied display name (the backoffice shows *Deleted user*); deletes the membership copies. **Events**: deletes the user's check-ins and the copies of memberships, `FarolAdmin` grant and display name; audit entries keep the opaque `userId`. **Transports**: deletes the membership copies. **Badges**: deletes progress, preferences and the copies of reports and check-ins. Published by Auth & Users after Keycloak and its own data are deleted (§2; guide D7) | `userId`, `deletedAt` |
 | `EventChanged` · `event.changed` | Events | **Auth & Users**: knows the event exists before its first EventAdmin is named (US-06) and accepts joins only to published events (US-12); **Reports**: refuses help requests and reports in a closed or suspended event (US-13, US-09); **Transports**: refuses a suspended event; **Badges**: the event's name on the *Event reporter* badge (US-55) | `name`, `organiserName`, `dates`, `status` (`Draft` \| `Published` \| `Closed` \| `Suspended`) |
 | `TeamChanged` · `team.changed` | Events | **Auth & Users**: a member can only be put in a team of the event (US-18); **Reports**: who triages, reviews and responds, the default team for a category (US-29), the teams the AI may suggest (US-34), and the requests to return to the queue when a team is deleted (US-16); **Transports**: who has `Transport.Edit` (US-37) | `teamId`, `name`, `permissions` (`[{ permission, reportTypes }]`), `handledCategories`, `deleted` |
 | `VenueMapVersionPublished` · `venue-map-version.published` | Events | **Reports**: a help request or report must point to an existing map version of the event (US-23, US-47) | `mapVersion`, `publishedAt` |
@@ -333,7 +340,7 @@ Every payload except `HelpRequestSubmitted` also carries `version` (§7.3). `eve
 | `ReportUnconfirmed` · `report.unconfirmed` | Reports | **Badges**: removes it from the counts and recalculates the tiers, which can go down (US-54, US-55) | `reportId`, `reporterUserId`, `type`, `confirmed: false`, `revokedAt` |
 
 - Transports and Badges publish nothing. The status of a help request reaches the participant by polling (§1.6), not by an event.
-- `ReportConfirmed` and `ReportUnconfirmed` carry the same full state, so Badges keeps one row per report and upserts it; a report confirmed, unconfirmed and confirmed again counts once.
+- `ReportConfirmed` and `ReportUnconfirmed` carry the same full state, so Badges keeps one row per report and upserts it; a report confirmed, unconfirmed and confirmed again counts once. After its reporter deletes the account, a report is published with an empty `reporterUserId`, and Badges ignores it.
 - If the badge preferences stay in Auth & Users (§6), Auth & Users also publishes `EngagementPreferencesChanged` to Badges.
 
 ### 7.5 Queues
