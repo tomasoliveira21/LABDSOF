@@ -18,6 +18,38 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `domain-model.md`: the pending deletion is a state of `AccountStatus`, whose values the model does not list.
 - Retention and backups (guide D5), out of scope; dead-letter messages and Keycloak login events that mention the `sub` expire within the D5 periods.
 
+### Merged
+- `main` merged (#133 architecture diagrams). Conflicts in this CHANGELOG (both kept, this entry first) and ADR-003 *Open points* (PostgreSQL servers closed from `main`, account deletion closed from this branch).
+
+## [Unreleased] · 2026-10-27 · Architecture diagrams updated (#133, Bruno Lopes)
+
+**Why:** the diagrams still showed the React Native app (removed on 22 October 2026, #125), had no API gateway or Keycloak (ADR-006, ADR-013) and showed a cloud platform still to choose. The professor asked for physical level 3 with the databases (meeting of 22 October 2026; guide *Em aberto* item 5).
+
+### Changed
+- **Physical view:** levels 1–3 show the local delivery (ADR-011, `local-delivery.md`). Level 3 has one machine with the web app, the API gateway, Keycloak, the five services (one instance each), RabbitMQ, WireMock and one PostgreSQL container with six databases, one user each (five services and Keycloak, Keycloak's marked third-party); the optional local AI model (K1) and Prometheus/Grafana (ADR-012) are dashed; a browser (phone or laptop) outside the machine; the AI provider and Porto Digital reached through WireMock. No ports and no HTTPS note (kept in `local-delivery.md`).
+- **Logical view:** no mobile app; one web app with phone and laptop pages used by all five personas (level 3: one *User* Person, also in its two mappings); API gateway (Spring Cloud Gateway) without `[PENDING]`; Keycloak and its database as containers from level 2 (not external, so not in level 1); account deletion through the Admin API. The web app is opened at level 3 (`logical-view-level-3-web`): level 3 with the phone and laptop pages, data and polling, login (`oidc-client-ts`) and the API client in place of its box.
+- **Implementation view:** the web app is `frontend/` itself (guide H2, ADR-010), `backend/gateway/` added, `infra/` holds the Compose file, the Keycloak realm and the PostgreSQL init script; "deploys" removed (local delivery). `implementation-view-level-3-web` is level 3 with `frontend/` opened into `pages/`, `data/`, `api/` and `auth/` (layout still `[PENDING: Tomás]`); event contracts are `contracts/events/` (one JSON Schema per event, `spec-driven-development.md` R3).
+- **Process view, help request:** the request goes through the gateway (JWT, rate limit); the event carries only the request id and triage reads the request from Reports' database (assessment M-5); outbox every 1 s; an AI failure ends in the "Not triaged" fallback and an acknowledgement, while a processing failure gets 4 attempts (1 s, 2 s, 4 s) and then the dead-letter queue, moved back by hand (`architecture.md` §6).
+- **Process view, transports:** web app instead of mobile app; import every 30 s and freshness limit 5 min (J1); bus positions and event shuttles instead of "regular lines" (ADR-008, API outline §5).
+- **Role names** in every diagram: Field-team member, EventAdmin, FarolAdmin (`features.md` §4).
+- **Mappings** rebuilt from the updated views; logical → physical links the AI provider and Porto Digital to WireMock and to the real system.
+- `architecture.md` §14 without the mobile links and the *TO ALIGN* notes; §2 explains why Keycloak is not in the system context. ADR-009: 32 diagrams, physical view and identity-provider open points closed. ADR-003: one PostgreSQL server with six databases (open point closed). Guide *Em aberto* item 5 ✅.
+- **Pending markers checked against `main`:** the AI provider is the local Ollama model (qwen3:4b, guide K1 ✅); in the physical view a hosted provider is dashed as the alternative, behind WireMock. Prometheus and Grafana only (#153), optional `observability` profile, without `[PENDING]`. WireMock stays without a marker (confirmed for J4 with the NFRs, #139). The only `[PENDING]` left is the `frontend/` folder layout.
+- **Physical view, levels 2 and 3** (and logical → physical): each container shows its name first in bold and *Docker container* after it.
+- **Every diagram** re-exported with draw.io so the content is centred, with equal margins.
+- `architecture.md` §14 links the *3 web* diagrams; the system-context sketch and the *Not drawn* note no longer say `[PENDING]` for the AI model and observability. ADR-009: level 4 per service, the web app at level 3; only the `frontend/` layout marker left.
+
+### Added
+- `logical-view-level-3-web`, `implementation-view-level-3-web` and `mapping-logical-implementation-level-3-web`.
+
+### Removed
+- `logical-view-level-4-mobile`, `implementation-view-level-4-mobile` and `mapping-logical-implementation-level-4-mobile`.
+- `logical-view-level-4-web`, `implementation-view-level-4-web` and `mapping-logical-implementation-level-4-web` (replaced by the *3 web* diagrams).
+
+### Merged
+- `main` merged (#123 API outline, #127 versioning, #129/#130 local delivery, #131/#132 ADR-010, #145 AI triage coverage, #58/#150 walking-skeleton decisions, #148/#151 local observability, #149/#152 AI evaluation, #153 simplified local demo tools). Conflicts in this CHANGELOG (both kept, this entry first) and the guide (*Em aberto* item 4 from `main`, item 5 ✅ from this branch).
+- `main` merged again (#139 NFR list). Conflicts in this CHANGELOG (both kept, this entry first) and the guide (*Em aberto* item 5 from this branch, item 6 from `main`, marked merged). K1 (✅ Ollama + qwen3:4b) and I1 (✅ stack) are now closed in the guide, so the diagrams and `architecture.md` drop the *to review: K1* marker.
+
 ## [Unreleased] · 2026-10-24 · Non-functional requirements list (#137, Tiago Teixeira)
 
 **Why:** in the meeting with the professor on 22 October 2026 the NFRs were *missing as one list* for the Sprint A deck (*Presentation contents*); the action was Tiago's.
@@ -670,7 +702,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Deck review: the personas slide shows Sofia's success as "event configured and published"; the main-features slide no longer mentions 112 (the "Ask for help" item and its speaker notes).
 - `.github/ISSUE_TEMPLATE/user-story.yml`: issue form with the DoR as required fields plus a checklist, and the story-level DoD pre-filled as a checklist.
 - `.github/ISSUE_TEMPLATE/task.yml` (work that is not a story) and `config.yml` (blank issues disabled).
-- `.github/workflows/conventions.yml`: the **Conventions** check fails a PR whose branch name, title or `Closes #<issue>` line does not follow README §2 and §4.
+- `.github/workflows/conventions.yml`: the **Conventions** check fails a PR whose branch name, title or `Closes #133` line does not follow README §2 and §4.
 
 ### Changed
 
@@ -916,6 +948,6 @@ Recorded in `team-and-process.md` §4, not fixed here because they depend on rep
 
 ### Notes for whoever opens the PR
 
-- The commits on this branch have **no issue number**, because there is no issue for this work yet. Create one in `tomasoliveira21/LABDSOF` and use `Closes #<issue>` in the PR description; with squash merge, the PR title becomes the commit on `main` (README §4).
+- The commits on this branch have **no issue number**, because there is no issue for this work yet. Create one in `tomasoliveira21/LABDSOF` and use `Closes #133` in the PR description; with squash merge, the PR title becomes the commit on `main` (README §4).
 - Suggested PR title: `Docs: Add Sprint 1 product, process and technical artifacts`.
 - Mermaid diagrams render on GitHub. They were checked with the Mermaid CLI before committing.
