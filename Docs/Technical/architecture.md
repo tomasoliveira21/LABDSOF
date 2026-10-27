@@ -118,6 +118,8 @@ Entities in lower case are not in the domain model yet; Tomás and Guerra add th
 | Service → service | **Asynchronous only** (RabbitMQ, Spring AMQP, *topic* exchanges) | A service that is down does not stop the others |
 | Transports → transport data | Scheduled poll | The external source may be slow or down; never called inside a user's request |
 
+The endpoints of each service and the events each one publishes and consumes are in the [API outline and event catalogue](api-outline.md).
+
 ## 6. The asynchronous workflow: help-request triage
 
 Required by assignment §6.3 and §7.1.2 (*Asynchronous workflow*). End-to-end flow: [`user-workflows.md`, W2](../Product/user-workflows.md#w2--participant-asks-for-help-core-journey).
@@ -237,15 +239,16 @@ Invalid data comes first because an invalid answer is still a successful HTTP ca
 
 **Current scope: local-only deployment/execution.** Tomás reported that the professor authorised proceeding locally **because of cloud-hosting costs**, provided the team explains that reason in the final report/presentation. See the [clarification record](../Meetings/2026-10-22-local-deployment-clarification.md) and [ADR-011](adr/0011-deployment-and-infrastructure.md). The [cloud assessment and dated costs](../Research/architecture-investigation/deployment.md) remain documented evidence and future alternatives, not a requirement to provision cloud resources.
 
-The local topology recommendation is one machine with five independently replaceable backend containers, one RabbitMQ with a persistent volume, one PostgreSQL instance with five separate databases/users and a web-server container for the React app. Gateway, simulator, observability and optional inference add components as needed; phones open the same web app in the browser. The API gateway and Keycloak are two of them, the only containers published to the host with the web app ([ADR-013](adr/0013-api-gateway.md), [ADR-006](adr/0006-identity-and-access.md)). Separate database containers are also possible without separate machines. Exact Compose configuration and resource sizing still need implementation/measurement.
+**Local delivery procedure (decided 23 October 2026, #129): [`local-delivery.md`](local-delivery.md).** One laptop runs one `infra/compose.yaml`: five independently replaceable backend containers, the API gateway ([ADR-013](adr/0013-api-gateway.md)), Keycloak ([ADR-006](adr/0006-identity-and-access.md)), one RabbitMQ with a persistent volume, **one PostgreSQL instance with six separate databases/users** (five services and Keycloak), a `web` container serving the React app, and WireMock in front of the external systems; AI and observability are optional profiles. The gateway, Keycloak and the web app are the only containers reachable from the network; admin pages are published on `127.0.0.1` only. HTTPS for the phones, which the PKCE login needs off `localhost`, is open ([security assessment](security-and-privacy-assessment.md) §9, Guerra). Only `docker compose` commands are used; a manual smoke-test checklist runs after every start, update or rollback. Phones open the web app at the laptop's LAN address; a second laptop is kept as a backup. Minimum RAM and recovery times are measured with the walking skeleton.
 
 Preserved requirements and limits:
 - **One instance per service** initially; independent images and service replacement still demonstrate the microservice boundaries.
 - **Multi-stage Dockerfiles**, Maven, Java 21 and Spring Boot 4.x. **CI/CD ([ADR-010](adr/0010-cicd-strategy.md)):** GitHub Actions checks every service in every run. Pull requests run the fast part (build, unit and Testcontainers integration tests, Checkstyle, ESLint, gitleaks); pushes to `main`, release tags and manual runs also build the images, scan them with Trivy and run the smoke test with Compose on the runner. Documentation-only and draft PRs skip the code jobs to save Actions minutes. No registry and no credentials: nothing is published.
 - The earlier automatic-deploy-to-cloud-production promise is superseded for this delivery scope. Delivery is building locally from the release tag and running the smoke test; CI never reaches a personal machine. Cloud credentials/ACR/provisioning are not prerequisites.
+- **Versioning (guide H7):** one **SemVer** version for the whole monorepo, set by an annotated git tag `vX.Y.Z` on `main`; our seven images (the five services, the API gateway of ADR-013 and the web app) get the same version without the `v` (`farol-<service>:0.2.0`), other builds are `dev`. Third-party images (Keycloak, PostgreSQL, RabbitMQ, WireMock, the observability stack) keep their own exact version, pinned in the Compose file (ADR-011) and changed only in a PR. One MINOR release at the end of each sprint, one per release of `features.md` §8.2 (`v0.1.0` Sprint A = R0, `v0.2.0` Sprint B = R1, `v1.0.0` Sprint C = R2), PATCH only to fix a release already demonstrated, tagged on `main` (no release branches, so a PATCH also ships whatever is already on `main`). Git tags only: no registry and no GitHub Releases; images are built from the tag, rolling back means building the previous tag, and release notes go in the `CHANGELOG.md`.
 - **Flyway** migrations remain compatible with the previous application image (*expand and contract*); rolling back code does not undo database migrations.
 - Local metrics/traces/logs and degraded-mode/integration tests still provide evidence. No cloud HA, managed scaling or cloud recovery result is claimed.
-- Persistent local volumes are not a backup or a guarantee against host/disk loss. Backup scope and observed recovery limits remain explicit.
+- Persistent local volumes are not a backup or a guarantee against host/disk loss. The six databases are dumped with `pg_dump` before every demo and update; queued messages and disk loss are not covered.
 
 ### 10.1 Peak load and scaling (J3)
 
@@ -304,8 +307,9 @@ Why these pass criteria: **p95 < 500 ms** on the server leaves most of SC1's 5 s
 | Load testing | **k6** |
 | API | Contract-first **OpenAPI**, `/api/v1` |
 | CI/CD | **GitHub Actions**, monorepo, private repository; fast checks on PRs, images + Trivy + Compose smoke test on `main` and tags; no registry ([ADR-010](adr/0010-cicd-strategy.md)) |
+| Versioning | **SemVer**, one version for the monorepo, git tag `vX.Y.Z` per sprint; our seven images `farol-<service>:X.Y.Z`, third-party images pinned; no registry (§10) |
 | Architecture views | **C4** (all four levels, level 3 for every service) and **4+1** views without scenarios, drawn in **draw.io** |
-| Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** [ADR-011](adr/0011-deployment-and-infrastructure.md); local implementation pending |
+| Deployment | **Local-only scope authorised by the professor, reported by Tomás; cloud omitted due to costs.** One Compose file, one PostgreSQL instance with six databases (five services and Keycloak). [ADR-011](adr/0011-deployment-and-infrastructure.md), [`local-delivery.md`](local-delivery.md); implementation in the walking skeleton |
 | AI provider and model | **[PROPOSED]** Hosted Mistral Small vs local Ollama comparison; selection gates in [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) |
 | Observability | **[PROPOSED]** Local Micrometer/OpenTelemetry + Prometheus/Grafana; Azure Monitor retained as cloud alternative. [ADR-012](adr/0012-observability.md) |
 | Identity | **Keycloak** (OpenID Connect), self-hosted; Spring Security resource server in every service; `oidc-client-ts` in the web app. [ADR-006](adr/0006-identity-and-access.md) |
@@ -328,11 +332,11 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
 | [ADR-010](adr/0010-cicd-strategy.md) | CI/CD strategy, including versioning (§10, guide H4–H8) | Accepted |
-| [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; detailed implementation/recovery pending |
+| [ADR-011](adr/0011-deployment-and-infrastructure.md) | Local deployment and cloud alternatives | Local-only delivery authorised; procedure decided 23 October 2026 ([`local-delivery.md`](local-delivery.md)); implementation pending |
 | [ADR-012](adr/0012-observability.md) | Observability | Proposed; instrumentation and SLO validation pending |
 | [ADR-013](adr/0013-api-gateway.md) | API gateway, CORS and rate limiting | Accepted |
 
-> ⚠️ **GAP: API outline and walking skeleton.** Sprint A also asks for an API outline (item 7; owner: Bruno, with the event catalogue) and a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; later phase, no owner yet).
+> ⚠️ **GAP: walking skeleton.** Sprint A also asks for a walking skeleton: a minimal end-to-end implementation with an automated build, an initial test and a containerised deployment (item 10; owner: Tomás). The API outline (item 7) is in [`api-outline.md`](api-outline.md).
 
 ## 14. Architecture diagrams
 
