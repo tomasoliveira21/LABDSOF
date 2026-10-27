@@ -58,14 +58,14 @@ Employer cost per month (A4, A5, A7): Junior 1,816 × 14 / 12 × 1.2375 = **2,62
 
 ### 4.1 Local scenario (what is actually used)
 
-Delivery is local only ([ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)): everything runs with Docker Compose on one team member's laptop, with a second laptop as a backup for the demo, and the phones open the web app over the LAN (`local-delivery.md`, proposed in #130).
+Delivery is local only ([ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)): everything runs with Docker Compose on one team member's laptop, with a second laptop as a backup for the demo, and the phones open the web app over the LAN ([`local-delivery.md`](../Technical/local-delivery.md), #129).
 
 | Item | Per month | Assumption |
 |---|---:|---|
 | Laptops (demo and backup), Docker, PostgreSQL (one instance, five databases), RabbitMQ | 0 € | Equipment the team already owns. Electricity and wear are not measured, so they are not zero, only not counted (ADR-011) |
 | Container registry | 0 € | No registry: images built locally from the git tag (proposed in #127; guide H7 still open) |
 | App stores, mobile builds | 0 € | No mobile app: one React web app (guide F1, #125) |
-| GitHub Free, private repository, GitHub Actions | 0 € | 2,000 Actions minutes per month; the pipeline is designed to fit them and uses no paid feature (ADR-010, proposed in #132) |
+| GitHub Free, private repository, GitHub Actions | 0 € | 2,000 Actions minutes per month; the pipeline is designed to fit them and uses no paid feature ([ADR-010](../Technical/adr/0010-cicd-strategy.md)) |
 | AI triage with local Ollama | 0 € | No API charges; runs on the demo laptop if guide K1 picks it ([`responsible-ai.md`](../Research/architecture-investigation/responsible-ai.md)) |
 | GitHub Copilot Business (automatic code review, README §5) | 6 × $19 = $114 = **102 €** | Copilot Business, the plan for organisations, $19 per user per month ([GitHub plans](https://docs.github.com/en/copilot/get-started/plans), checked 26 Oct 2026), one licence per person (A1). Notional, like the salaries: the team uses Copilot Pro free through GitHub Education, so the real cost is 0 € |
 | **Total per month** | **102 €** | × 3.35 months (A2) = **341 €** |
@@ -107,7 +107,7 @@ Even at hosted prices the AI is negligible next to hosting. The choice of provid
 3. **Locally the extra cost is 0 € beyond Copilot**, which is the same in both scenarios (and free for the team through GitHub Education). The same five independent services, five databases and RabbitMQ run on a laptop the team already has, which shows independent deployment without a cloud bill.
 4. **The professor agreed.** After discussing these costs, the professor authorised local delivery, provided the report and presentation explain that cost is the reason ([clarification](../Meetings/2026-10-22-local-deployment-clarification.md), ADR-011).
 
-**What this costs the project:** cloud operation, managed scaling and cloud recovery are not demonstrated. The local topology, the smoke test and the degraded-mode tests are shown instead (`local-delivery.md`, proposed in #130).
+**What this costs the project:** cloud operation, managed scaling and cloud recovery are not demonstrated. The local topology, the smoke test and the degraded-mode tests are shown instead ([`local-delivery.md`](../Technical/local-delivery.md)).
 
 ## 6. Limits of this estimate
 

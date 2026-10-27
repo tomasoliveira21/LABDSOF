@@ -2,22 +2,167 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] · 2026-10-26 · Architecture diagrams updated (#<issue>, Bruno Lopes)
+## [Unreleased] · 2026-10-27 · Architecture diagrams updated (#<issue>, Bruno Lopes)
 
 **Why:** the diagrams still showed the React Native app (removed on 22 October 2026, #125), had no API gateway or Keycloak (ADR-006, ADR-013) and showed a cloud platform still to choose. The professor asked for physical level 3 with the databases (meeting of 22 October 2026; guide *Em aberto* item 5).
 
 ### Changed
 - **Physical view:** levels 1–3 show the local delivery (ADR-011, `local-delivery.md`). Level 3 has one machine with the web app, the API gateway, Keycloak, the five services (one instance each), RabbitMQ, WireMock and one PostgreSQL container with six databases, one user each (five services and Keycloak, Keycloak's marked third-party); the optional local AI model (K1) and Prometheus/Grafana (ADR-012) are dashed; a browser (phone or laptop) outside the machine; the AI provider and Porto Digital reached through WireMock. No ports and no HTTPS note (kept in `local-delivery.md`).
-- **Logical view:** no mobile app; one web app with phone and laptop pages used by all five personas; API gateway (Spring Cloud Gateway) without `[PENDING]`; Keycloak and its database as containers from level 2 (not external, so not in level 1); account deletion through the Admin API. Level 4 web has every persona, phone and laptop pages, data and polling, login (`oidc-client-ts`) and the API client.
-- **Implementation view:** the web app is `frontend/` itself (guide H2, ADR-010), `backend/gateway/` added, `infra/` holds the Compose file, the Keycloak realm and the PostgreSQL init script; "deploys" removed (local delivery). Level 4 is now *frontend/* with `pages/`, `data/`, `auth/` and `api/` (layout still `[PENDING]`).
+- **Logical view:** no mobile app; one web app with phone and laptop pages used by all five personas (level 3: one *User* Person, also in its two mappings); API gateway (Spring Cloud Gateway) without `[PENDING]`; Keycloak and its database as containers from level 2 (not external, so not in level 1); account deletion through the Admin API. The web app is opened at level 3 (`logical-view-level-3-web`): level 3 with the phone and laptop pages, data and polling, login (`oidc-client-ts`) and the API client in place of its box.
+- **Implementation view:** the web app is `frontend/` itself (guide H2, ADR-010), `backend/gateway/` added, `infra/` holds the Compose file, the Keycloak realm and the PostgreSQL init script; "deploys" removed (local delivery). `implementation-view-level-3-web` is level 3 with `frontend/` opened into `pages/`, `data/`, `api/` and `auth/` (layout still `[PENDING: Tomás]`); event contracts are `contracts/events/` (one JSON Schema per event, `spec-driven-development.md` R3).
 - **Process view, help request:** the request goes through the gateway (JWT, rate limit); the event carries only the request id and triage reads the request from Reports' database (assessment M-5); outbox every 1 s; an AI failure ends in the "Not triaged" fallback and an acknowledgement, while a processing failure gets 4 attempts (1 s, 2 s, 4 s) and then the dead-letter queue, moved back by hand (`architecture.md` §6).
 - **Process view, transports:** web app instead of mobile app; import every 30 s and freshness limit 5 min (J1); bus positions and event shuttles instead of "regular lines" (ADR-008, API outline §5).
 - **Role names** in every diagram: Field-team member, EventAdmin, FarolAdmin (`features.md` §4).
 - **Mappings** rebuilt from the updated views; logical → physical links the AI provider and Porto Digital to WireMock and to the real system.
 - `architecture.md` §14 without the mobile links and the *TO ALIGN* notes; §2 explains why Keycloak is not in the system context. ADR-009: 32 diagrams, physical view and identity-provider open points closed. ADR-003: one PostgreSQL server with six databases (open point closed). Guide *Em aberto* item 5 ✅.
+- **Pending markers checked against `main`:** the AI provider is the local Ollama model (qwen3:4b), marked *to review: K1, Tomás* (ADR-005 still *Proposed*); in the physical view a hosted provider is dashed as the alternative, behind WireMock. Prometheus and Grafana only (#153), optional `observability` profile, without `[PENDING]`. WireMock stays without a marker (guide J4: Guerra confirms). The only `[PENDING]` left is the `frontend/` folder layout.
+- **Physical view, levels 2 and 3** (and logical → physical): each container shows its name first in bold and *Docker container* after it.
+- **Every diagram** re-exported with draw.io so the content is centred, with equal margins.
+- `architecture.md` §14 links the *3 web* diagrams; the system-context sketch and the *Not drawn* note no longer say `[PENDING]` for the AI model and observability. ADR-009: level 4 per service, the web app at level 3; only the `frontend/` layout marker left.
+
+### Added
+- `logical-view-level-3-web`, `implementation-view-level-3-web` and `mapping-logical-implementation-level-3-web`.
 
 ### Removed
 - `logical-view-level-4-mobile`, `implementation-view-level-4-mobile` and `mapping-logical-implementation-level-4-mobile`.
+- `logical-view-level-4-web`, `implementation-view-level-4-web` and `mapping-logical-implementation-level-4-web` (replaced by the *3 web* diagrams).
+
+### Merged
+- `main` merged (#123 API outline, #127 versioning, #129/#130 local delivery, #131/#132 ADR-010, #145 AI triage coverage, #58/#150 walking-skeleton decisions, #148/#151 local observability, #149/#152 AI evaluation, #153 simplified local demo tools). Conflicts in this CHANGELOG (both kept, this entry first) and the guide (*Em aberto* item 4 from `main`, item 5 ✅ from this branch).
+
+## [Unreleased] · 2026-10-23 · CI/CD strategy (#131, Bruno Lopes)
+
+**Why:** close guide H4–H8 in one ADR, so the walking skeleton (R0) builds the pipeline from it (assignment §8.4, §8.5; ADR-011 point 5).
+
+### Added
+- `adr/0010-cicd-strategy.md`: `conventions.yml` kept (Dependabot PRs exempt) plus one `ci.yml`. PRs run build, unit and Testcontainers integration tests, Checkstyle, ESLint, the web build and gitleaks; pushes to `main`, tags and manual runs also build the images with Compose, scan them with Trivy and run the `local-delivery.md` smoke test on the runner. Documentation-only and draft PRs skip the code jobs, and older runs of a PR are cancelled, to save the private repository's Actions minutes. Tags run the same pipeline and nothing is published (no registry, no secrets, `contents: read`). Dependabot monthly grouped updates. Required checks: **Conventions** and **CI**. R0 implements all of it; alternatives (everything on every PR, a `dev` branch, GHCR, artefacts, self-hosted runner, paid scanners) recorded.
+
+### Changed
+- `architecture-decisions-guide.md`: section H closed (H4–H8 ✅, H6 does not apply); status date; *Próximos passos* (done, Bruno's open items, walking skeleton).
+- `architecture.md` §10, §12 and §13 (ADR-010 *Accepted*, linked). `ADR-011` status and point 5: CI runs the smoke test on its own runner. `Docs/README.md`: ADR-010 in the index; §6 names the two required checks.
+- `definition-of-ready-and-done.md`: the "deployed to the shared environment" item now asks for a green pipeline on `main` (delivery is local).
+
+### Not changed
+- No workflow file: `ci.yml`, `dependabot.yml` and the Dependabot exemption in `conventions.yml` belong to the walking skeleton (Tomás). The real job durations are measured there.
+
+### Aligned with `main` (26 October 2026)
+- **API gateway** (ADR-013): built and tested like the services (`backend` matrix); `delivery` builds seven images and the CI smoke test also checks that the gateway answers `401` without a token.
+- **Security assessment, finding 12 (T18):** ADR-010 point 7 and guide H8 say that Dependabot and Trivy answer it; Guerra marks it in the assessment.
+- **R0 scope** (point 9) marked as a proposal to agree with Tomás; guide *Em aberto* item 4 says the same.
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #134 operating cost estimation, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (ADR-010 added to main's *Technical* row) and the guide (status date, H9 and *Feito*/*Em aberto* from main; H4–H8 and the pipeline item in *Feito* from #131; H6 and H7 removed from Bruno's areas).
+- `main` merged again (#127 versioning, #129 local delivery, #123 API outline, #145 AI triage coverage, #58 walking-skeleton decisions). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (ADR-010 added to main's *Technical* row), `ADR-011` (status and points 2–4 and 6 from #129; point 5 from #129 with the CI sentence from #131), `architecture.md` §12 (CI/CD bullet and row from #131, versioning bullet and row from #127) and §13 (ADR-010 row from #131, ADR-011 row from #129), and the guide (H4–H6 and H8 from #131; H7 from #127 with the CI sentence from #131; *Em aberto* items 1 and 2 from main, item 4 from main plus the pipeline). `local-delivery.md`, the research overview and the cost estimation now link ADR-010 instead of calling it not written.
+- `main` merged a third time (#153 simplified local demo tools). Conflict only in this CHANGELOG (both kept, this entry first).
+
+## [Unreleased] · 2026-10-26 · Simplify local demonstration tools (#153)
+
+### Changed
+- At Tomás's request, reduce local observability to Prometheus/Grafana, Actuator health/metrics and correlated Docker logs. Grafana-managed rules replace the separate Alertmanager; Collector/Tempo and distributed tracing become optional future extensions. Assignment §6.7's correlation-or-trace requirement is mapped to concrete minimum demo evidence.
+- Keep one Ollama/model and one evaluation on the existing 20/80 dataset split; repeated/cross-provider/concurrency studies and a new blinded dataset are optional extensions. Preserve label/reason review, human control and the 95%/30 s and SC5 targets.
+- Remove the fixed 24 GiB machine planning assumption from demo acceptance; use and measure the existing local machine. No runtime, capacity or quality result is fabricated; team review remains required.
+
+## [Unreleased] · 2026-10-26 · Complete walking-skeleton and local delivery decisions (#58)
+
+### Changed
+- Replaced the broad draft plan with the concrete Scenario A-style thin slice from the supplied course slides: fixed synthetic request, real persistence and displayed stored state; AI/dispatch/transport business functionality remains in later increments.
+- Answered G1–G7, F2 and C1: local Compose, no cloud region/provisioning, dev/test/demo isolation, local React/RabbitMQ, six owned databases including Keycloak, tag-based delivery and consistent dump/rollback procedure. Retained the original cloud/cost evidence.
+- Defined the minimum R0 cut, endpoint/data/smoke contract, resource planning budgets and recovery targets. No runtime, model or measured sizing result is fabricated; executable #58 remains open for evidence.
+## [Unreleased] · 2026-10-23 · Local delivery and demo procedure (#129, Bruno Lopes)
+
+**Why:** delivery is local only (#53). The team needed one written procedure to start, update, roll back, check and demonstrate the system before the walking skeleton is built (guide G4–G7 and H5).
+
+### Added
+- `Docs/Technical/local-delivery.md`: one `infra/compose.yaml` with `ai` and `observability` profiles; one PostgreSQL instance with five databases and five users; `infra/.env.example` versioned and `infra/.env` ignored; synthetic demo data from demo-only Flyway migrations; only `docker compose` commands (no script or Makefile) to start, update, replace one service, roll back (build the previous tag, guide H7) and reset; a manual smoke-test checklist (containers healthy, web app opens, one RabbitMQ round trip); `pg_dump` of the five databases before every demo and update; demo on a team member's laptop with a backup laptop, phones on the laptop's LAN IP over plain HTTP; D1, D2, broker and service outages shown with `docker compose stop`, always using the J4 simulator.
+
+### Changed
+- `architecture-decisions-guide.md`: G4–G7 and H5 decided (Bruno defines, Tomás applies in the walking skeleton); owners table, status date and *Próximos passos* updated. The RTO and the minimum RAM are measured with the walking skeleton.
+- `ADR-011`: status and points 2 and 4–6 now state the decided procedure. One PostgreSQL instance instead of separate containers. The mobile app line is replaced by phones opening the web app (#125).
+- `architecture.md` §10, §12 and §13: link the procedure and summarise it.
+- `deployment.md` (G6): the five-PostgreSQL-containers suggestion is marked as not taken.
+- `2026-10-22-local-deployment-clarification.md`: follow-up line. `Docs/README.md`: the procedure in the index.
+
+### Not changed
+- D5 (retention and backup) stays deferred: the dumps only cover the synthetic demo data. Running the smoke test in CI belongs to ADR-010 (Bruno, not written yet).
+
+### Aligned with `main` (26 October 2026)
+- **Gateway and Keycloak** (ADR-013, ADR-006) added to the Compose file; the `web` container no longer proxies `/api/`: the app calls the gateway and Keycloak directly. **Six databases** on the one PostgreSQL instance (Keycloak's added), dumped before every demo; one RabbitMQ user per service.
+- **Ports:** only the gateway, Keycloak and the web app reach the network (ADR-013); RabbitMQ management, WireMock's admin API and Grafana are published on `127.0.0.1` only; full-disk encryption on the demo laptop (assessment §9).
+- **HTTPS for the phones left open for Guerra** (assessment §9, finding 2): over plain HTTP the PKCE login fails off `localhost` and tokens are readable on the network. The mkcert and device-mode proposals are listed; until Guerra decides, the phone pages are shown in device mode on `localhost`.
+- **WireMock** (#43, J2; J4 proposal) replaces the generic simulator, in front of Porto Digital and a hosted AI provider; D1 and D2 shown with its failure stubs.
+- **Smoke test:** the gateway answers 401 without a token; login works (on a phone once HTTPS is decided).
+- **H6 closed** (✅): with no registry there is nothing to publish and no publishing credential.
+- `ADR-011` points 2 (eleven containers, ports, HTTPS open), 5 and 6; guide G4, G5, G6, G7, H6, *Feito* and Bruno's areas; `architecture.md` §10 and §12; `features.md` §8.2 no longer says every merge to `main` is deployed.
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (procedure added to main's *Technical* row), `architecture.md` §10 (procedure from #129, gateway and Keycloak sentence from main) and the guide (status date, G3, Guerra's row and *Em aberto* from main; G4–G7, Tomás's row and the procedure in *Feito* from #129; G4–G7 removed from Tomás's areas, local delivery added to Bruno's).
+- `main` merged again (#134 operating cost estimation). Conflicts in this CHANGELOG (both kept) and the guide's *Feito* (both items kept). The cost estimation's two `local-delivery.md` mentions, marked "proposed in #130", are links again.
+- `main` merged a third time (#145 AI triage coverage, #124 API outline). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (local delivery and API outline both in the *Technical* row) and the guide's *Em aberto* (item 2 from main; G4–G7 out of Tomás's areas, C8 and H6 out of Bruno's).
+- `main` merged a fourth time (#128 versioning). Conflicts in this CHANGELOG (both kept, this entry first), `architecture.md` §12 (local delivery sentence from #129, versioning bullet from main) and §13 (ADR-010 row from main, ADR-011 row from #129), and the guide (H5 and H6 from #129, H7 from main; *Feito* keeps both items; Bruno's areas now only D7).
+
+## [Unreleased] · 2026-10-23 · Versioning and release tags (#127, Bruno Lopes)
+
+**Why:** close guide H7 so the pipeline (ADR-010) and the local delivery (ADR-011) know which version a build is and how to go back to an earlier one.
+
+### Changed
+- `architecture-decisions-guide.md`: H7 ✅. One SemVer version for the monorepo, annotated tag `vX.Y.Z` on `main`, images `farol-<service>:X.Y.Z` (other builds `dev`); 0.x during the sprints (`v0.1.0` Sprint A, `v0.2.0` Sprint B, `v1.0.0` Sprint C), PATCH only to fix a release already demonstrated, tagged on `main` with no release branches; git tags only, no registry and no GitHub Releases; release notes in this CHANGELOG. *Próximos passos*: H7 moved to done.
+- `architecture.md`: versioning in §10 and §12; ADR-010 row in §13 says it includes versioning.
+
+### Not changed
+- No new ADR: versioning goes into ADR-010 (CI/CD), still to be written. H6 stays open, although with no registry there are no images to publish.
+
+### Aligned with `main` (26 October 2026)
+- **API gateway** (ADR-013): versioned with the services and the web app, so seven images of ours share the version.
+- **Third-party images** (Keycloak from ADR-006, PostgreSQL, RabbitMQ, WireMock from #43, the observability stack): not versioned with Farol; exact versions pinned in the Compose file (ADR-011, point 4), changed only in a PR.
+- **Releases:** `v0.1.0`, `v0.2.0` and `v1.0.0` are R0, R1 and R2 of `features.md` §8.2.
+- Same changes in `architecture.md` §10 and §12.
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first) and the guide (status date and *Em aberto* from main, H7 removed from Bruno's areas; H7 added to *Feito*).
+- `main` merged again (#134 operating cost estimation, #145 AI triage coverage). Conflicts in this CHANGELOG (both kept, this entry first) and the guide's *Feito* (both items kept).
+- `main` merged a third time (#124 API outline). Conflicts in this CHANGELOG (both kept, this entry first) and the guide's *Em aberto* (item 2 from main; C8 and H7 both removed from Bruno's areas).
+
+## [Unreleased] · 2026-10-23 · API outline and event catalogue (#123, Bruno Lopes)
+
+**Why:** Sprint A deliverable 7 (assignment §7.1.2; guide C8). The team needs an agreed outline of each service's REST endpoints and of the events between services before writing the OpenAPI contracts and the stories (guide C7).
+
+### Added
+- `Docs/Technical/api-outline.md`: conventions (resource paths under `/api/v1` with `{eventId}`, state changes as `POST /{id}/<action>`, `updatedSince` polling, Problem Details errors, per-event authorisation from local copies); endpoints of Auth & Users, Events, Reports, Transports and Badges with the role or permission and the story; request and response fields of the core flow (help request, triage, field tasks); event catalogue (envelope, one topic exchange per producer, full-state payloads with a version, 12 events with producer, consumers and why, queue bindings); coverage matrix of the Must and Should stories; Could features; §10 decisions: D1–D12 taken by the outline owner on 23 October 2026 (the FarolAdmin names the first EventAdmin with a second call, D3; no endpoint for another user's badges, D9), and O1–O7 waiting for other owners.
+
+### Changed
+- `architecture-decisions-guide.md`: C8 decided (✅, #123); status date; *Próximos passos*.
+- `architecture.md`: §5 links the outline; the §13 gap now covers only the walking skeleton.
+- `Docs/README.md`: outline added to the index.
+
+### Not changed
+- `domain-model.md`: `EngagementPreferences` stays in Auth & Users until the team accepts moving it to Badges (outline §6, decision O5 in §10.2).
+- `features.md`: US-41 still says STCP; left to its owner (Tiago).
+
+### Merged
+- `main` merged (#43 resilience, #46 identity and gateway, #125 mobile app removed, #138 board, #141 gateway limits, #143 security and privacy assessment). Conflicts in this CHANGELOG (both kept, this entry first), `Docs/README.md` (outline added to main's *Technical* row) and the guide (status date and *Em aberto* from main, C8 removed from Bruno's areas; outline added to *Feito*). The outline is then aligned with ADR-006 and ADR-013 (next section).
+- `main` merged again (#134 operating cost estimation, #145 AI triage coverage). Conflict only in this CHANGELOG (both kept, this entry first).
+
+### Aligned with ADR-006, ADR-013 and the Security and Privacy Assessment (26 October 2026)
+**Why:** guide *Em aberto* item 2 and the action for Bruno in the [meeting of 22 October 2026](Docs/Meetings/2026-10-22-identity-and-gateway-decisions.md): the outline still followed the proposals that ADR-006 and ADR-013 decided.
+
+- **O1–O3 closed:** paths follow ADR-013's route table; sign-up, login and logout in Keycloak, `POST /accounts` removed and the account created at the first `GET /me` (US-03); the token carries only the identity, and `userId` is the token's `sub`.
+- **O4 closed:** `GET /accounts?email=` follows the assessment's AC-9 (exact match, id and display name only, audited; the FarolAdmin confirms the account with the organisation outside Farol).
+- **Limits and errors:** ADR-013 rate limits in §1.7; `429` after 5 help requests in 10 minutes, `413` for a map over 20 MB, `503` with `Retry-After`.
+- **Event catalogue:** new `UserStatusChanged` (`Active` | `Disabled`), so every service refuses a disabled account at once; `UserDeleted` defined (`userId`, `deletedAt`, consumed by Events, Reports, Transports and Badges); `UserProfileChanged` also at account creation; `actorUserId` (the acting user's `sub`) in the envelope, for audit. Queue bindings updated; 13 events.
+- **Account deletion flow** (ADR-006) in §2: refused for the last EventAdmin, Keycloak then Auth & Users, retried while Keycloak is down. What each service deletes or anonymises stays with D7 (account-deletion issue).
+- **M-5 decided (Bruno):** `HelpRequestSubmitted` carries only `requestId`; the triage worker reads the request from Reports' database, so no help-request text or location sits in RabbitMQ. The assessment's M-5 and finding 3 marked decided.
+- `architecture-decisions-guide.md`: C8 row and *Em aberto* item 2 (✅). `2026-10-22-identity-and-gateway-decisions.md`: Bruno's action done.
+- *Not changed:* O5–O7 still wait for their owners; the assessment's other proposals (AC-7, T6) are not in the outline.
+
+## [Unreleased] · 2026-10-26 · Align AI triage coverage and observability (#145)
+
+### Changed
+- ADR-005 and the evaluation package use **≥95% valid suggestions stored within 30 s**, replacing the earlier 90% proposal and matching observability/NFR-03 in PR #139. The operational cohort is one hour; offline expected abstentions use a separate denominator and check.
+- ADR-005 defines deadline/window accounting, failure/abstention misses, semantic validity, no-data handling and the independent zero-urgent-failure / SC5 visibility checks; ADR-012 and research documents reference it.
+- The research overview and decisions guide distinguish delivered research from pending model choice, independent labels, runtime measurement, instrumentation, dashboards/alerts and team acceptance. The NFR branch remains with its owner.
+
+### Verified
+- Offline scorer regression checks exercise exact 95% coverage, below-threshold coverage, the inclusive 30 s deadline and invalid semantic outputs. Original synthetic inputs, prompt/schema and baseline evidence are preserved; no model or operational compliance result is claimed.
 
 ## [Unreleased] · 2026-10-23 · Operating cost estimation (#134, Bruno Lopes)
 

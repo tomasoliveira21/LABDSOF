@@ -703,7 +703,7 @@ Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 and u
 
 ### 8.2 Initial release plan
 
-Every merge to `main` is deployed (continuous deployment, guide H5). A *release* is the version shown at a review.
+Every merge to `main` is built and tested (guide H4). Delivery is local: a *release* is a git tag (guide H7), built and run on a laptop for the review ([`local-delivery.md`](../Technical/local-delivery.md), guide H5).
 
 | Release | When | What it contains | Assignment |
 |---|---|---|---|

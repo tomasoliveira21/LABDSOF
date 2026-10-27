@@ -19,7 +19,7 @@
    - **Process view:** dynamic diagrams of the help request with asynchronous triage and of the transport import, levels 1 to 4.
    - **Implementation (development) view:** repository, top-level folders, projects (one Maven project per service) and the hexagonal packages (`domain`, `application`, `adapters/in`, `adapters/out`, B5).
    - **Physical view:** where each part runs on the local machine of the local delivery (ADR-011), and the browser that uses it.
-2. **Four zoom levels per view, three in the physical view.** The physical view stops at level 3, which shows one container per service and one PostgreSQL server with six databases, one per service and one for Keycloak (professor, 22 October 2026). Level 4 has **one diagram per container** (web app, Reports, Transports). Every service follows the same hexagonal layout, so Reports and Transports are the examples; the level-4 diagrams of Auth & Users, Events and Badges are written with each service.
+2. **Four zoom levels per view, three in the physical view.** The physical view stops at level 3, which shows one container per service and one PostgreSQL server with six databases, one per service and one for Keycloak (professor, 22 October 2026). Level 4 has **one diagram per service** (Reports, Transports). The web app is opened at level 3 instead (*3 web*: the level-3 diagram with the web app's components, or `frontend/`'s folders, in place of its box), so it is seen next to the gateway and Keycloak it calls. Every service follows the same hexagonal layout, so Reports and Transports are the examples; the level-4 diagrams of Auth & Users, Events and Badges are written with each service.
 3. **View mappings:** for each level, one diagram puts the logical diagram next to the implementation diagram and another puts it next to the physical diagram (levels 1 to 3), with dashed arrows from each logical element to its counterpart.
 4. **Tool: draw.io** (B1), drawn with the draw.io MCP or by hand. Each diagram is one **`.drawio.svg`** file: an SVG that renders on GitHub and in Markdown and also embeds the editable draw.io source. There are no separate `.drawio` and image files to keep in sync.
 5. **Layout rules:** one title per diagram (`[<View>, level N] Farol`), C4 colours, no legend, every arrow labelled with its purpose and, where useful, its protocol. Persons are a single **User** at logical levels 1 and 2 and split into personas from level 3.
@@ -32,7 +32,7 @@
 - One file per diagram: renders in the browser, opens in draw.io, and its diff in a pull request is still text (though hard to read).
 - More files to keep consistent: 32 diagrams today (logical 6, process 8, implementation 6, physical 3, mappings 9). A change to a logical diagram also needs the two mapping diagrams of that level.
 - The Mermaid diagrams in `architecture.md` become working sketches; the draw.io diagrams are the reference.
-- **[PENDING]** markers in the diagrams must be removed when the decision they wait for is taken (AI provider K1, observability ADR-012, event contract format, web app folder layout).
+- **[PENDING]** markers in the diagrams must be removed when the decision they wait for is taken. Since 27 October 2026 only the `frontend/` folder layout is left (Tomás); the AI model is marked *to review* until the team accepts K1.
 
 ## Alternatives considered
 

@@ -22,19 +22,32 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 | F2 | Serve React management assets locally; cloud static hosting remains an alternative | Local SPA/auth/CORS tests with Guerra |
 | C1 hosting | Local RabbitMQ container with persistent volume; cloud VM assessment retained | Local identity/permissions, replay/recovery drill |
 | D2 topology | One PostgreSQL server per environment, five distinct databases and restricted service users | Integration proof of privilege separation and capacity |
-| I1–I3 | [Observability](observability.md): local Micrometer/OpenTelemetry + Prometheus/Grafana; Azure Monitor retained as a cloud alternative | Local instrumentation/dashboard and load evidence |
-| K1 | [AI assessment](responsible-ai.md): local Ollama and hosted API comparison retained; local app delivery does not decide the model/provider | Quality/latency benchmark, privacy and any optional API cost |
-| K2 | Responsible AI assessment, prompt/schema and [100 synthetic cases + offline evaluator](evaluation/README.md) | Independent labels, fresh holdout, actual model evaluation |
+| I1–I3 | [Observability](observability.md): local Actuator/Micrometer + Prometheus/Grafana and correlated Docker logs; Azure Monitor retained as a cloud alternative | Local instrumentation/dashboard and load evidence |
+| K1 | [AI assessment](responsible-ai.md): local Ollama + qwen3:4b selected for review in the [complete decision](../../Technical/plans/ai-provider-evaluation.md); hosted comparison retained | Quality/latency benchmark, privacy and any optional API cost |
+| K2 | Responsible AI assessment, prompt/schema and [100 synthetic cases + offline evaluator](evaluation/README.md) | Documented team label review and one local model evaluation; fresh blinded holdout optional |
 
 ## Review package
 
 - [Deployment research](deployment.md), [observability research](observability.md), [Responsible AI Opportunity Assessment](responsible-ai.md).
-- [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md), [ADR-012](../../Technical/adr/0012-observability.md). ADR-010 remains Bruno's pipeline decision.
+- [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md), [ADR-012](../../Technical/adr/0012-observability.md). The pipeline is in [ADR-010](../../Technical/adr/0010-cicd-strategy.md).
 - [Evaluation instructions and limitations](evaluation/README.md), [system prompt](evaluation/system-prompt.txt), [output schema](evaluation/output.schema.json), dataset and offline baseline report.
 - [Azure price snapshot](azure-price-snapshot.json): dated evidence, not a subscription quote.
+
+## AI and observability status (26 October 2026, #145)
+
+| Area | Documented/delivered | Still pending |
+|---|---|---|
+| Target discrepancy | ADR-005, ADR-012, observability, assessment, evaluation instructions and scorer now agree on the **proposed ≥95% within 30 s**; operational window is 1 h, with explicit cohort accounting and separate offline denominator | Team review/acceptance; this is not a measured result |
+| K1: provider/model | Selected local Ollama/Qwen3 profile, cost and deadline/circuit contract; hosted assessment retained | One local evaluation and observed capacity and team acceptance; local deadline/retry settings are specified; privacy clearance before real data |
+| K2: evaluation | Responsible AI assessment, draft prompt/schema, 100 synthetic cases and honest no-AI baseline; scorer boundary checks | Team-reviewed labels, actual model outputs, reason review, execution of the documented event-specific routing acceptance cases and SC3/SC5 integration evidence |
+| I1: instrumentation | Two-container Prometheus/Grafana proposal, Actuator/Micrometer and correlated Docker logs | Application health/metrics configuration and correlated HTTP → queue → stored-result log entries |
+| I2: measurements | SLI/SLO definitions and aligned coverage target | Actual end-to-end measurements on the local target, counters/denominators and no-data/degraded-window reporting |
+| I3: dashboard/alerts | Panel and trigger/runbook specification | Provisioned local dashboard/alerts and trigger/resolve drills |
+
+**NFR handoff:** [PR #139](https://github.com/tomasoliveira21/LABDSOF/pull/139) already uses 95% for NFR-03. Once this source correction is merged/reviewed, its owner can remove the obsolete 90%/95% discrepancy note and reference [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145). That closes this documentation mismatch; it does not prove the NFR is implemented or that all other open NFR decisions are resolved. No edits/merge to the NFR owner's branch are made by this task.
 
 ## Dependencies and handoff
 
 Guerra owns identity, gateway, secrets and Security & Privacy (#46). Tiago owns retry/circuit-breaker values, message redelivery and load tests (#43). Bruno owns pipeline authentication, tags and API/event contracts. This research gives constraints and acceptance checks without replacing their decisions. The joint domain-model work with Guerra is outside #53.
 
-The local-only scope is recorded separately from the remaining proposals. The team can review AI, observability and detailed local implementation independently; do not treat the professor's cloud exemption as acceptance of all technical recommendations. A future implementation issue should cover the deployment skeleton, telemetry and model comparison; closing this research issue does not mean those systems exist.
+The local-only scope is recorded separately from the remaining proposals. The team can review AI, observability and detailed local implementation independently; do not treat the professor's cloud exemption as acceptance of all technical recommendations. A future implementation issue should cover the deployment skeleton, minimum telemetry and local model evaluation; closing this research issue does not mean those systems exist.
