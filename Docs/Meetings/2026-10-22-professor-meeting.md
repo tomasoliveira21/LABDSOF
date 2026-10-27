@@ -31,7 +31,7 @@ What the professor listed, with the document each section comes from today.
 | Assumptions & dependencies | Assumptions in [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md); dependencies spread across the ADRs | **Missing** as one list |
 | Operating costs estimation | [`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md) (#134), with the infrastructure research of #53 (guide G2) | Exists |
 | Prioritised product backlog (epics) | [`features.md`](../Product/features.md) §2 and §7; issues #58 to #121 (§8.3) | Partial: issues created and on the [board](https://github.com/users/tomasoliveira21/projects/1); priority, size and *Ready* applied in #138 (24 October 2026) |
-| NFRs | Architecture drivers ([`architecture.md`](../Technical/architecture.md) §1) and success criteria | **Missing** as one list |
+| NFRs | [`non-functional-requirements.md`](../Product/non-functional-requirements.md), from the architecture drivers ([`architecture.md`](../Technical/architecture.md) §1) and the success criteria | Exists (#137) |
 | High-level scope of Sprint 1 | Sprint goals in #45 (`features.md` §8.1, not merged) | Partial |
 | People and responsibilities | [`team-and-process.md`](../Process/team-and-process.md) §2 and the guide's owners table | Exists |
 | Work methodology | [`team-and-process.md`](../Process/team-and-process.md), contributing guidelines in [`Docs/README.md`](../README.md) | Exists |
@@ -60,6 +60,6 @@ What the professor listed, with the document each section comes from today.
 - [ ] **No owner yet, done at the end:** the single PDF with the Sprint A documents (P6).
 - [x] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). Done in #134 ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md)), with the infrastructure from #53 (G2).
 - [ ] **Tomás:** the walking skeleton (P8).
-- [ ] **Tiago:** one list of NFRs, for the deck.
+- [x] **Tiago:** one list of NFRs, for the deck. Done in #137 ([`non-functional-requirements.md`](../Product/non-functional-requirements.md)).
 - [ ] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents.
 - [ ] **Guerra:** simulator of the Porto Digital API or recorded responses (guide J4).

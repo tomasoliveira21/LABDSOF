@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted**: decided by the team on 11 and 15 October 2026; the diagram layout was reviewed on 21 October 2026; the diagrams were updated on 26 October 2026 for the decisions since then (one web app, API gateway, Keycloak, local delivery; #<issue>). Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) B1 to B7.
+**Accepted**: decided by the team on 11 and 15 October 2026; the diagram layout was reviewed on 21 October 2026; the diagrams were updated on 26 October 2026 for the decisions since then (one web app, API gateway, Keycloak, local delivery; #133). Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) B1 to B7.
 
 ## Context
 
@@ -32,7 +32,7 @@
 - One file per diagram: renders in the browser, opens in draw.io, and its diff in a pull request is still text (though hard to read).
 - More files to keep consistent: 32 diagrams today (logical 6, process 8, implementation 6, physical 3, mappings 9). A change to a logical diagram also needs the two mapping diagrams of that level.
 - The Mermaid diagrams in `architecture.md` become working sketches; the draw.io diagrams are the reference.
-- **[PENDING]** markers in the diagrams must be removed when the decision they wait for is taken. Since 27 October 2026 only the `frontend/` folder layout is left (Tomás); the AI model is marked *to review* until the team accepts K1.
+- **[PENDING]** markers in the diagrams must be removed when the decision they wait for is taken. Since 27 October 2026 only the `frontend/` folder layout is left (Tomás).
 
 ## Alternatives considered
 

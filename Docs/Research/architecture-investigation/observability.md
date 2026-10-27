@@ -57,7 +57,7 @@ Metric names below are **proposed custom contracts**, not already emitted metric
 | `farol_probe_success` + scrape age | Two consecutive 30 s create/read probe failures or >2 min no sample | Tomás checks ingress/revision/DB; show missing telemetry separately from application failure |
 | `farol_requests_not_visible` | Any reconciled committed request still absent after 5 s on two checks | Immediate investigation; disable AI if implicated, preserve saved rows and reconcile visibility |
 | `farol_triage_pending_oldest_seconds` | >30 s for 2 min while eligible requests exist | Mark AI degraded, verify fallback, check worker/provider with Tiago |
-| `farol_outbox_oldest_seconds` | >60 s for 2 min | Check broker alarms, connectivity and confirms; never delete rows to silence alert |
+| `farol_outbox_oldest_seconds` | >60 s for 2 min (decided 24 October 2026, Tiago; first proposed here as 30 s) | Check broker alarms, connectivity and confirms; never delete rows to silence alert |
 | `farol_dlq_added_total` | Any increase over 5 min | Preserve poison message evidence without sensitive bodies; diagnose schema/retry cause before controlled replay |
 | `farol_broker_up` / disk alarm | Down >60 s or disk/memory alarm on two checks | Check VM/disk; DB/outbox should continue saving requests |
 | Create failure ratio | >5% over 5 min with ≥20 valid attempts, or repeated synthetic failure | Compare release/dependency traces, roll back bad release |
