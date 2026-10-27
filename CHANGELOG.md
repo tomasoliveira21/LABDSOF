@@ -2,6 +2,54 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-24 · Non-functional requirements list (#137, Tiago Teixeira)
+
+**Why:** in the meeting with the professor on 22 October 2026 the NFRs were *missing as one list* for the Sprint A deck (*Presentation contents*); the action was Tiago's.
+
+### Added
+- `Docs/Product/non-functional-requirements.md`: 34 NFRs in one table (ID, ISO/IEC 25010 category, requirement, measurable target, how it is verified, source), collected from the architecture drivers, the success criteria SC1–SC11, assignment §6, the degraded modes D1 and D2, ADR-004, ADR-005, ADR-008, ADR-011, ADR-012 and the architecture research. Values from the open PRs #52 (resilience, #43) and #47 (identity and gateway, #46) are marked as pending those PRs; targets that do not exist yet are **[PENDING]** with their owner. Open points at the end.
+
+### Changed
+- `Docs/README.md`: the page added to the Product row.
+- `architecture.md` §1: link to the NFR list.
+- `2026-10-22-professor-meeting.md`: NFR row of *Presentation contents* and Tiago's NFR action ticked.
+
+### Decided (Tiago, 24 October 2026)
+- Success-criteria targets SC1, SC2, SC4, SC6 and SC11 confirmed (`product-vision.md` §5), and the report rate limit of US-48 (`features.md`).
+- **SC6 raised from 10 s to 15 s**, so the 10 s polling of guide J3 fits; US-44 and US-45 (*within 15 s*) and NFR-04 updated.
+- Outbox alert: oldest pending row above **60 s for 2 min** (NFR-34; `observability.md` alert table; `architecture.md` §6 in PR #52).
+- Accessibility (NFR-25): **WCAG 2.1 AA** on the main pages, owner Tiago.
+- Availability and recovery measured locally (NFR-12, NFR-13); weak-network mode stays out while F11 is a Could.
+- NFR-15, NFR-17 and NFR-18 take their values from ADR-006 and ADR-013 (identity and gateway, merged with #47 on 24 October 2026) instead of the open PR.
+
+### Merged a third time and aligned with the simplified plans (27 October 2026)
+- `main` merged (#131 CI/CD strategy, #153 simplified local demo tools and local AI). Conflicts: this CHANGELOG (both kept, this entry first); `architecture.md` §9.1 (the local AI row and its *why* bullet from #153, plus the hosted alternative); the guide's I1–I3, K1–K2 and *Feito* (rows from `main` with the confirmations of 26 October added).
+- Tiago keeps the NFRs following Tomás's plans (`non-functional-requirements.md` §5): **NFR-11** takes the local AI profile (response 20 s, one attempt, slow above 16 s, at most 5 s waiting, start only with ≥ 23 s left) instead of 10 s and 2 attempts; **NFR-20** Ollama with `qwen3:4b`, no hosted fallback; **NFR-33** only Prometheus and Grafana, correlation IDs instead of tracing; **NFR-34** three Grafana alerts, the other signals as dashboard and acceptance checks; **NFR-19** metrics 1 day or 512 MiB, no traces stored.
+- `architecture.md` §9.1: the local AI profile accepted by Tiago on 27 October 2026; the hosted row no longer says *to confirm with K1*. Guide: J1 and J2 status, the J1 table (hosted AI and Keycloak rows) and the local AI profile no longer wait for K1, E1 or Guerra's J4 confirmation; D5 takes the new telemetry retention.
+- Not changed: ADR-005 and ADR-012 keep *Proposed* until the team review the plans ask for; the Security and Privacy Assessment §7 still says logs 14 days and traces 7 days (Guerra).
+
+### Aligned with Tomás's plans (26 October 2026)
+- NFR-19, NFR-20, NFR-33 and NFR-34 follow the merged observability plan (#148) and AI evaluation plan (#149), which Tiago chose as the reference: traces 24 h, container logs rotated at 10 MiB × 2 with exports deleted within 14 days, metrics 7 days or 2 GiB; Tempo, Collector and Alertmanager in the stack; the alert rules of the plan §4 (create-failure alert dropped; useful triage, urgent failure, missing telemetry and stale transport added); local Ollama for now, final choice through #149. Recorded in `non-functional-requirements.md` §5 and in guide D5, I1, I3 and K1.
+- Not changed: the Security and Privacy Assessment §7 still says logs 14 days and traces 7 days (Guerra).
+
+### Merged again (26 October 2026)
+- `main` merged (#58 walking skeleton, #123 API outline, #127 versioning, #129 local delivery, #148 observability plan, #149 AI evaluation plan). Conflicts: this CHANGELOG (both kept, this entry first); `observability.md` (outbox row from this PR); the guide's header, G4–G7, I1–I3, *Feito* and *Em aberto* (rows from `main` with the confirmations of 26 October added; J4 and the Keycloak J1 values no longer open).
+- `local-delivery.md` is now in `main`: NFR-13 and NFR-30 link it instead of PR #130, and the PR #130 open point is removed. NFR-13 and guide G7 say, as `local-delivery.md` §6 does, that on disk loss the last dump is recovered and what came after it is lost (no RPO guaranteed). Guide D5: retention and local backup decided, backup in production still 🔮.
+
+### Validated with the team (26 October 2026)
+- Tiago went through every **[PROPOSED]** target with Tomás, Guerra and Bruno; all confirmed (`non-functional-requirements.md` §5): NFR-03 (≥ 95 % in 30 s over 1 h; **abstentions count as misses**, also on a request with no text), NFR-06, NFR-11 (AI call values, whatever model K1 picks), NFR-12, NFR-13 (rollback and restore targets), NFR-19 (help-request consent, account data, retention periods), NFR-31 (WireMock) and NFR-33 (observability stack).
+- Then the items that had no value: **NFR-13** backup as in PR #130 (dump of the six databases before every demo and update, kept at most 30 days; disk-loss RPO is the last dump); **NFR-30** the procedure and smoke test of PR #130, with no time limit; **NFR-34** the six other alerts of the observability research, on the demo machine's Grafana only, no spend alert; **NFR-20** local Ollama for now (K1), so no hosted-provider review. No NFR target is left open.
+- `architecture-decisions-guide.md`: D5 (retention and backup), E5, G6, G7, I1, I2, I3, J4 and K1 record the confirmation; *Feito* and *Em aberto* updated.
+- `architecture.md` §9.1: the AI values are recorded as confirmed (NFR-11) with local Ollama for now (K1); if the model needs more than 10 s on the demo machine, Tomás and Tiago review them. §9.2 and the technology table (§12): WireMock confirmed for J4. The ADR-012 dashboard is no longer called *proposed* in §9.1–§9.3.
+- `architecture.md` §9.1, identity provider row: Keycloak in the local Compose (E1, ADR-006) instead of *only if external* and *mocked authentication*; the key timeouts (connect 2 s, response 3 s, no retry or circuit breaker) confirmed with Guerra on 26 October 2026. The guide's open action *J1 values for Keycloak with E1* (Tiago) is removed.
+- Not changed: ADR-005, ADR-012, the observability research and the Security and Privacy Assessment (its §7 still says *no backups in the MVP*) still mark these values as proposed; their owners update them.
+
+### Merged (26 October 2026)
+- `main` merged (#43 resilience, #134 cost estimation, #138 board, #141 gateway limits, #143 Security and Privacy Assessment, #145 triage coverage). Conflicts in this CHANGELOG (both kept, this entry first) and in the *Presentation contents* of `2026-10-22-professor-meeting.md` (costs and backlog rows from `main`, NFR row from this PR).
+- On-time AI triage: Tomás aligned ADR-005 and the observability research at **≥ 95 % within 30 s** over a one-hour window (#145). NFR-03 now links that definition, and the open point on 90 % vs 95 % is removed.
+- Resilience values (#43, PR #52 merged on 25 October 2026): checked against `architecture.md` §6, §9.1 and §10.1, all unchanged. The *(PR #52)* marks and their *otherwise [PENDING]* removed from NFR-02, NFR-04, NFR-05, NFR-07, NFR-08, NFR-10, NFR-11, NFR-17, NFR-31 and NFR-34, with links to those sections instead of the PR; the AI values of NFR-11 stay to confirm with K1 (Tomás), as in §9.1. The *Merge PR #52* open point removed.
+- NFR-19 takes the **[PROPOSED]** retention periods, help-request consent and account data of the Security and Privacy Assessment (#143, §6–§8): help-request content 30 days after the event closes, logs 14 days, traces 7 days, Keycloak login events 30 days. Its open point now says they wait for the team's review.
+
 ## [Unreleased] · 2026-10-23 · CI/CD strategy (#131, Bruno Lopes)
 
 **Why:** close guide H4–H8 in one ADR, so the walking skeleton (R0) builds the pipeline from it (assignment §8.4, §8.5; ADR-011 point 5).
