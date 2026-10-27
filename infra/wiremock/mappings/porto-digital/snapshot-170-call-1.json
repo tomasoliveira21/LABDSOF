@@ -1,0 +1,40 @@
+{
+  "name": "Porto Digital snapshot 170, call 1 (2026-10-25T18:04:26Z)",
+  "scenarioName": "porto-digital-replay",
+  "requiredScenarioState": "snapshot-170-call-1",
+  "newScenarioState": "snapshot-170-call-2",
+  "request": {
+    "method": "GET",
+    "urlPath": "/v2/entities",
+    "queryParameters": {
+      "q": {
+        "equalTo": "vehicleType==bus"
+      },
+      "georel": {
+        "equalTo": "near;maxDistance:2000"
+      },
+      "geometry": {
+        "equalTo": "point"
+      },
+      "coords": {
+        "equalTo": "41.1724,-8.6841"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "porto-digital/snapshot-170.json",
+    "transformers": [
+      "response-template"
+    ]
+  },
+  "metadata": {
+    "source": "response_170_20261025T180426Z.json",
+    "sha256": "c57177eb501cd9658e0593319f407e64830a9e21758e85c35de9221b9af51509",
+    "fetchedUtc": "2026-10-25T18:04:26.605272+00:00",
+    "vehicles": 11
+  }
+}

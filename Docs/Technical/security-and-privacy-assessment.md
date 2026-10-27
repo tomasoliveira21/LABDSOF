@@ -275,7 +275,7 @@ Who decides follows the owners in the [decisions guide](architecture-decisions-g
 | 2 | Phones and plain HTTP: tokens exposed and PKCE login broken (§9) | Local HTTPS with mkcert, or device mode | Guerra, with Tomás (Compose, G5–G6) | First demo on phones, Sprint B |
 | 3 | Help-request text and location travel through RabbitMQ (T11) | Triage message with `requestId` only (M-5) | Bruno (API outline and event catalogue): ✅ decided in #123 (26 October 2026) | Before US-34 |
 | 4 | Object access inside an event is not tested (T6) | Within-event case in US-14 | Tiago (backlog) | Sprint B planning |
-| 5 | WireMock admin API and recordings (T11, T16) | Admin API only on the demo machine; never record the AI provider | Guerra (J4) | With J4 |
+| 5 | WireMock admin API and recordings (T11, T16) | Admin API only on the demo machine; never record the AI provider | Guerra (J4) | Done: admin API on `127.0.0.1:8090` (`local-delivery.md` §1); only Porto Digital recorded, with no personal data ([`infra/wiremock/`](../../infra/wiremock/README.md), #155) |
 | 6 | 30-day sessions on field-team phones (T13) | AC-7: login in the last 12 h for operational actions | Guerra (ADR-006) | US-17, Sprint B |
 | 7 | Account lookup by e-mail, outline O4 (T14) | AC-9 | Guerra; Bruno updates the outline | Now |
 | 8 | Client secrets in the realm export (T17) | `${…}` placeholders | Guerra | Walking skeleton |

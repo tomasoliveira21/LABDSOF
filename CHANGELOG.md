@@ -2,6 +2,33 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-26 · Porto Digital simulator with recorded responses (#155, António Guerra)
+
+**Why:** the professor asked for a simulator of the Porto Digital API, or recorded real responses, under the team's control (21 and 22 October 2026). Guide J4, owned by Guerra, had WireMock as Tiago's proposal (#43) waiting for confirmation. Real responses were recorded on 25 October 2026 to check whether WireMock can replay them as Transports will call it.
+
+### Decided
+- **J4: WireMock** is the simulator of the Porto Digital API, confirmed by Guerra, owner of J4. Evidence: the stubs below, played on WireMock 3.13.2.
+
+### Added
+- `infra/wiremock/recordings/porto_bus_responses_20261025.zip`: 300 real responses of the whole-city query (`q=vehicleType==bus&limit=1000`), Sunday 25 October 2026, 15:15–20:14 UTC, about one a minute with no gaps, and `manifest.csv` with the SHA-256 of each. 89–118 STCP buses per response; no invalid entries; no personal data (the driver's shift is always `na`).
+- `infra/wiremock/scripts/convert_porto_digital.py`: turns the zip into stubs. It keeps only the buses within 2 km of the Queimódromo (`41.1724,-8.6841`, OpenStreetMap), as `georel=near;maxDistance:2000` would; renders each `observationDateTime` as `{{now offset='-N seconds'}}` with the bus's recorded age, so the data passes the 5 min freshness limit whenever it is replayed; and chains the snapshots as a WireMock scenario where each answers two calls, so the buses move at their real speed with the 30 s import. Same output on every run.
+- `infra/wiremock/mappings/porto-digital/` (600 mappings) and `infra/wiremock/__files/porto-digital/` (300 bodies, 2–13 buses and about 9 KB each), generated from the zip.
+- `infra/wiremock/scripts/check_porto_digital.py`: plays the whole scenario on a running WireMock and checks every answer against the zip. Run on 26 October 2026: all 600 calls right (snapshot and order, 2 km, freshness, each bus within 3 s of its recorded age), the loop back to the first snapshot, the percent-encoded query, 404 for another point, another distance and the whole-city query, and the scenario reset; median latency 45 ms.
+- `infra/wiremock/README.md`: what Transports must send, how the replay works, how to regenerate and check, where the recordings come from, and the limits.
+
+### Changed
+- `architecture-decisions-guide.md`: J4 ✅ with the evidence; J2's status, owners table, *Feito* and *Em aberto* item 1 updated; status date.
+- `architecture.md` §9 and §9.2 (recorded responses), §12 (technology table): WireMock confirmed.
+- `ADR-008` (status and decision 4) and `ADR-004` (open points): the simulator tool is resolved.
+- `local-delivery.md` §1: the `wiremock` container's root is `infra/wiremock/`; §9: the J4 open point removed.
+- `features.md` §3.1, D1 and D2: WireMock is the simulator, no longer a proposal.
+- `2026-10-22-professor-meeting.md`: Guerra's J4 action ticked.
+- `security-and-privacy-assessment.md` §10, finding 5: done.
+
+### Not changed
+- The D2 failure stubs (503, timeout, invalid data for US-42 and US-43): written by the tests themselves and added by the presenter through the admin API during the demo (`local-delivery.md` §8).
+- `infra/compose.yaml` does not exist yet (walking skeleton, #58); until then the README shows how to run WireMock on its own.
+- The Porto Digital terms of use and attribution are not checked yet; the repository is private (guide H8).
 ## [Unreleased] · 2026-10-27 · Account deletion and data ownership (#135, Bruno Lopes)
 
 **Why:** guide D7 was the last open data decision. The team needs to know whether account deletion (F2, US-05) is in the MVP and how a deleted user's data leaves each service. ADR-006 had fixed the flow, but left what each service does on `UserDeleted` to D7, and the assessment's proposal (§7) said Transports does nothing, while the outline has it consuming `UserDeleted`.
