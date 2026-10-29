@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-29 · Assessment retention aligned with the NFRs (#159, António Guerra)
+
+**Why:** the Security and Privacy Assessment still had its own proposal of 25 October 2026: application logs 14 days, traces 7 days, no backups. The team decided other values for NFR-19 and NFR-13 (non-functional requirements §5, 26 October 2026), and the telemetry ones changed again with the simplified observability plan (#153, 27 October 2026). The decisions guide (D5, G7) already had them.
+
+### Changed
+- `security-and-privacy-assessment.md`:
+  - Summary and §7: retention is decided, no longer **[PROPOSED]**. Container logs rotated at 10 MiB × 2 files, sanitised log exports deleted within 14 days, metrics 1 day or 512 MiB, no traces stored. A dump of the six databases before every demo and every update, each kept at most 30 days.
+  - §7: what restoring a dump means. Data deleted after the dump comes back, accounts included; accepted while the data is synthetic.
+  - §3: the logs row names Docker and Prometheus, with no traces; new row for the database dumps.
+  - §9: the backup laptop also needs full-disk encryption, and dumps are never committed or copied elsewhere.
+  - §10, finding 13: decided; the clean-up jobs stay in Sprint C. §12: "No backups" replaced by the limits of the dumps.
+  - Status and sources: update date; the NFRs, `local-delivery.md` and the observability plan added as sources.
+
+### Not changed
+- `non-functional-requirements.md` §5 keeps "logs 14 days, traces 7 days" in its 26 October 2026 entry: it records what was validated that day, and the later entries of the same section replace it.
+
 ## [Unreleased] · 2026-10-26 · Porto Digital simulator with recorded responses (#155, António Guerra)
 
 **Why:** the professor asked for a simulator of the Porto Digital API, or recorded real responses, under the team's control (21 and 22 October 2026). Guide J4, owned by Guerra, had WireMock as Tiago's proposal (#43) waiting for confirmation. Real responses were recorded on 25 October 2026 to check whether WireMock can replay them as Transports will call it.
