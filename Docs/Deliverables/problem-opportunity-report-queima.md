@@ -217,7 +217,7 @@ The most critical assumptions are **A2, A3 and A4**. If participants do not use 
 |---|---|
 | Instrument | Online questionnaire in Google Forms, *"Queima das Fitas: como vives a noite do evento?"*, 11 questions in Portuguese, about 3 minutes. Script: [`inquerito-estudantes-google-forms.gs`](../Research/inquerito-estudantes-google-forms.gs) |
 | Anonymity | No name or e-mail collected; answers used only in aggregate |
-| Collection | **Wave 1, 3 to 6 October 2026:** 21 answers. **Wave 2, 30 October 2026, 22:42–22:43:** 4 answers from friends of a team member (Tiago). **Wave 3, 30 October 2026, 22:49–22:57:** 8 answers from another group of Tiago's friends. Waves 2 and 3 were collected after the wave 1 results were known |
+| Collection | **Wave 1, 3 to 6 October 2026:** 21 answers. **Wave 2, 30 October 2026, 22:42–22:43:** 4 answers from friends of a team member (Tiago). **Wave 3, 30 October 2026, 22:49–22:57:** 8 answers from another group of Tiago's friends. Waves 2 and 3 were collected after the wave 1 results were known. **Collection closed on 30 October 2026** after wave 3; later answers are not counted |
 | Answers | **33** in total. 1 person has never been to an academic festival and does not plan to go, so the form ended after question 1; 1 has never been but plans to go, so they skipped the questions about the experience. **n = 31** for questions 2 to 6 and **n = 32** for questions 7 to 10 |
 | Flow | Question 1 filters: people who have been answer about their last event (Q2–Q6) and about an application (Q7–Q10); people who plan to go answer only about the application; people who never went and do not plan to go end the form |
 | Assumptions tested | A2 and A3 (Q6–Q9), A4 (Q3, Q5, Q10), the problem itself (Q3, Q4, Q6) |
