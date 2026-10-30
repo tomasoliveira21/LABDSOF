@@ -1,15 +1,15 @@
 # Security and Privacy Assessment
 
 > LABDSOF 2026/27 · Sprint A · Assignment §7.1.2 (deliverable 9: *initial threat model, sensitive data, access-control requirements, data-minimisation measures, retention considerations*), §6.4, §6.6 and §11
-> **Owner:** António Guerra (guide E5). **Status (25 October 2026):** first version, **to review with the team**. Controls that are already decided link to their ADR; every new control or number is marked **[PROPOSED]**. Nothing is implemented yet, so this assesses the design, and §11 names the test that will prove each control. The threat model is updated with the implementation in Sprint C (assignment §7.3.2, item 6).
-> **Sources:** [`architecture.md`](architecture.md), [`domain-model.md`](domain-model.md), [ADR-003](adr/0003-database-and-data-ownership.md), [ADR-004](adr/0004-service-communication.md), [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md), [ADR-006](adr/0006-identity-and-access.md), [ADR-007](adr/0007-venue-map-representation.md), [ADR-011](adr/0011-deployment-and-infrastructure.md), [ADR-012](adr/0012-observability.md), [ADR-013](adr/0013-api-gateway.md), [`features.md`](../Product/features.md), the API outline draft (#123, not merged yet) and the [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md).
+> **Owner:** António Guerra (guide E5). **Status (25 October 2026):** first version, **to review with the team**. **Updated 29 October 2026** (#159): retention and backups (§7) follow the values the team decided for NFR-13 and NFR-19. Controls that are already decided link to their ADR; every new control or number is marked **[PROPOSED]**. Nothing is implemented yet, so this assesses the design, and §11 names the test that will prove each control. The threat model is updated with the implementation in Sprint C (assignment §7.3.2, item 6).
+> **Sources:** [`architecture.md`](architecture.md), [`domain-model.md`](domain-model.md), [ADR-003](adr/0003-database-and-data-ownership.md), [ADR-004](adr/0004-service-communication.md), [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md), [ADR-006](adr/0006-identity-and-access.md), [ADR-007](adr/0007-venue-map-representation.md), [ADR-011](adr/0011-deployment-and-infrastructure.md), [ADR-012](adr/0012-observability.md), [ADR-013](adr/0013-api-gateway.md), [`features.md`](../Product/features.md), the [non-functional requirements](../Product/non-functional-requirements.md), [`local-delivery.md`](local-delivery.md), the [local observability plan](plans/local-observability.md), the API outline draft (#123, not merged yet) and the [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md).
 
 ## Summary
 
 - **The most sensitive data is the help request:** a point on the venue map and an optional text that can describe someone's health, an assault or another person. It stays in Reports, is seen only by the people who handle it, never reaches logs or the message broker, and is minimised before any AI call.
 - **The top risk is one event, or one participant, reading another's data** (SC8). The cross-event controls are decided (ADR-003, ADR-006). This assessment adds the check *inside* an event, with its test (T6).
 - **Three findings need a change before the features that depend on them are built:** the FarolAdmin bootstrap trusts an unverified e-mail (T4), phones cannot log in to the local demo safely over plain HTTP (§9), and the triage message carries the help-request text through RabbitMQ (T11).
-- **Retention [PROPOSED]:** help-request content is deleted 30 days after the event closes, and only anonymous statistics stay; application logs are kept 14 days; the MVP has no backups.
+- **Retention, decided (NFR-13, NFR-19):** help-request content is deleted 30 days after the event closes, and only anonymous statistics stay. Container logs rotate at 10 MiB × 2 files, metrics are kept 1 day and no traces are stored. The six databases are dumped before every demo and every update, and each dump is kept at most 30 days.
 - **The MVP uses only test accounts and synthetic data** (assignment §11). A real deployment would also need a DPIA and data-processing agreements with the organisers and with any hosted AI provider (§12).
 
 ## 1. Scope and method
@@ -85,7 +85,8 @@ Every item Farol stores, where it lives and who can see it. Retention is in §7.
 | Badge progress and preferences | Badges | The user; others never (outline D9) | Personal | F14, F15 |
 | Consent records (§8.4) | Auth & Users | The user | Personal | Proof of consent (GDPR art. 7(1)) |
 | Login and admin events (IP address, account, result) | Keycloak | Keycloak admin | Personal | Account protection |
-| Application logs and traces | Observability stack | The team | Pseudonymous: `sub` and correlation id only (ADR-012) | Operations (assignment §6.7) |
+| Container logs and metrics (no traces are stored) | Docker logs, and sanitised exports of them; Prometheus | The team | Pseudonymous: `sub` and correlation id only (ADR-012) | Operations (assignment §6.7) |
+| Database dumps | `backups/` on the demo machine and the backup laptop; never in git | The team | Same as the databases they copy, Keycloak's included | Recovery (NFR-13) |
 | Rate-limit counters | Gateway memory | Nobody | Pseudonymous, minutes | ADR-013 |
 | Friends (Could, US-61) | Auth & Users | The two users | Personal (social graph) | F18, after the MVP |
 | Event, venue map, points of interest, announcements, teams, shuttles | Events, Transports | Members of the event | Not personal | Operational information |
@@ -173,7 +174,7 @@ The permission model is decided in [ADR-006](adr/0006-identity-and-access.md) (*
 
 ## 7. Retention and deletion
 
-The guide lists retention and backup (D5) as a future improvement. Assignment §6.4 still asks for retention and deletion, and the privacy notice (§8) must say how long data is kept, so the periods below are **[PROPOSED]**, to decide with the team. Until the clean-up jobs exist (Sprint C, one scheduled job in Reports and one in Events), the periods are a promise that is not enforced yet (§12).
+Assignment §6.4 asks for retention and deletion, and the privacy notice (§8) must say how long data is kept. The team decided the periods below on 26 October 2026, as NFR-19 and NFR-13 ([non-functional requirements §5](../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026); guide D5 and G7). Telemetry follows the [local observability plan](plans/local-observability.md), simplified on 27 October 2026 (#153), and backups follow [`local-delivery.md` §6](local-delivery.md#6-backup-and-recovery-g7). Until the clean-up jobs exist (Sprint C, one scheduled job in Reports and one in Events), the periods of help requests, reports and check-ins are a promise that is not enforced yet (§12).
 
 | Data | Kept | Then | Why |
 |---|---|---|---|
@@ -182,12 +183,16 @@ The guide lists retention and backup (D5) as a future improvement. Assignment §
 | Check-in | In Events until the event closes, plus 30 days | Deleted; the attendance count stays in Badges | Same as above |
 | Account, memberships, team assignments, badges, consent records | While the account exists | Deleted when the user deletes it (US-05) | The user's own history of events and badges |
 | Keycloak login and admin events | **30 days** (realm setting) | Expire | Enough to investigate a brute-force attempt during an 8-night festival |
-| Application logs | **14 days** | Deleted | Covers the festival week plus a few days to investigate an incident |
-| Traces | **7 days** | Deleted | Debugging only |
+| Container logs | Rotated at **10 MiB × 2 files** per container (Docker) | Overwritten | Enough to follow one correlation id through a demo; there is no separate log store |
+| Sanitised log exports | At most **14 days** | Deleted | Only as evidence of a demo or a drill; sanitised, so they hold no request text, locations, names or tokens (M-10) |
+| Metrics | **1 day** or **512 MiB**, whichever comes first (Prometheus) | Deleted | Dashboards and alerts need only the recent window; labels hold no personal data (M-10) |
+| Traces | **Not stored** | — | Correlation ids in the logs replace distributed tracing (ADR-012) |
 | Dead-letter messages | Until they are replayed or judged invalid (architecture §6) | Deleted | With M-5 they hold no help-request text |
 | Rate-limit counters | In memory, at most 10 min | Gone | Only the current window matters |
-| Backups | None in the MVP (ADR-011: volumes are not backups) | — | Deletion is immediate. If backups are added (D5), they expire within 30 days so deletions reach them |
+| Database dumps | A dump of the six databases, Keycloak's included, before every demo and every update; each dump kept at most **30 days** | Deleted | So account deletions and the periods above reach the dumps within 30 days. Volumes are not backups (ADR-011), and queued RabbitMQ messages are not dumped |
 | User-research data | Survey answers are anonymous and stay outside the repository | Deleted when the course ends | Only the published summaries are needed |
+
+**Restoring a dump.** A restored dump brings back everything deleted after it was taken, accounts deleted with US-05 included, and Keycloak's dump brings back their login. The MVP holds only synthetic data (M-13), so this is accepted as a known limitation (§12). A real deployment would need a list of deleted accounts kept outside the dumps and applied again after every restore.
 
 **Account deletion** (US-05). *Decided* (Bruno, guide D7, #135, 27 October 2026), from the proposal of this section; flow in the [API outline §2](api-outline.md#2-auth--users). The account is refused at once (`UserStatusChanged`, `Disabled`); Auth & Users deletes the user in Keycloak, then its own data, then publishes `UserDeleted`. Every service keeps a tombstone with only the opaque `sub`, so the account stays refused and late events do not bring a copy back. What each service does with it:
 
@@ -262,7 +267,7 @@ The delivery runs on one machine ([ADR-011](adr/0011-deployment-and-infrastructu
 
 **Also [PROPOSED]:**
 - Keycloak, RabbitMQ, PostgreSQL and Grafana admin passwords come from `.env`, are generated per machine, and are never the image defaults.
-- The demo machine has full-disk encryption (BitLocker or FileVault) and a screen lock: it holds every database.
+- The demo machine and the backup laptop have full-disk encryption (BitLocker or FileVault) and a screen lock: they hold every database and its dumps (§7). Dumps are never committed or copied anywhere else.
 - Every security control stays on during the demo: rate limits, token validation, isolation, CORS (assignment §11). Scenarios D1 and D2 break a dependency, not a control.
 
 ## 10. Findings and proposed actions
@@ -283,7 +288,7 @@ Who decides follows the owners in the [decisions guide](architecture-decisions-g
 | 10 | Upload hardening (T9) | Content type, re-encoding, PDFBox limits | Tiago (ADR-007) | US-19 |
 | 11 | Content Security Policy, no third-party scripts (T10, M-14) | Headers on the web container | Whoever builds the web container | Walking skeleton |
 | 12 | No dependency or image scanning (T18) | Checks in CI | Bruno (ADR-010) | Sprint B |
-| 13 | Retention periods and clean-up jobs (§7) | The periods of §7 | Team (guide D5) | Decide now; build in Sprint C |
+| 13 | Retention periods and clean-up jobs (§7) | The periods of §7 | Team (guide D5): ✅ decided as NFR-19 and NFR-13 (26 October 2026; telemetry simplified 27 October 2026) | Clean-up jobs in Sprint C |
 | 14 | Consent records and the help-request consent (§8.3, §8.4) | New fields; criteria in US-03 and US-12 | Tomás and Guerra (domain model); Tiago (stories) | US-12, Sprint B |
 | 15 | Reviewers see who made a report (AC-3) | Reporter visible to EventAdmins only | Team | Before US-50 |
 
@@ -311,7 +316,7 @@ The security tests that the strategy in assignment §8.3 asks for.
 - **E-mails are not verified and passwords cannot be reset by e-mail** (no SMTP, ADR-006). An e-mail does not prove who owns an account (T4, AC-9), and scripted sign-ups are possible once sign-up opens. A local mail catcher (e.g. Mailpit) would let the demo show verification without a real mail server: **[PROPOSED]** option for Sprint C.
 - **Tokens in browser memory:** a cross-site scripting bug would expose them (T10). A backend-for-frontend is a later hardening (ADR-006).
 - **Multi-factor login only for the FarolAdmin** (T1).
-- **No backups** (D5): lost data cannot be restored. Deleted data is gone at once.
+- **Dumps only before demos and updates** (NFR-13): if the disk is lost, anything saved after the last dump is lost too, and queued messages are not dumped. A restored dump brings back data deleted after it was taken, accounts included (§7).
 - **One machine holds everything:** physical access to it is access to every database (§9).
 - **Retention not enforced until the clean-up jobs exist** (§7).
 - **No export of a user's data** beyond what the screens show; the right of access is answered by hand.
