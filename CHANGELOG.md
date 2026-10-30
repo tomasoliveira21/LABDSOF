@@ -2,6 +2,23 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-30 · Student survey results and Sprint A deck (Tiago Teixeira)
+
+**Why:** the report's *Results*, *Limitations* and *Resulting product decisions* were still "TBD" (Sprint 1 deliverable 3; gap review of 8 October 2026, G1), and the Sprint A deck had no owner (meeting with the professor, 22 October 2026, P5). Bruno gave both tasks to Tiago.
+
+### Added
+- `Docs/Presentation/Farol_Sprint_A_Presentation.pptx`: 18 slides with every section the professor listed on 22 October 2026 (vision, personas, workflow, domain model, architecture and technology, assumptions and dependencies, costs, prioritised backlog, NFRs, scope of the next sprints, people, methodology, DoR and DoD), plus two slides on the survey results and decisions. Speaker notes in Portuguese.
+
+### Changed
+- `problem-opportunity-report-queima.md`, *User Research*: method (Google Forms, 3 to 6 October 2026, 21 answers, n = 20 after the filter, *Outro* free-text answers excluded), results per question, V1 and V2, what the data says about A2, A3, A4 and root cause 1, limitations, and five product decisions taken from the data. §4 *weak evidence* points to the survey.
+- `product-vision.md` §5 and §8: V1 met (85 %), V2 not met (average 3.7); the survey marked as done; the gap now only names the missing volunteer interview.
+
+### Proposed (Tiago, 30 October 2026; to confirm with the team)
+- F17 entrance status per gate: Could → Should (85 % waited more than 30 min to get in).
+- F11 weak-network mode reopened at sprint planning (weak network and battery are the top barriers, 40 % each).
+- F6 help request: the phone's location as an optional shortcut next to the map pin (80 % accept it, nobody refuses).
+- `features.md` is not changed until the team confirms.
+
 ## [Unreleased] · 2026-10-29 · Assessment retention aligned with the NFRs (#159, António Guerra)
 
 **Why:** the Security and Privacy Assessment still had its own proposal of 25 October 2026: application logs 14 days, traces 7 days, no backups. The team decided other values for NFR-19 and NFR-13 (non-functional requirements §5, 26 October 2026), and the telemetry ones changed again with the simplified observability plan (#153, 27 October 2026). The decisions guide (D5, G7) already had them.
