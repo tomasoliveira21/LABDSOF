@@ -298,7 +298,7 @@ Most respondents are experienced festival-goers: 25 of 32 have been several time
 
 ### Resulting product decisions
 
-Decided by Tiago, the backlog owner, from the data on 30 October 2026, and presented to the team at the next planning meeting. Decisions 2, 3 and 4 change the backlog; they still have to be applied in [`features.md`](../Product/features.md) and on the board.
+Decided by Tiago, the backlog owner, from the data on 30 October 2026, and presented to the team at the next planning meeting. Decisions 2, 3 and 4 are applied in [`features.md`](../Product/features.md) (30 October 2026); the board fields still have to follow.
 
 | # | Decision | Data | Before → after |
 |---|---|---|---|

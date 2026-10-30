@@ -17,7 +17,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - F17 entrance status per gate: Could → Should (80 % waited more than 30 min to get in).
 - F11 weak-network mode reopened at sprint planning (battery 48 %, installing 39 % and weak network 32 % are the top barriers).
 - F6 help request: ask for the phone's location; if the participant refuses, they mark the place on the venue map (71 % accept it, 26 % only the map).
-- `features.md` and the board are not changed yet.
+- Applied in `features.md`: F17 to Should (heading, US-59 and US-60 in R2 "if there is time" and first after US-57/58 in the cut line, board table to sprint C); F11 note says it is reopened as a candidate for Should; F6 note and US-23 ask for the phone's location first, with the map as the fallback. The GitHub Projects fields (priority, size of US-23) still have to follow.
 
 ## [Unreleased] · 2026-10-29 · Assessment retention aligned with the NFRs (#159, António Guerra)
 
