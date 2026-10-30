@@ -98,7 +98,7 @@ Outcomes the MVP cannot measure (they need a real event): adoption during the ev
 
 **Targets:** SC3 (30 s) set by the team on 8 October 2026; SC1, SC2, SC4, SC6 and SC11 confirmed by Tiago on 24 October 2026 (#137), with SC6 raised from 10 s to 15 s to fit the 10 s polling of guide J3.
 
-**Results (student survey, 3 to 6 and 30 October 2026, n = 31 to 32):** **V1 met**, 84 % (27/32). **V2 met**, 2.97, by a small margin and dependent on the answers of 30 October (report, *Limitations*); to confirm with a test in night conditions. The main pain reported is the wait at the entrance (77 %). Details, limitations and the decisions taken from them: report, *User Research*.
+**Results (student survey, 3 to 6 and 30 October 2026, n = 30 to 31):** **V1 met**, 87 % (27/31). **V2 met**, 2.97, by a small margin and dependent on the answers of 30 October (report, *Limitations*); to confirm with a test in night conditions. The main pain reported is the wait at the entrance (80 %). Details, limitations and the decisions taken from them: report, *User Research*.
 
 ## 6. MVP boundary
 
@@ -119,7 +119,7 @@ The three critical assumptions are **A2** (participants use the app during the n
 
 | Method | Status | Validates | Source |
 |---|---|---|---|
-| Online student survey (Google Forms, 11 questions) | Done: 33 answers, n = 31 to 32 after the filter (3 to 6 and 30 October 2026) | A2, A3, A4, problem | [`inquerito-estudantes-google-forms.gs`](../Research/inquerito-estudantes-google-forms.gs); results in the report, *User Research* |
+| Online student survey (Google Forms, 11 questions) | Done: 33 answers, 32 valid, n = 30 to 31 after the filter (3 to 6 and 30 October 2026) | A2, A3, A4, problem | [`inquerito-estudantes-google-forms.gs`](../Research/inquerito-estudantes-google-forms.gs); results in the report, *User Research* |
 | Interview with a security volunteer | **TBD** | A4, root cause 4 | Report §4 |
 | Public evidence (press, operators, FAP) | Done (E1–E7) | Problem | Report §4 |
 | Market and competitor analysis | Done | Differentiation | [`market-and-competitor-analysis.md`](../Deliverables/market-and-competitor-analysis.md) |

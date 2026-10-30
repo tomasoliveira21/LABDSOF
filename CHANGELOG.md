@@ -10,14 +10,14 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `Docs/Presentation/Farol_Sprint_A_Presentation.pptx`: 18 slides with every section the professor listed on 22 October 2026 (vision, personas, workflow, domain model, architecture and technology, assumptions and dependencies, costs, prioritised backlog, NFRs, scope of the next sprints, people, methodology, DoR and DoD), plus two slides on the survey results and decisions. Speaker notes in Portuguese.
 
 ### Changed
-- `problem-opportunity-report-queima.md`, *User Research*: method (Google Forms, 3 to 6 and 30 October 2026, 33 answers; n = 31 for Q2–Q6 and 32 for Q7–Q10; collection closed on 30 October 2026; *Outro* free-text answers excluded), results per question, V1 and V2, what the data says about A2, A3, A4 and root cause 1, limitations, and five product decisions taken from the data. §4 *weak evidence* points to the survey.
-- `product-vision.md` §5 and §8: V1 met (84 %), V2 met (2.97), dependent on the answers of 30 October; the survey marked as done; the gap now only names the missing volunteer interview.
+- `problem-opportunity-report-queima.md`, *User Research*: method (Google Forms, 3 to 6 and 30 October 2026, 33 answers, 1 marked invalid; n = 30 for Q2–Q6 and 31 for Q7–Q10; collection closed on 30 October 2026; *Outro* free-text answers excluded), results per question, V1 and V2, what the data says about A2, A3, A4 and root cause 1, limitations, and five product decisions taken from the data. §4 *weak evidence* points to the survey.
+- `product-vision.md` §5 and §8: V1 met (87 %), V2 met (2.97), dependent on the answers of 30 October; the survey marked as done; the gap now only names the missing volunteer interview.
 
-### Proposed (Tiago, 30 October 2026; to confirm with the team)
-- F17 entrance status per gate: Could → Should (77 % waited more than 30 min to get in).
-- F11 weak-network mode reopened at sprint planning (battery 47 %, installing 38 % and weak network 31 % are the top barriers).
-- F6 help request: the phone's location as an optional shortcut next to the map pin (69 % accept it, 28 % only the map pin).
-- `features.md` is not changed until the team confirms.
+### Decided (Tiago, backlog owner, 30 October 2026; to present at the next planning)
+- F17 entrance status per gate: Could → Should (80 % waited more than 30 min to get in).
+- F11 weak-network mode reopened at sprint planning (battery 48 %, installing 39 % and weak network 32 % are the top barriers).
+- F6 help request: ask for the phone's location; if the participant refuses, they mark the place on the venue map (71 % accept it, 26 % only the map).
+- `features.md` and the board are not changed yet.
 
 ## [Unreleased] · 2026-10-29 · Assessment retention aligned with the NFRs (#159, António Guerra)
 
