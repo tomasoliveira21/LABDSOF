@@ -730,7 +730,7 @@ Each story is a GitHub issue created from the [user-story form](../../.github/IS
 | Sprint | Milestones *Sprint A*, *Sprint B*, *Sprint C* | The issue's milestone (this table's *Sprint* column); board views are grouped or filtered by *Milestone*. No *Iteration* field, so the sprint is kept in one place (decided on 24 October 2026 instead of the Iteration field of [`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md#in-the-tool)) |
 | *Estimate*, *Start date*, *Target date* | — | Not used for now |
 
-Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 16, **S** 22, **M** 16, **L** 9, **XL** 0. Only #58 is *Ready*: every story waits for at least one open blocker of §8.4 (the identity provider E1 alone blocks 60 of the 62 stories), so it stays in *Backlog* until that blocker is closed.
+Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 16, **S** 22, **M** 16, **L** 9, **XL** 0. On 30 October 2026, US-23 (#71) went from L to XL (5 criteria after the survey decision on location) and US-59 and US-60 (#118, #119) got the *Sprint C* milestone: **L** 8, **XL** 1. Only #58 is *Ready*: every story waits for at least one open blocker of §8.4 (the identity provider E1 alone blocks 60 of the 62 stories), so it stays in *Backlog* until that blocker is closed.
 
 | Story | Issue | Type | Sprint |
 |---|---|---|---|
