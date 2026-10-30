@@ -91,7 +91,7 @@ A checklist of commands, run by hand after starting, updating or rolling back. I
 | 4 | Login works | Log in with a demo account on the laptop (`localhost`); on a phone once HTTPS is decided (§8) | Keycloak's page opens; back in the app, the account's name is shown (`GET /me`) |
 | 5 | One round trip through RabbitMQ | The walking skeleton's end-to-end action: one service publishes an event and another consumes it. Tomás writes the exact command here when the skeleton exists | The consumer shows the change; the queue is empty afterwards |
 
-The same checks, without the phone and the login, run in CI with Compose on every push to `main`, every tag and manual runs ([ADR-010](adr/0010-cicd-strategy.md)).
+Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9, Tomás), the same checks, without the phone and the login, will run in CI with Compose on every push to `main`, every tag and manual runs. Not running yet (checked on 30 October 2026: the only workflow is `conventions.yml`).
 
 ## 8. The demo
 

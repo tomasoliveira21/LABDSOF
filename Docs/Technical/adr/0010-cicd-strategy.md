@@ -49,7 +49,7 @@
    - **gitleaks** in `secrets`, on every PR.
    - **Dependabot and Trivy answer finding 12 of the [security assessment](../security-and-privacy-assessment.md#10-findings-and-proposed-actions)** (T18, no dependency or image scanning): Dependabot covers the dependencies of every ecosystem, Trivy the images, including the pinned third-party ones (Keycloak, PostgreSQL, RabbitMQ). Guerra marks the finding as answered in the assessment.
 
-8. **Branch protection (H8, README §6).** Active on `main`: the required checks are **Conventions** and **CI**, plus the review rules of README §5 and §6.
+8. **Branch protection (H8, README §6).** On `main`, the required checks are **Conventions** and **CI**, plus the review rules of README §5 and §6. **Not active yet** (checked on 30 October 2026: the GitHub API returns `protected: false` for `main`). **To do: Tomás, the repository owner, turns it on** ([`team-and-process.md` §4](../../Process/team-and-process.md#4-process-health-check-what-the-repository-shows-today), agreed on 8 October 2026). The **CI** check can be required only once `ci.yml` exists (point 9).
 
 9. **Walking skeleton (R0, Tomás). Proposed scope, to agree with Tomás:** R0 implements all of the above for the services it creates (at least two, to show independent deployment): `ci.yml`, the Dependabot file, the Dependabot exemption in `conventions.yml` and the round-trip command in the smoke test. Every new service is added to the `backend` matrix and to `infra/compose.yaml` when it is created. The first tag is `v0.1.0` at the end of Sprint A.
 
