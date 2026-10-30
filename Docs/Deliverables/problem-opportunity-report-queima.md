@@ -142,7 +142,7 @@ Each **event configuration team can upload the venue map** to the platform. The 
 
 - Serious incidents in 2026: one rape complaint at the Queimódromo do Porto and two in Coimbra. They show the need for fast help-request channels, but do not prove that an app would have prevented anything.
 - Event app adoption rates between 55% and 65% with promotion. The figures come from vendor blogs (Cvent, Lineupr), which have a commercial interest.
-- The idea that "students want real-time information" is common sense. The student survey (n = 24, *User Research*) points the same way: 88 % would use the app and 38 % chose real-time announcements, but this is a small, non-random sample.
+- The idea that "students want real-time information" is common sense. The student survey (n = 32, *User Research*) points the same way: 84 % would use the app and 38 % chose real-time announcements, but this is a small, non-random sample.
 
 ### Gaps and primary validation plan
 
@@ -217,56 +217,63 @@ The most critical assumptions are **A2, A3 and A4**. If participants do not use 
 |---|---|
 | Instrument | Online questionnaire in Google Forms, *"Queima das Fitas: como vives a noite do evento?"*, 11 questions in Portuguese, about 3 minutes. Script: [`inquerito-estudantes-google-forms.gs`](../Research/inquerito-estudantes-google-forms.gs) |
 | Anonymity | No name or e-mail collected; answers used only in aggregate |
-| Collection | **Wave 1, 3 to 6 October 2026:** 21 answers. **Wave 2, 30 October 2026:** 4 answers from friends of a team member (Tiago), sent between 22:42 and 22:43, after the wave 1 results were known |
-| Answers | **25** in total. 1 person has never been to an academic festival and does not plan to go, so the form ended after question 1. **n = 24** for questions 2 to 10 (20 from wave 1, 4 from wave 2) |
-| Flow | Question 1 filters: people who have been answer about their last event (Q2–Q6) and about an application (Q7–Q10); people who never went and do not plan to go end the form |
+| Collection | **Wave 1, 3 to 6 October 2026:** 21 answers. **Wave 2, 30 October 2026, 22:42–22:43:** 4 answers from friends of a team member (Tiago). **Wave 3, 30 October 2026, 22:49–22:57:** 8 answers from another group of Tiago's friends. Waves 2 and 3 were collected after the wave 1 results were known |
+| Answers | **33** in total. 1 person has never been to an academic festival and does not plan to go, so the form ended after question 1; 1 has never been but plans to go, so they skipped the questions about the experience. **n = 31** for questions 2 to 6 and **n = 32** for questions 7 to 10 |
+| Flow | Question 1 filters: people who have been answer about their last event (Q2–Q6) and about an application (Q7–Q10); people who plan to go answer only about the application; people who never went and do not plan to go end the form |
 | Assumptions tested | A2 and A3 (Q6–Q9), A4 (Q3, Q5, Q10), the problem itself (Q3, Q4, Q6) |
-| Cleaning | Free-text answers in the *Outro* (other) option were **excluded**: one is a joke and the others cannot be compared with the closed options (one each in Q2, Q3 and Q9, all in wave 1). The closed answers of those respondents were kept. Nothing else was changed |
-| Analysis | Counts and percentages per option. Multiple-choice questions (Q2, Q3, Q4, Q8, Q9) add up to more than 100 %. Where the two waves differ, both are shown |
+| Cleaning | Free-text answers in the *Outro* (other) option were **excluded**: one is a joke and the others cannot be compared with the closed options (two in Q2, one in Q3, one in Q9). The closed answers of those respondents were kept. Nothing else was changed |
+| Analysis | Counts and percentages per option. Multiple-choice questions (Q2, Q3, Q4, Q8, Q9) add up to more than 100 %. Where the waves differ, each is shown |
 
 The group also used public news, official event communications and transport information (§4). The interview with a security volunteer (§4, assumption A4) **has not been done yet**.
 
 ### Results
 
-Respondents are experienced Queima-goers: 22 of 25 have been several times and 2 once. 23 of the 24 who went have been to the **Queima do Porto**; 6 have been to Coimbra's.
+Most respondents are experienced festival-goers: 26 of 33 have been several times and 5 once. Of the 31 who went, 26 have been to the **Queima do Porto**, 9 to Coimbra's and 1 to the Enterro da Gata in Braga.
 
-**What went wrong the last time (Q3, n = 24)**
+**What went wrong the last time (Q3, n = 31)**
 
 | Situation | Answers |
 |---|---|
-| Waited more than 30 minutes to get in | **21 (88 %)** |
-| Got separated from my group | 10 (42 %) |
-| Needed help (health, security, theft) and did not know whom to ask | 5 (21 %); 3 of them in wave 2 |
-| Did not know where something was in the venue (WC, stage, first aid) | 4 (17 %) |
-| Did not know how to get home or when there was transport | 2 (8 %) |
-| Was the victim or witness of a theft | 2 (8 %) |
-| None of these | 2 (8 %) |
+| Waited more than 30 minutes to get in | **24 (77 %)** |
+| Got separated from my group | 14 (45 %) |
+| Needed help (health, security, theft) and did not know whom to ask | 8 (26 %); 6 of them in waves 2 and 3 |
+| Did not know where something was in the venue (WC, stage, first aid) | 6 (19 %) |
+| Did not know how to get home or when there was transport | 5 (16 %) |
+| Was the victim or witness of a theft | 3 (10 %) |
+| None of these | 2 (6 %) |
 
-22 of 24 (92 %) went through at least one of these situations.
+29 of 31 (94 %) went through at least one of these situations.
 
-**Where they looked for information (Q4, n = 24):** the organisation's Instagram or social media 19 (79 %), friends or WhatsApp groups 15 (63 %), the federation app (e.g. FAP) 7 (29 %), the official website 6 (25 %), signs and staff at the venue 5 (21 %). Nobody chose *"I did not look"*.
+**Where they looked for information (Q4, n = 31):** the organisation's Instagram or social media 23 (74 %), friends or WhatsApp groups 19 (61 %), the federation app (e.g. FAP) 9 (29 %), the official website 8 (26 %), signs and staff at the venue 6 (19 %), *I did not look* 1 (3 %).
 
-**How easy it was to find information during the night (Q6, 1 = very hard, 5 = very easy, n = 24):** 1 → 3 answers, 2 → 1, 3 → 8, 4 → 10, 5 → 2. **Average 3.29**, median 3.5. The two waves differ sharply: wave 1 averages **3.7** (n = 20, nobody below 3); wave 2 averages **1.25** (n = 4).
+**How easy it was to find information during the night (Q6, 1 = very hard, 5 = very easy, n = 31):** 1 → 6 answers, 2 → 3, 3 → 10, 4 → 10, 5 → 2. **Average 2.97**, median 3. The waves differ sharply:
 
-**First thing they would do if they needed help inside the venue (Q5, n = 24):** ask friends 10 (42 %), look for a security guard or staff member 8 (33 %), go to the first-aid post 5 (21 %), call 112 1 (4 %). Nobody chose *"I don't know"*.
+| Wave | n | Average |
+|---|---|---|
+| 1 (3–6 October) | 20 | **3.70**; nobody below 3 |
+| 2 (30 October) | 4 | 1.25 |
+| 3 (30 October) | 7 | 1.86 |
+| 2 and 3 together | 11 | **1.64** |
 
-**Would they use an application like this during the night (Q7, n = 24):** *yes, definitely* 11 (46 %), *probably yes* 10 (42 %), *probably not* 2 (8 %), *no* 1 (4 %). **21 of 24 (88 %) positive.**
+**First thing they would do if they needed help inside the venue (Q5, n = 31):** ask friends 12 (39 %), look for a security guard or staff member 10 (32 %), go to the first-aid post 5 (16 %), *I don't know* 3 (10 %), call 112 1 (3 %).
 
-**Most useful features (Q8, up to 3, n = 24)**
+**Would they use an application like this during the night (Q7, n = 32):** *yes, definitely* 13 (41 %), *probably yes* 14 (44 %), *probably not* 4 (12 %), *no* 1 (3 %). **27 of 32 (84 %) positive** (wave 1: 17 of 20; wave 2: 4 of 4; wave 3: 6 of 8).
+
+**Most useful features (Q8, up to 3, n = 32)**
 
 | Feature | Answers |
 |---|---|
-| Venue map (WC, stages, support points) | **16 (67 %)** |
-| Timetable and location of transport home | 13 (54 %) |
-| Help button (health, security, theft) that alerts the organisation | 11 (46 %) |
-| Expected waiting time at the entrances | 10 (42 %) |
-| Real-time announcements from the organisation (changes, alerts) | 9 (38 %) |
-| Electronic ticket in the application | 6 (25 %) |
-| Assistant to answer questions about the event | 2 (8 %) |
+| Venue map (WC, stages, support points) | **17 (53 %)** |
+| Help button (health, security, theft) that alerts the organisation | 16 (50 %) |
+| Timetable and location of transport home | 14 (44 %) |
+| Expected waiting time at the entrances | 13 (41 %) |
+| Real-time announcements from the organisation (changes, alerts) | 12 (38 %) |
+| Electronic ticket in the application | 10 (31 %) |
+| Assistant to answer questions about the event | 3 (9 %) |
 
-**What would stop them from using it (Q9, up to 2, n = 24):** battery use 12 (50 %), weak network at the venue 9 (38 %), having to install another app 7 (29 %), not trusting that the information is up to date 5 (21 %), *nothing, I would use it* 4 (17 %), having to share my location 1 (4 %).
+**What would stop them from using it (Q9, up to 2, n = 32):** battery use 15 (47 %), having to install another app 12 (38 %), weak network at the venue 10 (31 %), not trusting that the information is up to date 8 (25 %), *nothing, I would use it* 5 (16 %), having to share my location 2 (6 %).
 
-**Location when asking for help (Q10, n = 24):** share the phone's location 19 (79 %), only by marking the place on the venue map myself 5 (21 %), no 0.
+**Location when asking for help (Q10, n = 32):** share the phone's location 22 (69 %), only by marking the place on the venue map myself 9 (28 %), no 1 (3 %).
 
 **Q11 (optional, open):** 2 answers, neither about the product.
 
@@ -274,26 +281,26 @@ Respondents are experienced Queima-goers: 22 of 25 have been several times and 2
 
 | # | Target | Result | Reading |
 |---|---|---|---|
-| V1 | ≥ 60 % *yes, definitely* or *probably yes* in Q7 | **88 %** (21/24); wave 1 alone 85 % | Met. It is a stated intention, not observed use |
-| V2 | Q6 average ≤ 3 confirms that finding information is a problem | **3.29** (wave 1: 3.7; wave 2: 1.25) | **Not met; not confirmed by this survey.** Wave 1 found information fairly easy to find; the 4 answers of wave 2 found it very hard. The answers were given away from the event (see *Limitations*), so the result is read as open, not as evidence against the problem. The pain reported most is the wait at the entrance (88 %) |
+| V1 | ≥ 60 % *yes, definitely* or *probably yes* in Q7 | **84 %** (27/32); wave 1 alone 85 % | Met. It is a stated intention, not observed use |
+| V2 | Q6 average ≤ 3 confirms that finding information is a problem | **2.97** overall; wave 1: 3.70; waves 2 and 3: 1.64 | **Met only by the overall average, and only because of waves 2 and 3.** Wave 1 alone does not meet it. Waves 2 and 3 are small, were recruited among a team member's friends after the wave 1 result was known, and disagree strongly with wave 1. Read as weak evidence for the problem, to confirm with a test in night conditions. The pain reported most is still the wait at the entrance (77 %) |
 
 **What this says about the assumptions**
 
-- **A2** (they use the app during the night): supported as an intention (88 %). The barriers are physical, not of interest: battery (50 %) and weak network (38 %).
-- **A3** (one app, opened by link or QR): 29 % name installing another app as a barrier, which supports the no-installation choice. The survey did not ask about one app for several events directly.
-- **A4** (help through the app is faster): **not validated.** 5 of 24 needed help without knowing whom to ask (3 of them in wave 2), and the first reaction is people nearby (friends, staff, first aid), not a phone. 79 % would share location with a request. The volunteer interview is still missing.
-- **Root cause 1** (no single source): supported. Information comes from social media and WhatsApp groups (79 % and 63 %); official channels (website, FAP app, signs) are each below 30 %.
+- **A2** (they use the app during the night): supported as an intention (84 %). The barriers are physical, not of interest: battery (47 %), installing another app (38 %) and weak network (31 %).
+- **A3** (one app, opened by link or QR): 38 % name installing another app as a barrier, which supports the no-installation choice. The survey did not ask about one app for several events directly.
+- **A4** (help through the app is faster): **not validated.** 8 of 31 needed help without knowing whom to ask (6 of them in waves 2 and 3), and the first reaction is people nearby (friends, staff, first aid), not a phone. 69 % would share the phone's location with a request and 28 % only a place on the map. The volunteer interview is still missing.
+- **Root cause 1** (no single source): supported. Information comes from social media and WhatsApp groups (74 % and 61 %); official channels (website, FAP app, signs) are each below 30 %.
 
 ### Limitations
 
-- **Small sample.** n = 24 against a target of 100 or more (§4). Each answer is about 4 percentage points; the percentages show direction, not precise values, and no statistical test was done.
-- **Convenience sample.** Answers came from the group's own reach, not from a random sample of students. 23 of 24 went to the Queima do Porto and 22 of 25 have been several times. First-timers and other cities are almost absent, and the survey did not ask for age, course or institution.
-- **Two waves, different recruitment.** Wave 2 (4 answers) are friends of a team member, collected on 30 October after the team had seen that V2 was not met. Their Q6 answers (average 1.25) are very different from wave 1 (3.7), and with n = 4 they move the overall average by 0.4. Both values are reported so the reader can judge.
-- **Answered away from the event.** People answered at home, calmly, not during the night with noise, a crowd, low battery and a weak network. Q6 probably underestimates how hard it is to find information on the spot. It needs a test in night conditions (usability test of SC1 and SC11).
+- **Small sample.** n = 31 against a target of 100 or more (§4). Each answer is about 3 percentage points; the percentages show direction, not precise values, and no statistical test was done.
+- **Convenience sample.** Answers came from the group's own reach, not from a random sample of students. Most went to the Queima do Porto (26 of 31) and have been several times (26 of 33). The survey did not ask for age, course or institution.
+- **Three waves, different recruitment.** Waves 2 and 3 (12 answers) are friends of a team member, collected on 30 October after the team had seen that wave 1 did not meet V2. Their Q6 average (1.64) is very different from wave 1 (3.70), and it is what brings the overall average below 3. All waves are reported so the reader can judge.
+- **Answered away from the event.** People answered at home, calmly, not during the night with noise, a crowd, low battery and a weak network. Q6 depends on how each person remembers the night. It needs a test in night conditions (usability test of SC1 and SC11).
 - **Memory.** Q3 to Q6 ask about *"the last time"*, which may be one or more years ago.
 - **Intention is not behaviour.** Q7 measures what people say they would do. The form describes the app in a positive way before Q7 (*opens by link or QR, no installation required*), which may push answers up.
 - **Forced choices.** Q8 allows at most 3 options and Q9 at most 2; a low count means *less chosen*, not *not wanted*.
-- **Cleaning.** *Outro* answers were excluded (one joke and two free-text answers). One respondent gave a joke in Q2 but their closed answers were kept; without them, Q7 is 91 % (21/23) and the Q6 average 3.3, so the conclusions do not change.
+- **Cleaning.** *Outro* answers were excluded (one joke and three free-text answers). One respondent gave a joke in Q2 but their closed answers were kept; without them, Q7 is 87 % (27/31) and the Q6 average stays 2.97, so the conclusions do not change.
 - **Only one side.** The survey covers participants. The event team's side (assumptions A1, A4, A6) has no primary data yet: the security-volunteer interview has not been done and the group has no access to FAP.
 
 ### Resulting product decisions
@@ -302,13 +309,13 @@ Proposed by Tiago from the data on 30 October 2026. Decisions 2, 3 and 4 change 
 
 | # | Decision | Data | Before → after |
 |---|---|---|---|
-| 1 | **The venue map stays the centre of the participant app** (F5, Must) | Map is the most chosen feature: 16 of 24 (67 %) | Confirmed |
-| 2 | **Entrance status per gate (F17) moves from Could to Should.** It stays a manual status set by the team; no automatic prediction (out of scope; assumption A6) | Waiting more than 30 min is the most common problem, 21 of 24 (88 %); waiting time chosen by 10 (42 %) | **Changed:** Could → Should |
-| 3 | **Weak network and battery become design constraints of the participant pages:** light pages, few requests, the last-update time always visible. Weak-network mode (F11) goes back to sprint planning as a candidate for Should | Battery is the top barrier, 12 of 24 (50 %), then weak network, 9 (38 %); install 7 (29 %) | **Changed:** F11 reopened (Could, to review) |
-| 4 | **The help request keeps the place marked on the map as the way that always works; the phone's location becomes an optional shortcut.** The help screen also shows the nearest first-aid and staff points | 19 of 24 (79 %) accept phone location and the other 5 accept the map; nobody refuses. 13 of 24 would first go to staff or first aid | **Changed:** map only → map plus optional phone location |
-| 5 | **AI stays on help-request triage, not on a participant assistant** (decision of 8 October 2026, `features.md` §5) | The assistant is the least chosen feature, 2 of 24 (8 %) | Confirmed |
+| 1 | **The venue map stays the centre of the participant app** (F5, Must) | Map is the most chosen feature: 17 of 32 (53 %), with the help button close behind (16, 50 %) | Confirmed |
+| 2 | **Entrance status per gate (F17) moves from Could to Should.** It stays a manual status set by the team; no automatic prediction (out of scope; assumption A6) | Waiting more than 30 min is the most common problem, 24 of 31 (77 %); waiting time chosen by 13 of 32 (41 %) | **Changed:** Could → Should |
+| 3 | **Weak network and battery become design constraints of the participant pages:** light pages, few requests, the last-update time always visible. Weak-network mode (F11) goes back to sprint planning as a candidate for Should | Battery is the top barrier, 15 of 32 (47 %); install 12 (38 %); weak network 10 (31 %) | **Changed:** F11 reopened (Could, to review) |
+| 4 | **The help request keeps the place marked on the map as the way that always works; the phone's location becomes an optional shortcut.** The help screen also shows the nearest first-aid and staff points | 22 of 32 (69 %) accept phone location, 9 only the map, 1 neither. 15 of 31 would first go to staff or first aid | **Changed:** map only → map plus optional phone location |
+| 5 | **AI stays on help-request triage, not on a participant assistant** (decision of 8 October 2026, `features.md` §5) | The assistant is the least chosen feature, 3 of 32 (9 %) | Confirmed |
 
-**Problem statement:** the report keeps the fragmented-information problem (root cause 1 is supported by Q4). V2 does not confirm that participants struggle to find information during the night, but the two waves disagree and the survey was answered away from the event, so this stays open until a test in night conditions. The strongest pain participants reported is the entrance wait, which is why decision 2 brings live entrance information forward. The statement is reviewed again after the volunteer interview.
+**Problem statement:** the report keeps the fragmented-information problem (root cause 1 is supported by Q4). The overall Q6 average meets V2, but only because of waves 2 and 3, so the team treats it as weak support and confirms it with a test in night conditions. The strongest pain participants reported is the entrance wait, which is why decision 2 brings live entrance information forward. The statement is reviewed again after the volunteer interview.
 
 ---
 

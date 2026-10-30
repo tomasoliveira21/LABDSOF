@@ -10,13 +10,13 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `Docs/Presentation/Farol_Sprint_A_Presentation.pptx`: 18 slides with every section the professor listed on 22 October 2026 (vision, personas, workflow, domain model, architecture and technology, assumptions and dependencies, costs, prioritised backlog, NFRs, scope of the next sprints, people, methodology, DoR and DoD), plus two slides on the survey results and decisions. Speaker notes in Portuguese.
 
 ### Changed
-- `problem-opportunity-report-queima.md`, *User Research*: method (Google Forms; wave 1, 3 to 6 October 2026, 21 answers; wave 2, 30 October 2026, 4 answers from friends of Tiago; n = 24 after the filter; *Outro* free-text answers excluded), results per question, V1 and V2, what the data says about A2, A3, A4 and root cause 1, limitations, and five product decisions taken from the data. §4 *weak evidence* points to the survey.
-- `product-vision.md` §5 and §8: V1 met (88 %), V2 not met and not confirmed (average 3.29; wave 1 3.7, wave 2 1.25); the survey marked as done; the gap now only names the missing volunteer interview.
+- `problem-opportunity-report-queima.md`, *User Research*: method (Google Forms; wave 1, 3 to 6 October 2026, 21 answers; waves 2 and 3, 30 October 2026, 4 and 8 answers from friends of Tiago; n = 31 for Q2–Q6 and 32 for Q7–Q10; *Outro* free-text answers excluded), results per question, V1 and V2, what the data says about A2, A3, A4 and root cause 1, limitations, and five product decisions taken from the data. §4 *weak evidence* points to the survey.
+- `product-vision.md` §5 and §8: V1 met (84 %), V2 met only by the overall average (2.97; wave 1 3.70, waves 2 and 3 1.64); the survey marked as done; the gap now only names the missing volunteer interview.
 
 ### Proposed (Tiago, 30 October 2026; to confirm with the team)
-- F17 entrance status per gate: Could → Should (88 % waited more than 30 min to get in).
-- F11 weak-network mode reopened at sprint planning (battery 50 % and weak network 38 % are the top barriers).
-- F6 help request: the phone's location as an optional shortcut next to the map pin (79 % accept it, nobody refuses).
+- F17 entrance status per gate: Could → Should (77 % waited more than 30 min to get in).
+- F11 weak-network mode reopened at sprint planning (battery 47 %, installing 38 % and weak network 31 % are the top barriers).
+- F6 help request: the phone's location as an optional shortcut next to the map pin (69 % accept it, 28 % only the map pin).
 - `features.md` is not changed until the team confirms.
 
 ## [Unreleased] · 2026-10-29 · Assessment retention aligned with the NFRs (#159, António Guerra)
