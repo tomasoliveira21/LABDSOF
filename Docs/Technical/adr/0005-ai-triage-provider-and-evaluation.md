@@ -8,7 +8,7 @@
 
 ## Context
 
-F8 suggests category, priority and response team; an operator decides. F7 must work without AI. SC3 allows 30 s from submission to stored suggestion and SC5 requires all requests visible with AI off. Domain invariant I4 forbids lowering priorities or overwriting operator decisions. The complete [Responsible AI assessment](../../Research/architecture-investigation/responsible-ai.md) records sources, costs, input/output, risks and evidence gaps.
+F8 suggests category, priority and response team; an operator decides. F7 must work without AI. SC3 allows 30 s from submission to stored suggestion and SC5 requires all requests visible with AI off. NFR-22 forbids lowering priorities or overwriting operator decisions. The complete [Responsible AI assessment](../../Research/architecture-investigation/responsible-ai.md) records sources, costs, input/output, risks and evidence gaps.
 
 ## Decision
 
@@ -41,7 +41,7 @@ The dataset run and a one-hour operational cohort have different populations and
 - Cloud Ollama as default: greater infrastructure/memory cost and unknown CPU latency; retain as a candidate if measurements justify it.
 - Hosted model selected solely by headline accuracy/price: insufficient evidence for Portuguese triage or sensitive-data handling.
 - Only deterministic routing: remains the fallback/baseline; cannot provide the required AI-assisted workflow by itself.
-- Autonomous classification/dispatch: rejected by the existing operator-control decision and I4.
+- Autonomous classification/dispatch: rejected by the existing operator-control decision and NFR-22.
 
 ## Acceptance evidence pending
 

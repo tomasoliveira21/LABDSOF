@@ -57,7 +57,7 @@ The team uses **GitHub Flow**.
 4. Open a pull request to `main`.
 5. After approval and a green CI run, the PR is **squash-merged** and the branch is deleted.
 
-`main` is always deployable. Direct pushes to `main` are not allowed. The rule is not enforced by GitHub yet: see §6.
+`main` is always deployable. Direct pushes to `main` are not allowed. GitHub enforces it since 30 October 2026: see §6.
 
 ## 2. Branch naming
 
@@ -136,16 +136,16 @@ A pull request can only be merged after **two reviews**:
 
 ## 6. Branch protection on `main`
 
-> **Not active yet** (checked on 30 October 2026: the GitHub API returns `protected: false` for `main`). **To do: Tomás, the repository owner, turns it on** (agreed on 8 October 2026, [`team-and-process.md` §4](Process/team-and-process.md#4-process-health-check-what-the-repository-shows-today)). **Conventions** can be required now; **CI** once `ci.yml` exists ([ADR-010](Technical/adr/0010-cicd-strategy.md) point 9).
+> **Active since 30 October 2026**, through the repository ruleset *[MAIN] Branch protection rules* (created at 18:43 UTC; checked on 31 October 2026: the GitHub API returns `protected: true` for `main`). The repository allows only squash merging. **Still to do: Tomás, the repository owner** (agreed on 8 October 2026, [`team-and-process.md` §4](Process/team-and-process.md#4-process-health-check-what-the-repository-shows-today)): the unticked items below. The list of required checks is empty; the checks to add are `CI` (the job of `ci.yml`, [ADR-010](Technical/adr/0010-cicd-strategy.md) point 9) and `conventions` (the name GitHub shows for the job of `conventions.yml`).
 
-- [ ] No direct pushes
-- [ ] Copilot code review requested automatically on every PR (repository ruleset)
-- [ ] At least **1 approval** from another team member (authors do not approve their own PRs)
-- [ ] Stale approvals are dismissed when new commits are pushed
-- [ ] All review conversations must be resolved
-- [ ] CI pipeline must pass: the required checks are **Conventions** (branch name, PR title, linked issue) and **CI** ([ADR-010](Technical/adr/0010-cicd-strategy.md))
-- [ ] Branch must be up to date with `main` before merging
-- [ ] Head branch is deleted automatically after merge
+- [x] No direct pushes (a pull request is required; no force push, no deletion of `main`)
+- [x] Copilot code review requested automatically on every PR (repository ruleset)
+- [x] At least **1 approval** from another team member (authors do not approve their own PRs)
+- [ ] Stale approvals are dismissed when new commits are pushed (off in the ruleset)
+- [ ] All review conversations must be resolved (off in the ruleset)
+- [ ] CI pipeline must pass: the required checks are **Conventions** (branch name, PR title, linked issue) and **CI** ([ADR-010](Technical/adr/0010-cicd-strategy.md)). The ruleset lists no required check yet
+- [ ] Branch must be up to date with `main` before merging (on in the ruleset, but it belongs to the required-checks rule, which lists no check)
+- [x] Head branch is deleted automatically after merge (repository setting)
 
 ## 7. Pull request template
 

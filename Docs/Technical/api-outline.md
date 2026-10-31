@@ -224,7 +224,7 @@ Owns help requests, triage suggestions, community reports, field tasks and their
 ```
 
 - The participant gets only `id`, `category`, `status` and `updatedAt`, which the app shows as *Sent*, *Seen*, *On the way*, *Resolved* or *Closed* (US-24).
-- The request is saved and shown at once, with `triage.state: Pending`. If no valid suggestion arrives within 30 s it becomes `NotTriaged` (scenario D1, US-36). A suggestion never overwrites a value a member already set, and never lowers the default priority (domain model I4).
+- The request is saved and shown at once, with `triage.state: Pending`. If no valid suggestion arrives within 30 s it becomes `NotTriaged` (scenario D1, US-36). A suggestion never overwrites a value a member already set, and never lowers the default priority (NFR-22).
 
 **A field task:** `GET /events/{eventId}/field-tasks?updatedSince=`
 

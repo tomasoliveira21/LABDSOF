@@ -19,7 +19,7 @@
 3. **Delivery guarantees** (C3):
    - **Outbox table** in each service: the business change and the outgoing event are saved in the same transaction; a polling job publishes pending rows to RabbitMQ. An event is never lost and never sent for a change that was rolled back.
    - **At-least-once delivery, idempotent consumers:** each consumer records the `message_id`s it has processed and ignores duplicates.
-   - After **4 attempts** with exponential backoff (1 s, 2 s, 4 s), the message goes to the **dead-letter queue** of its queue, with the failure reason in its headers. DLQ messages are never reprocessed automatically: they are alerted on and moved back by hand once the cause is fixed ([`architecture.md`](../architecture.md) §6).
+   - After **4 attempts** with exponential backoff (1 s, 2 s, 4 s), the message goes to the **dead-letter queue** of its queue, with the failure reason in its headers. DLQ messages are never reprocessed automatically: they show on the DLQ panel of the dashboard ([ADR-012](0012-observability.md), NFR-34) and are moved back by hand once the cause is fixed ([`architecture.md`](../architecture.md) §6).
 4. **Apps → services: synchronous REST, contract-first** (C7). The OpenAPI file is written by hand in `backend/<service>/contracts/openapi.yaml`, paths start with `/api/v1`, and `openapi-generator` produces the Spring interfaces and DTOs and the app clients ([`spec-driven-development.md`](../../Process/spec-driven-development.md)).
 5. **External sources are read by a scheduled poll** in the owning service, never inside a user's request: Transports polls the Porto Digital API with a timeout, validates the data and keeps the last valid copy ([`architecture.md`](../architecture.md) §7). Its HTTP client points to a configurable base URL, so the same code runs against the real API or the simulator / recorded responses (guide J4).
 6. **Polling for live data** (C5): the apps poll for the backoffice list, request status and announcements. One instance per service for now.
@@ -50,7 +50,7 @@
 
 ## Open points
 
-- Resolved on 22 October 2026: retry values (guide C3) and Porto Digital poll values (guide J1: every 30 s, freshness limit 5 min); see [`architecture.md`](../architecture.md) §6 and §9. DLQ alerting follows the proposed observability decision ([ADR-012](0012-observability.md)).
+- Resolved on 22 October 2026: retry values (guide C3) and Porto Digital poll values (guide J1: every 30 s, freshness limit 5 min); see [`architecture.md`](../architecture.md) §6 and §9. The DLQ is watched on the dashboard of [ADR-012](0012-observability.md) (accepted on 31 October 2026), not by an alert.
 - Resolved on 26 October 2026: the simulator tool is **WireMock**, confirmed by Guerra, owner of J4 (#155); see [ADR-008](0008-transport-data-source.md), decision 4.
 - Where RabbitMQ runs in the cloud: guide C1 and G1, Tomás.
 - API gateway, rate limiting and CORS: guide C6, Guerra.

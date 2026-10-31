@@ -7,7 +7,7 @@ Delivery is local only, because cloud hosting costs were not justified ([clarifi
 
 ## 0. Sprint A: run the executable minimum first
 
-The 31 October review relayed by Tomás (#166) limits deliverable 10 to a small one-service slice, HTTP tests, Dockerfile, Compose and CI. Follow the [R0 run instructions](plans/local-walking-skeleton.md#3-run-and-demonstrate-from-the-repository-root) and [actual branch evidence](evidence/walking-skeleton-2026-10-31.md). The current `infra/compose.yaml` starts Reports only with profile `demo`, bound to `127.0.0.1:8080`: Swagger creates and reads synthetic help requests with fixed identity and in-memory storage. `GET /api/v1/status` remains diagnostic. No secret file is required. #58 remains open until review of running evidence; #148 remains open until actual observability exists.
+The 31 October review relayed by Tomás (#166) limits deliverable 10 to a small one-service slice, HTTP tests, Dockerfile, Compose and CI. Follow the [R0 run instructions](plans/local-walking-skeleton.md#3-run-and-demonstrate-from-the-repository-root) and [actual branch evidence](evidence/walking-skeleton-2026-10-31.md). The current `infra/compose.yaml` starts Reports only with profile `demo`, bound to `127.0.0.1:8080`: Swagger creates and reads synthetic help requests with fixed identity and in-memory storage. `GET /api/v1/status` remains diagnostic. No secret file is required. #58 was closed by Tomás on 31 October 2026 after #167; #148 remains open until actual observability exists.
 
 The procedures in §§1–8 are retained for **Sprint B**, when the named services/configuration exist. They must not be followed as if Keycloak, a web UI, databases and the broker are already part of R0. Authentication and domain guarantees apply when business endpoints are introduced; the demo uses only fixed synthetic identity/event values and is absent without the demo profile.
 
@@ -97,7 +97,7 @@ A checklist of commands, run by hand after starting, updating or rolling back. I
 | 4 | Login works | Log in with a demo account on the laptop (`localhost`); on a phone once HTTPS is decided (§8) | Keycloak's page opens; back in the app, the account's name is shown (`GET /me`) |
 | 5 | One round trip through RabbitMQ | The walking skeleton's end-to-end action: one service publishes an event and another consumes it. Tomás writes the exact command here when the skeleton exists | The consumer shows the change; the queue is empty afterwards |
 
-Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9, Tomás), the same checks, without the phone and the login, will run in CI with Compose on every push to `main`, every tag and manual runs. Not running yet (checked on 30 October 2026: the only workflow is `conventions.yml`).
+Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9, Tomás), the same checks, without the phone and the login, will run in CI with Compose on every push to `main`, every tag and manual runs (Sprint B). Today `ci.yml` (#167) runs the Sprint A skeleton's smoke test instead (status, synthetic create and read, Swagger) on every pull request, push to `main`, tag and manual run.
 
 ## 8. The demo
 

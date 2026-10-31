@@ -58,7 +58,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | §6.1 Client application | Participant web app (PWA) and backoffice, both behind login | Decided |
 | §6.3 At least one asynchronous workflow | Help request → AI triage → notification of the event team (see [`architecture.md`](../Technical/architecture.md)) | **[PROPOSED]** |
 | §6.5 Integration with at least one external system or realistic simulator | **Porto Digital urban platform**, FIWARE NGSI v2 bus API (F9; accepted by the professor, [ADR-008](../Technical/adr/0008-transport-data-source.md)) | Decided |
-| §6.6 Authentication and authorisation | F1 login for every user; F2 account and consent; F4 per-event roles and team permissions (§4); audit records for help requests (domain model I5) | Decided; mocked authentication allowed for the MVP |
+| §6.6 Authentication and authorisation | F1 login for every user; F2 account and consent; F4 per-event roles and team permissions (§4); audit records for help requests (`AuditEntry` in the domain model; NFR-16) | Decided; mocked authentication allowed for the MVP |
 | §6.8 At least one degraded-mode scenario | **D1** AI unavailable and **D2** transport source unavailable (§3.1) | Decided |
 
 ### 3.1 Degraded-mode scenarios (decided, 9 October 2026)
@@ -70,11 +70,11 @@ Two scenarios, no more. Both are demoed by breaking one dependency while the res
 | | |
 |---|---|
 | **Dependency** | AI model provider used by the triage worker (F8) |
-| **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout (10 s per attempt, 2 attempts), a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker: at least half of the last 10 calls failed or were slow, minimum 4 calls). Values: [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1) |
+| **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout (response 20 s, one attempt: the local profile, NFR-11), a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker: at least half of the last 10 calls failed or were slow, minimum 4 calls). Values: [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1) |
 | **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down (circuit breaker open), a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
 | **What the operator does** | Sets the priority and team by hand. Nothing else changes in F7 |
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
-| **When the AI comes back** | The banner disappears after the first successful call. Requests from the last 15 min that the operator has not touched are sent to triage once more and may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (domain model I4) |
+| **When the AI comes back** | The banner disappears after the first successful call. Requests from the last 15 min that the operator has not touched are sent to triage once more and may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (NFR-22) |
 | **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard (proposed in [ADR-012](../Technical/adr/0012-observability.md)) |
 | **How it is demoed** | On the local machine (local-only delivery, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)), the triage worker points at **WireMock** (the simulator of guide J4), which normally passes requests to the real AI provider. The presenter makes it drop the connection (or answer late, or return invalid output) and a participant submits help requests from the web app's phone pages; the services carry no fault-injection code. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
 | **Test** | US-36 (SC5): 100 % of requests are shown to the operator with the AI off. Reports integration test on every PR, with WireMock in place of the provider (delay over the timeout, 503, dropped connection, invalid body); also under load in Sprint C (scenario L5) |
@@ -168,7 +168,7 @@ The help categories still need to be checked against the interview with the secu
 | What the AI does | Reads the participant's category and optional text, then suggests a **category, a priority and the team** (one of the event's teams that handles the category, §4.2). The operator accepts or changes the suggestion |
 | User need | Requests arrive without category or priority (root cause 4); assumption A4 |
 | Non-AI fallback | Scenario D1 (§3.1): participant's category, order of arrival, "Not triaged" |
-| Human control | The AI only suggests. It never lowers a priority, and it never overwrites an operator's decision (domain model I4) |
+| Human control | The AI only suggests. It never lowers a priority, and it never overwrites an operator's decision (NFR-22) |
 | Speed target | Suggestion within **30 s** of submission (SC3) |
 | Market | Raven Controls does this for professional control rooms (annex C9); nobody does it for academic events |
 
@@ -182,7 +182,7 @@ This is the list the team works through before the AI work starts. Owner: AI lea
 |---|---|---|---|
 | AI-1 | **Input** | Exactly which fields go to the model: category, free text, map zone, time of night? Is the location sent, or only the zone? | Privacy, prompt design |
 | AI-2 | **Output format** | A fixed JSON schema: category (fixed list), priority (`Low`/`Medium`/`High`/`Critical`), team (one of the event's teams, §4.2), a short reason for the operator. What happens with an answer outside the schema (→ D1) | Validation, UI |
-| AI-3 | **Priority scale** | What each level means, with examples, so people and the AI apply the same rule. What is the "default priority" of each category, so that "never lowers a priority" is measurable | Evaluation, I4 |
+| AI-3 | **Priority scale** | What each level means, with examples, so people and the AI apply the same rule. What is the "default priority" of each category, so that "never lowers a priority" is measurable | Evaluation, NFR-22 |
 | AI-4 | **Model and provider** | Which provider and model; hosted API or local model; cost per request; what happens to the text sent (data retention by the provider, GDPR) | Cost, privacy, ADR |
 | AI-5 | **Prompt design** | System prompt, few-shot examples, European Portuguese informal language, how the participant's text is isolated from the instructions | Quality, prompt injection |
 | AI-6 | **Evaluation dataset** | Size (proposal: ≥ 100 cases), who writes and labels it, share of difficult cases (typos, slang, mixed languages, empty text, prompt injection, two problems in one request), how origin, scope and limits are documented (§5.6.1) | Evaluation |
@@ -536,7 +536,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 *Persona:* P2 · *Depends on:* US-17, US-26; AI provider and model (guide K1, Tomás); input, output schema and priority scale (§5.2 AI-1 to AI-3) · *AI fallback:* US-36 (scenario D1)
 - Given a help request is submitted and the AI is available, then a suggestion is shown within 30 s, marked as a suggestion (SC3).
 - Given the event's teams and their help categories (US-17), then the AI only suggests a team of this event.
-- Given the AI suggests a priority lower than the category's default, then the default priority is kept (domain model I4).
+- Given the AI suggests a priority lower than the category's default, then the default priority is kept (NFR-22; the per-category floor of the [local AI plan](../Technical/plans/ai-provider-evaluation.md)).
 
 **US-35** · As a **control-room member**, I want to accept or change the AI suggestion, so that I stay in control of the decision.
 *Persona:* P2 · *Depends on:* US-34 · *AI fallback:* US-36
