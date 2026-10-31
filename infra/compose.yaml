@@ -1,4 +1,4 @@
-# Sprint A: one diagnostic service. Full application integration follows in Sprint B.
+# Sprint A: one service with a synthetic, in-memory help-request demo. Full application integration follows in Sprint B.
 services:
   reports:
     image: farol-reports:${VERSION:-dev}
@@ -7,6 +7,7 @@ services:
     ports:
       - "127.0.0.1:${REPORTS_PORT:-8080}:8080"
     environment:
+      SPRING_PROFILES_ACTIVE: demo
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0"
     read_only: true
     tmpfs:

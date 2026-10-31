@@ -340,7 +340,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-012](adr/0012-observability.md) | Observability | Accepted architecture; instrumentation and SLO validation pending |
 | [ADR-013](adr/0013-api-gateway.md) | API gateway, CORS and rate limiting | Accepted |
 
-> **Sprint A skeleton (#58/#166):** one Reports diagnostic endpoint, one real HTTP test, multi-stage Dockerfile, Compose and CI; [run instructions and Sprint B boundary](plans/local-walking-skeleton.md), [branch execution evidence](evidence/walking-skeleton-2026-10-31.md). The authenticated multi-service application is Sprint B. #58 stays open for review of runnable evidence; #148 stays open for telemetry implementation.
+> **Sprint A skeleton (#58/#166):** one Reports synthetic help-request create/read demo in memory, diagnostic health, HTTP tests, Dockerfile, Compose and CI; [run instructions and Sprint B boundary](plans/local-walking-skeleton.md), [branch execution evidence](evidence/walking-skeleton-2026-10-31.md). The authenticated multi-service application is Sprint B. #58 stays open for review of runnable evidence; #148 stays open for telemetry implementation.
 
 ## 14. Architecture diagrams
 

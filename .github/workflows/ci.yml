@@ -37,6 +37,27 @@ jobs:
         run: |
           curl --fail --silent --show-error http://127.0.0.1:8080/api/v1/status |
             python3 -c 'import json, sys; assert json.load(sys.stdin) == {"service": "reports", "status": "ok"}'
+      - name: Create and read a synthetic help request
+        shell: bash
+        run: |
+          python3 - <<'PYSMOKE'
+          import json
+          import urllib.request
+          base = "http://127.0.0.1:8080"
+          payload = json.dumps({"category": "Health", "description": "Synthetic CI exercise."}).encode()
+          request = urllib.request.Request(base + "/api/v1/demo/help-requests", data=payload,
+                                           headers={"Content-Type": "application/json"}, method="POST")
+          with urllib.request.urlopen(request, timeout=10) as response:
+              assert response.status == 201
+              assert response.headers["X-Demo-Mode"] == "true"
+              location = response.headers["Location"]
+              saved = json.load(response)
+          assert saved["demo"] is True and saved["requesterId"] == "demo-participant"
+          assert saved["status"] == "Submitted" and saved["triage"]["state"] == "NotTriaged"
+          assert location == "/api/v1/demo/help-requests/" + saved["id"]
+          with urllib.request.urlopen(base + location, timeout=10) as response:
+              assert response.status == 200 and json.load(response) == saved
+          PYSMOKE
       - name: Check Swagger UI and the handwritten contract
         shell: bash
         run: |

@@ -8,6 +8,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - One Java 21 / Spring Boot 4.0.9 Reports service, diagnostic OpenAPI contract and real random-port HTTP test; multi-stage Dockerfile, loopback-only Compose deployment and CI build/test/container smoke on every PR.
 - Ignore rules for local env, Python caches, backups and Maven output; repeatable R0 commands and an actual branch execution record.
 - Swagger UI at `/swagger-ui.html` loads the existing handwritten `/openapi.yaml`; HTTP/CI checks cover the UI, configuration and packaged contract.
+- At Tomás's request, the meaningful R0 slice now creates/reads synthetic help requests in memory, with fixed demo identity/event and NotTriaged state. Demo routes require the explicit demo profile; status remains a health check. Production persistence/auth/outbox and US-23/24 acceptance stay in Sprint B.
 
 ### Corrected
 - Reopened #58/#148: prior Markdown-only merges were documentary delivery, not runnable software. The corrective PR closes only #166 and leaves those runtime issues open for reviewed evidence.

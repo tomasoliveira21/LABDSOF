@@ -35,3 +35,5 @@ Explain the limitation alongside the reason: cloud operation, managed-platform s
 ## Sprint A review correction (31 October 2026)
 
 Tomás relayed a review requiring deliverable 10's executable minimum: one endpoint/service/test, Dockerfile, Compose, CI on every PR and ignore rules. This is the source of #166's narrower R0, not a new professor quotation or team meeting. The [full authenticated local application](../Technical/local-delivery.md) is the Sprint B target. #58/#148 are reopened because Markdown-only merges did not deliver running software. ADR-005/012 statuses are reconciled to the existing 26–27 October guide/NFR architectural decisions; runtime/model/privacy evidence remains separate.
+
+**31 October follow-up requested by Tomás (#166):** evolve the diagnostic-only R0 into a small Reports workflow: create and read synthetic help requests using a fixed demo identity and temporary in-memory storage. An explicit demo profile and namespace distinguish this prototype from the authenticated production API. No new professor/team acceptance or production feature completion is claimed.

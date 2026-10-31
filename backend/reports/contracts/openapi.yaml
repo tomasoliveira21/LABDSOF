@@ -2,7 +2,14 @@ openapi: 3.0.3
 info:
   title: Farol Reports skeleton
   version: 0.1.0
-  description: Local diagnostic endpoint only; no business data or authentication flow.
+  description: >-
+    Synthetic Sprint A help-request demonstration, plus a diagnostic endpoint.
+    Demo routes require the demo Spring profile, use the fixed demo-participant
+    identity and demo-event, and store data only in memory until restart.
+    No real incidents, authentication, dispatch, database, broker or AI.
+tags:
+  - name: Demo help requests
+    description: Synthetic data only; not the authenticated product API.
 paths:
   /api/v1/status:
     get:
@@ -24,3 +31,115 @@ paths:
                   status:
                     type: string
                     enum: [ok]
+  /api/v1/demo/help-requests:
+    post:
+      tags: [Demo help requests]
+      operationId: createDemoHelpRequest
+      summary: Create a synthetic help request (demo identity, in-memory)
+      description: >-
+        The server fixes the identity to demo-participant and event to demo-event.
+        The response is Submitted with triage.state NotTriaged (AI is not running).
+        No real assistance is requested. Data is lost on restart. Requires demo profile.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDemoHelpRequest'
+            example:
+              category: Health
+              description: Synthetic exercise - a participant needs help near the entrance.
+      responses:
+        '201':
+          description: Synthetic request saved in memory; no notification or dispatch occurs.
+          headers:
+            Location:
+              description: Local GET path for the synthetic request.
+              schema:
+                type: string
+            X-Demo-Mode:
+              schema:
+                type: string
+                enum: ['true']
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoHelpRequest'
+        '400':
+          description: Invalid category, blank/oversized description, malformed body or unknown field.
+  /api/v1/demo/help-requests/{requestId}:
+    get:
+      tags: [Demo help requests]
+      operationId: getDemoHelpRequest
+      summary: Read a synthetic request from memory
+      description: Same fixed demo identity; not a production authorisation mechanism.
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Synthetic request found; no personal data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoHelpRequest'
+        '400':
+          description: Malformed UUID.
+        '404':
+          description: Unknown request, data cleared by restart, or demo profile inactive.
+components:
+  schemas:
+    CreateDemoHelpRequest:
+      type: object
+      additionalProperties: false
+      required: [category, description]
+      properties:
+        category:
+          type: string
+          enum: [Health, Safety, LostPerson, Theft, Other]
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Non-blank synthetic exercise text only; never enter a real incident.
+    DemoHelpRequest:
+      type: object
+      additionalProperties: false
+      required: [id, eventId, requesterId, category, description, status, triage, submittedAt, demo]
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventId:
+          type: string
+          enum: [demo-event]
+        requesterId:
+          type: string
+          enum: [demo-participant]
+        category:
+          type: string
+          enum: [Health, Safety, LostPerson, Theft, Other]
+        description:
+          type: string
+          maxLength: 500
+        status:
+          type: string
+          enum: [Submitted]
+        triage:
+          type: object
+          additionalProperties: false
+          required: [state]
+          properties:
+            state:
+              type: string
+              enum: [NotTriaged]
+        submittedAt:
+          type: string
+          format: date-time
+        demo:
+          type: boolean
+          enum: [true]
