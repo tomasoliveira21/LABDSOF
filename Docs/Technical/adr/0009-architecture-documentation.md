@@ -34,6 +34,12 @@
 - The Mermaid diagrams in `architecture.md` become working sketches; the draw.io diagrams are the reference.
 - **[PENDING]** markers in the diagrams must be removed when the decision they wait for is taken. Since 27 October 2026 only the `frontend/` folder layout is left.
 
+## Rationale
+
+- One picture cannot show the whole architecture at a readable size, so the views are split by zoom level, with mappings to show how they fit together.
+- draw.io keeps the layout under control and is editable by the whole team; a `.drawio.svg` file renders on GitHub and holds its own source, so there is no image to keep in sync.
+- The workflows W1–W8 already play the role of the scenarios, so the 4+1 views are used without a scenarios view.
+
 ## Alternatives considered
 
 | Option | Why not chosen |

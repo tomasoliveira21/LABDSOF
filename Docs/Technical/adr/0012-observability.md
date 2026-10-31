@@ -26,6 +26,7 @@ The asynchronous triage spans queueing, inference and persistence. Fallback must
 
 ## Alternatives considered
 
+- Local stack with an OpenTelemetry Collector, Tempo and a separate Alertmanager (the earlier proposal of #151), dropped in the 27 October simplification (#153): assignment §6.7 accepts correlation *or* trace identifiers, so correlation IDs in the logs are enough and a distributed tracing platform is unnecessary for the demo; Grafana-managed alert rules replace the separate Alertmanager ([plan](../plans/local-observability.md)). It remains an optional future extension.
 - Fully self-hosted Prometheus/Loki/Tempo/Grafana in cloud: portable but adds stores/patching/recovery for this team; optional future extension.
 - Console logs only: insufficient latency/queue visibility and no measurable error budget.
 - Provider-call latency only: hides outbox/queue/storage delays and cannot establish SC3.

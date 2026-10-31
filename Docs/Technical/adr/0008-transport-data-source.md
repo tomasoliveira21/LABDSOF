@@ -25,6 +25,12 @@
 - When the source is down, participants see the last valid data with its time and a warning ([`architecture.md`](../architecture.md) §7 and §9).
 - Positions are geographic coordinates, separate from the venue-map coordinates (`GeoPosition` vs `MapPosition`).
 
+## Rationale
+
+- The Porto Digital API gives real, live bus positions from an open source, which is what participants need to leave the venue (F9); the GTFS feed gives static timetables only.
+- The professor asked for the real integration and also for a simulator under the team's control; WireMock serves both the repeatable tests and the degraded-mode demo, and the presentation does not depend on the real API.
+- A scheduled import with a freshness limit keeps users away from the external API and lets the app show the last valid data with its time when the source fails (§6.5).
+
 ## Alternatives considered
 
 | Option | Why not chosen |

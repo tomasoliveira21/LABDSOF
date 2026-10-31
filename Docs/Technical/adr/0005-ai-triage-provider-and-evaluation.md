@@ -32,8 +32,9 @@ The dataset run and a one-hour operational cohort have different populations and
 
 ## Consequences
 
-- Hosted token cost avoids an always-on inference host but adds network, account, privacy and quota dependencies.
-- Local Ollama is the selected proposal; latency and full-stack memory remain unmeasured. Download size is not runtime RAM.
+- **Selected local model.** No help-request text leaves the demo machine (NFR-20) and there is no API-token cost. Why `qwen3:4b` Q4_K_M: it can run on a laptop CPU without token charges (published model file about 2.5 GB; prototype with 8 GiB host RAM, 4 CPU cores, context 4096, concurrency 1) ([Responsible AI assessment](../../Research/architecture-investigation/responsible-ai.md), provider table). Latency on the demo machine's CPU and full-stack memory remain unmeasured; download size is not runtime RAM.
+- **One request at a time.** Ollama runs with `OLLAMA_NUM_PARALLEL=1` and a queue of 1 ([plan](../plans/ai-provider-evaluation.md), capacity row), so a burst of help requests waits in the application's admission queue, and requests that cannot start in time become fallback (D1).
+- **Hosted alternative, not selected:** token cost would avoid an always-on inference host but adds network, account, privacy and quota dependencies.
 - Evaluation and monitoring become release evidence; release eligibility stays conditional until those measurements exist; the selected documentary recommendation is explicit.
 
 ## Alternatives considered

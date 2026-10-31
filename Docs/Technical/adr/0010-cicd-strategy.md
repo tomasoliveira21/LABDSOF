@@ -58,7 +58,7 @@
 ## Consequences
 
 - The R0 correction intentionally builds/tests and runs one container on every PR to provide visible evidence. The documentation/draft skip policy above applies when the full Sprint B pipeline is implemented, not to this minimum.
-- A code PR costs roughly one runner-minute per service plus the web app and gitleaks; a full run on `main` adds the image builds and the smoke test. These are estimates: R0 measures the real durations and writes them here. Usage is checked at each sprint review; if it gets close to the limit, the next cut is to run `delivery` only on tags and manual runs.
+- A code PR costs roughly one runner-minute per service plus the web app and gitleaks; a full run on `main` adds the image builds and the smoke test. These are estimates. **Measured on R0 (31 October 2026, eleven successful runs of `ci.yml` from 12:59 to 17:55 UTC on PRs and `main`):** a whole run took 68–90 s. In runs 41203497613, 41208418720, 41222205000 and 41226836648, the `CI` job (Maven verify, image build, Compose start and smoke test of one service) took 61–75 s and the `SonarQube Cloud` job, in parallel, 59–71 s. Usage is checked at each sprint review; if it gets close to the limit, the next cut is to run `delivery` only on tags and manual runs.
 - Image, Trivy and Compose failures appear after the merge, not before. That is the price of saving minutes: the team fixes `main` straight away instead of starting new work.
 - The smoke test runs on a clean runner every time something reaches `main`, so `local-delivery.md` stays executable. The manual smoke test on the demo laptop is still needed: CI does not cover the phones, the LAN or the laptop's resources.
 - Nothing is published, so a release is only as reproducible as its build. Base images are pinned in the Dockerfiles and Compose file (ADR-011); a rebuilt tag can still pick up newer OS packages.
@@ -69,7 +69,7 @@
 
 | Option | Why not chosen |
 |---|---|
-| Everything on every PR (the original H4) | Simplest, catches image and Compose errors before the merge, but the full run on every push of every PR would use up the Actions minutes of a private repository |
+| Everything on every PR (the original H4) | Simplest, catches image and Compose errors before the merge, but the full run on every push of every PR would use up the Actions minutes of a private repository. *Note of 31 October 2026:* the repository is public since 31 October (point 10), and the R0 `ci.yml` already runs its whole job on every PR (point 9); this reason is to be revisited when the Sprint B pipeline is built |
 | A long-lived `dev` branch: light checks on PRs into `dev`, everything on `dev`→`main` | Saves the same minutes, but breaks GitHub Flow (README §1), needs merge commits instead of squash for `dev`→`main`, and finds errors later, mixed with other people's work |
 | One workflow per service, with path filters | Fewer minutes per PR, but a change to a shared contract would not test the services that use it, and the required checks would change with every service (H4) |
 | Publishing images to GitHub Container Registry on each tag | Lets the demo laptop pull instead of build, but needs a registry, credentials and retention; guide H7 chose git tags only |

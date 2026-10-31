@@ -37,7 +37,7 @@ The venue map (F5, Must) is the shared spatial reference of the product: points 
    - The rendered image is at most **4096 px on the long side**, and larger uploaded images are scaled down to the same limit. A larger image only costs mobile data and memory on the phone.
    - The `VenueMapVersion` keeps the **original file** and the **rendered image**. Clients only ever download the rendered image.
    - **Why on upload, not in the browser:** see *Alternatives considered*. Converting once means every page, on a phone or a laptop, shows the same raster, which normalised coordinates depend on.
-3. Where the files are stored (database or files on the local machine) is **not** decided here; it depends on the deployment (G1, [ADR-011](0011-deployment-and-infrastructure.md)).
+3. Where the files are stored is **not** decided here. It was decided in the API outline (decision D6 = A, 23 October 2026): a volume of the Events service, with the references in its database ([`api-outline.md`](../api-outline.md) §10.1; local deployment, [ADR-011](0011-deployment-and-infrastructure.md)).
 4. **Check before the map is built.** Before US-21 and US-22 are implemented, a **spike** runs the map component with a few hundred markers on a **real iPhone (Safari)** and a **real Android phone (Chrome)**: pinch, pan, tap to mark a location, and that the page itself does not zoom instead of the map. **If the spike fails**, the pinch and pan layer is written directly with Pointer Events (about one component). The rest of this decision, the SVG overlay and the coordinate model, stays the same.
 
 ## Consequences
@@ -63,8 +63,8 @@ The venue map (F5, Must) is the shared spatial reference of the product: points 
 ## Open points
 
 - Phone spike on a real iPhone and a real Android phone (*Decision* 4): before US-21 and US-22; owner to be set when the stories are planned.
-- Where the original and rendered files are stored: guide G1.
-- Upload file-size limit: set when US-19 is specified.
+- ~~Where the original and rendered files are stored: guide G1.~~ Closed: a volume of the Events service ([`api-outline.md`](../api-outline.md) §10.1, decision D6).
+- ~~Upload file-size limit: set when US-19 is specified.~~ Closed: 20 MB at the gateway for the map upload route ([ADR-013](0013-api-gateway.md), limit L-4).
 
 ## Sources (checked 23 October 2026)
 

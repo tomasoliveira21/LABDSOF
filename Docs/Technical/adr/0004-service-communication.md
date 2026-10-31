@@ -26,7 +26,7 @@
 
 ## Consequences
 
-- From Sprint A the broker, the outbox and eventual consistency are real between deployed services, not simulated inside one process.
+- Once more than one service runs, the broker, the outbox and eventual consistency are real between deployed services, not simulated inside one process. Note of 31 October 2026: the Sprint A skeleton has one service and no broker (R0, #166, [ADR-010](0010-cicd-strategy.md) point 9); this starts in Sprint B.
 - A service can be down without blocking the others; its events wait in the outbox or in its queue and are processed when it comes back.
 - **Eventual consistency:** local copies lag behind the source by the time it takes an event to arrive. The UI must handle it (e.g. "awaiting triage").
 - Every service needs an outbox table, a publishing job and a processed-messages table. This is repeated code; a shared library is not allowed (guide A3: services share only contracts), so each service keeps its own small copy.
@@ -34,6 +34,13 @@
 - Polling adds load during read peaks and delays updates by up to the polling interval. Acceptable for the MVP; push (WebSocket or Server-Sent Events) can replace it later.
 - RabbitMQ is one more component to run in every environment. Testcontainers covers it in the tests.
 - Tests and the degraded-mode demo (D2) run Transports against the simulator, never the real API, so they are repeatable and failures can be injected on demand.
+
+## Rationale
+
+- Events only, with local copies, keep a service that is down from breaking the others (driver D6), which synchronous REST between services would not.
+- The outbox with idempotent consumers is the simplest way to lose no event and send none for a rolled-back change (§6.3), without running Debezium.
+- RabbitMQ covers publish-subscribe and dead-lettering with less to run than Kafka, and runs the same way locally and in the tests.
+- Polling is enough for the MVP's freshness and keeps the small team away from connection handling (driver D9).
 
 ## Alternatives considered
 
