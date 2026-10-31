@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed**: investigated by Tiago (issue #44) for the React Native app and approved on 22 October 2026. The same day the React Native app was removed and the product became **one React web app** (meeting with the professor, 22 October 2026, P9; [ADR-002](0002-backend-and-frontend-technology.md); #125), so on 23 October 2026 the rendering part (*Decision* 1 and 4) was rewritten for the browser. It waits for Tiago's review. The rest (normalised coordinates, PDF converted on upload, file storage) does not change. Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) F3; related: D1 (PostgreSQL, no PostGIS), A2 (the Events service owns the venue map), F1 and G1. User stories (numbering of 22 October 2026): US-19 to US-23, US-27, US-46, US-47 ([`features.md`](../../Product/features.md)).
+**Proposed**: investigated in issue #44 for the React Native app and approved on 22 October 2026. The same day the React Native app was removed and the product became **one React web app** (meeting with the professor, 22 October 2026, P9; [ADR-002](0002-backend-and-frontend-technology.md); #125), so on 23 October 2026 the rendering part (*Decision* 1 and 4) was rewritten for the browser. It waits for review. The rest (normalised coordinates, PDF converted on upload, file storage) does not change. Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) F3; related: D1 (PostgreSQL, no PostGIS), A2 (the Events service owns the venue map), F1 and G1. User stories (numbering of 22 October 2026): US-19 to US-23, US-27, US-46, US-47 ([`features.md`](../../Product/features.md)).
 
 ## Context
 

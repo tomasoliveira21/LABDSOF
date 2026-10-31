@@ -32,8 +32,8 @@ The asynchronous triage spans queueing, inference and persistence. Fallback must
 
 ## Acceptance evidence pending
 
-Correlated request log entries, scraped metrics/dashboard, no-sensitive-data inspection, one trigger/resolve alert drill and actual SC3/SC5 evidence. No cloud-ingestion quote or trace-store evidence is required for local delivery. Bruno and Tiago integrate the telemetry and failure/load evidence with their assigned work.
+Correlated request log entries, scraped metrics/dashboard, no-sensitive-data inspection, one trigger/resolve alert drill and actual SC3/SC5 evidence. No cloud-ingestion quote or trace-store evidence is required for local delivery. The telemetry and the failure/load evidence are integrated with the CI/CD and resilience work.
 
 ## I1–I3 completion record (26 October 2026, #148)
 
-The [decision specification](../plans/local-observability.md) fixes ports, 15 s scrape/evaluation, 1-day/512 MiB metric storage, rotated correlated logs, cohort accounting, four dashboard groups and three core Grafana alerts. Outbox alert is **>60 s for 2 min**, superseding the earlier 30 s research proposal and matching Tiago's NFR/resilience value. Configuration, compatible pinned versions and observed correlated logs/alerts/SLOs are implementation evidence, not open software-selection decisions.
+The [decision specification](../plans/local-observability.md) fixes ports, 15 s scrape/evaluation, 1-day/512 MiB metric storage, rotated correlated logs, cohort accounting, four dashboard groups and three core Grafana alerts. Outbox alert is **>60 s for 2 min**, superseding the earlier 30 s research proposal and matching the NFR/resilience value. Configuration, compatible pinned versions and observed correlated logs/alerts/SLOs are implementation evidence, not open software-selection decisions.

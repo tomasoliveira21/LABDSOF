@@ -36,4 +36,4 @@ Farol needs a backend made of five services, deployed independently from Sprint 
 
 ## Open points
 
-- Venue map in the web app: guide F3 / [ADR-007](0007-venue-map-representation.md), rewritten for the web, waits for Tiago's review.
+- Venue map in the web app: guide F3 / [ADR-007](0007-venue-map-representation.md), rewritten for the web, waits for review.

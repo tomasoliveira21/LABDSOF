@@ -1,7 +1,7 @@
 # Spec-Driven Development Rules
 
 > LABDSOF 2026/27 · Sprint A · Assignment §8 (Development and Delivery Practices)
-> **Status:** **[PROPOSED]** by Bruno on 15 October 2026, to validate with Tiago and the team. Once agreed, the two checklist items at the end move into [`definition-of-ready-and-done.md`](definition-of-ready-and-done.md).
+> **Status:** **[PROPOSED]** on 15 October 2026, to validate with the team. Once agreed, the two checklist items at the end move into [`definition-of-ready-and-done.md`](definition-of-ready-and-done.md).
 > Related decisions: contract-first API (C7), events only between services (C4), hexagonal services (B5) in [`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md).
 
 ## Why

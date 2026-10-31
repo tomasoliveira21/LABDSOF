@@ -1,12 +1,12 @@
 # Sprint A walking skeleton and Sprint B handoff
 
-**Issue:** [#58](https://github.com/tomasoliveira21/LABDSOF/issues/58) · **Correction/implementation:** [#166](https://github.com/tomasoliveira21/LABDSOF/issues/166) · **Owner:** Tomás Oliveira · **Updated:** 31 October 2026
+**Issue:** [#58](https://github.com/tomasoliveira21/LABDSOF/issues/58) · **Correction/implementation:** [#166](https://github.com/tomasoliveira21/LABDSOF/issues/166) · **Updated:** 31 October 2026
 
 ## 1. Sprint A boundary: one service, not the full application
 
-Tomás supplied a review on 31 October identifying deliverable 10 as a blocker and asking for the smallest executable cut before Sprint B. This supersedes the earlier multi-service/authenticated request slice as an **R0 requirement**. That complete design remains the Sprint B target, not missing work to hide behind a documentation-only closure.
+A review on 31 October identified deliverable 10 as a blocker and asked for the smallest executable cut before Sprint B. This supersedes the earlier multi-service/authenticated request slice as an **R0 requirement**. That complete design remains the Sprint B target, not missing work to hide behind a documentation-only closure.
 
-R0 is **Swagger/client → create a synthetic help request in Reports → store it in memory → read it by ID**. `POST /api/v1/demo/help-requests` accepts category/description and returns a generated ID, `status: Submitted` and `triage.state: NotTriaged`; `GET /api/v1/demo/help-requests/{id}` returns the stored request. `/api/v1/status` remains the technical health check. This replaces the status-only demonstration at Tomás's request while retaining one service/container.
+R0 is **Swagger/client → create a synthetic help request in Reports → store it in memory → read it by ID**. `POST /api/v1/demo/help-requests` accepts category/description and returns a generated ID, `status: Submitted` and `triage.state: NotTriaged`; `GET /api/v1/demo/help-requests/{id}` returns the stored request. `/api/v1/status` remains the technical health check. This replaces the status-only demonstration as that review asked, while retaining one service/container.
 
 The identity is fixed on the server to `demo-participant`, event `demo-event`, and every response marks `demo: true`. Demo routes exist only with Spring profile `demo`, explicitly enabled in Compose, and are published on loopback only. They are a synthetic prototype, not production endpoints with authentication disabled. No frontend app, database, Keycloak, gateway, broker/outbox, AI or dashboard is required. Data disappears on restart; never submit real incidents or expect dispatch.
 
@@ -60,7 +60,7 @@ The health check means this diagnostic HTTP endpoint responds; it does not certi
 
 The full [local delivery runbook](../local-delivery.md) and [ADR-011](../adr/0011-deployment-and-infrastructure.md) remain the target: five service images, gateway, Keycloak, one PostgreSQL with six owned databases/users, RabbitMQ and WireMock; React UI plus optional AI/observability profiles. Add them incrementally to the existing Compose file instead of adding non-existent dependencies now.
 
-First authenticated business slice: seeded synthetic event and users, one help-request button, Reports persistence/outbox, stored-status read and broker round trip. Implement domain/security/isolation and recovery tests with that slice. No cross-service shared database or synchronous domain calls are introduced. Identity/gateway work stays coordinated with Guerra; platform/CI decisions with Bruno.
+First authenticated business slice: seeded synthetic event and users, one help-request button, Reports persistence/outbox, stored-status read and broker round trip. Implement domain/security/isolation and recovery tests with that slice. No cross-service shared database or synchronous domain calls are introduced. Identity/gateway work stays coordinated with ADR-006 and ADR-013; platform/CI decisions with ADR-010.
 
 The [minimal observability plan](local-observability.md) remains two extra containers, Prometheus/Grafana plus Actuator/Micrometer and correlated logs; #148 owns its actual implementation. The [AI decision](ai-provider-evaluation.md) remains local Ollama/Qwen3 with human approval and measured evaluation. Neither is claimed running by this one-service demo.
 

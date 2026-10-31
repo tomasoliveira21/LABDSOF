@@ -1,6 +1,6 @@
 # Farol — API Outline and Event Catalogue
 
-> Sprint A deliverable 7 (assignment §7.1.2; guide C8). Issue #123. Owner: Bruno.
+> Sprint A deliverable 7 (assignment §7.1.2; guide C8). Issue #123.
 > What each service exposes over REST and which domain events it publishes and consumes. This is an **outline**: the complete `openapi.yaml` of each service and the formal event schemas are written per story, contract-first (guide C7, [`spec-driven-development.md`](../Process/spec-driven-development.md)).
 > Stories follow the numbering in [`features.md` §7](../Product/features.md#7-initial-backlog-user-stories) (US-01 to US-62). Entities follow [`domain-model.md`](domain-model.md). Roles and permissions follow [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026).
 > Items marked **[WAITS: On]** follow the current proposal and wait for another owner's decision On. The outline's own decisions and those still waiting are in §10.
@@ -441,7 +441,7 @@ Not outlined; listed by name only.
 
 ## 10. Decisions to take
 
-### 10.1 Outline decisions (owner: Bruno)
+### 10.1 Outline decisions
 
 Decided on 23 October 2026. The outline above already follows them.
 
@@ -462,14 +462,14 @@ Decided on 23 October 2026. The outline above already follows them.
 
 ### 10.2 Decisions of other owners
 
-The outline follows the current proposal and marks it **[WAITS: On]**. When the owner decides, the outline is updated in the documentation review. O1 to O4 are closed.
+The outline follows the current proposal and marks it **[WAITS: On]**. When it is decided, the outline is updated in the documentation review. O1 to O4 are closed.
 
-| # | Decision | What the outline assumes | Owner | Where |
-|---|---|---|---|---|
-| O1 | Gateway routing (guide C6) | ✅ **Closed** (22 October 2026): the route table of [ADR-013](adr/0013-api-gateway.md#route-table) follows the outline's paths | Guerra | §1.2 |
-| O2 | Sign-up and login (guide E1) | ✅ **Closed** (22 October 2026, [ADR-006](adr/0006-identity-and-access.md)): sign-up, login and logout in Keycloak; `POST /accounts` removed, the account is created at the first `GET /me` | Guerra | §1.4, §2 |
-| O3 | What the token carries (guide E2) | ✅ **Closed** (22 October 2026, ADR-006): only the identity; roles and teams come from local copies (`MembershipChanged`, `TeamChanged`) | Guerra | §1.5 |
-| O4 | Account lookup by e-mail (privacy) | ✅ **Closed** (26 October 2026): `GET /accounts?email=` for the FarolAdmin, with the rules of the assessment's AC-9 | Guerra | §2 |
-| O5 | Where the badge preferences live (domain model) | In Badges (`/me/badges/preferences`); if they stay in Auth & Users, it publishes `EngagementPreferencesChanged` | Tomás and Guerra | §6 |
-| O6 | US-41 and the Porto Digital data (backlog) | Shows the buses on the event's routes, not timetables; the story still says STCP | Tiago | §5 |
-| O7 | Priority scale (`features.md` §5.2, AI-3) | Named levels such as `High`; the values come from AI-3 | Tomás | §4.1 |
+| # | Decision | What the outline assumes | Where |
+|---|---|---|---|
+| O1 | Gateway routing (guide C6) | ✅ **Closed** (22 October 2026): the route table of [ADR-013](adr/0013-api-gateway.md#route-table) follows the outline's paths | §1.2 |
+| O2 | Sign-up and login (guide E1) | ✅ **Closed** (22 October 2026, [ADR-006](adr/0006-identity-and-access.md)): sign-up, login and logout in Keycloak; `POST /accounts` removed, the account is created at the first `GET /me` | §1.4, §2 |
+| O3 | What the token carries (guide E2) | ✅ **Closed** (22 October 2026, ADR-006): only the identity; roles and teams come from local copies (`MembershipChanged`, `TeamChanged`) | §1.5 |
+| O4 | Account lookup by e-mail (privacy) | ✅ **Closed** (26 October 2026): `GET /accounts?email=` for the FarolAdmin, with the rules of the assessment's AC-9 | §2 |
+| O5 | Where the badge preferences live (domain model) | In Badges (`/me/badges/preferences`); if they stay in Auth & Users, it publishes `EngagementPreferencesChanged` | §6 |
+| O6 | US-41 and the Porto Digital data (backlog) | Shows the buses on the event's routes, not timetables; the story still says STCP | §5 |
+| O7 | Priority scale (`features.md` §5.2, AI-3) | Named levels such as `High`; the values come from AI-3 | §4.1 |

@@ -4,7 +4,7 @@
 
 **Accepted — architectural decision; runtime/evaluation evidence pending.** Status reconciled on 31 October 2026 (#166) with the existing [guide K1/J1](../architecture-decisions-guide.md) and [NFRs §5](../../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026): team-confirmed targets on 26 October and the 27 October local Ollama/Qwen3, no-cloud-fallback and single-attempt profile. This records those existing decisions, not a new team vote or model-quality approval. K2 label/reason/routing evaluation, privacy gates before real data and measured SC3/SC5 remain outstanding; acceptance of the architecture does not waive them. Covers K1–K2 / AI-1–AI-11.
 
-**Delivery-scope update:** the professor authorised local-only application execution due to cost ([clarification](../../Meetings/2026-10-22-local-deployment-clarification.md)). Tomás now selects local Ollama `qwen3:4b` Q4_K_M as the selected local architecture, specified in the [complete local AI decision](../plans/ai-provider-evaluation.md); hosted inference remains a researched alternative. The authorisation itself does not approve a model. Fixed team names in the synthetic schema are an event fixture, not the production role model: derive eligible teams from the event's configured permissions/categories and validate isolation.
+**Delivery-scope update:** the professor authorised local-only application execution due to cost ([clarification](../../Meetings/2026-10-22-local-deployment-clarification.md)). Local Ollama `qwen3:4b` Q4_K_M is now the selected local architecture, specified in the [complete local AI decision](../plans/ai-provider-evaluation.md); hosted inference remains a researched alternative. The authorisation itself does not approve a model. Fixed team names in the synthetic schema are an event fixture, not the production role model: derive eligible teams from the event's configured permissions/categories and validate isolation.
 
 ## Context
 
@@ -16,7 +16,7 @@ F8 suggests category, priority and response team; an operator decides. F7 must w
 2. Minimise input to participant category, sanitised optional text and current priority floor. Fixed categories/priorities, event-derived eligible team IDs, a short operator-facing reason and abstention; no tools, identifiers, exact location or autonomous dispatch.
 3. Enforce schema/semantic validation, immediate F7 visibility and a total 30 s inference budget. Late/error/abstained results become fallback. Protect operator updates and clamp stored priorities atomically; measure raw predictions separately so safety guards cannot conceal errors.
 4. Require zero urgent under-prioritisations on the reviewed holdout, proposed category/team accuracy ≥80%, valid on-time coverage ≥95% within 30 s (the operational target uses a one-hour window), reason review and an AI-off integration test. The supplied labels require documented team review; a passing synthetic set cannot establish clinical safety.
-5. Synthetic data only until Guerra confirms actual endpoint, processing/retention/training controls and privacy assessment. Freeze versions/settings and log metadata rather than request bodies.
+5. Synthetic data only until the security assessment confirms actual endpoint, processing/retention/training controls and privacy assessment. Freeze versions/settings and log metadata rather than request bodies.
 
 ## Coverage definition (aligned 26 October 2026, #145)
 

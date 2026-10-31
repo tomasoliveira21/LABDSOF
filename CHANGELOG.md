@@ -13,7 +13,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `team-and-process.md` §1: each member's areas with the pull requests that show them, and the pull requests merged and approved on 31 October 2026. The roles in §2 stay unassigned, as the team agreed.
 - Research documents of #53: a notice at the top that they are a snapshot of 22 October 2026, naming the decisions in force. They are not rewritten.
-- Markers closed with their source: `features.md` §6.3 and §8.4 (walking skeleton, K1, J1, D7), the ADR-005 and ADR-012 "proposed" notes, the product-vision header, guide D2, ADR-004's open points, `local-delivery.md` §9, two of Tomás's actions in the professor meeting record. Status headers of `architecture.md` and `features.md`.
+- Markers closed with their source: `features.md` §6.3 and §8.4 (walking skeleton, K1, J1, D7), the ADR-005 and ADR-012 "proposed" notes, the product-vision header, guide D2, ADR-004's open points, `local-delivery.md` §9, two actions in the professor meeting record. Status headers of `architecture.md` and `features.md`.
 - `operating-cost-estimation.md`: six databases, guide H7 decided, K1 chosen, repository public. No amount changes.
 
 ### Corrected
@@ -25,10 +25,11 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Corrected after a review of the whole repository against assignment §7
 - NFR-19 showed 112 when help-request consent is declined; the meeting of 12 October 2026 decided "No mention of 112" (T5).
-- ADR-003 put retention and backup outside the MVP (decided on 26 October 2026, NFR-13, NFR-19); ADR-006 said gitleaks runs on every PR (planned for Sprint B); ADR-011 and `local-delivery.md` §9 said only "the walking skeleton" measures the RTO; the in-memory skeleton cannot, so when it is measured is open (Tomás, guide G7).
+- ADR-003 put retention and backup outside the MVP (decided on 26 October 2026, NFR-13, NFR-19); ADR-006 said gitleaks runs on every PR (planned for Sprint B); ADR-011 and `local-delivery.md` §9 said only "the walking skeleton" measures the RTO; the in-memory skeleton cannot, so when it is measured is open (guide G7).
 - `api-outline.md`: the triage fallback reasons gain `Abstained` (ADR-005); the skeleton's status and demo endpoints are named as outside the product API.
 - README §5 and `team-and-process.md`: every Copilot review so far failed for lack of quota; 39 PRs, not 8, were merged with a merge commit, the last on 30 October 2026. `local-delivery.md`: the web port, 3000.
 - Two level-4 Reports diagrams labelled the call to the local AI "[HTTPS]"; it is HTTP.
+- People's names removed from the documentation: each statement keeps its source (date, issue, pull request, meeting record or guide item). Names stay only in the team list (README, `team-and-process.md` §1), the owners of the architecture decisions guide, the meeting records and older changelog entries. Owner columns removed from `features.md` §8.4 and `api-outline.md` §10.2; the assessment's §10 column now names the decision that settles each finding.
 - English: Portuguese quotes in `user-workflows.md` and its service names, "teacher", stray spaces, and two false claims in the market analysis (§5.4).
 
 ### Not changed

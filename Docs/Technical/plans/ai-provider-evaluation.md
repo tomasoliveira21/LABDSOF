@@ -1,6 +1,6 @@
 # Local AI: provider, Responsible AI and evaluation decision
 
-**Issue:** [#153](https://github.com/tomasoliveira21/LABDSOF/issues/153), continuation of #149 / merged PR #152 · **Tracker:** [#147](https://github.com/tomasoliveira21/LABDSOF/issues/147) · **Owner:** Tomás Oliveira · **Updated:** 26 October 2026
+**Issue:** [#153](https://github.com/tomasoliveira21/LABDSOF/issues/153), continuation of #149 / merged PR #152 · **Tracker:** [#147](https://github.com/tomasoliveira21/LABDSOF/issues/147) · **Updated:** 26 October 2026
 
 **Architecture accepted; execution/evaluation evidence pending.** Status reconciled on 31 October (#166) against guide/NFR decisions recorded on 26–27 October. Select local Ollama with `qwen3:4b` Q4_K_M for the academic delivery. This is an architectural selection, not a measured quality claim. The professor's cost clarification authorises local delivery; it does not certify this model. Application implementation stays with [#81](https://github.com/tomasoliveira21/LABDSOF/issues/81), [#82](https://github.com/tomasoliveira21/LABDSOF/issues/82) and [#83](https://github.com/tomasoliveira21/LABDSOF/issues/83).
 
@@ -25,7 +25,7 @@ Hosted Mistral and cloud CPU/GPU remain the dated alternatives in the [assessmen
 | Circuit | Last 10 calls, minimum 4; open at >=50% failures or slow calls (>16 s), remain open 30 s, allow one probe; queue-expired requests remain coverage misses |
 | Completion | Recheck deadline, event eligibility and operator version atomically before saving; discard stale/late results. Fallback never overwrites an operator decision |
 
-This selects J1's already identified local 20 s / single-attempt alternative for review with Tiago. The hosted 10 s / two-attempt profile remains a researched alternative, not the local default. The 16 s slow threshold is 80% of the local response timeout; actual timing and circuit configuration must be verified in implementation. No retry storm or blocking AI call is allowed on request submission. A separate warm-up uses synthetic text before measurement; report cold start separately.
+This selects J1's already identified local 20 s / single-attempt alternative for review. The hosted 10 s / two-attempt profile remains a researched alternative, not the local default. The 16 s slow threshold is 80% of the local response timeout; actual timing and circuit configuration must be verified in implementation. No retry storm or blocking AI call is allowed on request submission. A separate warm-up uses synthetic text before measurement; report cold start separately.
 
 Sources checked for this recommendation: [Ollama chat API](https://docs.ollama.com/api/chat), [structured outputs](https://docs.ollama.com/capabilities/structured-outputs), [runtime configuration](https://docs.ollama.com/faq) and [model entry](https://ollama.com/library/qwen3:4b). Pin the actual full model digest and Ollama image digest when downloading; a mutable tag or a short web digest is insufficient. No model has been downloaded or run by this documentation change.
 
@@ -53,7 +53,7 @@ Required routing scenarios: two events with different team IDs/names; identical 
 | Human control | Original request visible immediately, AI label and short reason, operator can reject/change; no numerical confidence without calibration and no overwrite after operator action |
 | Safety | Zero urgent under-prioritisations, urgent missing/invalid/late/abstained outputs; >=80% category/team accuracy, >=95% coverage; human review of every reason in the holdout |
 | Bias and abuse | Report PT-PT slang/typos, English/mixed language, ambiguous/multiple issues and injection slices with counts; small synthetic sets do not prove fairness or safety |
-| Privacy | Local-only inference; no prompt/response bodies, identity or coordinates in telemetry. Synthetic-only research. Guerra reviews real-data lawful basis, access, retention and deletion before real use |
+| Privacy | Local-only inference; no prompt/response bodies, identity or coordinates in telemetry. Synthetic-only research. The security assessment reviews real-data lawful basis, access, retention and deletion before real use |
 | Retention | Synthetic evaluation artefacts versioned; telemetry follows the observability plan (rotated logs, 14-day maximum exports; no persistent trace store required). Incident records follow the separately reviewed product retention policy, not an invented AI retention period |
 | Failure and accountability | AI-off/slow/malformed tests must retain 100% request visibility; record model/config version and sanitised failure metadata; operator feedback triggers review |
 | Changes | Re-run evaluation when model, prompt, schema, rubric or event routing changes; no automatic update of mutable model tags |

@@ -2,7 +2,7 @@
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §7.1.2 (deliverables 4 *MVP definition* and 5 *Product Backlog*)
 > **Product name:** **Farol** (decided 9 October 2026).
-> **Status:** feature list and MoSCoW revised on **9 October 2026** (owner of the topic: Bruno Lopes) on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: report types and expiry (§6.1) and the AI priority scale (AI-3, §5.2); the AI provider was decided on 27 October 2026 (guide K1; ADR-005 accepted on 31 October). **[PROPOSED] 10 October 2026** (personas owner): a platform admin (persona P4) creates events and names their first admin (F3, F4), to confirm with the team. **16 October 2026:** user stories (§7) checked against the DoR (owner: Tiago Teixeira); issues created on 22 October 2026 (#58 to #121, §8.3); sprint goals and initial release plan (§8) **[PROPOSED]**, to confirm with the team. **22 October 2026** (Tiago Teixeira, backlog owner): new role model, `FarolAdmin` (global), `EventAdmin` and `RegularUser` (per event), with teams and permissions defined by each event's admins (§4), replacing the fixed roles and teams of 9 October; stories split into smaller ones and renumbered US-01 to US-62 (§7.1). To confirm with the team.
+> **Status:** feature list and MoSCoW revised on **9 October 2026** on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: report types and expiry (§6.1) and the AI priority scale (AI-3, §5.2); the AI provider was decided on 27 October 2026 (guide K1; ADR-005 accepted on 31 October). **[PROPOSED] 10 October 2026:** a platform admin (persona P4) creates events and names their first admin (F3, F4), to confirm with the team. **16 October 2026:** user stories (§7) checked against the DoR; issues created on 22 October 2026 (#58 to #121, §8.3); sprint goals and initial release plan (§8) **[PROPOSED]**, to confirm with the team. **22 October 2026:** new role model, `FarolAdmin` (global), `EventAdmin` and `RegularUser` (per event), with teams and permissions defined by each event's admins (§4), replacing the fixed roles and teams of 9 October; stories split into smaller ones and renumbered US-01 to US-62 (§7.1). To confirm with the team.
 > **Sources:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (*MVP definition*, §5 risks) · [`market-and-competitor-analysis-product-specific.md`](../Deliverables/market-and-competitor-analysis-product-specific.md) (§1, §2) · assignment PDF (§5.5, §5.6, §6).
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
@@ -94,7 +94,7 @@ Two scenarios, no more. Both are demoed by breaking one dependency while the res
 
 ## 4. Roles, teams and permissions (22 October 2026)
 
-Defined on 22 October 2026 by Tiago Teixeira (backlog owner), to confirm with the team. It **replaces** the fixed event roles (`Owner`, `Admin`, `Operator`, `Responder`) and the four fixed response teams decided on 9 October 2026: each event now creates its own teams and decides what each one may do. The personas do not change: P2 (operator) and P5 (responder) are now **jobs**, given by the permissions of the team a user belongs to, not roles.
+Defined on 22 October 2026, to confirm with the team. It **replaces** the fixed event roles (`Owner`, `Admin`, `Operator`, `Responder`) and the four fixed response teams decided on 9 October 2026: each event now creates its own teams and decides what each one may do. The personas do not change: P2 (operator) and P5 (responder) are now **jobs**, given by the permissions of the team a user belongs to, not roles.
 
 ### 4.1 Roles
 
@@ -325,7 +325,7 @@ The 29 stories of 16 October became **62**. Each story is now **one user action,
 
 | Number | Story | Why |
 |---|---|---|
-| **5 reports in 10 minutes** per account | US-48 | A participant can see several problems at once (a queue, a broken WC, broken glass), so 5 allows a real burst. More than that in 10 minutes looks like spam or badge farming, which §6.4 must prevent. Reports expire after 20–60 minutes (§6.1), so 10 minutes is shorter than any expiry. It is a setting, to tune with real data. Confirmed by Tiago on 24 October 2026 (#137) |
+| **5 reports in 10 minutes** per account | US-48 | A participant can see several problems at once (a queue, a broken WC, broken glass), so 5 allows a real burst. More than that in 10 minutes looks like spam or badge farming, which §6.4 must prevent. Reports expire after 20–60 minutes (§6.1), so 10 minutes is shorter than any expiry. It is a setting, to tune with real data. Confirmed on 24 October 2026 (#137) |
 | **≤ 5 s** until a routed request appears on a responder's phone | US-31 | Same target as SC2 for the control room: the responder is on the critical path of a help request. With polling (guide C5) it needs a refresh every 2–3 s on the open screen, which one instance per service can serve at the expected load |
 
 #### Why these criteria were rewritten
@@ -347,7 +347,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 ### F1 · Login and logout
 
 **US-01** · As a **user**, I want to log in, so that I can use my account and the events I belong to.
-*Persona:* P1, P2, P3, P4, P5 · *Depends on:* walking skeleton (§8.2); identity provider (guide E1, Guerra; mocked authentication is allowed for the MVP, assignment §6.6)
+*Persona:* P1, P2, P3, P4, P5 · *Depends on:* walking skeleton (§8.2); identity provider (guide E1; mocked authentication is allowed for the MVP, assignment §6.6)
 - Given I have an account, when I log in with valid credentials, then I see the events I am a member of.
 - Given I enter wrong credentials, when I log in, then I see an error that does not say which field was wrong.
 
@@ -370,7 +370,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 - Given I change my password, when I log in again, then only the new password works.
 
 **US-05** · As a **user**, I want to delete my account, so that my personal data leaves Farol.
-*Persona:* P1, P2, P3, P5 · *Depends on:* US-03, US-54; account deletion (guide D7, Bruno)
+*Persona:* P1, P2, P3, P5 · *Depends on:* US-03, US-54; account deletion (guide D7)
 - Given I delete my account, then my personal data, memberships and badges are deleted, and my past reports stay only as anonymous statistics.
 - Given I deleted my account, when I try to log in with it, then I am refused.
 - Given I am the last EventAdmin of an event, when I try to delete my account, then I am asked to name another EventAdmin first.
@@ -533,7 +533,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 ### F8 · AI help-request triage
 
 **US-34** · As a **control-room member**, I want each new help request to arrive with a suggested category, priority and team, so that I can route it faster.
-*Persona:* P2 · *Depends on:* US-17, US-26; AI provider and model (guide K1, Tomás); input, output schema and priority scale (§5.2 AI-1 to AI-3) · *AI fallback:* US-36 (scenario D1)
+*Persona:* P2 · *Depends on:* US-17, US-26; AI provider and model (guide K1); input, output schema and priority scale (§5.2 AI-1 to AI-3) · *AI fallback:* US-36 (scenario D1)
 - Given a help request is submitted and the AI is available, then a suggestion is shown within 30 s, marked as a suggestion (SC3).
 - Given the event's teams and their help categories (US-17), then the AI only suggests a team of this event.
 - Given the AI suggests a priority lower than the category's default, then the default priority is kept (NFR-22; the per-category floor of the [local AI plan](../Technical/plans/ai-provider-evaluation.md)).
@@ -692,7 +692,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 ## 8. Sprint goals and initial release plan **[PROPOSED]**
 
-Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 and updated on 22 October 2026 with the smaller stories (Tiago, backlog owner), to confirm with the team at the next planning meeting. Order follows the MoSCoW rank in §2 and the dependencies in §7. The reasons are in §8.5.
+Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 and updated on 22 October 2026 with the smaller stories, to confirm with the team at the next planning meeting. Order follows the MoSCoW rank in §2 and the dependencies in §7. The reasons are in §8.5.
 
 ### 8.1 Sprint goals
 
@@ -707,7 +707,7 @@ Every merge to `main` is built and tested (guide H4). Delivery is local: a *rele
 
 | Release | When | What it contains | Assignment |
 |---|---|---|---|
-| **R0 · Walking skeleton** | Sprint A, before Sprint B starts on 2 Nov 2026 (#58, owner: Tomás) | One Reports service with synthetic help-request create/read in memory, diagnostic health, HTTP tests, Dockerfile, Compose and CI smoke on every PR (#166; [run instructions](../Technical/plans/local-walking-skeleton.md)). Keycloak, persistence/outbox and the full application are Sprint B. Not a user story: a task issue | §7.1.2 item 10 (Sprint A) |
+| **R0 · Walking skeleton** | Sprint A, before Sprint B starts on 2 Nov 2026 (#58) | One Reports service with synthetic help-request create/read in memory, diagnostic health, HTTP tests, Dockerfile, Compose and CI smoke on every PR (#166; [run instructions](../Technical/plans/local-walking-skeleton.md)). Keycloak, persistence/outbox and the full application are Sprint B. Not a user story: a task issue | §7.1.2 item 10 (Sprint A) |
 | **R1 · Vertical slice** | Sprint B review (6 Dec 2026) | 27 stories: US-01, 02, 06, 11, 12, 14, 16, 17, 18, 19, 20, 21, 23, 24, 26 to 36, 40, 41. The help-request journey end to end (W2 + W3), with teams and permissions, AI triage, scenario D1 and the first external integration | §7.2.2 items 1–13 |
 | **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58 and US-57 if there is time | §7.3.2 items 1–2, 8 |
 | **Later** (product roadmap) | After the course | Could: US-46, US-59 to US-62. Won't: F19, F20 | §7.3.2 item 13 |
@@ -718,7 +718,7 @@ Every merge to `main` is built and tested (guide H4). Delivery is local: a *rele
 
 Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) stay open, but were archived from the board on 24 October 2026 (#138): each one is covered by the stories below or is out of scope (#6, #8, #10, #14). #11 (Problem and Opportunity Report) was closed as delivered.
 
-**Board:** [GitHub Projects, *LABDSOF*](https://github.com/users/tomasoliveira21/projects/1) (project 1 of `tomasoliveira21`; private, open to the team). Every issue in the table below is on it, with the other open issues of the repository (auto-add workflow). How its fields are used, decided and applied on 24 October 2026 (Tiago, backlog owner, #138); the board is the source of truth for the values (they are not repeated in this table):
+**Board:** [GitHub Projects, *LABDSOF*](https://github.com/users/tomasoliveira21/projects/1) (project 1 of `tomasoliveira21`; private, open to the team). Every issue in the table below is on it, with the other open issues of the repository (auto-add workflow). How its fields are used, decided and applied on 24 October 2026 (#138); the board is the source of truth for the values (they are not repeated in this table):
 
 | Field | Values | Rule |
 |---|---|---|
@@ -800,16 +800,16 @@ Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 1
 
 These dependencies were open on 22 October 2026; the struck-through ones were closed by 31 October 2026, with the source. A story that needs one stays in *Backlog*, not *Ready*, until it is closed. All are expected before Sprint B starts on 2 November.
 
-| Open dependency | Owner | Blocks |
-|---|---|---|
-| ~~Walking skeleton (R0, #58), in Sprint A; needs the deployment platform (guide G1, #53)~~ Closed on 31 October 2026: local delivery (guide G1, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)); R0 merged in #167 and #58 closed | Tomás | ~~Every story (first to be built)~~ |
-| ~~Identity provider (guide E1)~~ Closed on 22 October 2026: Keycloak ([ADR-006](../Technical/adr/0006-identity-and-access.md)) | Guerra | ~~US-01, US-03~~ |
-| Role, team and permission model (§4): team confirmation, then the domain model (Tomás + Guerra). ~~Where permissions are checked (guide E2)~~ closed on 22 October 2026: in each service's use cases, against local copies ([ADR-006](../Technical/adr/0006-identity-and-access.md)). Replaces personas PE-5 and PE-6 | Team; Tomás + Guerra | US-06, US-14, US-15, US-16 |
-| Venue map library (guide F3, ADR-007, #44) | Tiago | US-19 |
-| ~~AI provider and model (guide K1); AI-1, AI-2~~ closed: Ollama with `qwen3:4b` ([ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted on 31 October 2026). Still open: AI-3, the priority scale ([API outline](../Technical/api-outline.md) O7) | Tomás, AI lead | US-34 |
-| ~~Resilience values (guide J1, #43)~~ Closed on 24 October 2026 (guide J1, #43, PR #52; [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1)) | Tiago | ~~US-42, US-43~~ |
-| Report types and expiry times (§6.1) | Team | US-47 |
-| ~~Account deletion (guide D7)~~ Closed on 27 October 2026 (guide D7, #135; [ADR-006](../Technical/adr/0006-identity-and-access.md#changes-for-the-api-outline-and-d7)) | Bruno | ~~US-05~~ |
+| Open dependency | Blocks |
+|---|---|
+| ~~Walking skeleton (R0, #58), in Sprint A; needs the deployment platform (guide G1, #53)~~ Closed on 31 October 2026: local delivery (guide G1, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)); R0 merged in #167 and #58 closed | ~~Every story (first to be built)~~ |
+| ~~Identity provider (guide E1)~~ Closed on 22 October 2026: Keycloak ([ADR-006](../Technical/adr/0006-identity-and-access.md)) | ~~US-01, US-03~~ |
+| Role, team and permission model (§4): team confirmation, then the domain model. ~~Where permissions are checked (guide E2)~~ closed on 22 October 2026: in each service's use cases, against local copies ([ADR-006](../Technical/adr/0006-identity-and-access.md)). Replaces personas PE-5 and PE-6 | US-06, US-14, US-15, US-16 |
+| Venue map library (guide F3, ADR-007, #44) | US-19 |
+| ~~AI provider and model (guide K1); AI-1, AI-2~~ closed: Ollama with `qwen3:4b` ([ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted on 31 October 2026). Still open: AI-3, the priority scale ([API outline](../Technical/api-outline.md) O7) | US-34 |
+| ~~Resilience values (guide J1, #43)~~ Closed on 24 October 2026 (guide J1, #43, PR #52; [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1)) | ~~US-42, US-43~~ |
+| Report types and expiry times (§6.1): team decision | US-47 |
+| ~~Account deletion (guide D7)~~ Closed on 27 October 2026 (guide D7, #135; [ADR-006](../Technical/adr/0006-identity-and-access.md#changes-for-the-api-outline-and-d7)) | ~~US-05~~ |
 
 Stories that depend on a blocked story wait for it too (see each story's *Depends on*).
 
@@ -873,7 +873,7 @@ Sprint B must already have an *initial external-system integration* (§7.2.2, it
 
 - Mocked authentication is allowed for the MVP (assignment §6.6, footnote 1), so seeded test accounts are enough for the help-request journey; log in and log out (US-01, US-02) are in Sprint B.
 - Sign-up is not a step of that journey.
-- The terms and consent text follow the [Security & Privacy assessment](../Technical/security-and-privacy-assessment.md) §8 (guide E5, Guerra; written on 25 October 2026, to review with the team).
+- The terms and consent text follow the [Security & Privacy assessment](../Technical/security-and-privacy-assessment.md) §8 (guide E5; written on 25 October 2026, to review with the team).
 - US-03 to US-05 all handle personal data, so they are built and tested together.
 
 #### Why the FarolAdmin's other stories (US-07 to US-09) are in Sprint C
@@ -898,4 +898,4 @@ Sprint C has 28 Must stories in four weeks, including Christmas, and it also hol
 
 #### Why the walking skeleton comes first
 
-It is a Sprint A deliverable (§7.1.2, item 10), so it stays in Sprint A (#58) and is done before Sprint B starts. DoD Level 2 asks for every story to be *deployed through the pipeline*, so no story can be *Done* before the skeleton exists. One week is enough for one endpoint, one test, a Dockerfile and the pipeline, because the CI/CD choices are decided (guide H1–H5). It needs the deployment platform (guide G1, #53) first. **Owner:** Tomás ([professor meeting of 22 October 2026](../Meetings/2026-10-22-professor-meeting.md)).
+It is a Sprint A deliverable (§7.1.2, item 10), so it stays in Sprint A (#58) and is done before Sprint B starts. DoD Level 2 asks for every story to be *deployed through the pipeline*, so no story can be *Done* before the skeleton exists. One week is enough for one endpoint, one test, a Dockerfile and the pipeline, because the CI/CD choices are decided (guide H1–H5). It needs the deployment platform (guide G1, #53) first. **Source:** [professor meeting of 22 October 2026](../Meetings/2026-10-22-professor-meeting.md).

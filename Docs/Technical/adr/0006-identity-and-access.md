@@ -76,7 +76,7 @@ From [`features.md` §4](../../Product/features.md#4-roles-teams-and-permissions
 
 ### Changes for the API outline and D7
 
-Bruno updates the API outline draft (#123) and guide D7 to match this decision (meeting of 22 October 2026):
+The API outline draft (#123) and guide D7 are updated to match this decision (meeting of 22 October 2026):
 
 - **O2:** login, logout and sign-up happen in Keycloak; `POST /accounts` goes, because the account is created at the first `GET /me`.
 - **O3:** the token carries only the identity, as the outline already assumes.

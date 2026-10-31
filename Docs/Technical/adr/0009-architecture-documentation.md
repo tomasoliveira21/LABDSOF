@@ -32,7 +32,7 @@
 - One file per diagram: renders in the browser, opens in draw.io, and its diff in a pull request is still text (though hard to read).
 - More files to keep consistent: 32 diagrams today (logical 6, process 8, implementation 6, physical 3, mappings 9). A change to a logical diagram also needs the two mapping diagrams of that level.
 - The Mermaid diagrams in `architecture.md` become working sketches; the draw.io diagrams are the reference.
-- **[PENDING]** markers in the diagrams must be removed when the decision they wait for is taken. Since 27 October 2026 only the `frontend/` folder layout is left (Tomás).
+- **[PENDING]** markers in the diagrams must be removed when the decision they wait for is taken. Since 27 October 2026 only the `frontend/` folder layout is left.
 
 ## Alternatives considered
 

@@ -51,5 +51,5 @@
 ## Open points
 
 - Resolved on 22 October 2026: retry values (guide C3) and Porto Digital poll values (guide J1: every 30 s, freshness limit 5 min); see [`architecture.md`](../architecture.md) §6 and §9. The DLQ is watched on the dashboard of [ADR-012](0012-observability.md) (accepted on 31 October 2026), not by an alert.
-- Resolved on 26 October 2026: the simulator tool is **WireMock**, confirmed by Guerra, owner of J4 (#155); see [ADR-008](0008-transport-data-source.md), decision 4.
+- Resolved on 26 October 2026: the simulator tool is **WireMock**, confirmed in guide J4 (#155); see [ADR-008](0008-transport-data-source.md), decision 4.
 - Resolved: RabbitMQ runs locally in a container (guide C1 and G1; the cloud is an alternative, [ADR-011](0011-deployment-and-infrastructure.md)); API gateway, rate limiting and CORS (guide C6, [ADR-013](0013-api-gateway.md), 22 October 2026); API outline and event catalogue (guide C8, [`api-outline.md`](../api-outline.md), #123).

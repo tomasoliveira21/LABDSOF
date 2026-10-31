@@ -1,6 +1,6 @@
 # Operating Cost Estimation
 
-**Course:** LABDSOF 2026/27, Sprint A · **Issue:** #134 · **Owner:** Bruno Lopes · **Date:** 23 October 2026 · **Updated:** 31 October 2026 (#162)
+**Course:** LABDSOF 2026/27, Sprint A · **Issue:** #134 · **Date:** 23 October 2026 · **Updated:** 31 October 2026 (#162)
 **Asked for by:** the professor, meeting of 22 October 2026 (P7, [minutes](../Meetings/2026-10-22-professor-meeting.md)): salaries and infrastructure, simple, reasonable assumptions.
 **Infrastructure figures:** from the cloud research of #53 ([`deployment.md`](../Research/architecture-investigation/deployment.md), prices of **22 October 2026** in the [price snapshot](../Research/architecture-investigation/azure-price-snapshot.json)).
 

@@ -4,7 +4,7 @@
 **Pilot case:** Queima das Fitas do Porto (Queimódromo, 8 nights, May)
 **Course:** LABDSOF 2026/27, Sprint 1
 **Assignment direction:** 4.3 *Local Event Coordination Platform*, applied to an event with crowds and road closures
-**Version:** revised with the group's alignment questionnaire and Tiago's decisions (October 2026)
+**Version:** revised with the group's alignment questionnaire and the backlog decisions (October 2026)
 
 ---
 
