@@ -1,21 +1,23 @@
 # Team Roles and Work Process
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §8.1, §8.2 and §10
-> **Status:** agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). The work process is defined in the [README](../README.md) and summarised here. Roles are identified by what they do. People are not assigned to them on purpose: everyone codes, reviews and can take any role.
+> **Status:** agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). The work process is defined in the [README](../README.md) and summarised here. Roles are identified by what they do and are not assigned to people: everyone codes, reviews and can take any role. Each member owns areas instead (§1).
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
 ## 1. Team
 
-| Member | GitHub | Student Number | Contributions so far (from commits) |
-|---|---|---|---|
-| Tomás Oliveira | `tomasoliveira21` | 1230213 | Repository owner; initial commit; Product Vision and User Research sections of the report (#17); merged PR #19 |
-| Tiago Teixeira | `tteixeira30` | 1240493 | Problem and Opportunity Report (#11); student survey script (#11); merged PR #18 and #21; added the assignment PDF |
-| Bruno de Abreu Lopes | `BrunoLopes1190` | 1240441 | Contributing guidelines (README); market and competitor analysis; merged PR #20 |
-| António Guerra | `AntonioGuerra1190409` | 1190409 | Product Vision and User Research sections of the report (#17); |
+Areas from the pull requests each member wrote and from the owners table of the [decisions guide](../Technical/architecture-decisions-guide.md#responsáveis-pelas-investigações-em-curso). Counts on 31 October 2026, from GitHub (46 merged pull requests): pull requests written and merged, and pull requests the member approved.
+
+| Member | GitHub | Student Number | Areas (pull requests) | PRs merged | PRs approved |
+|---|---|---|---|---:|---:|
+| Tomás Oliveira | `tomasoliveira21` | 1230213 | Repository owner. Product vision (#19, #30); domain model, with Guerra (#37, #171); architecture research on deployment, observability and AI (#54, #146, #151, #152, #154); walking skeleton (#150, #167); CI with SonarQube Cloud (#169) | 13 | 14 |
+| Tiago Teixeira | `tteixeira30` | 1240493 | Problem and Opportunity Report and survey script (#18); Sprint 1 presentation and personas (#21, #27); venue map, ADR-007 (#51); resilience, degraded modes and load testing (#52); role model (#57); backlog issues and board (#122, #140, #142); non-functional requirements (#139). Survey results and the Sprint A deck in PR #165, open | 10 | 5 |
+| Bruno de Abreu Lopes | `BrunoLopes1190` | 1240441 | Contributing guidelines and process (#1, #33); market and competitor analysis (#20); main features (#25); decisions guide and ADR-002/003/004 (#36, #49); architecture diagrams and ADR-009 (#50, #157); meeting records (#23, #96); API outline (#124); one web app (#126); versioning, local delivery and ADR-010 CI/CD (#128, #130, #132); operating costs (#136); account deletion (#158); documentation corrections (#163) | 18 | 8 |
+| António Guerra | `AntonioGuerra1190409` | 1190409 | User workflows slide (#31); identity and API gateway, ADR-006 and ADR-013 (#47); security and privacy assessment (#144, #160); Porto Digital simulator in WireMock (#156) | 5 | 9 |
 
 ## 2. Roles
 
-The assignment asks the team to work as a startup (§1) and evaluates each student individually, including their contribution and understanding of the whole product (§10). These are the roles the project needs and what each one does. Roles are **not assigned to a member**: any member can take a role for a given task, and everyone writes code and reviews.
+The assignment asks the team to work as a startup (§1) and evaluates each student individually, including their contribution and understanding of the whole product (§10). These are the roles the project needs and what each one does. Roles are **not assigned to a member**: any member can take a role for a given task, and everyone writes code and reviews. Responsibility is held by area instead: each member owns the areas in §1, as in the owners table of the decisions guide.
 
 | Role | What it does | Focus in this project |
 |---|---|---|
