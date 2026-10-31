@@ -1,5 +1,7 @@
 # Responsible AI Opportunity Assessment and provider investigation
 
+> **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md), [NFR-11 and NFR-20](../../Product/non-functional-requirements.md#2-requirements). Where this document differs, they win: for example, local Ollama with `qwen3:4b`, one 20 s attempt and no hosted fallback.
+
 **22 October 2026 · #53 · K1–K2 / AI-1–AI-11 · PROPOSED.** Research artefacts for the academic MVP; no clinical validation, production deployment or measured model performance.
 
 **Current decision update (26 October 2026):** [Local-only delivery is authorised because of cloud costs](../../Meetings/2026-10-22-local-deployment-clarification.md). Tomás selects local Ollama `qwen3:4b` Q4_K_M for team review. The [complete decision](../../Technical/plans/ai-provider-evaluation.md) fixes runtime/cost, dynamic event-team contract, safeguards, dataset review and evaluation procedure. The historical cloud/API assessment below is retained as an alternative; it is not the current default. No inference test is claimed.

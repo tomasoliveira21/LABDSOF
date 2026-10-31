@@ -1,5 +1,7 @@
 # Deployment, infrastructure and cost investigation
 
+> **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md) (local-only delivery), [ADR-003](../../Technical/adr/0003-database-and-data-ownership.md), [ADR-010](../../Technical/adr/0010-cicd-strategy.md) and the [local delivery procedure](../../Technical/local-delivery.md). Where this document differs, they win: for example, local delivery instead of Azure, and six databases (five services and Keycloak), not five.
+
 **22 October 2026 · #53 · PROPOSED** · Covers G1–G7, F2, RabbitMQ hosting (C1) and PostgreSQL topology (D2).
 
 ## Current delivery scope: local-only, authorised by the professor

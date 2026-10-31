@@ -1,5 +1,7 @@
 # Architecture investigation
 
+> **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-003](../../Technical/adr/0003-database-and-data-ownership.md), [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md), [ADR-012](../../Technical/adr/0012-observability.md), the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md) and the [local observability decisions](../../Technical/plans/local-observability.md). Where this document differs, they win: for example, one PostgreSQL instance with six databases (five services and Keycloak), not five (ADR-003).
+
 **Issue:** [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53) · **Date:** 22 October 2026 · **Owner:** Tomás Oliveira
 
 **Status: research delivered; local AI/observability architecture accepted in ADR-005/012, reconciled on 31 October (#166) against the guide/NFR agreement of 26–27 October.** Original alternatives remain research proposals. No cloud deployment, model benchmark or real-data privacy approval is claimed. Repository baseline: `5ee70a3`. Primary sources were checked on the date above; prices and provider terms must be rechecked before purchase or real-data use.

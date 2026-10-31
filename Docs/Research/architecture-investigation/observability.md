@@ -1,5 +1,7 @@
 # Observability investigation
 
+> **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-012](../../Technical/adr/0012-observability.md), the [local observability decisions](../../Technical/plans/local-observability.md), [NFR-03, NFR-33 and NFR-34](../../Product/non-functional-requirements.md#2-requirements). Where this document differs, they win: for example, Prometheus and Grafana with three core alerts, without a Collector, Tempo or Alertmanager.
+
 **22 October 2026 · #53 · I1–I3 · PROPOSED.** The targets below are design proposals, not measured service levels. SC3 (30 s) and SC5 (no requests lost with AI off) come from the product vision.
 
 **Current scope update:** [Local-only delivery is authorised because of cloud costs](../../Meetings/2026-10-22-local-deployment-clarification.md). Implement the minimum local Prometheus/Grafana plus correlated Docker logs option for the demo; Azure Monitor, cloud alert routing and cloud ingestion costs below are retained alternatives. The proposed SLIs/SLOs and evidence checks still apply locally; no cloud dashboard is required.
