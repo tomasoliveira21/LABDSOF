@@ -56,7 +56,7 @@ What the professor listed, with the document each section comes from today.
 - [ ] **Tiago:** review [ADR-007](../Technical/adr/0007-venue-map-representation.md), rewritten for the web (`react-zoom-pan-pinch` + SVG markers), and accept or change it (P9).
 - [x] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2). Done: own machine, Ollama with `qwen3:4b` (guide K1); ADR-005 accepted as architecture on 31 October 2026 (#166). Model measurements still to do.
 - [x] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2). Done in #43: x = 30 s, y = 5 min.
-- [ ] **No owner yet, done at the end:** the presentation deck (P5).
+- [ ] **Tiago:** the presentation deck (P5). First version on 30 October 2026: [`Farol_Sprint_A_Presentation.pptx`](../Presentation/Farol_Sprint_A_Presentation.pptx), to review with the team.
 - [ ] **No owner yet, done at the end:** the single PDF with the Sprint A documents (P6).
 - [x] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). Done in #134 ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md)), with the infrastructure from #53 (G2).
 - [x] **Tomás:** the walking skeleton (P8). Done in its Sprint A minimum: one Reports service in memory, with build, tests, image and Compose in CI (#167; #166 and #58 closed on 31 October 2026). The authenticated multi-service slice is Sprint B.

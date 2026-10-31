@@ -32,9 +32,44 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - People's names removed from the documentation: each statement keeps its source (date, issue, pull request, meeting record or guide item). Names stay only in the team list (README, `team-and-process.md` §1), the owners of the architecture decisions guide, the meeting records and older changelog entries. Owner columns removed from `features.md` §8.4 and `api-outline.md` §10.2; the assessment's §10 column now names the decision that settles each finding.
 - English: Portuguese quotes in `user-workflows.md` and its service names, "teacher", stray spaces, and two false claims in the market analysis (§5.4).
 
+### Corrected after a second check against assignment §5 to §8 (31 October 2026)
+- D1 (`architecture.md` §9, `features.md` D1): the demo script assumed the hosted two-attempt profile; with the local profile (one attempt, minimum 4 calls) the circuit opens after the third failed request, so the script has one more request and the counter +3. The 15-minute re-triage after recovery is removed: it contradicted the accepted AI contract (the 30 s deadline is never reset, late results are discarded).
+- `api-outline.md`: `suggestedReason` added to the triage object (the reason the operator must see, ADR-005); fallback reasons gain `Unavailable` and `NoEligibleTeam`; every outbound HTTP call is listed; `dataAsOf` used everywhere; SC6 is 15 s.
+- `domain-model.md`: the help-request text, the suggestion's reason, the e-mail and the consent fields ([PROPOSED]) are in the model; an event can have no EventAdmin yet (D3 = B). The SVG still needs the same change in draw.io.
+- `product-vision.md`: an *Expected community benefit* section (assignment §5.4), the MVP boundary now lists every Must, and §6 answers the Sprint A investor question (assignment §7.1.3).
+- `responsible-ai.md`: the baseline numbers, where the AI must beat it (zero urgent misses), and the known limitations and how users are told (assignment §5.6.3).
+- Security assessment: retention and consent shown as decided on 26 October 2026, 112 removed (decision of 12 October), ADR-005 and ADR-012 shown as accepted, and a section on the Sprint A skeleton, including the open gap: a rejected help-request text is written to the log by Spring's default handler.
+- ADRs: a *Rationale* section in ADR-001, 003, 004, 008 and 009; dated notes that Sprint A runs one service (ADR-010 point 9); ADR-007's open points closed by later decisions; ADR-010 has the measured CI times; ADR-012 lists the dropped Collector/Tempo/Alertmanager stack.
+- 18 diagrams: the AI suggests a team too, the DLQ is a panel, Auth & Users has no login, the `infra/` folders that exist, and "from Sprint B" for the independent deployment of each service. Their PNG fallback must be refreshed in draw.io.
+- Market analysis: a dated note on the decisions taken since 6 October 2026 (live buses, no Q&A assistant, offline mode a Could); first person removed. Cost estimate: rounding, six databases, Keycloak and observability not priced.
+- Survey results (#165) reflected in the deliverables table, the assumptions list and persona P1; product decision 4 (phone location first) is marked as still to reconcile with assessment M-1 and ADR-007.
+- `.gitattributes` keeps the evaluation files LF, so their SHA-256 hashes match on Windows; `evaluate.py` reads UTF-8.
+
 ### Not changed
 - Older entries of this changelog and the meeting records, except ticking two finished actions.
 - Decisions that need the team or their owner; they are listed in the pull request under *Open for the team*.
+
+## [Unreleased] · 2026-10-30 · Student survey results and Sprint A deck (Tiago Teixeira)
+
+**Why:** the report's *Results*, *Limitations* and *Resulting product decisions* were still "TBD" (Sprint 1 deliverable 3; gap review of 8 October 2026, G1), and the Sprint A deck had no owner (meeting with the professor, 22 October 2026, P5). Bruno gave both tasks to Tiago.
+
+### Added
+- `Docs/Presentation/Farol_Sprint_A_Presentation.pptx`: 18 slides with every section the professor listed on 22 October 2026 (vision, personas, workflow, domain model, architecture and technology, assumptions and dependencies, costs, prioritised backlog, NFRs, scope of the next sprints, people, methodology, DoR and DoD), plus two slides on the survey results and decisions. Speaker notes in Portuguese.
+
+### Changed
+- `problem-opportunity-report-queima.md`, *User Research*: method (Google Forms, 3 to 6 and 30 October 2026, 33 answers, 1 marked invalid; n = 30 for Q2–Q6 and 31 for Q7–Q10; collection closed on 30 October 2026; *Outro* free-text answers excluded), results per question, V1 and V2, what the data says about A2, A3, A4 and root cause 1, limitations, and five product decisions taken from the data. §4 *weak evidence* points to the survey.
+- `product-vision.md` §5 and §8: V1 met (87 %), V2 met (2.97), dependent on the answers of 30 October; the survey marked as done; the gap now only names the missing volunteer interview.
+
+### Decided (Tiago, backlog owner, 30 October 2026; to present at the next planning)
+- F17 entrance status per gate: Could → Should (80 % waited more than 30 min to get in).
+- F11 weak-network mode reopened at sprint planning (battery 48 %, installing 39 % and weak network 32 % are the top barriers).
+- F6 help request: ask for the phone's location; if the participant refuses, they mark the place on the venue map (71 % accept it, 26 % only the map).
+- Applied in `features.md`: F17 to Should (heading, US-59 and US-60 in R2 "if there is time" and first after US-57/58 in the cut line, board table to sprint C); F11 note says it is reopened as a candidate for Should; F6 note and US-23 ask for the phone's location first, with the map as the fallback. The GitHub Projects fields (priority, size of US-23) still have to follow.
+
+### Merged main (31 October 2026)
+- `main` merged (#163 diagrams and corrections, #167 walking skeleton, #169 SonarQube Cloud). Conflict only in this CHANGELOG (both kept, this entry first).
+- Deck aligned with them: ADR-005 and ADR-012 shown as accepted (slide 9 and notes); SonarQube in the delivery stack; Ollama reached through WireMock (slide 8); R0 walking skeleton done on 31 October with its narrowed scope (slide 14); the first next step is now the start of Sprint B (slide 18).
+- Deck checked again against `main`: "112 first" removed from the core journey (slide 6 and notes; no mention of 112 since 12 October 2026, T5); the walking skeleton keeps its help requests in memory (slide 14 and notes); the architecture notes say only Reports runs today (slide 8); the Copilot review is requested but has not run so far (slide 16 and notes).
 
 ## [Unreleased] · 2026-10-31 · Domain model diagram redrawn (#170)
 

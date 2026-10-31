@@ -157,7 +157,7 @@ The permission model is decided in [ADR-006](adr/0006-identity-and-access.md) (*
 
 | # | Measure | Status |
 |---|---|---|
-| M-1 | **Location is a point the participant marks on the venue map**, normalised to one map version; the app never asks the phone for GPS. It is less precise on purpose and works inside a crowd | *Decided* (F6, user-workflows W2) |
+| M-1 | **Location is a point the participant marks on the venue map**, normalised to one map version; the app never asks the phone for GPS. It is less precise on purpose and works inside a crowd | *Decided* (F6, user-workflows W2). **Open:** product decision 4 of 30 October 2026 (#164, report *User Research*) asks for the phone's location first, with the map as the fallback. It needs this measure, [ADR-007](adr/0007-venue-map-representation.md) (a map with no geographic data) and the API location field reviewed together at Sprint B planning |
 | M-2 | The help-request text is **optional, at most 500 characters**, with a hint above it: *"Describe what is happening. Do not write names or phone numbers."* | **[PROPOSED]** (500, as in the Responsible AI assessment) |
 | M-3 | The requester sees only the status of their request; its location goes only to the people who handle it (AC-3) | *Decided* (US-23, US-24) |
 | M-4 | The AI gets only the category, the sanitised text and the priority floor: no account or event id, no location, no names (ADR-005). **[PROPOSED]:** before sending, phone numbers, e-mail addresses and document numbers are replaced with a placeholder. Redaction is not anonymisation: the text can still say something sensitive | *Decided* (ADR-005, accepted 31 October 2026); redaction **[PROPOSED]** |
