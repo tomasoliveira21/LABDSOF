@@ -25,7 +25,7 @@
 
 ## Consequences
 
-- §6.2 is met from Sprint A, before Sprint B requires it; no evidence against services is needed.
+- §6.2 is met once more than one service runs (Sprint B; Sprint A delivered one, see *Status*); no evidence against services is needed.
 - A failure or read peak in one service does not stop the others (communication only through events, [ADR-004](0004-service-communication.md)). Locally all services share one machine and one PostgreSQL server, which stay a common point of failure ([ADR-011](0011-deployment-and-infrastructure.md), consequences).
 - More to run from Sprint A: five deployables, five databases ([ADR-003](0003-database-and-data-ownership.md)) and the broker, with their pipeline jobs. The walking skeleton was planned to cover more than one service; the delivered R0 has one (see *Status*).
 - The ArchUnit boundary test planned for the monolith phase is no longer needed: separate Maven projects cannot import each other's classes.
@@ -33,7 +33,7 @@
 
 ## Rationale
 
-- Services meet §6.2 from the start, so no evidence against services has to be gathered later.
+- Services meet §6.2 by design, so no evidence against services has to be gathered later.
 - The professor asked for the architecture to be defined from the start and changed only on evidence; a split planned for Sprint C would be a change driven by the calendar.
 - Separate services keep a read peak from stopping help requests (driver D2), and separate Maven projects enforce the boundaries without an extra test.
 

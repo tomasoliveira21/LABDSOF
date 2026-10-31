@@ -46,7 +46,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `.gitattributes` keeps the evaluation files LF, so their SHA-256 hashes match on Windows; `evaluate.py` reads UTF-8.
 
 ### Not changed
-- Older entries of this changelog and the meeting records, except ticking two finished actions.
+- Older entries of this changelog and the meeting records, except ticking two finished actions and two dated *Update 31 October 2026* notes (meetings of 12 and 22 October).
 - Decisions that need the team or their owner; they are listed in the pull request under *Open for the team*.
 
 ## [Unreleased] · 2026-10-30 · Student survey results and Sprint A deck (Tiago Teixeira)

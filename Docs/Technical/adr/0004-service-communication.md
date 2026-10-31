@@ -7,7 +7,7 @@
 ## Context
 
 - The assignment asks for at least one asynchronous workflow that handles retries, duplicate events, failures and eventual consistency (§6.3). In Farol this is the help-request triage ([`architecture.md`](../architecture.md) §6).
-- Five services (guide A2) are deployed on their own from Sprint A (guide A4); Sprint B already requires at least two (assignment §6.2). A service that is down must not stop the others: a help request must still be saved when the AI or another service fails (architecture driver D6).
+- Five services (guide A2) are deployed on their own from Sprint A (guide A4; planned, see the note of 31 October 2026 in *Consequences*); Sprint B already requires at least two (assignment §6.2). A service that is down must not stop the others: a help request must still be saved when the AI or another service fails (architecture driver D6).
 - Each service owns its database ([ADR-003](0003-database-and-data-ownership.md)), so it cannot read another service's data directly.
 - Transports reads an external source, the Porto Digital API, which can be unavailable, slow or return invalid data (guide A2, J4).
 - The apps need fresh data (backoffice list, request status, announcements), but the team is small (driver D9).

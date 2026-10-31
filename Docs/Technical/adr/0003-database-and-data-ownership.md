@@ -7,7 +7,7 @@
 ## Context
 
 - The assignment asks for **one** database technology unless more are justified (§6.4).
-- Farol is split into five services (guide A2), deployed independently from Sprint A (guide A4), that talk only through events (guide C4). A service that reads another service's tables would break that boundary.
+- Farol is split into five services (guide A2), deployed independently from Sprint A (guide A4; planned, see the note of 31 October 2026), that talk only through events (guide C4). A service that reads another service's tables would break that boundary.
 - **One team must never see or change another event's data** (architecture driver D1). The report asks for automated tests that prove it.
 - The venue map is an uploaded image with coordinates on it, not a geographic map (annex C3), so no spatial queries are needed.
 - With local delivery (guide H5, [ADR-011](0011-deployment-and-infrastructure.md)), one service can be replaced or rolled back on its own (`docker compose up -d --no-deps`, [`local-delivery.md`](../local-delivery.md)), so a new version of a service can start while the old schema is still in use, and an old version can start on a newer schema.
@@ -26,7 +26,7 @@
 - Services cannot join across databases. Cross-service views (e.g. the event's teams and their permissions inside Reports) come from local copies and are **eventually consistent**.
 - Isolation depends on the application filter being present in every query; a missing filter is a data leak. The per-service isolation test is the safety net, so it must cover every new event-scoped table.
 - *Expand and contract* makes some changes (renames, type changes) take two releases.
-- Five databases from Sprint A cost more than one. Locally they share **one PostgreSQL server** with Keycloak's database, six databases with one user each (guide G5, [`local-delivery.md`](../local-delivery.md)).
+- Five databases (from Sprint B; see the note of 31 October 2026) cost more than one. Locally they share **one PostgreSQL server** with Keycloak's database, six databases with one user each (guide G5, [`local-delivery.md`](../local-delivery.md)).
 
 ## Rationale
 

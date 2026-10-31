@@ -25,7 +25,7 @@ The report has two primary user groups with the same weight: the **event team** 
 | **P4 · Daniel, the FarolAdmin** **[PROPOSED]** | Farol team (internal user, not in report §1) | `FarolAdmin` (global) | Backoffice, platform area | W4 (first steps) |
 | **P5 · Inês, the responder** **[PROPOSED]** | Event team (field teams, e.g. Nursing, Security, PCR, Logistics) | `RegularUser` in a team with `HelpRequests.Respond`, `Reports.Respond` | Backoffice on the phone, field view | W2, W3, W7 |
 
-Journeys W1–W7 are described in [`user-workflows.md`](user-workflows.md).
+Journeys W1–W8 are described in [`user-workflows.md`](user-workflows.md).
 
 ---
 
@@ -37,8 +37,8 @@ Journeys W1–W7 are described in [`user-workflows.md`](user-workflows.md).
 | **Context of use** | At night, phone in hand, limited battery, congested network, loud environment, often after drinking (report §1) |
 | **Goals** | Know where things are (WC, stages, first aid, entrances); know how and when to get home; know whom to ask for help, fast |
 | **Frustrations (sourced)** | Long, badly distributed entrance queues and lack of information and signage (E3); information published before the event that does not reflect what changes during the night (root cause 2); the venue map is an image on social media (root cause 3) |
-| **What she does today (hypothesis)** | Looks for information on Instagram, the event site and WhatsApp groups; looks for a security guard or staff member when she needs help. *To validate with survey Q4 and Q5* |
-| **Barriers to adoption (hypothesis)** | Installing another app, battery use, sharing her location, weak network, not trusting that the information is up to date. *To validate with survey Q9* |
+| **What she does today (hypothesis)** | Looks for information on Instagram, the event site and WhatsApp groups; looks for a security guard or staff member when she needs help. Survey (n = 30): information comes from the organisation's social media (77 %) and WhatsApp groups (60 %); in need, 40 % would first ask friends and 33 % look for staff (Q4, Q5; report, *User Research*) |
+| **Barriers to adoption (hypothesis)** | Installing another app, battery use, sharing her location, weak network, not trusting that the information is up to date. Survey Q9 (n = 31): battery 48 %, installing another app 39 %, weak network 32 %, outdated information 23 %, sharing location 6 % (report, *User Research*) |
 | **Location sharing (hypothesis)** | Survey Q10 (n = 31): 71 % would share the phone's location with a help request, 26 % only a place on the venue map. Product decision 4 of 30 October 2026 (report, *User Research*) asks for the phone's location first, with the map as the fallback; still to reconcile with [assessment M-1](../Technical/security-and-privacy-assessment.md#6-data-minimisation-measures) and [ADR-007](../Technical/adr/0007-venue-map-representation.md) |
 | **What success looks like** | Opens the link from the QR code on her ticket or at the venue (annex §7), already logged in from the first time, sees the map in seconds, finds the next shuttle, and can ask for help for a friend in under 30 s (success criteria SC1, SC11) |
 | **Design implications** | No installation; one account for every event, logged in once and kept logged in on the phone (login is mandatory, decided 9 October 2026); large tap targets; short text; works from cache; never asks for more data than needed (report §5, risks) |

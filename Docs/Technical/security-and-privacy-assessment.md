@@ -164,7 +164,7 @@ The permission model is decided in [ADR-006](adr/0006-identity-and-access.md) (*
 | M-5 | **The triage message carries only `requestId`.** Producer and consumer are both Reports, so the worker can read the request from its own database: no personal text in RabbitMQ, in dead-letter queues or in message traces. An exception to the outline's full-state rule for one internal queue | *Decided* (API outline §7.3, #123, 26 October 2026) |
 | M-6 | **The account holds an e-mail and a display name only.** No phone number, birth date, student number, photo or university. The display name can be a nickname | *Decided* 26 October 2026 (NFR-19, NFRs §5) |
 | M-7 | Names are copied only where they are shown: `userId` and display name, to Reports and Events (`UserProfileChanged`); Badges and Transports get no names | *Decided* in the API outline (#123, its decision D4; merged on 26 October 2026) |
-| M-8 | Other participants never see who made a report; Badges receives the reporter, type and status of a report, not its location | *Decided* (US-49; `ReportConfirmed` in the API outline draft) |
+| M-8 | Other participants never see who made a report; Badges receives the reporter, type and status of a report, not its location | *Decided* (US-49; `ReportConfirmed` in the API outline, #123, merged in #124) |
 | M-9 | A check-in is one time per account and event: no location, no list of nights; badges never show which nights or where (features §6.4) | *Decided* (US-58) |
 | M-10 | Logs and metrics hold no request text, locations, names or tokens; only `sub` and the correlation id identify a request (ADR-012). **[PROPOSED]:** no client IP addresses in application logs; Keycloak's login events keep them for account protection (§7) | *Decided* (ADR-012, accepted 31 October 2026); IPs **[PROPOSED]** |
 | M-11 | Map uploads are re-encoded to PNG, so the photo's GPS position and the PDF's author are dropped; participants receive only that image | *Proposed in ADR-007*; re-encoding **[PROPOSED]** (T9) |
@@ -276,7 +276,7 @@ The delivery runs on one machine ([ADR-011](adr/0011-deployment-and-infrastructu
 
 The Sprint A walking skeleton ([plan](plans/local-walking-skeleton.md), #166) is one Reports service that creates and reads synthetic help requests in memory. It is the only running code, and it does not follow the controls above yet:
 
-- **Limits:** synthetic data only; the routes exist only with the `demo` profile; the port is published on `127.0.0.1:8080` only; there is no authentication, and every request uses a fixed identity. The assignment allows mocked authentication for the MVP (§6.6, footnote). AC-1 and AC-3 apply from the Sprint B slice, when Keycloak and the gateway arrive (ADR-010 point 9).
+- **Limits:** synthetic data only; the routes exist only with the `demo` profile; the port is published on `127.0.0.1:8080` only; there is no authentication, and every request uses a fixed identity. The assignment allows mocked authentication for the MVP (§6.6, footnote). AC-1 and AC-3 apply from the Sprint B slice, when Keycloak and the gateway arrive ([skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)).
 - **Controls already in place:** unknown JSON fields are rejected with 400 (`fail-on-unknown-properties`, part of T7); the image runs as a non-root user (`10001`) from base images pinned by digest; the container is `read_only`, with `cap_drop: ALL`, `no-new-privileges`, memory and process limits, and rotated logs (§7) (`backend/reports/Dockerfile`, `infra/compose.yaml`).
 - **Deviation:** the text is required (`@NotBlank`), while M-2 makes it optional.
 - **Open gap:** when validation rejects a `description` (blank or over 500 characters), Spring's `DefaultHandlerExceptionResolver` writes the rejected value in full to the log at WARN, as seen in a local `mvn verify` on 31 October 2026. This breaks M-10 and NFR-21; the fix and the log test of §11 (T11, M-10) are due with the Sprint B slice.
@@ -287,17 +287,17 @@ The owners of each decision are in the [decisions guide](architecture-decisions-
 
 | # | Finding | Proposal | Decided in | Needed by |
 |---|---|---|---|---|
-| 1 | FarolAdmin bootstrap trusts an unverified e-mail (T4) | Grant only with `email_verified: true`; amend ADR-006 | ADR-006 | Sprint B slice (Keycloak, PostgreSQL and web, ADR-010 point 9), and before sign-up opens (US-03) |
+| 1 | FarolAdmin bootstrap trusts an unverified e-mail (T4) | Grant only with `email_verified: true`; amend ADR-006 | ADR-006 | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)), and before sign-up opens (US-03) |
 | 2 | Phones and plain HTTP: tokens exposed and PKCE login broken (§9) | Local HTTPS with mkcert, or device mode | Guide G4, with Compose (G5–G6) | First demo on phones, Sprint B |
 | 3 | Help-request text and location travel through RabbitMQ (T11) | Triage message with `requestId` only (M-5) | API outline and event catalogue: ✅ decided in #123 (26 October 2026) | Before US-34 |
 | 4 | Object access inside an event is not tested (T6) | Within-event case in US-14 | Backlog (US-14) | Sprint B planning |
 | 5 | WireMock admin API and recordings (T11, T16) | Admin API only on the demo machine; never record the AI provider | Guide J4 | Decided: admin API on `127.0.0.1:8090` (`local-delivery.md` §1); WireMock enters Compose in Sprint B. Done: only Porto Digital recorded, with no personal data ([`infra/wiremock/`](../../infra/wiremock/README.md), #155) |
 | 6 | 30-day sessions on field-team phones (T13) | AC-7: login in the last 12 h for operational actions | ADR-006 | US-17, Sprint B |
 | 7 | Account lookup by e-mail, outline O4 (T14) | AC-9 | API outline O4 | Now |
-| 8 | Client secrets in the realm export (T17) | `${…}` placeholders | ADR-006 | Sprint B slice (Keycloak, PostgreSQL and web, ADR-010 point 9) |
-| 9 | RabbitMQ and PostgreSQL grants not specified (T8) | AC-8 | This assessment, with Compose (G5–G6) | Sprint B slice (Keycloak, PostgreSQL and web, ADR-010 point 9) |
+| 8 | Client secrets in the realm export (T17) | `${…}` placeholders | ADR-006 | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
+| 9 | RabbitMQ and PostgreSQL grants not specified (T8) | AC-8 | This assessment, with Compose (G5–G6) | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
 | 10 | Upload hardening (T9) | Content type, re-encoding, PDFBox limits | ADR-007 | US-19 |
-| 11 | Content Security Policy, no third-party scripts (T10, M-14) | Headers on the web container | The web container | Sprint B slice (Keycloak, PostgreSQL and web, ADR-010 point 9) |
+| 11 | Content Security Policy, no third-party scripts (T10, M-14) | Headers on the web container | The web container | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
 | 12 | No dependency or image scanning (T18) | Checks in CI | ADR-010 | Sprint B |
 | 13 | Retention periods and clean-up jobs (§7) | The periods of §7 | Team (guide D5): ✅ decided as NFR-19 and NFR-13 (26 October 2026; telemetry simplified 27 October 2026) | Clean-up jobs in Sprint C |
 | 14 | Consent records and the help-request consent (§8.3, §8.4) | New fields; criteria in US-03 and US-12 | Domain model; stories | US-12, Sprint B |

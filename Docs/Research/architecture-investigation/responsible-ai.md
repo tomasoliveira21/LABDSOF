@@ -86,14 +86,14 @@ This section is added to the snapshot so that deliverable 6 states its numbers a
 
 **Non-AI baseline, reproduced.** The [baseline report](evaluation/baseline-report.json) applies the no-AI policy (participant category, default team, category priority floor) to the 80 test cases (72 non-abstention references):
 
-| Measure | Baseline | Gate (ADR-005 decision 4) |
+| Measure | Baseline | Gate (ADR-005 decision 4; evaluation README) |
 |---|---|---|
 | Category accuracy | 0.708 (51 of 72) | ≥ 0.80 |
 | Team accuracy | 0.806 (58 of 72) | ≥ 0.80 |
 | Urgent cases missed (under-prioritised, abstained or missing) | 24 of 31 | 0 |
 | Correct expected abstentions | 0 of 8 | all |
 
-The baseline passes only the team-accuracy threshold. **Where the AI must beat it** is the existing gate on urgent cases: zero misses against the baseline's 24 of 31, plus category accuracy ≥ 0.80 and every expected abstention. No new gate is added here. The value the AI is expected to bring is therefore earlier attention to urgent requests whose participant category understates them; it is not measured until the model runs (guide K2).
+Of the gates in this table, the baseline passes only team accuracy; it meets suggestion coverage, the priority floor and consistency trivially, because it always suggests. **Where the AI must beat it** is the existing gate on urgent cases: zero misses against the baseline's 24 of 31, plus category accuracy ≥ 0.80 and every expected abstention. No new gate is added here. The value the AI is expected to bring is therefore earlier attention to urgent requests whose participant category understates them; it is not measured until the model runs (guide K2).
 
 **Known limitations:**
 
