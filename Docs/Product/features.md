@@ -707,7 +707,7 @@ Every merge to `main` is built and tested (guide H4). Delivery is local: a *rele
 
 | Release | When | What it contains | Assignment |
 |---|---|---|---|
-| **R0 · Walking skeleton** | Sprint A, before Sprint B starts on 2 Nov 2026 (#58, owner: Tomás) | One endpoint, one test, a Dockerfile and the CI/CD pipeline, deployed. Not a user story: a task issue | §7.1.2 item 10 (Sprint A) |
+| **R0 · Walking skeleton** | Sprint A, before Sprint B starts on 2 Nov 2026 (#58, owner: Tomás) | One Reports service with synthetic help-request create/read in memory, diagnostic health, HTTP tests, Dockerfile, Compose and CI smoke on every PR (#166; [run instructions](../Technical/plans/local-walking-skeleton.md)). Keycloak, persistence/outbox and the full application are Sprint B. Not a user story: a task issue | §7.1.2 item 10 (Sprint A) |
 | **R1 · Vertical slice** | Sprint B review (6 Dec 2026) | 27 stories: US-01, 02, 06, 11, 12, 14, 16, 17, 18, 19, 20, 21, 23, 24, 26 to 36, 40, 41. The help-request journey end to end (W2 + W3), with teams and permissions, AI triage, scenario D1 and the first external integration | §7.2.2 items 1–13 |
 | **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58 and US-57 if there is time | §7.3.2 items 1–2, 8 |
 | **Later** (product roadmap) | After the course | Could: US-46, US-59 to US-62. Won't: F19, F20 | §7.3.2 item 13 |

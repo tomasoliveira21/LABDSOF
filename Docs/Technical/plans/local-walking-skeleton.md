@@ -1,100 +1,69 @@
-# Walking skeleton and local deployment decisions
+# Sprint A walking skeleton and Sprint B handoff
 
-**Issue:** [#58](https://github.com/tomasoliveira21/LABDSOF/issues/58) · **Tracker:** [#147](https://github.com/tomasoliveira21/LABDSOF/issues/147) · **Owner:** Tomás Oliveira · **Updated:** 26 October 2026
+**Issue:** [#58](https://github.com/tomasoliveira21/LABDSOF/issues/58) · **Correction/implementation:** [#166](https://github.com/tomasoliveira21/LABDSOF/issues/166) · **Owner:** Tomás Oliveira · **Updated:** 31 October 2026
 
-**Documentary decision complete for PR review.** This document selects the scope, topology, delivery and rollback procedure. It does not claim that the application, pipeline or recovery drill has already run. Issue #58's executable deliverable remains open until its evidence exists; reviewing this decision is not that execution evidence.
+## 1. Sprint A boundary: one service, not the full application
 
-## 1. Basis in the supplied course slides
+Tomás supplied a review on 31 October identifying deliverable 10 as a blocker and asking for the smallest executable cut before Sprint B. This supersedes the earlier multi-service/authenticated request slice as an **R0 requirement**. That complete design remains the Sprint B target, not missing work to hide behind a documentation-only closure.
 
-Sources supplied for this task: *Product_Management_Slides.pdf*, PDF pages **23–25**, especially **Example Walking Skeleton, Scenario A** (page 25); *Mapping_Prioritization_Metrics_Slides.pdf*, PDF pages **4–5**, **Anatomy of a story map** and **Running a story-mapping workshop**. The files are course references, not new repository instructions.
+R0 is **Swagger/client → create a synthetic help request in Reports → store it in memory → read it by ID**. `POST /api/v1/demo/help-requests` accepts category/description and returns a generated ID, `status: Submitted` and `triage.state: NotTriaged`; `GET /api/v1/demo/help-requests/{id}` returns the stored request. `/api/v1/status` remains the technical health check. This replaces the status-only demonstration at Tomás's request while retaining one service/container.
 
-The first example is a button sending a very small DTO to a backend that persists it; later increments add attributes and business rules. The mapping slides place the smallest working path across the user's activities in the first horizontal release. Therefore R0 must prove a real write/read across architectural components, not just health endpoints, and must not expand into the whole Sprint B journey.
+The identity is fixed on the server to `demo-participant`, event `demo-event`, and every response marks `demo: true`. Demo routes exist only with Spring profile `demo`, explicitly enabled in Compose, and are published on loopback only. They are a synthetic prototype, not production endpoints with authentication disabled. No frontend app, database, Keycloak, gateway, broker/outbox, AI or dashboard is required. Data disappears on restart; never submit real incidents or expect dispatch.
 
-**Choice for Farol: Scenario A**, retaining Farol's already accepted security and architecture constraints. A user presses **Send demo help request** for one seeded synthetic event; Reports saves the minimal request and the page displays the stored request/status. One seed category and map point avoid building the full input/map UI. The control-room demo page reads that saved request. AI, dispatch, badge rules and transport integration are later slices.
+Course references supplied earlier: *Product_Management_Slides.pdf* pp.23–25 and *Mapping_Prioritization_Metrics_Slides.pdf* pp.4–5. The skeleton is a small executable slice evolved through later increments; documentation is not a substitute for the first running increment. The current deliberately narrower cut follows the 31 October review, not a claim that the lecture examples prescribe this exact endpoint.
 
-## 2. Walking-skeleton slice and release cut
+## 2. Concrete contract, code and test
 
-| Backbone activity | R0: thin working path | Later increment |
-|---|---|---|
-| Access | Keycloak synthetic demo login, existing membership and permission checks | Registration, account management and invitation workflows |
-| Choose event | One seeded published event; no event-creation UI | Real event catalogue, administration and membership flows |
-| Ask for help | One button sends fixed category, map point and unique client request id | Editable category/text/map form, full validations and user stories |
-| Persist and display | Reports transaction saves the request + outbox; UI reads the saved id/status | AI suggestion, routing, responder lifecycle and full audit views |
-| Operate | Start the local stack, test, replace one image and demonstrate persistence | Load evidence, complete dashboards and production-style recovery drills |
-
-Concrete path: **React → Spring Cloud Gateway → Reports REST → Reports PostgreSQL database → REST read → React**, with **Keycloak** authentication and **Auth & Users** supplying the minimum seeded membership/permission path. Reports' outbox publishes the minimal notification to its triage queue and an idempotent technical consumer records delivery; it makes **no model call in R0**. This is real broker wiring, not completed F8 triage. No synchronous service-to-service domain REST is introduced.
-
-At least Reports and Auth & Users have executable independently built containers. The other three services retain independent project/image/health scaffolds only; no complete business modules are required for R0. This preserves the five-service architecture without turning the walking skeleton into five complete products.
-
-### Minimal HTTP and data contract
-
-Use the API outline's paths, under `/api/v1`, coordinated with [PR #124](https://github.com/tomasoliveira21/LABDSOF/pull/124):
-
-- `POST /api/v1/events/{eventId}/help-requests`: fixed synthetic `category`, map position and `clientRequestId`; server identifies the caller from its token. Return `201` with the stored id/status; a duplicate id returns the existing request rather than another row.
-- `GET /api/v1/events/{eventId}/help-requests/{requestId}`: owner sees their status; the seeded authorised control-room identity can read the operational view. Invalid/expired tokens, another event and another requester's private data remain denied.
-- The demo DTO is a strict subset of the product contract, not a parallel permanent API. Hand-write the contract before implementation; full domain rules are added with their stories.
-- Persist request, event/account references, status, submission time and outbox in Reports only. AMQP notification carries request id/correlation metadata, not raw incident text or coordinates; the worker reads the row through the Reports application layer. Consumption deduplicates by message id.
-
-The slide's absence of business validation is about slicing, **not permission to disable login, isolation, DTO syntax/size checks or rate limits**. Synthetic demo accounts/data are explicitly labelled.
-
-## 3. Answers to G1–G7, F2 and C1
-
-| Item | Selected answer |
+| Artefact | Implemented slice |
 |---|---|
-| **G1 — platform** | **One local laptop with Docker Engine/Desktop and Compose v2. No cloud deployment.** Professor's authorisation and cost reason remain in [ADR-011](../adr/0011-deployment-and-infrastructure.md) |
-| **G2 — infrastructure cost** | No new hosted VM/database/monitoring or API subscription for this scope. Existing hardware/electricity are not asserted free. Keep the [dated cloud assessment](../../Research/architecture-investigation/deployment.md) and [operating cost estimate](../../Deliverables/operating-cost-estimation.md); explain costs as the reason cloud was omitted |
-| **G3 — region** | No cloud region: processing/storage on the local delivery machine in Portugal. No provider receives real help-request data by default; future external processing needs its own review. Local placement alone is not a GDPR-compliance claim |
-| **G4 — environments** | `dev` locally with synthetic seeds; isolated ephemeral `test` stack in CI; `demo` locally from a reviewed release tag with synthetic data. Separate Compose project names/volumes/env files; no paid production environment |
-| **G5 — IaC** | Versioned `infra/compose.yaml`, Dockerfiles, service settings, PostgreSQL bootstrap and Keycloak realm. **No Terraform/Bicep provisioning in current scope.** Bicep is only the retained Azure alternative |
-| **G6 — execution** | Compose default profile runs the application/infrastructure; optional `observability` and `ai` profiles add telemetry and local inference. One command path and one base network/volume definition, not competing independent stacks |
-| **G7 — rollback** | Build the previous reviewed tag, replace affected service images and rerun smoke tests. Flyway migrations stay expand/contract compatible; never undo DB migrations automatically. Take consistent demo dumps before change; restore from those if a demo-state reset is required |
-| **F2 — web hosting** | React static build served by a local web-server container, `WEB_PORT=3000`; browser calls the gateway on 8080 and Keycloak on 8180 using configured origins. No Vercel/Azure static site is required |
-| **C1 — RabbitMQ hosting** | One local RabbitMQ container, stable node name, named data volume, per-service users/vhosts/permissions. AMQP private to Compose; management UI only `127.0.0.1:15672`; metrics private to the telemetry network |
+| Service | `backend/reports`, Java 21, Spring Boot 4.0.9, independent Maven build |
+| REST contract | [OpenAPI](../../../backend/reports/contracts/openapi.yaml): synthetic create/read routes (201/200), validation (400) and missing requests (404); `/api/v1/status` remains the diagnostic (200) |
+| Automated test | Random-port HTTP tests cover status/UI/contract, create→read stored synthetic data, invalid input/spoofed identity, missing requests and absence of demo routes without the demo profile |
+| Image | `backend/reports/Dockerfile`: builds/tests the JAR in Maven, then runs it as a non-root user in a JRE image |
+| Deployment | `infra/compose.yaml`: one Reports container with profile `demo`, loopback port 8080, diagnostic health check, bounded memory and rotated container logs |
+| CI | `.github/workflows/ci.yml`: build/test plus container startup and JSON smoke check on **every PR**, main push, release tag and manual run; no docs/draft skip in this minimum |
+| Ignore rules | `.gitignore`: `infra/.env`, `__pycache__/`, `backups/`, `target/` and local editor output |
 
-### Local topology and resources
+The diagnostic and demo contracts are hand-written before implementation. This isolated demo is not the US-23/US-24 production API; generated business interfaces/clients follow C7 when those stories and their auth/persistence/location/idempotency contracts are implemented. Empty domain/application classes and scaffolds for the other four services are not Sprint A prerequisites.
 
-Five service containers + gateway + web + Keycloak + one PostgreSQL + RabbitMQ + WireMock form the planned default topology. PostgreSQL has **six databases/users: five domain-service databases and one Keycloak database**, not six database machines. Three domain services may be health-only scaffolds in R0. Runtime/user secrets remain in ignored local configuration. No database, AMQP, model or scrape endpoint is published to the LAN.
+## 3. Run and demonstrate from the repository root
 
-The local baseline is the accepted [delivery procedure](../local-delivery.md) (PR #130); CI details follow [PR #132](https://github.com/tomasoliveira21/LABDSOF/pull/132), and accepted tag semantics follow PR #128: **build locally from tags, no registry, CI never connects to anyone's laptop**. The chosen R0 implements this contract; there is no unresolved registry-versus-pull decision here. This applies the accepted local runbook; automated CI job implementation follows Bruno's pipeline work.
-
-**Capacity: demonstrate on the existing local laptop and measure actual usage with `docker stats --no-stream`.** No fixed 24 GiB host requirement is imposed. The minimum observability profile adds only Prometheus/Grafana; no dedicated trace/log backend. Inspection on 26 October found 16 GiB physical RAM and about 4 GiB allocated to Docker; allocation was not changed and full-stack capacity is unmeasured. R0 starts without AI; run the optional AI demonstration sequentially after its model is loaded. If resource contention occurs, record it and stop optional profiles between scenarios; no cloud purchase or machine upgrade is assumed.
-
-## 4. Startup, smoke check and recovery procedure
-
-**Implementation command contract** (files below are to be supplied by #58; no claim they exist/run yet):
+Requirements: Docker Engine/Desktop with Compose v2; Java 21 and Maven 3.6.3+ only for the independent host build. Docker builds need no host JDK. No secrets, cloud account or database is needed.
 
 ```sh
-cp infra/.env.example infra/.env
-# Set local secrets, PUBLIC_HOST=localhost, WEB_PORT=3000 and VERSION=dev.
-docker compose --env-file infra/.env -f infra/compose.yaml -p farol-dev build
-docker compose --env-file infra/.env -f infra/compose.yaml -p farol-dev up -d --wait
-docker compose --env-file infra/.env -f infra/compose.yaml -p farol-dev ps
+mvn --batch-mode --no-transfer-progress -f backend/reports/pom.xml verify
+docker compose -p farol-skeleton -f infra/compose.yaml up --build -d --wait --wait-timeout 120
+curl --fail http://127.0.0.1:8080/api/v1/status
+docker compose -p farol-skeleton -f infra/compose.yaml ps
+docker compose -p farol-skeleton -f infra/compose.yaml logs --tail=50 reports
+docker compose -p farol-skeleton -f infra/compose.yaml down
 ```
 
-Follow the accepted runbook using Compose commands and a manual browser checklist, without a startup script or Makefile. The R0 smoke checks are: all required containers healthy; web HTTP 200; gateway `/api/v1/me` answers 401 without a token; browser logs in through Keycloak; clicking the synthetic request button yields a stored id; an authenticated read returns the same row; duplicate submission does not duplicate it; the outbox notification is consumed once logically. CI automates infrastructure/negative-auth/queue checks and integration fixtures; manual browser login and the actual demo laptop are checked separately. CI success is not a phone/LAN test.
+Open **[Swagger UI](http://localhost:8080/swagger-ui.html)**, then under **Demo help requests**:
 
-**Update one service:** build `reports`, then `up -d --no-deps reports`; other service processes keep their existing images. **Stop:** `down` without `-v`, preserving local volumes. **Reset synthetic demo only:** explicit `down -v`, then reseed; never use this as routine rollback.
+1. Expand `POST /api/v1/demo/help-requests`, choose **Try it out**, retain the synthetic example (category/description), then **Execute**.
+2. Expect **201**, a generated `id`, `status: Submitted` and `triage.state: NotTriaged` (shown as **Not triaged**). The event/identity are fixed demo values; callers cannot set them.
+3. Copy `id` to `GET /api/v1/demo/help-requests/{requestId}`, then execute: expect **200** with the same stored record.
+4. Restart Reports to clear the temporary in-memory data; reading the old ID now returns **404**. `/api/v1/status` still responds 200.
 
-**Before every demo/update:** stop writes, take `pg_dump -Fc` for all six databases, export broker definitions and record the current git tag/configuration checksum; resume writes afterwards. Dumps live in ignored encrypted local storage and are copied to the backup laptop. Definitions are not a backup of queued messages.
+Input categories are Health/Safety/LostPerson/Theft/Other; description is non-blank, at most 500 characters. Invalid/unknown fields return 400. To run the JAR outside Compose, explicitly activate `--spring.profiles.active=demo`; otherwise the demo routes return 404. No credentials are needed for this fixed synthetic identity. The UI loads the existing handwritten contract at `/openapi.yaml`, packaged by Maven from `backend/reports/contracts/openapi.yaml`; there is no second maintained copy or generated competing specification. Springdoc 3.0.3 follows its [Spring Boot 4.0 compatibility line](https://springdoc.org/). Swagger assets are served locally; no external validator is configured.
 
-**Rollback:** stop the changed worker/service, check out the previous reviewed tag, set its image version, build and replace that service, then run the same smoke checks; verify outbox/queue drain and state. **Restore:** quiesce the stack, restore the six matching demo dumps, import the matching realm/configuration and replay only retained outbox records idempotently. Disk loss between dumps and queued messages not recoverable from retained history have no guaranteed RPO.
+Expected HTTP response: `{"service":"reports","status":"ok"}`. To avoid a port already in use, run Compose with `REPORTS_PORT=18080` and call that loopback port. Optional local overrides: copy `infra/.env.example` to `infra/.env` and pass `--env-file infra/.env`; no credentials are required. An unavailable/conflicting port must fail startup, not be mistaken for a successful demonstration of another process.
 
-RTO targets remain **≤10 min code rollback / ≤60 min demo-state restore**, evaluated by a timed drill; they are not measured results. RPO is the last consistent demo dump, not zero host-loss data loss. Production retention/backup policy stays outside this local-demo decision.
+The health check means this diagnostic HTTP endpoint responds; it does not certify a database, auth provider, broker or SLO. A named Compose project limits cleanup to this demo's resources. No volume/backups exist for the in-memory demo; a restart deliberately clears synthetic records. This does not satisfy production durability, auth, per-event isolation, idempotency or SC3/SC5.
 
-**Demo access decision:** R0 uses the laptop browser and its responsive/device mode on `localhost`; there is no unresolved requirement to make plain-HTTP PKCE work on a phone. Real-phone LAN login is a later HTTPS integration gate owned with Guerra. Never disable PKCE/token validation/CORS to demonstrate it.
+## 4. Review evidence and honest issue status
 
-## 5. Analysis → design → tests → implementation → evidence
+[Execution record](../evidence/walking-skeleton-2026-10-31.md) records the actual commands/results on the #166 branch. CI must also pass on the PR. Reopen #58 and #148 because merged Markdown-only #150/#151/#154 did not implement their runtime acceptance. The corrective PR closes **only #166**; #58 stays open until runnable evidence is reviewed, and #148 stays open until telemetry/dashboard/alert evidence exists. Do not mark board items Done just because their documentation merged.
 
-The course slide on the software-engineering process (Product Management, PDF p.23) applies to configuration as well as Java. This document supplies analysis/design and the test plan; code/tests and their execution records follow it.
+## 5. Sprint B handoff
 
-| Acceptance | Required check |
-|---|---|
-| Real thin slice | Button → authenticated API → durable DB row → displayed status, with exactly one synthetic event and without AI/routing/transport business features |
-| Isolation | Unauthenticated, other-event and other-requester access are denied; service database users cannot open another service's database |
-| Independent delivery | Two executable services and five independent scaffolds/images; replace one without rebuilding all |
-| Persistence/queue | Request/outbox atomicity, logical deduplication and broker round trip; ordinary container replacement preserves data |
-| CI/delivery | Reviewed CI jobs build/test/images and execute the smoke contract; local machine follows the same startup procedure |
-| Recovery | Record tag/configuration/host, time the rollback/restore, verify resulting rows/queue state; report failures |
-| Scope explanation | Report/presentation states local-only delivery was professor-authorised because of cost; cloud evaluation is retained |
+The full [local delivery runbook](../local-delivery.md) and [ADR-011](../adr/0011-deployment-and-infrastructure.md) remain the target: five service images, gateway, Keycloak, one PostgreSQL with six owned databases/users, RabbitMQ and WireMock; React UI plus optional AI/observability profiles. Add them incrementally to the existing Compose file instead of adding non-existent dependencies now.
 
-**Documentation is answered; runtime evidence is not invented.** The executable R0 issue remains open until these tests run. The later observability and AI PRs complete their own concrete decisions; they are not prerequisites for calling a DB-backed non-AI R0 a walking skeleton.
+First authenticated business slice: seeded synthetic event and users, one help-request button, Reports persistence/outbox, stored-status read and broker round trip. Implement domain/security/isolation and recovery tests with that slice. No cross-service shared database or synchronous domain calls are introduced. Identity/gateway work stays coordinated with Guerra; platform/CI decisions with Bruno.
+
+The [minimal observability plan](local-observability.md) remains two extra containers, Prometheus/Grafana plus Actuator/Micrometer and correlated logs; #148 owns its actual implementation. The [AI decision](ai-provider-evaluation.md) remains local Ollama/Qwen3 with human approval and measured evaluation. Neither is claimed running by this one-service demo.
+
+## 6. Infrastructure answers retained
+
+G1–G3: local only, cloud costs/alternatives retained, no cloud region or paid provisioning; explain the professor's cost authorisation in the report. G4–G6: isolated local dev/test/demo projects and versioned Compose/Dockerfiles; full stack/configuration comes in Sprint B. F2/C1: local React and RabbitMQ then, not deployed in this Sprint A cut. G7: R0 rollback rebuilds the previous reviewed tag; database dumps, expand/contract migrations and measured restore/RPO apply when persistence exists. Existing NFR recovery targets are not measured by this in-memory demo.

@@ -1,0 +1,13 @@
+# Local secrets and state
+infra/.env
+backups/
+
+# Build and interpreter output
+target/
+__pycache__/
+*.py[cod]
+
+# Local editor / OS files
+.idea/
+*.iml
+.DS_Store

@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted**: decided by the team on 23 October 2026 (#131, Bruno). Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) H1–H8. It brings together the versioning decision (H7, #127) and the local delivery procedure ([`local-delivery.md`](../local-delivery.md), #129, [ADR-011](0011-deployment-and-infrastructure.md)). **Tomás** implements it in the walking skeleton (R0, #58); the scope of R0 below is still to be confirmed with him.
+**Accepted**: decided by the team on 23 October 2026 (#131, Bruno). Source: [`architecture-decisions-guide.md`](../architecture-decisions-guide.md) H1–H8. It brings together the versioning decision (H7, #127) and the local delivery procedure ([`local-delivery.md`](../local-delivery.md), #129, [ADR-011](0011-deployment-and-infrastructure.md)). **Tomás** implements it in the walking skeleton (R0, #58); the minimum Sprint A scope was narrowed by the 31 October review relayed by Tomás (#166); the full pipeline remains the Sprint B target.
 
 ## Context
 
@@ -51,11 +51,11 @@
 
 8. **Branch protection (H8, README §6).** On `main`, the required checks are **Conventions** and **CI**, plus the review rules of README §5 and §6. **Not active yet** (checked on 30 October 2026: the GitHub API returns `protected: false` for `main`). **To do: Tomás, the repository owner, turns it on** ([`team-and-process.md` §4](../../Process/team-and-process.md#4-process-health-check-what-the-repository-shows-today), agreed on 8 October 2026). The **CI** check can be required only once `ci.yml` exists (point 9).
 
-9. **Walking skeleton (R0, Tomás). Proposed scope, to agree with Tomás:** R0 implements all of the above for the services it creates (at least two, to show independent deployment): `ci.yml`, the Dependabot file, the Dependabot exemption in `conventions.yml` and the round-trip command in the smoke test. Every new service is added to the `backend` matrix and to `infra/compose.yaml` when it is created. The first tag is `v0.1.0` at the end of Sprint A.
+9. **Walking skeleton R0 — narrowed 31 October 2026 (#166).** Implement one Reports service, a synthetic help-request create/read demo plus diagnostic health, real HTTP tests, multi-stage Dockerfile and Compose. The actual `.github/workflows/ci.yml` has one required job named `CI`: Maven verify, container build/start, JSON smoke check and cleanup on **every PR**, main push, tag and manual run, including drafts/documentation changes. No path filters, cloud/registry access or deployment to a personal machine. The broader jobs in points 2–7 (matrix/web, Testcontainers, Checkstyle/ESLint, gitleaks, Trivy, Dependabot and release-tag ancestry/version handling) are the accepted **Sprint B target**, not implemented capabilities of the minimum. Two independently deployable backend components are a Sprint B requirement, not a Sprint A blocker. The first reviewed release tag remains `v0.1.0`; no release/tag is created by #166.
 
 ## Consequences
 
-- During Sprint A almost every PR is documentation only and costs seconds of Actions time; the code jobs exist and run as soon as there is code.
+- The R0 correction intentionally builds/tests and runs one container on every PR to provide visible evidence. The documentation/draft skip policy above applies when the full Sprint B pipeline is implemented, not to this minimum.
 - A code PR costs roughly one runner-minute per service plus the web app and gitleaks; a full run on `main` adds the image builds and the smoke test. These are estimates: R0 measures the real durations and writes them here. Usage is checked at each sprint review; if it gets close to the limit, the next cut is to run `delivery` only on tags and manual runs.
 - Image, Trivy and Compose failures appear after the merge, not before. That is the price of saving minutes: the team fixes `main` straight away instead of starting new work.
 - The smoke test runs on a clean runner every time something reaches `main`, so `local-delivery.md` stays executable. The manual smoke test on the demo laptop is still needed: CI does not cover the phones, the LAN or the laptop's resources.

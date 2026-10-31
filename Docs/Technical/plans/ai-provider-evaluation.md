@@ -2,7 +2,7 @@
 
 **Issue:** [#153](https://github.com/tomasoliveira21/LABDSOF/issues/153), continuation of #149 / merged PR #152 · **Tracker:** [#147](https://github.com/tomasoliveira21/LABDSOF/issues/147) · **Owner:** Tomás Oliveira · **Updated:** 26 October 2026
 
-**Documentary decision complete for team review; execution evidence pending.** Select local Ollama with `qwen3:4b` Q4_K_M for the academic delivery. This is a specific implementation recommendation, not a measured quality claim or team acceptance. The professor's cost clarification authorises local delivery; it does not certify this model. Application implementation stays with [#81](https://github.com/tomasoliveira21/LABDSOF/issues/81), [#82](https://github.com/tomasoliveira21/LABDSOF/issues/82) and [#83](https://github.com/tomasoliveira21/LABDSOF/issues/83).
+**Architecture accepted; execution/evaluation evidence pending.** Status reconciled on 31 October (#166) against guide/NFR decisions recorded on 26–27 October. Select local Ollama with `qwen3:4b` Q4_K_M for the academic delivery. This is an architectural selection, not a measured quality claim. The professor's cost clarification authorises local delivery; it does not certify this model. Application implementation stays with [#81](https://github.com/tomasoliveira21/LABDSOF/issues/81), [#82](https://github.com/tomasoliveira21/LABDSOF/issues/82) and [#83](https://github.com/tomasoliveira21/LABDSOF/issues/83).
 
 ## K1: selected platform and cost
 
@@ -74,4 +74,4 @@ Run artefacts: `manifest.json`, `predictions-run-1.jsonl`, scorer reports, routi
 
 ## What is closed and what remains
 
-K1 has a selected local platform/model, cost position, sizing experiment, runtime settings, deadline and fallback. K2 has purpose, data provenance/split, input/output and event routing, human safeguards, risk controls and an executable evaluation procedure using the existing scorer. **These documentary questions are answered for review.** Team acceptance, label review, one actual model evaluation, observed capacity and integrated SC3/SC5 evidence remain execution/review work; no benchmark, real-data privacy clearance or implemented application is claimed. [ADR-005](../adr/0005-ai-triage-provider-and-evaluation.md) retains Proposed until team review.
+K1 has a selected local platform/model, cost position, sizing experiment, runtime settings, deadline and fallback. K2 has purpose, data provenance/split, input/output and event routing, human safeguards, risk controls and an executable evaluation procedure using the existing scorer. **These documentary questions are answered for review.** Label review, one actual model evaluation, observed capacity and integrated SC3/SC5 evidence remain execution/review work; no benchmark, real-data privacy clearance or implemented application is claimed. [ADR-005](../adr/0005-ai-triage-provider-and-evaluation.md) records architectural acceptance; evaluation/release evidence remains pending.
