@@ -13,9 +13,9 @@ Multi-event coordination platform for large academic festivals (pilot case: Quei
 | Product | [Product Vision](Product/product-vision.md) · [Personas](Product/personas.md) · [Main Features and Backlog](Product/features.md) · [User Workflows](Product/user-workflows.md) · [Non-Functional Requirements](Product/non-functional-requirements.md) | EN |
 | Process | [Team Roles and Work Process](Process/team-and-process.md) · [Definition of Ready and Done](Process/definition-of-ready-and-done.md) · [Spec-Driven Development rules](Process/spec-driven-development.md) (proposed) | EN |
 | Backlog | [Backlog board (GitHub Projects)](https://github.com/users/tomasoliveira21/projects/1) (private, team members only) · how its fields are used: [`features.md` §8.3](Product/features.md#83-stories-on-the-board) | EN |
-| Technical | [Domain Model](Technical/domain-model.md) · [High-Level Architecture](Technical/architecture.md) · [API Outline and Event Catalogue](Technical/api-outline.md) · [Local delivery and demo](Technical/local-delivery.md) · ADRs: [001](Technical/adr/0001-architectural-style.md) · [002](Technical/adr/0002-backend-and-frontend-technology.md) · [003](Technical/adr/0003-database-and-data-ownership.md) · [004](Technical/adr/0004-service-communication.md) · [006](Technical/adr/0006-identity-and-access.md) · [007](Technical/adr/0007-venue-map-representation.md) · [008](Technical/adr/0008-transport-data-source.md) · [009](Technical/adr/0009-architecture-documentation.md) · [010](Technical/adr/0010-cicd-strategy.md) · [013](Technical/adr/0013-api-gateway.md) · [Diagrams](Technical/architecture.md#14-architecture-diagrams) | EN |
+| Technical | [Domain Model](Technical/domain-model.md) · [High-Level Architecture](Technical/architecture.md) · [API Outline and Event Catalogue](Technical/api-outline.md) · [Sprint A skeleton: run and evidence](Technical/plans/local-walking-skeleton.md) · [SonarQube Cloud CI setup](Technical/sonarqube-cloud.md) · [Local delivery and demo (Sprint B target)](Technical/local-delivery.md) · ADRs: [001](Technical/adr/0001-architectural-style.md) · [002](Technical/adr/0002-backend-and-frontend-technology.md) · [003](Technical/adr/0003-database-and-data-ownership.md) · [004](Technical/adr/0004-service-communication.md) · [006](Technical/adr/0006-identity-and-access.md) · [007](Technical/adr/0007-venue-map-representation.md) · [008](Technical/adr/0008-transport-data-source.md) · [009](Technical/adr/0009-architecture-documentation.md) · [010](Technical/adr/0010-cicd-strategy.md) · [013](Technical/adr/0013-api-gateway.md) · [Diagrams](Technical/architecture.md#14-architecture-diagrams) | EN |
 | Security and privacy | [Security and Privacy Assessment](Technical/security-and-privacy-assessment.md): threat model, sensitive data, access control, data minimisation, retention, consent | EN |
-| Architecture research | [Deployment, observability and AI](Research/architecture-investigation/README.md) · [Responsible AI assessment](Research/architecture-investigation/responsible-ai.md) · [Triage evaluation](Research/architecture-investigation/evaluation/README.md) · ADRs: [005, proposed](Technical/adr/0005-ai-triage-provider-and-evaluation.md), [011, local delivery scope](Technical/adr/0011-deployment-and-infrastructure.md), [012, proposed](Technical/adr/0012-observability.md) | EN |
+| Architecture research | [Deployment, observability and AI](Research/architecture-investigation/README.md) · [Responsible AI assessment](Research/architecture-investigation/responsible-ai.md) · [Triage evaluation](Research/architecture-investigation/evaluation/README.md) · ADRs: [005, accepted architecture](Technical/adr/0005-ai-triage-provider-and-evaluation.md), [011, local delivery scope](Technical/adr/0011-deployment-and-infrastructure.md), [012, accepted architecture](Technical/adr/0012-observability.md) | EN |
 | Technical (working document) | [Architecture decisions](Technical/architecture-decisions-guide.md): every architecture decision taken by the team, its status and owner, and next steps | PT |
 | Meetings | [2026-10-08 Sprint A gap review and decisions](Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Meetings/2026-10-12-sprint-1-presentation-feedback.md) · [2026-10-22 Local deployment clarification](Meetings/2026-10-22-local-deployment-clarification.md) · [2026-10-22 Meeting with the professor](Meetings/2026-10-22-professor-meeting.md) · [2026-10-22 Identity and API gateway decisions](Meetings/2026-10-22-identity-and-gateway-decisions.md) | EN |
 | History | [CHANGELOG](../CHANGELOG.md) | EN |
@@ -34,7 +34,7 @@ The team uses **GitHub Flow**.
 4. Open a pull request to `main`.
 5. After approval and a green CI run, the PR is **squash-merged** and the branch is deleted.
 
-`main` is always deployable. Direct pushes to `main` are not allowed.
+`main` is always deployable. Direct pushes to `main` are not allowed. The rule is not enforced by GitHub yet: see §6.
 
 ## 2. Branch naming
 
@@ -112,6 +112,8 @@ A pull request can only be merged after **two reviews**:
 - **Approve** when no blocking comments remain; otherwise **Request changes**.
 
 ## 6. Branch protection on `main`
+
+> **Not active yet** (checked on 30 October 2026: the GitHub API returns `protected: false` for `main`). **To do: Tomás, the repository owner, turns it on** (agreed on 8 October 2026, [`team-and-process.md` §4](Process/team-and-process.md#4-process-health-check-what-the-repository-shows-today)). **Conventions** can be required now; **CI** once `ci.yml` exists ([ADR-010](Technical/adr/0010-cicd-strategy.md) point 9).
 
 - [ ] No direct pushes
 - [ ] Copilot code review requested automatically on every PR (repository ruleset)

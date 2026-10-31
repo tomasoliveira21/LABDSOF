@@ -2,7 +2,7 @@
 
 **Issue:** [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53) · **Date:** 22 October 2026 · **Owner:** Tomás Oliveira
 
-**Status: research completed for review; recommendations are PROPOSED.** No team approval, cloud deployment, model benchmark or privacy approval is claimed. Repository baseline: `5ee70a3`. Primary sources were checked on the date above; prices and provider terms must be rechecked before purchase or real-data use.
+**Status: research delivered; local AI/observability architecture accepted in ADR-005/012, reconciled on 31 October (#166) against the guide/NFR agreement of 26–27 October.** Original alternatives remain research proposals. No cloud deployment, model benchmark or real-data privacy approval is claimed. Repository baseline: `5ee70a3`. Primary sources were checked on the date above; prices and provider terms must be rechecked before purchase or real-data use.
 
 ## Current delivery scope
 
@@ -37,8 +37,8 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 
 | Area | Documented/delivered | Still pending |
 |---|---|---|
-| Target discrepancy | ADR-005, ADR-012, observability, assessment, evaluation instructions and scorer now agree on the **proposed ≥95% within 30 s**; operational window is 1 h, with explicit cohort accounting and separate offline denominator | Team review/acceptance; this is not a measured result |
-| K1: provider/model | Selected local Ollama/Qwen3 profile, cost and deadline/circuit contract; hosted assessment retained | One local evaluation and observed capacity and team acceptance; local deadline/retry settings are specified; privacy clearance before real data |
+| Target discrepancy | ADR-005, ADR-012, observability, assessment, evaluation instructions and scorer now agree on the **proposed ≥95% within 30 s**; operational window is 1 h, with explicit cohort accounting and separate offline denominator | Team-confirmed target; actual measurements still pending |
+| K1: provider/model | Selected local Ollama/Qwen3 profile, cost and deadline/circuit contract; hosted assessment retained | One local evaluation and observed capacity and release-evidence review; local deadline/retry settings are specified; privacy clearance before real data |
 | K2: evaluation | Responsible AI assessment, draft prompt/schema, 100 synthetic cases and honest no-AI baseline; scorer boundary checks | Team-reviewed labels, actual model outputs, reason review, execution of the documented event-specific routing acceptance cases and SC3/SC5 integration evidence |
 | I1: instrumentation | Two-container Prometheus/Grafana proposal, Actuator/Micrometer and correlated Docker logs | Application health/metrics configuration and correlated HTTP → queue → stored-result log entries |
 | I2: measurements | SLI/SLO definitions and aligned coverage target | Actual end-to-end measurements on the local target, counters/denominators and no-data/degraded-window reporting |
@@ -51,3 +51,7 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 Guerra owns identity, gateway, secrets and Security & Privacy (#46). Tiago owns retry/circuit-breaker values, message redelivery and load tests (#43). Bruno owns pipeline authentication, tags and API/event contracts. This research gives constraints and acceptance checks without replacing their decisions. The joint domain-model work with Guerra is outside #53.
 
 The local-only scope is recorded separately from the remaining proposals. The team can review AI, observability and detailed local implementation independently; do not treat the professor's cloud exemption as acceptance of all technical recommendations. A future implementation issue should cover the deployment skeleton, minimum telemetry and local model evaluation; closing this research issue does not mean those systems exist.
+
+## Sprint A correction (31 October 2026)
+
+The prior merged plans were documentation, not runnable acceptance. #58/#148 are reopened; #166 supplies the [one-service skeleton and commands](../../Technical/plans/local-walking-skeleton.md) with [actual execution evidence](../../Technical/evidence/walking-skeleton-2026-10-31.md). Full auth/outbox/database/web integration and observability are Sprint B increments. The architecture ADRs are accepted based on existing guide/NFR decisions; K2 evaluation/privacy and all telemetry/SLO results remain separate pending evidence.
