@@ -22,7 +22,7 @@ For the 5–7 minute presentation, **W2 + W3 tell the whole story**: a participa
 
 ## Complete journeys (BPMN)
 
-Added after the presentation of 12 October 2026 (teacher feedback): one BPMN diagram per core journey, from the participant's first tap to the end, with one lane per actor. The Mermaid diagrams in W1–W8 stay as the step-by-step detail. Who receives what is in [`features.md` §4.3](features.md#43-who-receives-what-and-who-acts). The lanes are personas, and since 22 October 2026 they are jobs given by team permissions, not roles ([`features.md` §4.2](features.md#42-teams-and-permissions)): P2 stands for the members with `HelpRequests.Triage` or `Reports.Review`, P5 for the members with `HelpRequests.Respond` or `Reports.Respond`.
+Added after the presentation of 12 October 2026 (professor feedback): one BPMN diagram per core journey, from the participant's first tap to the end, with one lane per actor. The Mermaid diagrams in W1–W8 stay as the step-by-step detail. Who receives what is in [`features.md` §4.3](features.md#43-who-receives-what-and-who-acts). The lanes are personas, and since 22 October 2026 they are jobs given by team permissions, not roles ([`features.md` §4.2](features.md#42-teams-and-permissions)): P2 stands for the members with `HelpRequests.Triage` or `Reports.Review`, P5 for the members with `HelpRequests.Respond` or `Reports.Respond`.
 
 ### Help request, end to end (W2 + W3)
 
@@ -73,7 +73,7 @@ Source: report, third journey: *"When a participant sends a help request, the ev
 sequenceDiagram
     actor P as Participant (Rita, logged in)
     participant App as Participant web app
-    participant Inc as Incident service
+    participant Inc as Reports service
     participant AI as AI triage
     participant BO as Backoffice
     actor O as Control room (Miguel, HelpRequests.Triage)
@@ -110,7 +110,7 @@ sequenceDiagram
 
 ## W3 · Control room handles a help request
 
-Lifecycle of a help request **[PROPOSED]**. The report says the team *"avalia a sua prioridade e encaminha-o"*, but does not define statuses.
+Lifecycle of a help request **[PROPOSED]**. The report says the team *"assesses its priority and routes it to the right operational team"*, but does not define statuses.
 
 ```mermaid
 stateDiagram-v2
@@ -170,7 +170,7 @@ Source: report, *"updates information during the night"*; root cause 2.
 sequenceDiagram
     actor A as EventAdmin (Sofia, or a member with Announcements.Publish)
     participant BO as Backoffice
-    participant Ev as Event service
+    participant Ev as Events service
     participant App as Participant web app
     actor P as Participant
 
@@ -182,7 +182,7 @@ sequenceDiagram
 
 ## W6 · Participant loses the network (F11, Could)
 
-Source: report §5, technical risks (*"Rede móvel congestionada no recinto: exige cache, modo offline e mensagens curtas"*); assumption A8; assignment §6.8.
+Source: report §5, technical risks (*"Congested mobile network at the venue: requires caching, offline mode and short messages"*); assumption A8; assignment §6.8.
 
 ```mermaid
 flowchart TD

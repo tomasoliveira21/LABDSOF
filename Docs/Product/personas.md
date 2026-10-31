@@ -10,7 +10,7 @@ The report has two primary user groups with the same weight: the **event team** 
 
 **[PROPOSED] 10 October 2026:** Farol hosts **many events** (Queima do Porto, Braga, Coimbra, Lisboa, …), and each organisation manages only its own. Someone outside every event has to create events, decide who runs each one, and step in when an event has no EventAdmin left. That is the fourth persona, **P4**, an internal user from the Farol team, with the global role `FarolAdmin`.
 
-**[PROPOSED] 12 October 2026** (teacher feedback on the presentation: who receives the reports and how they are handled was not clear): the people who handle requests during the night do two different jobs. The **control-room operator** receives help requests and reports and **decides** what happens to each one; the **responder** is in the field, gets what the control room routes to their team and **acts** on it. They work in different places, on different screens, so the old P2 is split into **P2** and **P5**.
+**[PROPOSED] 12 October 2026** (professor feedback on the presentation: who receives the reports and how they are handled was not clear): the people who handle requests during the night do two different jobs. The **control-room operator** receives help requests and reports and **decides** what happens to each one; the **responder** is in the field, gets what the control room routes to their team and **acts** on it. They work in different places, on different screens, so the old P2 is split into **P2** and **P5**.
 
 **22 October 2026:** the role model in [`features.md` §4](features.md#4-roles-teams-and-permissions-22-october-2026) (to confirm with the team) gives each persona a role or a job:
 

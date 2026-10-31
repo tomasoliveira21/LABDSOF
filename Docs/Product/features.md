@@ -43,7 +43,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F19 | Chat between friends | — | Won't (this release) | — | P1 | |
 | F20 | Link to the ticket on the ticketing partner's site | C11 | Won't (this release) | — | P1 | Ticketing is a partner, not part of the MVP (annex C11) |
 
-**Out of scope** (report *Fora de âmbito*; annex §1): physical capacity of entrances, heavy integrations, advanced crowd prediction, full automation, own ticketing.
+**Out of scope** (report, *Out of scope*; annex §1): physical capacity of entrances, heavy integrations, advanced crowd prediction, full automation, own ticketing.
 
 **Removed on 9 October 2026:** the former *"participant web app opened by link or QR, without an account"*. Login is now mandatory, so the participant app is simply the client application (assignment §6.1), reached after F1. The QR code still opens the event, after login.
 
@@ -204,9 +204,9 @@ Each report is a type, a point on the venue map and a time. It is not a help req
 |---|---|---|---|
 | Queue at an entrance | "Gate 2: long queue (> 15 min)" · short / medium / long | Security | 30 min |
 | Crowded area | "Very crowded in front of the main stage" | Security | 20 min |
-| WC problem | Out of service, no water, ...| Logistics | 60 min |
+| WC problem | Out of service, no water, … | Logistics | 60 min |
 | Water point or bar out of water | "No water at bar 3" | PCR | 60 min |
-| Hazard | Broken glass, spill, dark area, broken fence , ...| Logistics | Until the team closes it |
+| Hazard | Broken glass, spill, dark area, broken fence, … | Logistics | Until the team closes it |
 | Transport problem | "Shuttle stop moved", "shuttle full", "shuttle not passing" | Logistics | 30 min |
 | Wrong information | A map point or announcement that is no longer true | Logistics | Until the team closes it |
 
@@ -265,7 +265,7 @@ Badges are always linked to the participant's **account** (F1, F2). There are no
 
 ## 7. Initial backlog: user stories
 
-Rewritten on 9 October 2026 to match the feature list above; checked against the [Definition of Ready](../Process/definition-of-ready-and-done.md#definition-of-ready-backlog-item) on 16 October 2026 (teacher feedback T1, [notes](../Meetings/2026-10-12-sprint-1-presentation-feedback.md)); split into smaller stories and renumbered on 22 October 2026, with the role model of §4. One story = one issue = one PR. Acceptance criteria use *Given / When / Then*. Every story names its persona and its dependencies; a story moves to *Ready* on the board only when none of its dependencies blocks it (§8.4). Won't-have features (F19, F20) have no stories.
+Rewritten on 9 October 2026 to match the feature list above; checked against the [Definition of Ready](../Process/definition-of-ready-and-done.md#definition-of-ready-backlog-item) on 16 October 2026 (professor feedback T1, [notes](../Meetings/2026-10-12-sprint-1-presentation-feedback.md)); split into smaller stories and renumbered on 22 October 2026, with the role model of §4. One story = one issue = one PR. Acceptance criteria use *Given / When / Then*. Every story names its persona and its dependencies; a story moves to *Ready* on the board only when none of its dependencies blocks it (§8.4). Won't-have features (F19, F20) have no stories.
 
 ### 7.1 DoR check and split
 

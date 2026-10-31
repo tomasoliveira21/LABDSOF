@@ -188,6 +188,6 @@ Remaining sources in annex `02a`, section 9.
 | Limitation | Possible effect | Mitigation |
 |---|---|---|
 | The AI reads pages through an automatic summary | It may miss a detail or a price | Open the source before quoting a number in the final report |
-| Prices and features change | Data may be out of date | Each source list has the date it was checked |
+| Prices and features change | Data may be out of date | Most source lists of the annex give the date they were checked; the list in §4 and annex §9.2 do not |
 | Some searches returned nothing useful (for example, official apps of Queima de Coimbra and Enterro da Gata) | Gaps in coverage | Recorded as "not found" |
-| AI can make mistakes or invent things | Risk of unfounded claims | Only claims with a link were kept; human verification below |
+| AI can make mistakes or invent things | Risk of unfounded claims | Only claims with a link were kept, and the rules of §5.3 were applied by hand |
