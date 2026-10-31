@@ -23,6 +23,14 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - A DLQ that is not empty is a dashboard panel and an acceptance check, not an alert (ADR-012, NFR-34): `architecture.md` §6, ADR-004, NFR-10, guide C3.
 - `local-delivery.md` said CI was not running; `ci.yml` has run since #167. #58 was closed on 31 October 2026, not "open". ADR-011's old R0 slice is marked as superseded by #166. `architecture.md` §3 and §11 now say that Sprint A runs only Reports, and that ADR-001 was not amended for it. The repository has been public since 31 October 2026 (`architecture.md` §12, guide H8, four diagrams).
 
+### Corrected after a review of the whole repository against assignment §7
+- NFR-19 showed 112 when help-request consent is declined; the meeting of 12 October 2026 decided "No mention of 112" (T5).
+- ADR-003 put retention and backup outside the MVP (decided on 26 October 2026, NFR-13, NFR-19); ADR-006 said gitleaks runs on every PR (planned for Sprint B); ADR-011 measured the RTO with the in-memory skeleton.
+- `api-outline.md`: the triage fallback reasons gain `Abstained` (ADR-005); the skeleton's status and demo endpoints are named as outside the product API.
+- README §5 and `team-and-process.md`: every Copilot review so far failed for lack of quota; 38 PRs, not 8, were merged with a merge commit, the last on 30 October 2026. `local-delivery.md`: the web port, 3000.
+- Two level-4 Reports diagrams labelled the call to the local AI "[HTTPS]"; it is HTTP.
+- English: Portuguese quotes in `user-workflows.md` and its service names, "teacher", stray spaces, and two false claims in the market analysis (§5.4).
+
 ### Not changed
 - Older entries of this changelog and the meeting records, except ticking two finished actions.
 - Decisions that need the team or their owner; they are listed in the pull request under *Open for the team*.
