@@ -25,9 +25,9 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Corrected after a review of the whole repository against assignment §7
 - NFR-19 showed 112 when help-request consent is declined; the meeting of 12 October 2026 decided "No mention of 112" (T5).
-- ADR-003 put retention and backup outside the MVP (decided on 26 October 2026, NFR-13, NFR-19); ADR-006 said gitleaks runs on every PR (planned for Sprint B); ADR-011 measured the RTO with the in-memory skeleton.
+- ADR-003 put retention and backup outside the MVP (decided on 26 October 2026, NFR-13, NFR-19); ADR-006 said gitleaks runs on every PR (planned for Sprint B); ADR-011 and `local-delivery.md` §9 said only "the walking skeleton" measures the RTO; the in-memory skeleton cannot, so when it is measured is open (Tomás, guide G7).
 - `api-outline.md`: the triage fallback reasons gain `Abstained` (ADR-005); the skeleton's status and demo endpoints are named as outside the product API.
-- README §5 and `team-and-process.md`: every Copilot review so far failed for lack of quota; 38 PRs, not 8, were merged with a merge commit, the last on 30 October 2026. `local-delivery.md`: the web port, 3000.
+- README §5 and `team-and-process.md`: every Copilot review so far failed for lack of quota; 39 PRs, not 8, were merged with a merge commit, the last on 30 October 2026. `local-delivery.md`: the web port, 3000.
 - Two level-4 Reports diagrams labelled the call to the local AI "[HTTPS]"; it is HTTP.
 - English: Portuguese quotes in `user-workflows.md` and its service names, "teacher", stray spaces, and two false claims in the market analysis (§5.4).
 

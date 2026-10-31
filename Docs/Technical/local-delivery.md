@@ -119,7 +119,7 @@ Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9, Tomás), the
 
 ## 9. What is still open
 
-- The minimum RAM of the demo laptop, and the measured RTO for rollback and restore: measured with the Sprint B slice (Tomás); the in-memory Sprint A skeleton cannot measure them.
+- The minimum RAM of the demo laptop, and the measured RTO for rollback and restore: measured with the walking skeleton (Tomás, guide G7); the in-memory Sprint A skeleton cannot measure them (#166), so when they are measured is open.
 - The exact round-trip command in the smoke test: Sprint B slice (Tomás).
 - HTTPS for the phones, which the PKCE login needs (§8): Guerra, with Tomás (assessment §9, finding 2).
 - Closed: the AI container is Ollama with `qwen3:4b` (guide K1, [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md)); the degraded-mode script and x = 30 s, y = 5 min (guide J1, J2; [`architecture.md` §9](architecture.md#9-degraded-modes)). Still open: the model measurements on the demo laptop (Tomás).

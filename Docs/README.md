@@ -109,7 +109,7 @@ Example: `docs (#1): Add conventions chapter to global report`
 
 A pull request can only be merged after **two reviews**:
 
-1. **GitHub Copilot**: requested automatically when the PR is opened. *So far every Copilot review has failed for lack of quota ("insufficient remaining quota", 13 attempts up to #171, checked on 31 October 2026), so in practice only the team member's review has happened.*
+1. **GitHub Copilot**: requested automatically when the PR is opened. *So far every Copilot review has failed for lack of quota (14 attempts on nine PRs up to #171, checked on 31 October 2026), so in practice only the team member's review has happened.*
 2. **A team member**: 1 approval from someone other than the author.
 
 ### As the author

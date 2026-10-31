@@ -131,7 +131,7 @@ An EventAdmin creates the teams of their event (e.g. *Security*, *Nursing*, *PCR
 
 ### 4.3 Who receives what, and who acts
 
-Teacher feedback on the presentation (12 October 2026): it was not clear who receives the reports and how they are handled. With teams and permissions:
+Professor feedback on the presentation (12 October 2026): it was not clear who receives the reports and how they are handled. With teams and permissions:
 
 | What | Goes to | Who acts |
 |---|---|---|
