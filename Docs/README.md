@@ -34,7 +34,7 @@ The team uses **GitHub Flow**.
 4. Open a pull request to `main`.
 5. After approval and a green CI run, the PR is **squash-merged** and the branch is deleted.
 
-`main` is always deployable. Direct pushes to `main` are not allowed.
+`main` is always deployable. Direct pushes to `main` are not allowed. The rule is not enforced by GitHub yet: see §6.
 
 ## 2. Branch naming
 
@@ -112,6 +112,8 @@ A pull request can only be merged after **two reviews**:
 - **Approve** when no blocking comments remain; otherwise **Request changes**.
 
 ## 6. Branch protection on `main`
+
+> **Not active yet** (checked on 30 October 2026: the GitHub API returns `protected: false` for `main`). **To do: Tomás, the repository owner, turns it on** (agreed on 8 October 2026, [`team-and-process.md` §4](Process/team-and-process.md#4-process-health-check-what-the-repository-shows-today)). **Conventions** can be required now; **CI** once `ci.yml` exists ([ADR-010](Technical/adr/0010-cicd-strategy.md) point 9).
 
 - [ ] No direct pushes
 - [ ] Copilot code review requested automatically on every PR (repository ruleset)

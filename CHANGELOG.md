@@ -15,6 +15,29 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - ADR-005/012 now record Accepted architecture based on the existing guide/NFR agreement from 26–27 October; Tiago's J1 approval is explicitly timeout/circuit policy, not model/telemetry validation. K2/privacy and runtime/SLO evidence remain pending.
 - Narrowed Sprint A R0 to one endpoint/test/service. The full Keycloak/gateway/web/database/outbox/broker stack and full ADR-010 pipeline remain Sprint B increments; no cloud provisioning or complete application delivery is claimed.
 
+## [Unreleased] · 2026-10-30 · Diagrams and false claims corrected (#161, Bruno Lopes)
+
+**Why:** a review of the documentation against `main` and GitHub found diagrams that no longer followed the decisions in force (the local AI profile of 27 October 2026, WireMock in front of the local AI, J4) and process claims that GitHub does not show (branch protection, CI runs, the Sprint A dates, direct pushes). Each claim was checked again on 30 October 2026.
+
+### Changed
+- `process-view-level-{1,2,3,4}-help-request`: the AI call has one attempt and no retry; the branch labels are "[AI unavailable]", "[AI timeout or error]" and "[Timeout or error]"; the arrows are "[HTTP, timeout, one attempt]" (level 3) and "[HTTP, timeout, one attempt, circuit breaker]" (level 4). Aligned with `architecture.md` §9.1 (local AI, accepted on 27 October 2026), guide J1 and K1, NFR-11, and the AI plan (Ollama on `http://ollama:11434`, private network). The broker's "Reject, 4 attempts with backoff" is unchanged.
+- `physical-view-level-{2,3}` and `mapping-logical-physical-level-{2,3}`: Reports → WireMock → Ollama (`HTTP (proxy)`) replaces the direct Reports → Ollama link; WireMock is the simulator "for Porto Digital and the AI provider"; the mappings link the logical AI provider to WireMock, as for Porto Digital. The hosted provider stays as the alternative. Aligned with guide J4 (confirmed on 26 October 2026, #155), `architecture.md` §9.2 and NFR-31.
+- `local-delivery.md` §1: WireMock is in front of the local AI; the `ai` container is Ollama with `qwen3:4b` (guide K1). §8: D1 is shown with a WireMock stub, as in the demo script (`architecture.md` §9.3).
+- Branch protection notes in `Docs/README.md` (§1 and §6), `team-and-process.md` (§3 rules table and §4), ADR-010 point 8 and guide H8: not active yet, with the action for Tomás, the repository owner (agreed on 8 October 2026). The H8 decision is unchanged.
+- `2026-10-22-professor-meeting.md`: Bruno's two diagram actions ticked, with a note. `physical-view-level-3` shows six databases, not five (five services and Keycloak, ADR-003), and no diagram mentions a mobile app (#157, #55).
+
+### Corrected
+- ADR-010 point 8 said branch protection was "Active on `main`". The GitHub API returns `protected: false` for `main`.
+- `local-delivery.md` §7 said the smoke checks "run in CI … on every push to `main`". No CI workflow exists yet: the only workflow is `conventions.yml`, and it runs only on pull requests (`gh run list`). Now written in the future tense, once `ci.yml` exists (ADR-010 point 9).
+- `team-and-process.md` §3 said Sprint A ran "Until the review on 12 October 2026". The *Sprint A* milestone is due on 1 November 2026, and Sprint B starts on 2 November; 12 October was the Sprint 1 presentation.
+- `team-and-process.md` §4, and the entry *2026-10-08 · Sprint 1 presentation artifacts* below, said `5ef2c4a`, `3a4ba04` and `e853854` were pushed directly to `main`. They were not: `5ef2c4a` is the commit of PR #1 and `3a4ba04` its merge commit, and `e853854` is the first commit of PR #21 (`gh pr view 1`, `gh pr view 21`, `git log --first-parent`). Every commit on `main` came through a PR, except the initial commit. Protection is still off.
+- The entry *2026-10-23 · Local delivery and demo procedure* below put WireMock in front of "a hosted AI provider". It is in front of the local Ollama container (guide J4).
+
+### Not changed
+- The older entries of this changelog and the meeting records: the corrections are recorded here.
+- `adr/0011-deployment-and-infrastructure.md` point 5 ("CI still builds and tests the images") is a decision, not a status.
+- `architecture.md` §7 still describes the AI provider with "Timeout, retry and circuit breaker" and **[PROPOSED for review]**, against §9.1. Left for the documentation clean-up.
+
 ## [Unreleased] · 2026-10-29 · Assessment retention aligned with the NFRs (#159, António Guerra)
 
 **Why:** the Security and Privacy Assessment still had its own proposal of 25 October 2026: application logs 14 days, traces 7 days, no backups. The team decided other values for NFR-19 and NFR-13 (non-functional requirements §5, 26 October 2026), and the telemetry ones changed again with the simplified observability plan (#153, 27 October 2026). The decisions guide (D5, G7) already had them.
