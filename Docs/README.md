@@ -57,7 +57,7 @@ The team uses **GitHub Flow**.
 4. Open a pull request to `main`.
 5. After approval and a green CI run, the PR is **squash-merged** and the branch is deleted.
 
-`main` is always deployable. Direct pushes to `main` are not allowed. GitHub enforces it since 30 October 2026: see §6.
+`main` is always deployable. Direct pushes to `main` are not allowed. GitHub has enforced it since 30 October 2026: see §6.
 
 ## 2. Branch naming
 

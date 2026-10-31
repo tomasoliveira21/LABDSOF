@@ -4,14 +4,14 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ## [Unreleased] · 2026-10-31 · Documentation organised (#162, Bruno Lopes)
 
-**Why:** a reader had to know the repository to find each Sprint A deliverable, and several documents no longer matched the decisions in force or GitHub. Every change below was checked against its source on 31 October 2026 and then by a second agent that tried to refute it.
+**Why:** a reader had to know the repository to find each Sprint A deliverable, and several documents no longer matched the decisions in force or GitHub. Every change below was checked against its source on 31 October 2026.
 
 ### Added
 - `Docs/README.md`: a *Sprint A deliverables* table, one row per item of assignment §7.1.2 with its document and its real status. Item 3 (user research) is missing on `main`: findings, limitations and decisions are "TBD" (the results are in PR #165, not merged). Item 10 is one Reports service in memory, with build, tests, image and Compose smoke test in CI. Documents that no table listed are now indexed.
 - `Docs/Deliverables/assumptions-and-dependencies.md`: one list for the deck (professor meeting of 22 October 2026): assumptions A1–A9 with their validation status, and the external dependencies of the ADRs, each with its source.
 
 ### Changed
-- `team-and-process.md` §1: each member's areas with the pull requests that show them, and the pull requests merged and approved on 31 October 2026. §2 keeps the roles unassigned and says responsibility is held by area.
+- `team-and-process.md` §1: each member's areas with the pull requests that show them, and the pull requests merged and approved on 31 October 2026. The roles in §2 stay unassigned, as the team agreed.
 - Research documents of #53: a notice at the top that they are a snapshot of 22 October 2026, naming the decisions in force. They are not rewritten.
 - Markers closed with their source: `features.md` §6.3 and §8.4 (walking skeleton, K1, J1, D7), the ADR-005 and ADR-012 "proposed" notes, the product-vision header, guide D2, ADR-004's open points, `local-delivery.md` §9, two of Tomás's actions in the professor meeting record. Status headers of `architecture.md` and `features.md`.
 - `operating-cost-estimation.md`: six databases, guide H7 decided, K1 chosen, repository public. No amount changes.
@@ -21,7 +21,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `architecture.md` §7 still had the AI provider as "[PROPOSED for review]" with "retry", and `features.md` D1 had "10 s, 2 attempts": the local profile is one 20 s attempt (ADR-005, NFR-11).
 - References to domain-model invariants I1, I4, I5 and to `StatusChange`, removed from the model on 15 October, now point to `AuditEntry`, NFR-14, NFR-16 and NFR-22 (text, and three diagrams in both the model and the picture).
 - A DLQ that is not empty is a dashboard panel and an acceptance check, not an alert (ADR-012, NFR-34): `architecture.md` §6, ADR-004, NFR-10, guide C3.
-- `local-delivery.md` said CI was not running; `ci.yml` runs since #167. #58 was closed on 31 October 2026, not "open". ADR-011's old R0 slice is marked as superseded by #166. "Deployed from Sprint A" is stated as the fact: Sprint A runs only Reports. The repository is public since 31 October 2026 (`architecture.md` §12, guide H8, four diagrams).
+- `local-delivery.md` said CI was not running; `ci.yml` has run since #167. #58 was closed on 31 October 2026, not "open". ADR-011's old R0 slice is marked as superseded by #166. `architecture.md` §3 and §11 now say that Sprint A runs only Reports, and that ADR-001 was not amended for it. The repository has been public since 31 October 2026 (`architecture.md` §12, guide H8, four diagrams).
 
 ### Not changed
 - Older entries of this changelog and the meeting records, except ticking two finished actions.

@@ -4,7 +4,7 @@
 > **Status (31 October 2026, #162):** reflects the team decisions recorded in [`architecture-decisions-guide.md`](architecture-decisions-guide.md) (Portuguese). Items marked **[PROPOSED]** are not decided yet; the owner is in that document. The Sprint A skeleton implements only a small part of this architecture (§13). The reference diagrams are drawn in draw.io and listed in §14 ([ADR-009](adr/0009-architecture-documentation.md)); the Mermaid diagrams below are working sketches.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
-> **Research update (22 October 2026, #53):** The [investigation](../Research/architecture-investigation/README.md) supplies recommendations for deployment, observability and AI, including C1 hosting and D2 server topology. ADR-005 and ADR-012 are **Accepted as architectural choices** (status reconciled on 31 October against guide/NFR decisions from 26–27 October); implementation/model/telemetry evidence remains separate. [ADR-011](adr/0011-deployment-and-infrastructure.md) now records the professor-authorised local-only delivery due to costs, as reported by Tomás; the cloud evaluation is retained. Implementation and measured evidence remain pending; the diagrams were aligned on 26–27 October (#133, §14).
+> **Research update (22 October 2026, #53):** The [investigation](../Research/architecture-investigation/README.md) supplies recommendations for deployment, observability and AI, including C1 hosting and D2 server topology. ADR-005 and ADR-012 are **Accepted as architectural choices** (status reconciled on 31 October against guide/NFR decisions from 26–27 October); implementation/model/telemetry evidence remains separate. [ADR-011](adr/0011-deployment-and-infrastructure.md) now records the professor-authorised local-only delivery due to costs, as reported by Tomás; the cloud evaluation is retained. Implementation and measured evidence remain pending; the diagrams were aligned on 26–27 October (#133) and 31 October 2026 (#171, #162; §14).
 
 ## 1. Architecture drivers
 
@@ -50,7 +50,7 @@ The identity provider, Keycloak, is self-hosted inside Farol ([ADR-006](adr/0006
 
 ## 3. Container view
 
-The five services are deployed independently (§11). The Sprint A skeleton runs only Reports (#166, §13).
+The five services are deployed independently from Sprint A (§11). The Sprint A skeleton runs only Reports (#166, §13); see the note in §11.
 
 ```mermaid
 flowchart LR

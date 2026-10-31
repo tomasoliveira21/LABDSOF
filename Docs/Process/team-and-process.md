@@ -1,12 +1,12 @@
 # Team Roles and Work Process
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §8.1, §8.2 and §10
-> **Status:** agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). The work process is defined in the [README](../README.md) and summarised here. Roles are identified by what they do and are not assigned to people: everyone codes, reviews and can take any role. Each member owns areas instead (§1).
+> **Status:** agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). The work process is defined in the [README](../README.md) and summarised here. Roles are identified by what they do. People are not assigned to them on purpose: everyone codes, reviews and can take any role.
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
 ## 1. Team
 
-Areas from the pull requests each member wrote and from the owners table of the [decisions guide](../Technical/architecture-decisions-guide.md#responsáveis-pelas-investigações-em-curso). Counts on 31 October 2026, from GitHub (46 merged pull requests): pull requests written and merged, and pull requests the member approved.
+What each member worked on, from the pull requests they wrote; open investigations and their owners are in the [decisions guide](../Technical/architecture-decisions-guide.md#responsáveis-pelas-investigações-em-curso). Counts on 31 October 2026, from GitHub (46 merged pull requests): pull requests written and merged, and pull requests the member approved.
 
 | Member | GitHub | Student Number | Areas (pull requests) | PRs merged | PRs approved |
 |---|---|---|---|---:|---:|
@@ -17,7 +17,7 @@ Areas from the pull requests each member wrote and from the owners table of the 
 
 ## 2. Roles
 
-The assignment asks the team to work as a startup (§1) and evaluates each student individually, including their contribution and understanding of the whole product (§10). These are the roles the project needs and what each one does. Roles are **not assigned to a member**: any member can take a role for a given task, and everyone writes code and reviews. Responsibility is held by area instead: each member owns the areas in §1, as in the owners table of the decisions guide.
+The assignment asks the team to work as a startup (§1) and evaluates each student individually, including their contribution and understanding of the whole product (§10). These are the roles the project needs and what each one does. Roles are **not assigned to a member**: any member can take a role for a given task, and everyone writes code and reviews.
 
 | Role | What it does | Focus in this project |
 |---|---|---|

@@ -51,7 +51,7 @@ A story is *Done* when its PR is merged and:
 - [ ] The Product Owner has accepted it
 - [ ] The GitHub issue is closed by the PR (`Closes #<issue>`)
 
-> **Note:** the items about CI and deployment apply since the walking skeleton (#167, 31 October 2026): `ci.yml` builds, tests and runs the Compose smoke test on every pull request. Logs and the rest of the observability apply once they exist (#148).
+> **Note:** the items about CI and deployment have applied since the walking skeleton (#167, 31 October 2026): `ci.yml` builds, tests and runs the Compose smoke test on every pull request. Logs and the rest of the observability apply once they exist (#148).
 
 ---
 
