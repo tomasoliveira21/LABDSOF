@@ -23,7 +23,7 @@
 6. Accounts are created **just in time**, at the first authenticated `GET /api/v1/me`. Account deletion goes through the Keycloak Admin API with client credentials, then a deletion event to every service.
 7. The web app uses **Authorization Code + PKCE** (public client), tokens in memory, access tokens of 5 min and refresh tokens rotated on every use. Session idle is 12 h, or 30 days with *Remember me*.
 8. **Service-to-service:** no HTTP between services; one RabbitMQ user per service, limited to its own exchanges and queues.
-9. **Secrets** come from environment variables: `.env` locally, GitHub Actions secrets in CI, Azure Key Vault if the cloud alternative is resumed. gitleaks runs as a GitHub Actions job on every PR.
+9. **Secrets** come from environment variables: `.env` locally, GitHub Actions secrets in CI, Azure Key Vault if the cloud alternative is resumed. gitleaks runs as a GitHub Actions job on every PR, planned for Sprint B ([ADR-010](0010-cicd-strategy.md) point 9).
 
 ### Keycloak setup
 

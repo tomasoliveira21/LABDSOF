@@ -14,6 +14,7 @@
 - **Must** and **Should** features (F1–F10, F12–F16). The **Could** features (F11, F17, F18) are listed by name in §9.
 - Per endpoint: method, path, purpose, the role or permission required, and the story. Request and response fields only for the core flow (help request, triage, field tasks).
 - No service calls another service's REST API: services talk only through events (guide C4, [ADR-004](adr/0004-service-communication.md)).
+- Not in this outline: the endpoints of the Sprint A walking skeleton in Reports (`GET /api/v1/status` and the synthetic `/api/v1/demo/help-requests`, only with the `demo` profile). They are diagnostic, not part of the product API ([`openapi.yaml`](../../backend/reports/contracts/openapi.yaml), [run instructions](plans/local-walking-skeleton.md), #166).
 
 ### 1.2 Paths
 
@@ -218,7 +219,7 @@ Owns help requests, triage suggestions, community reports, field tasks and their
     "suggestedCategory": "Health",
     "suggestedPriority": "High",
     "suggestedTeamId": "tm-03…",
-    "notTriagedReason": null           // Timeout | ProviderError | InvalidOutput (US-36)
+    "notTriagedReason": null           // Timeout | ProviderError | InvalidOutput | Abstained (US-36; ADR-005)
   }
 }
 ```

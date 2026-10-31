@@ -43,4 +43,4 @@
 
 - Number of PostgreSQL servers and where they run: ✅ closed on 26 October 2026. One PostgreSQL server on the local machine, with six databases and six users (five services and Keycloak); no user can read another's database (guide G5, ADR-011, [`local-delivery.md`](../local-delivery.md)).
 - ~~Account deletion (anonymise or delete per service): guide D7, Bruno.~~ Closed on 27 October 2026 (decision 5, #135).
-- Cache for read peaks (D4) and retention and backup (D5): future improvements, outside the MVP.
+- Cache for read peaks (D4): future improvement, outside the MVP. Retention and local backup (D5) were decided on 26 October 2026: help-request content deleted 30 days after the event ends, Keycloak login events kept 30 days (NFR-19); a `pg_dump` of the six databases before every demo and every update, kept at most 30 days, queued messages not covered (NFR-13, [`local-delivery.md`](../local-delivery.md) §6). Production backup stays a future improvement (guide D5).
