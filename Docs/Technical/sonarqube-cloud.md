@@ -28,7 +28,18 @@ The token belongs only in the secret; never provide it as a `-Dsonar.token=...` 
 5. Bootstrap the main-branch baseline before expecting a successful PR quality gate: once this workflow is available on main, use its manual **Run workflow** on **main** (or the first main push). A first setup PR may need review before that bootstrap; do not fabricate a successful PR analysis when the base has no Sonar analysis yet. If testing before merge, the owner can run the same pinned Maven scanner on a clean main checkout, using these actual keys and SONAR_TOKEN in the environment.
 6. Re-run the job on the setup PR. Confirm a real report in Sonar's **Pull requests** page, coverage import and the returned quality gate before treating analysis as operational. Then make **SonarQube Cloud** a required check if the team wants it to block merges. The documented required checks are **Conventions** / **CI**; branch protection is not active yet (ADR-010 §8). This PR does not modify it.
 
-Tomás provided the [public project](https://sonarcloud.io/project/overview?id=tomasoliveira21_LABDSOF) on 31 October. Its public API confirmed organization/project identifiers and a main analysis of commit `b298b1e` at 12:32 UTC. Both GitHub variables above are now configured. `SONAR_TOKEN` is still absent; CI-based analysis/Automatic Analysis settings require owner verification. The existing main analysis is not proof of this CI integration: its quality-gate API returned `NONE`, and no authenticated PR scan from this workflow has completed. The configuration check intentionally fails with missing **names only**; it does not silently skip trusted analyses or print secret values. A green build/test job alone is not evidence of Sonar analysis.
+Tomás provided the [public project](https://sonarcloud.io/project/overview?id=tomasoliveira21_LABDSOF) on 31 October. Its public API confirmed organization/project identifiers and a main analysis of commit `b298b1e` at 12:32 UTC. Both GitHub variables above are now configured. Tomás added `SONAR_TOKEN` as a repository secret. The existing main analysis was not proof of this CI integration (its quality-gate API initially returned `NONE`). The authenticated CI rerun below now validates the integration. The configuration check intentionally fails with missing **names only**; it does not silently skip trusted analyses or print secret values. A green build/test job alone is not evidence of Sonar analysis.
+
+## Observed activation evidence — 31 October 2026
+
+[GitHub Actions run 41202153038, attempt 2](https://github.com/tomasoliveira21/LABDSOF/actions/runs/41202153038/attempts/2), PR #169 at commit `d02ec25977a0812be42623c7a786335ad5220ea7`:
+
+- Configuration check passed with the repository secret; no token value was collected or committed.
+- All 10 HTTP tests passed; JaCoCo generated XML and the Sonar JaCoCo XML importer ran successfully. Local line coverage measured 25/27 (92.6%).
+- The Maven scanner completed authenticated PR analysis and returned **QUALITY GATE STATUS: PASSED** at 12:46 UTC. [PR report](https://sonarcloud.io/dashboard?id=tomasoliveira21_LABDSOF&pullRequest=169).
+- The existing **CI** container/demo/Swagger smoke and **Conventions** checks passed too.
+
+The initial missing-configuration failure is retained in Actions history. The successful scanner run confirms that Automatic Analysis did not block CI-based analysis. This validates the current setup PR; it does not assert a clean historical main baseline or future quality gates. This PR adds build/CI configuration rather than Java features, so its passing new-code gate does not certify all existing code. Branch-protection activation and normal peer review remain separate.
 
 ## Triggers and secret boundary
 

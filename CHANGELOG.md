@@ -6,7 +6,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Added
 - Separate SonarQube Cloud job for trusted PRs into main and main analyses: pinned Maven scanner, measured JaCoCo XML coverage and quality-gate wait/failure. Existing container CI remains in place.
-- Owner activation guide with GitHub variables/secret, main baseline, automatic-analysis setting and explicit fork/Dependabot limits. Missing configuration fails visibly; external analysis is pending setup, not claimed passed.
+- Owner activation guide with GitHub variables/secret, main baseline, automatic-analysis setting and explicit fork/Dependabot limits. Missing configuration fails visibly. After owner setup, run 41202153038 attempt 2 completed authenticated PR #169 analysis with quality gate PASSED; activation evidence is linked in the guide.
 
 ### Corrected
 - ADR-010 and decisions-guide addendum record Tomás's Sonar request and public repository; correct the blanket private-project pricing claim. Application delivery remains local; full security/style checks and branch-protection activation remain separate work.
