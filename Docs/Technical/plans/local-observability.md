@@ -2,7 +2,7 @@
 
 **Issue:** [#148](https://github.com/tomasoliveira21/LABDSOF/issues/148) · **Tracker:** [#147](https://github.com/tomasoliveira21/LABDSOF/issues/147) · **Owner:** Tomás Oliveira · **Updated:** 26 October 2026
 
-**I1–I3 documentary choices complete for review.** This document selects the local software, data paths, endpoints, storage bounds, SLIs, dashboard and alert rules. Instrumentation, configuration files, live panels and measured compliance remain implementation/evidence, not an unanswered architectural choice or a result fabricated by this PR.
+**I1–I3 architecture accepted; implementation/evidence pending.** Status reconciled on 31 October (#166) against the guide/NFR agreement recorded on 26–27 October. This document selects the local software, data paths, endpoints, storage bounds, SLIs, dashboard and alert rules. Instrumentation, configuration files, live panels and measured compliance remain implementation/evidence, not an unanswered architectural choice or a result fabricated by this PR.
 
 ## 1. I1: minimum local demonstration stack
 
@@ -92,4 +92,4 @@ Minimum evidence: (1) healthy services and one live metric/dashboard, (2) the sa
 
 The >=95%/30 s target and one-hour cohort remain the product specification. A short demonstration, a small sample or a provider-only benchmark cannot establish an hour-long SLO; show actual counts/window and no-data until the cohort is mature. SC5 still requires 100% visibility in its AI-off test.
 
-**I1–I3 have explicit answers with two added containers.** More panels, distributed tracing, centralised log storage and external alert routing are optional extensions. Runtime files and results remain implementation evidence, separate from this documentary decision; no team acceptance or runtime success is invented.
+**I1–I3 have explicit answers with two added containers.** More panels, distributed tracing, centralised log storage and external alert routing are optional extensions. Runtime files and results remain implementation evidence, separate from this documentary decision; architectural acceptance is based on those existing records and does not assert runtime success.

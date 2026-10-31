@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: Farol Reports skeleton
+  version: 0.1.0
+  description: Local diagnostic endpoint only; no business data or authentication flow.
+paths:
+  /api/v1/status:
+    get:
+      operationId: getServiceStatus
+      summary: Confirm that the Reports HTTP service is running
+      responses:
+        '200':
+          description: Reports is responding; this does not check external dependencies.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [service, status]
+                properties:
+                  service:
+                    type: string
+                    enum: [reports]
+                  status:
+                    type: string
+                    enum: [ok]

@@ -31,3 +31,7 @@ Explain the limitation alongside the reason: cloud operation, managed-platform s
 ## Linked records
 
 [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md) · [Architecture §10](../Technical/architecture.md#10-deployment-view) · [Decisions guide](../Technical/architecture-decisions-guide.md) · [Research overview](../Research/architecture-investigation/README.md).
+
+## Sprint A review correction (31 October 2026)
+
+Tomás relayed a review requiring deliverable 10's executable minimum: one endpoint/service/test, Dockerfile, Compose, CI on every PR and ignore rules. This is the source of #166's narrower R0, not a new professor quotation or team meeting. The [full authenticated local application](../Technical/local-delivery.md) is the Sprint B target. #58/#148 are reopened because Markdown-only merges did not deliver running software. ADR-005/012 statuses are reconciled to the existing 26–27 October guide/NFR architectural decisions; runtime/model/privacy evidence remains separate.

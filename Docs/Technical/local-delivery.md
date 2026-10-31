@@ -1,9 +1,15 @@
 # Local delivery and demo
 
-> **Decided 23 October 2026** (#129, Bruno; guide G4–G7, H5 and H6). Implements [ADR-011](adr/0011-deployment-and-infrastructure.md) points 4–6. **Bruno** defines this procedure and **Tomás** applies it in the walking skeleton. Nothing below is running yet: it is the specification that the `infra/` folder and the walking skeleton must follow.
+> **Decided 23 October 2026** (#129, Bruno; guide G4–G7, H5 and H6). Implements [ADR-011](adr/0011-deployment-and-infrastructure.md) points 4–6. **Bruno** defines this procedure and **Tomás** applies it in the walking skeleton. The full stack below is the **Sprint B target**. Sprint A now has a separate minimum described in §0: one Reports diagnostic service; it does not claim the full stack is implemented.
 > **Aligned on 26 October 2026** with [ADR-006](adr/0006-identity-and-access.md) (Keycloak), [ADR-013](adr/0013-api-gateway.md) (API gateway) and the [Security and Privacy Assessment](security-and-privacy-assessment.md) §9 (ports). HTTPS for the phones is open (§8, Guerra).
 
 Delivery is local only, because cloud hosting costs were not justified ([clarification record](../Meetings/2026-10-22-local-deployment-clarification.md)). Everything runs on one laptop with Docker. The phones open the same React web app in their browser.
+
+## 0. Sprint A: run the executable minimum first
+
+The 31 October review relayed by Tomás (#166) limits deliverable 10 to one service/endpoint/test, Dockerfile, Compose and CI. Follow the [R0 run instructions](plans/local-walking-skeleton.md#3-run-and-demonstrate-from-the-repository-root) and [actual branch evidence](evidence/walking-skeleton-2026-10-31.md). The current `infra/compose.yaml` starts Reports only, bound to `127.0.0.1:8080`; `GET /api/v1/status` returns `{"service":"reports","status":"ok"}`. No secret file is required. #58 remains open until review of running evidence; #148 remains open until actual observability exists.
+
+The procedures in §§1–8 are retained for **Sprint B**, when the named services/configuration exist. They must not be followed as if Keycloak, a web UI, databases and the broker are already part of R0. Authentication and domain guarantees apply when business endpoints are introduced; the current diagnostic response exposes no account or event data.
 
 ## 1. What runs
 

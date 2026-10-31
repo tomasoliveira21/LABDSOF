@@ -2,6 +2,17 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-31 · Deliver minimal executable skeleton (#166)
+
+### Added
+- One Java 21 / Spring Boot 4.0.9 Reports service, diagnostic OpenAPI contract and real random-port HTTP test; multi-stage Dockerfile, loopback-only Compose deployment and CI build/test/container smoke on every PR.
+- Ignore rules for local env, Python caches, backups and Maven output; repeatable R0 commands and an actual branch execution record.
+
+### Corrected
+- Reopened #58/#148: prior Markdown-only merges were documentary delivery, not runnable software. The corrective PR closes only #166 and leaves those runtime issues open for reviewed evidence.
+- ADR-005/012 now record Accepted architecture based on the existing guide/NFR agreement from 26–27 October; Tiago's J1 approval is explicitly timeout/circuit policy, not model/telemetry validation. K2/privacy and runtime/SLO evidence remain pending.
+- Narrowed Sprint A R0 to one endpoint/test/service. The full Keycloak/gateway/web/database/outbox/broker stack and full ADR-010 pipeline remain Sprint B increments; no cloud provisioning or complete application delivery is claimed.
+
 ## [Unreleased] · 2026-10-29 · Assessment retention aligned with the NFRs (#159, António Guerra)
 
 **Why:** the Security and Privacy Assessment still had its own proposal of 25 October 2026: application logs 14 days, traces 7 days, no backups. The team decided other values for NFR-19 and NFR-13 (non-functional requirements §5, 26 October 2026), and the telemetry ones changed again with the simplified observability plan (#153, 27 October 2026). The decisions guide (D5, G7) already had them.
