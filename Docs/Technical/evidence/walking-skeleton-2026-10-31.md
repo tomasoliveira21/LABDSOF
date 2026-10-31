@@ -28,7 +28,7 @@ The CI workflow executes the build/test and container smoke on each PR. Its GitH
 
 ## Review checks
 
-Markdown links/anchors, XML/YAML syntax, Compose configuration and ignore rules were checked. #58/#148 remain open; the board was corrected from Done to In progress (#58) and Backlog (#148). #166's PR closes only the corrective issue and requires the repository's normal Copilot/team review.
+Markdown links/anchors, XML/YAML syntax, Compose configuration and ignore rules were checked. #58/#148 remain open; the board was corrected from Done to In progress (#58) and Backlog (#148). #166's PR closes only the corrective issue and requires the repository's normal Copilot/team review. **Update (31 October 2026):** #58 was closed at 13:07 UTC, after #167 merged; #148 is still open.
 
 ## Swagger UI follow-up (31 October 2026, #166)
 

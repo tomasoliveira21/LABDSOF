@@ -1,6 +1,6 @@
 # Local delivery and demo
 
-> **Decided 23 October 2026** (#129; guide G4–G7, H5 and H6). Implements [ADR-011](adr/0011-deployment-and-infrastructure.md) points 4–6. The walking skeleton is to apply this procedure. The full stack below is the **Sprint B target**. Sprint A now has a separate minimum described in §0: one Reports synthetic in-memory demo service; it does not claim the full stack is implemented.
+> **Decided 23 October 2026** (#129; guide G4–G7, H5 and H6). Implements [ADR-011](adr/0011-deployment-and-infrastructure.md) points 4–6. The Sprint B slice applies this procedure; the full stack below is the **Sprint B target**. Sprint A now has a separate minimum described in §0: one Reports synthetic in-memory demo service; it does not claim the full stack is implemented.
 > **Aligned on 26 October 2026** with [ADR-006](adr/0006-identity-and-access.md) (Keycloak), [ADR-013](adr/0013-api-gateway.md) (API gateway) and the [Security and Privacy Assessment](security-and-privacy-assessment.md) §9 (ports). HTTPS for the phones is open (§8).
 
 Delivery is local only, because cloud hosting costs were not justified ([clarification record](../Meetings/2026-10-22-local-deployment-clarification.md)). Everything runs on one laptop with Docker. The phones open the same React web app in their browser.
@@ -42,7 +42,7 @@ One Compose file, `infra/compose.yaml`. Images are built from the repository: th
   - The PostgreSQL superuser and the six database users and passwords; the RabbitMQ admin and the five service users.
   - Keycloak's admin user, the `farol-auth-users` client secret and `FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL` (ADR-006).
   - `TRANSPORT_SOURCE_URL` (WireMock by default), the AI provider settings (guide K1) and `SPRING_PROFILES_ACTIVE`.
-- No real secret goes into the repository, the images or the CHANGELOG. Passwords are generated per machine, never the image defaults. The realm export holds `${…}` placeholders, not secrets (assessment finding 8). An API key for a hosted AI provider, if K1 picks one, lives only in `infra/.env`.
+- No real secret goes into the repository, the images or the CHANGELOG. Passwords are generated per machine, never the image defaults. The realm export holds `${…}` placeholders, not secrets (assessment finding 8). K1 chose local Ollama, which needs no API key (guide K1, [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md)); a hosted provider, if ever approved, would keep its key only in `infra/.env`.
 
 ## 3. Demo data
 
@@ -82,8 +82,8 @@ Run the smoke test after every update or rollback.
 - **Before every demo and before every update**, take a dump of the six databases, Keycloak's included, so the accounts stay consistent with Auth & Users:
   `docker compose -f infra/compose.yaml exec -T postgres pg_dump -U <superuser> -Fc <database> > backups/<database>.dump` (one per database; `backups/` is in `.gitignore`).
 - Restore one database: `docker compose -f infra/compose.yaml exec -T postgres pg_restore -U <superuser> --clean -d <database> < backups/<database>.dump`, then restart that service.
-- What this covers: going back to a known demo state, and moving that state to the backup laptop. What it does **not** cover: messages in RabbitMQ queues (no backup of queued messages), and the loss of the laptop's disk between dumps. The RPO for disk loss is **not guaranteed**. Data retention and backup in production stay out of scope (guide D5, 🔮).
-- The time to roll back and to restore (RTO) is measured with the walking skeleton and written here. Until then, no recovery figure is claimed.
+- What this covers: going back to a known demo state, and moving that state to the backup laptop. What it does **not** cover: messages in RabbitMQ queues (no backup of queued messages), and the loss of the laptop's disk between dumps. The RPO for disk loss is **not guaranteed**. Retention is decided (NFR-19, [assessment §7](security-and-privacy-assessment.md)); only backup in production stays out of scope (guide D5, 🔮).
+- The time to roll back and to restore (RTO) is measured once the Sprint B slice has databases, and written here; the in-memory Sprint A skeleton cannot measure it (§9, #166). Until then, no recovery figure is claimed.
 
 ## 7. Smoke test
 
@@ -97,7 +97,7 @@ A checklist of commands, run by hand after starting, updating or rolling back. I
 | 4 | Login works | Log in with a demo account on the laptop (`localhost`); on a phone once HTTPS is decided (§8) | Keycloak's page opens; back in the app, the account's name is shown (`GET /me`) |
 | 5 | One round trip through RabbitMQ | One service publishes an event and another consumes it. The exact command is written here in Sprint B: the Sprint A skeleton has no broker (#166) | The consumer shows the change; the queue is empty afterwards |
 
-Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9), the same checks, without the phone and the login, will run in CI with Compose on every push to `main`, every tag and manual runs (Sprint B). Today `ci.yml` (#167) runs the Sprint A skeleton's smoke test instead (status, synthetic create and read, Swagger) on every pull request, push to `main`, tag and manual run.
+`ci.yml` exists since #167 ([ADR-010](adr/0010-cicd-strategy.md) point 9). In Sprint B the same checks, without the phone and the login, are added to it, to run in CI with Compose on every push to `main`, every tag and manual runs (Sprint B). Today `ci.yml` (#167) runs the Sprint A skeleton's smoke test instead (status, synthetic create and read, Swagger) on every pull request, push to `main`, tag and manual run.
 
 ## 8. The demo
 
@@ -119,7 +119,7 @@ Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9), the same ch
 
 ## 9. What is still open
 
-- The minimum RAM of the demo laptop, and the measured RTO for rollback and restore: measured with the walking skeleton (guide G7); the in-memory Sprint A skeleton cannot measure them (#166), so when they are measured is open.
+- The minimum RAM of the demo laptop, and the measured RTO for rollback and restore (guide G7): the in-memory Sprint A skeleton cannot measure them (#166), so they are measured with the Sprint B slice.
 - The exact round-trip command in the smoke test: Sprint B slice.
 - HTTPS for the phones, which the PKCE login needs (§8): assessment §9, finding 2.
 - Closed: the AI container is Ollama with `qwen3:4b` (guide K1, [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md)); the degraded-mode script and x = 30 s, y = 5 min (guide J1, J2; [`architecture.md` §9](architecture.md#9-degraded-modes)). Still open: the model measurements on the demo laptop (guide K1).

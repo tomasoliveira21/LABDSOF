@@ -62,7 +62,7 @@ Show the full cohort count/ratio and degraded periods together. Empty cohorts di
 
 | Rule | Trigger/window | Severity and local response |
 |---|---|---|
-| API probe failed | Two failed 30 s authenticated probes in succession | Critical: inspect gateway/DB/release; preserve data and roll back bad code |
+| **Service down** | **Prometheus `up == 0` for an expected service for 2 min** (the core rule below). An authenticated API probe (two failed 30 s probes in succession) is a later option: nothing in the stack obtains a Keycloak token for it yet | Critical: inspect gateway/DB/release; preserve data and roll back bad code |
 | Committed request not visible | Any reconciled committed request still missing after 5 s on two checks | Critical: reconcile request visibility; AI may be disabled but the saved request cannot disappear |
 | Useful triage below target | Mature 1 h ratio <95%, at least 20 eligible requests, for 5 min | Warning: inspect queue/model/validation; keep manual handling. With fewer than 20 requests show the ratio/count but avoid noisy percentage paging |
 | Urgent suggestion failure | Any reviewed/known urgent case under-prioritised or missing/late | Critical test/review failure; do not suppress it behind an aggregate percentage |

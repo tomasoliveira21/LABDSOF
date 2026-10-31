@@ -24,7 +24,7 @@ Course references supplied earlier: *Product_Management_Slides.pdf* pp.23–25 a
 | CI | `.github/workflows/ci.yml`: build/test plus container startup and JSON smoke check on **every PR**, main push, release tag and manual run; no docs/draft skip in this minimum |
 | Ignore rules | `.gitignore`: `infra/.env`, `__pycache__/`, `backups/`, `target/` and local editor output |
 
-The diagnostic and demo contracts are hand-written before implementation. This isolated demo is not the US-23/US-24 production API; generated business interfaces/clients follow C7 when those stories and their auth/persistence/location/idempotency contracts are implemented. Empty domain/application classes and scaffolds for the other four services are not Sprint A prerequisites.
+The diagnostic and demo contracts are hand-written before implementation. This isolated demo is not the US-23/US-24 production API; generated business interfaces/clients follow C7 when those stories and their auth/persistence/location/idempotency contracts are implemented. Empty domain/application classes and scaffolds for the other four services are not Sprint A prerequisites. R0 makes `description` required; the product makes it optional ([assessment](../security-and-privacy-assessment.md) M-2, [API outline §4.1](../api-outline.md#41-core-flow-request-and-response-fields)), which the Sprint B slice aligns.
 
 ## 3. Run and demonstrate from the repository root
 
@@ -54,11 +54,11 @@ The health check means this diagnostic HTTP endpoint responds; it does not certi
 
 ## 4. Review evidence and honest issue status
 
-[Execution record](../evidence/walking-skeleton-2026-10-31.md) records the actual commands/results on the #166 branch. CI must also pass on the PR. Reopen #58 and #148 because merged Markdown-only #150/#151/#154 did not implement their runtime acceptance. The corrective PR closes **only #166**; #58 stays open until runnable evidence is reviewed, and #148 stays open until telemetry/dashboard/alert evidence exists. Do not mark board items Done just because their documentation merged.
+[Execution record](../evidence/walking-skeleton-2026-10-31.md) records the actual commands/results on the #166 branch. CI must also pass on the PR. Reopen #58 and #148 because merged Markdown-only #150/#151/#154 did not implement their runtime acceptance. The corrective PR closes **only #166**; #58 stays open until runnable evidence is reviewed, and #148 stays open until telemetry/dashboard/alert evidence exists. **Update (31 October 2026):** #58 was closed at 13:07 UTC, after #167 merged; #148 is still open. Do not mark board items Done just because their documentation merged.
 
 ## 5. Sprint B handoff
 
-The full [local delivery runbook](../local-delivery.md) and [ADR-011](../adr/0011-deployment-and-infrastructure.md) remain the target: five service images, gateway, Keycloak, one PostgreSQL with six owned databases/users, RabbitMQ and WireMock; React UI plus optional AI/observability profiles. Add them incrementally to the existing Compose file instead of adding non-existent dependencies now.
+The full [local delivery runbook](../local-delivery.md) and [ADR-011](../adr/0011-deployment-and-infrastructure.md) remain the target: five service images, gateway, Keycloak, one PostgreSQL with six owned databases/users, RabbitMQ and WireMock; React UI plus optional AI/observability profiles. Add them incrementally to the existing Compose file instead of adding non-existent dependencies now. The gateway takes host port 8080 ([ADR-013](../adr/0013-api-gateway.md)), so Reports stops publishing that port and the URLs in §3, the [execution record](../evidence/walking-skeleton-2026-10-31.md) and the `ci.yml` smoke steps change with it.
 
 First authenticated business slice: seeded synthetic event and users, one help-request button, Reports persistence/outbox, stored-status read and broker round trip. Implement domain/security/isolation and recovery tests with that slice. No cross-service shared database or synchronous domain calls are introduced. Identity/gateway work stays coordinated with ADR-006 and ADR-013; platform/CI decisions with ADR-010.
 
@@ -66,4 +66,4 @@ The [minimal observability plan](local-observability.md) remains two extra conta
 
 ## 6. Infrastructure answers retained
 
-G1–G3: local only, cloud costs/alternatives retained, no cloud region or paid provisioning; explain the professor's cost authorisation in the report. G4–G6: isolated local dev/test/demo projects and versioned Compose/Dockerfiles; full stack/configuration comes in Sprint B. F2/C1: local React and RabbitMQ then, not deployed in this Sprint A cut. G7: R0 rollback rebuilds the previous reviewed tag; database dumps, expand/contract migrations and measured restore/RPO apply when persistence exists. Existing NFR recovery targets are not measured by this in-memory demo.
+G1–G3: local only, cloud costs/alternatives retained, no cloud region or paid provisioning; explain the professor's cost authorisation in the report. G4–G6: isolated local dev/test/demo projects and versioned Compose/Dockerfiles; full stack/configuration comes in Sprint B. F2/C1: local React and RabbitMQ then, not deployed in this Sprint A cut. G7: R0 rollback rebuilds the previous reviewed tag. No tag exists yet: `v0.1.0` (guide H7) is to be created on `main` at the end of Sprint A. Rollback is then `git checkout v0.1.0` followed by `VERSION=0.1.0 docker compose -p farol-skeleton -f infra/compose.yaml up --build -d --wait`. `ci.yml` does not yet set `VERSION` on tag builds, so CI still names the image `farol-reports:dev`; database dumps, expand/contract migrations and measured restore/RPO apply when persistence exists. Existing NFR recovery targets are not measured by this in-memory demo.
