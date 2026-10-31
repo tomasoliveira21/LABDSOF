@@ -1,0 +1,35 @@
+# Assumptions and Dependencies
+
+> LABDSOF 2026/27 · Sprint A · #162
+> **Status (31 October 2026):** one list for the deck, put together from the documents linked in each row, with nothing new decided here (meeting with the professor, 22 October 2026, [*Presentation contents*](../Meetings/2026-10-22-professor-meeting.md#presentation-contents)). When a source changes, change this list with it.
+
+## 1. Product assumptions
+
+From the [Problem and Opportunity Report §5](problem-opportunity-report-queima.md#critical-assumptions). The most critical are **A2, A3 and A4**: if any of them fails, the product loses its reason to exist. Validation status from [`product-vision.md` §8](../Product/product-vision.md#8-research-status).
+
+| # | Assumption | Risk | Planned validation | Status (31 October 2026) |
+|---|---|---|---|---|
+| A1 | Organisations accept configuring and maintaining their event on the platform (map, transport, team) | High | Interview and conversation with organisations | Not validated: no conversation with an organisation is recorded |
+| A2 | Participants check the application during the night, even in adverse conditions (alcohol, battery, noise) | High | Survey and prototype | Not validated: survey script ready, results not in the repository (report, *User Research*) |
+| A3 | Participants adopt one application shared by several events, opened through a link or QR code | High | Survey | Not validated: as A2 |
+| A4 | Help requests made through the application reach the right team faster than through the current channels | High | Volunteer interview and simulation | Not validated: interview with a security volunteer still to do (product vision §8) |
+| A5 | Each organisation has a usable venue map (image or PDF) | Medium | Easy | Not validated. The design takes an image or a one-page PDF ([ADR-007](../Technical/adr/0007-venue-map-representation.md), proposed) |
+| A6 | Real-time information (transport, queues) can be entered or estimated by the event team, without direct integration with the operators | Medium | Medium | Changed for buses: live positions come from the Porto Digital API ([ADR-008](../Technical/adr/0008-transport-data-source.md)); event shuttles are still entered by the event team (ADR-008, decision 3) |
+| A7 | AI features are more useful than a non-AI alternative and do not mislead users | Medium | Simulated dataset, compared with a non-AI alternative | Dataset of 100 synthetic cases and a reproducible baseline in the [triage evaluation](../Research/architecture-investigation/evaluation/README.md); label review and model runs pending (guide K2, [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md)) |
+| A8 | The mobile network holds up at peak, or the application works in degraded or offline mode | Medium | Tests and reports | Not validated. Designed for: data shown with its update time (SC7), light polling at the peak ([`architecture.md` §10.1](../Technical/architecture.md#101-peak-load-and-scaling-j3)); offline mode is F11, a *Could* (SC10) |
+| A9 | The same product serves different events through configuration alone, without custom development | Medium | Medium | Not validated. Designed for: per-event data, roles and teams ([`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026), [ADR-003](../Technical/adr/0003-database-and-data-ownership.md)) |
+
+Other assumptions, kept in their own documents: the cost assumptions ([`operating-cost-estimation.md` §2](operating-cost-estimation.md#2-assumptions)) and the peak-load assumptions ([`architecture.md` §10.1](../Technical/architecture.md#101-peak-load-and-scaling-j3)).
+
+## 2. External dependencies
+
+Systems and services outside the team's control that the product or its delivery needs. The pinned third-party images that run inside the local stack (PostgreSQL, RabbitMQ and the observability stack) are part of the delivery, not external services ([ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)).
+
+| # | Dependency | Used for | Decision | If it is unavailable | Status (31 October 2026) |
+|---|---|---|---|---|---|
+| X1 | **Porto Digital urban platform** (FIWARE NGSI v2, open data, free) | Live bus positions (F9) | [ADR-008](../Technical/adr/0008-transport-data-source.md), accepted by the professor | Degraded mode D2: the last valid data, with its time and a warning ([`architecture.md` §9](../Technical/architecture.md#9-degraded-modes)) | Accepted. 300 real responses recorded on 25 October 2026 for tests and the demo ([`infra/wiremock/`](../../infra/wiremock/README.md)). Not integrated yet |
+| X2 | **Local AI model:** Ollama with `qwen3:4b` Q4_K_M | Triage suggestions (F8) | [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), guide K1 | Degraded mode D1: the request reaches the operator untriaged, in order of arrival | Accepted as architecture. Measurements on the demo machine pending (Tomás, guide K1) |
+| X3 | **Keycloak**, self-hosted | Login, tokens, account deletion (Admin API) | [ADR-006](../Technical/adr/0006-identity-and-access.md) | Tokens validated with cached keys ([`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1)); account deletion answers `202` and retries (guide D7) | Accepted; built in Sprint B. HTTPS for the phones is open (guide G4, Guerra) |
+| X4 | **WireMock** | Simulator of Porto Digital and of the AI provider, for tests and the demo | Guide J4 (Guerra, 26 October 2026, #155), ADR-008 | Point the URL at an unreachable address and restart the service ([`architecture.md` §9.2](../Technical/architecture.md#92-how-d1-and-d2-are-triggered-observed-and-tested-j2)) | Stubs tested with WireMock 3.13.2 |
+| X5 | **Demo laptop, backup laptop and a LAN** (hotspot or router) | Local delivery and the demo | [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md), [`local-delivery.md`](../Technical/local-delivery.md) | The backup laptop, with the same tag and the restored dumps (guide G4) | Minimum RAM and recovery time still to measure (ADR-011) |
+| X6 | **GitHub** (repository, Actions, Projects, Copilot) and **SonarQube Cloud** | Code, CI, backlog, code review, static analysis | [ADR-010](../Technical/adr/0010-cicd-strategy.md) | Delivery builds locally from the git tag (guide H5) | In use. Branch protection on `main` not active yet ([README §6](../README.md#6-branch-protection-on-main)) |

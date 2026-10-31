@@ -61,5 +61,5 @@ What the professor listed, with the document each section comes from today.
 - [x] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). Done in #134 ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md)), with the infrastructure from #53 (G2).
 - [ ] **Tomás:** the walking skeleton (P8).
 - [x] **Tiago:** one list of NFRs, for the deck. Done in #137 ([`non-functional-requirements.md`](../Product/non-functional-requirements.md)).
-- [ ] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents.
+- [x] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents. Done in #162 by Bruno: [`assumptions-and-dependencies.md`](../Deliverables/assumptions-and-dependencies.md).
 - [x] **Guerra:** simulator of the Porto Digital API or recorded responses (guide J4). Done in #155 (26 October 2026): WireMock, replaying the responses recorded on 25 October 2026 ([`infra/wiremock/`](../../infra/wiremock/README.md)).

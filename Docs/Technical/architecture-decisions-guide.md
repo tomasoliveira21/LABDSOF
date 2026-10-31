@@ -219,7 +219,7 @@ Email enviado a 15/10/2026 com duas perguntas; o professor respondeu a ambas:
 **Sem responsável, ficam para o fim** ❗ (reunião com o professor, 22/10, [ata](../Meetings/2026-10-22-professor-meeting.md)):
 - Apresentação (deck) com as secções pedidas pelo professor.
 - PDF único com os documentos dos entregáveis do Sprint A.
-- Lista de pressupostos e dependências, juntada a partir dos outros documentos.
+- ✅ Lista de pressupostos e dependências, juntada a partir dos outros documentos: feita no #162 (Bruno), em [`assumptions-and-dependencies.md`](../Deliverables/assumptions-and-dependencies.md).
 
 **Plano anterior de 26/10 (#58):** a fatia autenticada com pedido persistido e broker fica para o Sprint B. O [plano atualizado](plans/local-walking-skeleton.md) separa-a do R0 mínimo de 31/10 (#166).
 
