@@ -38,7 +38,7 @@ Defined in the README; summarised here for the presentation.
 | Commits | `<prefix> (#<issue>): <Title>`, title ≤ 50 characters, imperative mood | README §3 |
 | Pull requests | Title `<Prefix>: <Description>`; description with `Closes #<issue>`, summary and how it was tested. **Every PR has an issue** | README §4 |
 | Code review | Two reviews: GitHub Copilot (automatic) and one team member; review within 1 working day; blocking comments start with `blocking:` | README §5 |
-| Branch protection | No direct pushes, Copilot review, 1 approval, stale approvals dismissed, conversations resolved, CI must pass, branch up to date | README §6 |
+| Branch protection | No direct pushes, Copilot review, 1 approval, stale approvals dismissed, conversations resolved, CI must pass, branch up to date. **Not active yet** (checked on 30 October 2026: `protected: false`). **To do: Tomás turns it on** (§4) | README §6 |
 | Definition of Ready / Done | See [`definition-of-ready-and-done.md`](definition-of-ready-and-done.md). One user story = one issue = one PR | — |
 | Language | All branches, commits, PRs and repository documentation in **English**. Exceptions: survey questions and presentation speaker notes, which are for a Portuguese audience (decided 12 October 2026) | README (introduction) |
 
@@ -48,7 +48,7 @@ The assignment fixes **three sprints** (§1, §7). The team calls them A, B and 
 
 | Sprint | Objective (assignment §7) | Dates |
 |---|---|---|
-| Sprint A (1) | Discover, validate and design | Until the review on **12 October 2026** |
+| Sprint A (1) | Discover, validate and design | Until **1 November 2026** (milestone *Sprint A*; the Sprint 1 presentation was on 12 October 2026) |
 | Sprint B (2) | Build and operate the vertical slice | **2 November 2026 – 6 December 2026** |
 | Sprint C (3) | Evaluate, harden and present | **7 December 2026 – 3 January 2027** |
 
@@ -76,7 +76,7 @@ Tomás reported that the professor authorised **local-only delivery because of c
 
 | Check | Finding | Action (agreed 8 October 2026) |
 |---|---|---|
-| Branch protection on `main` | Every item in README §6 is an unticked checkbox. The history also shows commits made directly on `main` without a PR (`5ef2c4a` and `3a4ba04` on 24 September, `e853854` "Project Assignment" on 8 October), so "no direct pushes" is not enforced | Tomás (repo owner) turns the rules on in the repository settings, then ticks the boxes in README §6 |
+| Branch protection on `main` | Every item in README §6 is an unticked checkbox, and protection is still off (checked on 30 October 2026: the GitHub API returns `protected: false` for `main`). There were **no direct pushes**: every commit on `main` came through a PR, except the initial commit (checked on 30 October 2026). The commits once listed here as direct pushes belong to PRs: `5ef2c4a` and its merge commit `3a4ba04` to PR #1, `e853854` to PR #21 | Tomás (repo owner) turns the rules on in the repository settings, then ticks the boxes in README §6 |
 | Merge method | README §4 requires **squash merge**, but PRs #18 to #21, #23, #25, #27 and #30 were merged with merge commits | Tomás restricts the repository to squash merging (Settings → General → Pull Requests) |
 | PR template | README §7 says to save it as `.github/pull_request_template.md`, but the file did not exist | Created in PR #21 |
 | Issue templates | The DoR and the story-level DoD were not in the tool | Since 12 October 2026: issue forms in `.github/ISSUE_TEMPLATE/` (user story and task) |

@@ -17,8 +17,8 @@ One Compose file, `infra/compose.yaml`. Images are built from the repository: th
 | `web` | Serves the React app, image `farol-web:${VERSION}`. The app calls the gateway and Keycloak directly | default | `0.0.0.0:${WEB_PORT}` |
 | `postgres` | **One** PostgreSQL instance with **six databases and six users**: one per service and one for Keycloak. No user can read another's database (ADR-003) | default | none |
 | `rabbitmq` | The broker, with a fixed node name, a named volume and one user per service (ADR-006) | default | `127.0.0.1:15672` (management UI) |
-| `wiremock` | WireMock in front of Porto Digital and of a hosted AI provider: proxy, recorded responses and failure stubs (guide J2, J4). Its root is [`infra/wiremock/`](../../infra/wiremock/README.md), mounted at `/home/wiremock`, with the recorded Porto Digital stubs. Transports and Reports point at it by default | default | `127.0.0.1:8090` (admin API) |
-| `ai` | Local model (e.g. Ollama) if guide K1 picks one | `ai` | none |
+| `wiremock` | WireMock in front of Porto Digital and of the AI provider (the local `ai` container, guide K1): proxy, recorded responses and failure stubs (guide J2, J4). Its root is [`infra/wiremock/`](../../infra/wiremock/README.md), mounted at `/home/wiremock`, with the recorded Porto Digital stubs. Transports and Reports point at it by default | default | `127.0.0.1:8090` (admin API) |
+| `ai` | Local model: Ollama with `qwen3:4b` (guide K1, [AI plan](plans/ai-provider-evaluation.md)). Reports reaches it through `wiremock` | `ai` | none |
 | `prometheus`, `grafana` | Observability stack, if ADR-012 is accepted | `observability` | `127.0.0.1` only |
 
 - **Only the gateway, Keycloak and the web app are published to the network** (`0.0.0.0`, ADR-013). Three admin pages are also published, but **only on `127.0.0.1`**, so only the demo laptop opens them: RabbitMQ's management UI, WireMock's admin API (the presenter uses it to trigger D1 and D2, §8) and Grafana. Nothing else is published: the services, PostgreSQL and RabbitMQ's AMQP port are reachable only inside Compose (assessment §9).
@@ -91,7 +91,7 @@ A checklist of commands, run by hand after starting, updating or rolling back. I
 | 4 | Login works | Log in with a demo account on the laptop (`localhost`); on a phone once HTTPS is decided (§8) | Keycloak's page opens; back in the app, the account's name is shown (`GET /me`) |
 | 5 | One round trip through RabbitMQ | The walking skeleton's end-to-end action: one service publishes an event and another consumes it. Tomás writes the exact command here when the skeleton exists | The consumer shows the change; the queue is empty afterwards |
 
-The same checks, without the phone and the login, run in CI with Compose on every push to `main`, every tag and manual runs ([ADR-010](adr/0010-cicd-strategy.md)).
+Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9, Tomás), the same checks, without the phone and the login, will run in CI with Compose on every push to `main`, every tag and manual runs. Not running yet (checked on 30 October 2026: the only workflow is `conventions.yml`).
 
 ## 8. The demo
 
@@ -106,7 +106,7 @@ The same checks, without the phone and the login, run in CI with Compose on ever
 
 | Show | How |
 |---|---|
-| D1 · AI unavailable | Local model: `docker compose -f infra/compose.yaml stop ai`, or start without the `ai` profile. Hosted provider (K1): add a failure stub in WireMock through its admin API, and remove it to recover |
+| D1 · AI unavailable | Add an AI failure stub (dropped connection, slow answer) in WireMock through its admin API, and remove it to recover ([`architecture.md`](architecture.md) §9.3). Also: `docker compose -f infra/compose.yaml stop ai`, or start without the `ai` profile |
 | D2 · Transport source unavailable, late or invalid | The demo always goes through `wiremock`. Add a failure stub (no answer, late, invalid data) through its admin API, or `docker compose -f infra/compose.yaml stop wiremock` |
 | Broker down | `docker compose -f infra/compose.yaml stop rabbitmq`: requests are still saved (outbox) and catch up after `start rabbitmq` |
 | Another service down | `docker compose -f infra/compose.yaml stop badges`: the other services keep working |

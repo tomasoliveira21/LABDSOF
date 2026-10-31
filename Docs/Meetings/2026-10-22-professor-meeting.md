@@ -50,9 +50,9 @@ What the professor listed, with the document each section comes from today.
 ## Open actions
 
 - [x] **Bruno:** delete `physical-view-level-4-*` and `mapping-logical-physical-level-4-*`; update ADR-009 and `architecture.md` §14 (P1). Done in #55.
-- [ ] **Bruno:** expand `physical-view-level-3` to show the five databases (P1).
+- [x] **Bruno:** expand `physical-view-level-3` to show the five databases (P1). Done in #157 (#133): six, not five: five services + Keycloak ([ADR-003](../Technical/adr/0003-database-and-data-ownership.md)).
 - [x] **Bruno:** remove the mobile app from the documentation (P9). Done in #125, except the diagrams.
-- [ ] **Bruno:** remove the mobile app from the diagrams (levels 1 to 3 and `*-level-4-mobile`) (P9).
+- [x] **Bruno:** remove the mobile app from the diagrams (levels 1 to 3 and `*-level-4-mobile`) (P9). Done in #157 (#133) and #55: no diagram mentions a mobile app, and the `*-level-4-mobile` files were deleted (checked on 30 October 2026).
 - [ ] **Tiago:** review [ADR-007](../Technical/adr/0007-venue-map-representation.md), rewritten for the web (`react-zoom-pan-pinch` + SVG markers), and accept or change it (P9).
 - [ ] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2).
 - [x] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2). Done in #43: x = 30 s, y = 5 min.
