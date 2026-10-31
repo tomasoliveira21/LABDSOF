@@ -38,7 +38,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F14 | Badges for confirmed reports (all-time and per event) | — | Must | 13 | P1 | Two of the three badge tracks. See §6.3 |
 | F15 | Badges for event attendance | — | Should | — | P1 | Third badge track. See §6.3 |
 | F16 | Event check-in at the venue | — | Should | — | P1, P3 | The logged-in participant scans the event's QR code **at the venue, during the event dates**; this is what counts as "attended" for F15. See §6.3 |
-| F17 | Entrance status per gate, updated manually by the team | C8 | Should | — | P1, P3 | **Could → Should on 30 October 2026** (Tiago): waiting more than 30 min to get in is the most common problem in the student survey (80 %). Manual status only; no automatic prediction |
+| F17 | Entrance status per gate, updated manually by the team | C8 | Should | — | P1, P3 | **Could → Should on 30 October 2026** (backlog owner, #164): waiting more than 30 min to get in is the most common problem in the student survey (80 %). Manual status only; no automatic prediction |
 | F18 | Friends inside the app | — | Could | — | P1 | Add and remove friends |
 | F19 | Chat between friends | — | Won't (this release) | — | P1 | |
 | F20 | Link to the ticket on the ticketing partner's site | C11 | Won't (this release) | — | P1 | Ticketing is a partner, not part of the MVP (annex C11) |
