@@ -27,18 +27,18 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F3 | Event management | C1 | Must | 3 | P4, P3 | Create, edit, publish and close events. Every other feature is scoped by event; isolation between events is a top technical risk (report §5). The `FarolAdmin` (P4) creates an event, for a verified organisation, and names its first `EventAdmin`; the EventAdmins edit, publish and close it (§4) |
 | F4 | Event roles, teams and permissions | C1 | Must | 4 | P3, P4 | **22 Oct:** roles per event, `EventAdmin` and `RegularUser`, plus the global `FarolAdmin`, who never sees an event's help requests, reports or participants. EventAdmins create the event's teams (e.g. *Security*, *Nursing*), set each team's permissions and add RegularUsers to them (§4) |
 | F5 | Venue map with points of interest | C3 | Must | 5 | P1, P3 | Map uploaded as an image or PDF; points placed on it (entrances, stages, WC, first aid, transport stops) |
-| F6 | Help request | C6 | Must | 6 | P1 | Category and location marked on the map; location shared only with the request |
+| F6 | Help request | C6 | Must | 6 | P1 | Category and location: the app asks for the phone's location; if the participant refuses, they mark the place on the map (survey, 30 October 2026). Location shared only with the request |
 | F7 | Incident backoffice | C7 | Must | 7 | P2, P5 | Receive, prioritise, route to a team and close help requests; live list and map; full status history. Members of a team with the *respond* permission get what is routed to their team on the phone and update its status (§4.3) |
 | F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Suggests category, priority and team (one of the event's teams that handles the category, §4.2); the operator decides. Kept separate from F7 on purpose (see note below). See §5 |
 | F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **Porto Digital urban platform** (FIWARE NGSI v2): live positions of the city buses (§3), plus event shuttles and temporary stops entered by the team |
 | F10 | Live announcements, with last-update time | C4 | Must | 10 | P1, P3 | |
-| F11 | Weak-network mode: cached map and information, "data from HH:MM" | C10 | Could | — | P1 | Not one of the §6.8 degraded-mode scenarios (§3.1). Moved from Must to Could on 9 October 2026 |
+| F11 | Weak-network mode: cached map and information, "data from HH:MM" | C10 | Could | — | P1 | Not one of the §6.8 degraded-mode scenarios (§3.1). Moved from Must to Could on 9 October 2026. **Reopened on 30 October 2026:** candidate for Should at the next planning, since battery and weak network are top barriers in the student survey |
 | F12 | Community reports on the map | — | Must (assignment §5.5) | 11 | P1 | Waze-style reports (queues, WC out of service, …). See §6 |
 | F13 | Report confirmation and unconfirmation by the responsible team | — | Must | 12 | P2, P5 | Only the responsible team confirms a report; a confirmation can be withdrawn. See §6.2 |
 | F14 | Badges for confirmed reports (all-time and per event) | — | Must | 13 | P1 | Two of the three badge tracks. See §6.3 |
 | F15 | Badges for event attendance | — | Should | — | P1 | Third badge track. See §6.3 |
 | F16 | Event check-in at the venue | — | Should | — | P1, P3 | The logged-in participant scans the event's QR code **at the venue, during the event dates**; this is what counts as "attended" for F15. See §6.3 |
-| F17 | Entrance status per gate, updated manually by the team | C8 | Could | — | P1, P3 | |
+| F17 | Entrance status per gate, updated manually by the team | C8 | Should | — | P1, P3 | **Could → Should on 30 October 2026** (backlog owner, #164): waiting more than 30 min to get in is the most common problem in the student survey (80 %). Manual status only; no automatic prediction |
 | F18 | Friends inside the app | — | Could | — | P1 | Add and remove friends |
 | F19 | Chat between friends | — | Won't (this release) | — | P1 | |
 | F20 | Link to the ticket on the ticketing partner's site | C11 | Won't (this release) | — | P1 | Ticketing is a partner, not part of the MVP (annex C11) |
@@ -474,9 +474,11 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 ### F6 · Help request
 
-**US-23** · As a **participant**, I want to ask for help by choosing a category and marking where I am on the map, so that the team can reach me.
+**US-23** · As a **participant**, I want to ask for help by choosing a category and sharing where I am, so that the team can reach me.
 *Persona:* P1 · *Depends on:* US-14, US-21
-- Given I choose a category and mark a location, when I submit, then I see a confirmation.
+- Given I choose a category, when I ask for help, then the app asks for permission to use the phone's location.
+- Given I allow it, when I submit, then the request carries the phone's location and I see a confirmation.
+- Given I refuse it or the location is not available, then I mark where I am on the map, and when I submit I see a confirmation.
 - Given I submitted a request, then my location is visible only to members with `HelpRequests.Triage`, to EventAdmins and to the team it is routed to.
 - Given I have sent 5 help requests in the last 10 minutes, when I submit another, then it is refused with a message saying when I can ask again, and the first-aid points are shown on the map (ADR-013, L-2: answer 429 with `Retry-After`).
 
@@ -669,7 +671,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 - Given I already checked in to this event, when I scan again, then nothing changes (one check-in per event).
 - Given the event has not started or has ended, when I scan the QR code, then the event opens but no check-in is recorded.
 
-### F17 · Entrance status (Could)
+### F17 · Entrance status (Should)
 
 **US-59** · As a **team member** with `Entrances.Update`, I want to set the status of each entrance, so that participants choose a better gate.
 *Persona:* P2, P5 · *Depends on:* US-20
@@ -709,10 +711,10 @@ Every merge to `main` is built and tested (guide H4). Delivery is local: a *rele
 |---|---|---|---|
 | **R0 · Walking skeleton** | Sprint A, before Sprint B starts on 2 Nov 2026 (#58, owner: Tomás) | One Reports service with synthetic help-request create/read in memory, diagnostic health, HTTP tests, Dockerfile, Compose and CI smoke on every PR (#166; [run instructions](../Technical/plans/local-walking-skeleton.md)). Keycloak, persistence/outbox and the full application are Sprint B. Not a user story: a task issue | §7.1.2 item 10 (Sprint A) |
 | **R1 · Vertical slice** | Sprint B review (6 Dec 2026) | 27 stories: US-01, 02, 06, 11, 12, 14, 16, 17, 18, 19, 20, 21, 23, 24, 26 to 36, 40, 41. The help-request journey end to end (W2 + W3), with teams and permissions, AI triage, scenario D1 and the first external integration | §7.2.2 items 1–13 |
-| **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58 and US-57 if there is time | §7.3.2 items 1–2, 8 |
-| **Later** (product roadmap) | After the course | Could: US-46, US-59 to US-62. Won't: F19, F20 | §7.3.2 item 13 |
+| **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58, US-57, US-59 and US-60 if there is time | §7.3.2 items 1–2, 8 |
+| **Later** (product roadmap) | After the course | Could: US-46, US-61, US-62. Won't: F19, F20 | §7.3.2 item 13 |
 
-**Cut line for Sprint C.** If Sprint C runs short, drop in this order: US-57 and US-58; then US-52 and US-53; then US-22; then US-08, US-09, US-10 and US-45 (reasons in §8.5).
+**Cut line for Sprint C.** If Sprint C runs short, drop in this order: US-57 and US-58; then US-59 and US-60; then US-52 and US-53; then US-22; then US-08, US-09, US-10 and US-45 (reasons in §8.5).
 
 ### 8.3 Stories on the board
 
@@ -728,7 +730,7 @@ Each story is a GitHub issue created from the [user-story form](../../.github/IS
 | Sprint | Milestones *Sprint A*, *Sprint B*, *Sprint C* | The issue's milestone (this table's *Sprint* column); board views are grouped or filtered by *Milestone*. No *Iteration* field, so the sprint is kept in one place (decided on 24 October 2026 instead of the Iteration field of [`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md#in-the-tool)) |
 | *Estimate*, *Start date*, *Target date* | — | Not used for now |
 
-Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 16, **S** 22, **M** 16, **L** 9, **XL** 0. Only #58 is *Ready*: every story waits for at least one open blocker of §8.4 (the identity provider E1 alone blocks 60 of the 62 stories), so it stays in *Backlog* until that blocker is closed.
+Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 16, **S** 22, **M** 16, **L** 9, **XL** 0. On 30 October 2026, US-23 (#71) went from L to XL (5 criteria after the survey decision on location) and US-59 and US-60 (#118, #119) got the *Sprint C* milestone: **L** 8, **XL** 1. Only #58 is *Ready*: every story waits for at least one open blocker of §8.4 (the identity provider E1 alone blocks 60 of the 62 stories), so it stays in *Backlog* until that blocker is closed.
 
 | Story | Issue | Type | Sprint |
 |---|---|---|---|
@@ -791,8 +793,8 @@ Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 1
 | US-56 · Hide or stop earning badges | #114 | Front Office | C |
 | US-57 · *Event attendance* badge (Should) | #115 | Front Office | C |
 | US-58 · Check in at the venue (Should) | #116 | Front Office | C |
-| US-59 · Set entrance status (Could) | #118 | Back Office | — |
-| US-60 · See entrance status (Could) | #119 | Front Office | — |
+| US-59 · Set entrance status (Should) | #118 | Back Office | C |
+| US-60 · See entrance status (Should) | #119 | Front Office | C |
 | US-61 · Send and accept friend requests (Could) | #120 | Front Office | — |
 | US-62 · Remove a friend (Could) | #121 | Front Office | — |
 

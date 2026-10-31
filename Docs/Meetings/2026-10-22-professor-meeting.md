@@ -56,7 +56,7 @@ What the professor listed, with the document each section comes from today.
 - [ ] **Tiago:** review [ADR-007](../Technical/adr/0007-venue-map-representation.md), rewritten for the web (`react-zoom-pan-pinch` + SVG markers), and accept or change it (P9).
 - [ ] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2).
 - [x] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2). Done in #43: x = 30 s, y = 5 min.
-- [ ] **No owner yet, done at the end:** the presentation deck (P5).
+- [ ] **Tiago:** the presentation deck (P5). First version on 30 October 2026: [`Farol_Sprint_A_Presentation.pptx`](../Presentation/Farol_Sprint_A_Presentation.pptx), to review with the team.
 - [ ] **No owner yet, done at the end:** the single PDF with the Sprint A documents (P6).
 - [x] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). Done in #134 ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md)), with the infrastructure from #53 (G2).
 - [ ] **Tomás:** the walking skeleton (P8).

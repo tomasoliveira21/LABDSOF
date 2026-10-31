@@ -2,6 +2,28 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-30 · Student survey results and Sprint A deck (Tiago Teixeira)
+
+**Why:** the report's *Results*, *Limitations* and *Resulting product decisions* were still "TBD" (Sprint 1 deliverable 3; gap review of 8 October 2026, G1), and the Sprint A deck had no owner (meeting with the professor, 22 October 2026, P5). Bruno gave both tasks to Tiago.
+
+### Added
+- `Docs/Presentation/Farol_Sprint_A_Presentation.pptx`: 18 slides with every section the professor listed on 22 October 2026 (vision, personas, workflow, domain model, architecture and technology, assumptions and dependencies, costs, prioritised backlog, NFRs, scope of the next sprints, people, methodology, DoR and DoD), plus two slides on the survey results and decisions. Speaker notes in Portuguese.
+
+### Changed
+- `problem-opportunity-report-queima.md`, *User Research*: method (Google Forms, 3 to 6 and 30 October 2026, 33 answers, 1 marked invalid; n = 30 for Q2–Q6 and 31 for Q7–Q10; collection closed on 30 October 2026; *Outro* free-text answers excluded), results per question, V1 and V2, what the data says about A2, A3, A4 and root cause 1, limitations, and five product decisions taken from the data. §4 *weak evidence* points to the survey.
+- `product-vision.md` §5 and §8: V1 met (87 %), V2 met (2.97), dependent on the answers of 30 October; the survey marked as done; the gap now only names the missing volunteer interview.
+
+### Decided (Tiago, backlog owner, 30 October 2026; to present at the next planning)
+- F17 entrance status per gate: Could → Should (80 % waited more than 30 min to get in).
+- F11 weak-network mode reopened at sprint planning (battery 48 %, installing 39 % and weak network 32 % are the top barriers).
+- F6 help request: ask for the phone's location; if the participant refuses, they mark the place on the venue map (71 % accept it, 26 % only the map).
+- Applied in `features.md`: F17 to Should (heading, US-59 and US-60 in R2 "if there is time" and first after US-57/58 in the cut line, board table to sprint C); F11 note says it is reopened as a candidate for Should; F6 note and US-23 ask for the phone's location first, with the map as the fallback. The GitHub Projects fields (priority, size of US-23) still have to follow.
+
+### Merged main (31 October 2026)
+- `main` merged (#163 diagrams and corrections, #167 walking skeleton, #169 SonarQube Cloud). Conflict only in this CHANGELOG (both kept, this entry first).
+- Deck aligned with them: ADR-005 and ADR-012 shown as accepted (slide 9 and notes); SonarQube in the delivery stack; Ollama reached through WireMock (slide 8); R0 walking skeleton done on 31 October with its narrowed scope (slide 14); the first next step is now the start of Sprint B (slide 18).
+- Deck checked again against `main`: "112 first" removed from the core journey (slide 6 and notes; no mention of 112 since 12 October 2026, T5); the walking skeleton keeps its help requests in memory (slide 14 and notes); the architecture notes say only Reports runs today (slide 8); the Copilot review is requested but has not run so far (slide 16 and notes).
+
 ## [Unreleased] · 2026-10-31 · Domain model diagram redrawn (#170)
 
 ### Changed
