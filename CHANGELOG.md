@@ -2,6 +2,15 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-10-31 · Domain model diagram redrawn (#170)
+
+### Changed
+- `domain-model.svg` redrawn as an editable draw.io diagram (the `mxfile` source is embedded in the SVG) to match `domain-model.md`, `features.md` §4 and ADR-006: event-defined `Team`, `TeamPermission` and `TeamAssignment` replace the fixed `ResponseTeam` / `ResponseTeamType`; `GlobalRoleGrant` (`FarolAdmin`) and per-event `EventMembership` are shown. The five service boundaries (Auth & Users, Events, Reports, Transports, Badges), the external Porto Digital API, all entities, labelled relations and cardinalities are kept, and venue-map `MapPosition` stays distinct from the geographic `GeoPosition` of bus observations.
+- `domain-model.md` status note and an ADR-006 addendum record the redraw. They claim no new team vote and no runtime implementation.
+
+### Unchanged
+- The open product decision (default team when two teams handle the same category) is shown in the diagram as an open note. No routing tie-break rule was invented; production scope and application code are untouched.
+
 ## [Unreleased] · 2026-10-31 · SonarQube Cloud CI (#168)
 
 ### Added
