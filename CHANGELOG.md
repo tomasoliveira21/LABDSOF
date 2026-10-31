@@ -22,6 +22,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Merged main (31 October 2026)
 - `main` merged (#163 diagrams and corrections, #167 walking skeleton, #169 SonarQube Cloud). Conflict only in this CHANGELOG (both kept, this entry first).
 - Deck aligned with them: ADR-005 and ADR-012 shown as accepted (slide 9 and notes); SonarQube in the delivery stack; Ollama reached through WireMock (slide 8); R0 walking skeleton done on 31 October with its narrowed scope (slide 14); the first next step is now the start of Sprint B (slide 18).
+- Deck checked again against `main`: "112 first" removed from the core journey (slide 6 and notes; no mention of 112 since 12 October 2026, T5); the walking skeleton keeps its help requests in memory (slide 14 and notes); the architecture notes say only Reports runs today (slide 8); the Copilot review is requested but has not run so far (slide 16 and notes).
 
 ## [Unreleased] · 2026-10-31 · Domain model diagram redrawn (#170)
 
