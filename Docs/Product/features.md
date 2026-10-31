@@ -56,7 +56,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | §5.5 Ethical engagement design | F12–F15: community reports, team confirmation and badges | Decided (§6) |
 | §5.6 At least one AI-assisted workflow, with evaluation and baseline or fallback | F8: help-request triage | Decided; details open (§5.2) |
 | §6.1 Client application | Participant web app (PWA) and backoffice, both behind login | Decided |
-| §6.3 At least one asynchronous workflow | Help request → AI triage → notification of the event team (see [`architecture.md`](../Technical/architecture.md)) | **[PROPOSED]** |
+| §6.3 At least one asynchronous workflow | Help request → AI triage → notification of the event team (see [`architecture.md`](../Technical/architecture.md)) | Decided ([ADR-004](../Technical/adr/0004-service-communication.md)) |
 | §6.5 Integration with at least one external system or realistic simulator | **Porto Digital urban platform**, FIWARE NGSI v2 bus API (F9; accepted by the professor, [ADR-008](../Technical/adr/0008-transport-data-source.md)) | Decided |
 | §6.6 Authentication and authorisation | F1 login for every user; F2 account and consent; F4 per-event roles and team permissions (§4); audit records for help requests (`AuditEntry` in the domain model; NFR-16) | Decided; mocked authentication allowed for the MVP |
 | §6.8 At least one degraded-mode scenario | **D1** AI unavailable and **D2** transport source unavailable (§3.1) | Decided |
@@ -75,7 +75,7 @@ Two scenarios, no more. Both are demoed by breaking one dependency while the res
 | **What the operator does** | Sets the priority and team by hand. Nothing else changes in F7 |
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
 | **When the AI comes back** | The banner disappears after the first successful call. Requests from the last 15 min that the operator has not touched are sent to triage once more and may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (NFR-22) |
-| **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard (proposed in [ADR-012](../Technical/adr/0012-observability.md)) |
+| **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard ([ADR-012](../Technical/adr/0012-observability.md)) |
 | **How it is demoed** | On the local machine (local-only delivery, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)), the triage worker points at **WireMock** (the simulator of guide J4), which normally passes requests to the real AI provider. The presenter makes it drop the connection (or answer late, or return invalid output) and a participant submits help requests from the web app's phone pages; the services carry no fault-injection code. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
 | **Test** | US-36 (SC5): 100 % of requests are shown to the operator with the AI off. Reports integration test on every PR, with WireMock in place of the provider (delay over the timeout, 503, dropped connection, invalid body); also under load in Sprint C (scenario L5) |
 
@@ -174,7 +174,7 @@ The help categories still need to be checked against the interview with the secu
 
 ### 5.2 Still to define
 
-**Research available (22 October 2026, #53):** [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md) proposes answers to AI-1–AI-11, with an [evaluation package](../Research/architecture-investigation/evaluation/README.md) and proposed [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md). These questions remain pending team acceptance, independent labels, provider/privacy review and measured model/SC3/SC5 evidence. The original questions below remain the review checklist.
+**Research available (22 October 2026, #53):** [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md) proposes answers to AI-1–AI-11, with an [evaluation package](../Research/architecture-investigation/evaluation/README.md) and [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted as architecture on 31 October 2026 (#166). Still pending: independent labels, provider/privacy review and measured model/SC3/SC5 evidence (guide K1, K2). The original questions below remain the review checklist.
 
 This is the list the team works through before the AI work starts. Owner: AI lead (see [`team-and-process.md`](../Process/team-and-process.md) §2).
 
@@ -798,18 +798,18 @@ Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 1
 
 ### 8.4 What still blocks *Ready*
 
-These dependencies are open on 22 October 2026. A story that needs one stays in *Backlog*, not *Ready*, until it is closed. All are expected before Sprint B starts on 2 November.
+These dependencies were open on 22 October 2026; the struck-through ones were closed by 31 October 2026, with the source. A story that needs one stays in *Backlog*, not *Ready*, until it is closed. All are expected before Sprint B starts on 2 November.
 
 | Open dependency | Owner | Blocks |
 |---|---|---|
-| Walking skeleton (R0, #58), in Sprint A; needs the deployment platform (guide G1, #53) | Tomás | Every story (first to be built) |
+| ~~Walking skeleton (R0, #58), in Sprint A; needs the deployment platform (guide G1, #53)~~ Closed on 31 October 2026: local delivery (guide G1, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)); R0 merged in #167 and #58 closed | Tomás | ~~Every story (first to be built)~~ |
 | ~~Identity provider (guide E1)~~ Closed on 22 October 2026: Keycloak ([ADR-006](../Technical/adr/0006-identity-and-access.md)) | Guerra | ~~US-01, US-03~~ |
 | Role, team and permission model (§4): team confirmation, then the domain model (Tomás + Guerra). ~~Where permissions are checked (guide E2)~~ closed on 22 October 2026: in each service's use cases, against local copies ([ADR-006](../Technical/adr/0006-identity-and-access.md)). Replaces personas PE-5 and PE-6 | Team; Tomás + Guerra | US-06, US-14, US-15, US-16 |
 | Venue map library (guide F3, ADR-007, #44) | Tiago | US-19 |
-| AI provider and model (guide K1); AI-1 to AI-3 (§5.2) | Tomás, AI lead | US-34 |
-| Resilience values (guide J1, #43) | Tiago | US-42, US-43 |
+| ~~AI provider and model (guide K1); AI-1, AI-2~~ closed: Ollama with `qwen3:4b` ([ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted on 31 October 2026). Still open: AI-3, the priority scale ([API outline](../Technical/api-outline.md) O7) | Tomás, AI lead | US-34 |
+| ~~Resilience values (guide J1, #43)~~ Closed on 22 October 2026 (guide J1; [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1)) | Tiago | ~~US-42, US-43~~ |
 | Report types and expiry times (§6.1) | Team | US-47 |
-| Account deletion (guide D7) | Bruno | US-05 |
+| ~~Account deletion (guide D7)~~ Closed on 27 October 2026 (guide D7, #135; [ADR-006](../Technical/adr/0006-identity-and-access.md#changes-for-the-api-outline-and-d7)) | Bruno | ~~US-05~~ |
 
 Stories that depend on a blocked story wait for it too (see each story's *Depends on*).
 

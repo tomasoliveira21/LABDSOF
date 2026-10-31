@@ -25,7 +25,7 @@ One Compose file, `infra/compose.yaml`. Images are built from the repository: th
 | `rabbitmq` | The broker, with a fixed node name, a named volume and one user per service (ADR-006) | default | `127.0.0.1:15672` (management UI) |
 | `wiremock` | WireMock in front of Porto Digital and of the AI provider (the local `ai` container, guide K1): proxy, recorded responses and failure stubs (guide J2, J4). Its root is [`infra/wiremock/`](../../infra/wiremock/README.md), mounted at `/home/wiremock`, with the recorded Porto Digital stubs. Transports and Reports point at it by default | default | `127.0.0.1:8090` (admin API) |
 | `ai` | Local model: Ollama with `qwen3:4b` (guide K1, [AI plan](plans/ai-provider-evaluation.md)). Reports reaches it through `wiremock` | `ai` | none |
-| `prometheus`, `grafana` | Observability stack, if ADR-012 is accepted | `observability` | `127.0.0.1` only |
+| `prometheus`, `grafana` | Observability stack ([ADR-012](adr/0012-observability.md), accepted architecture) | `observability` | `127.0.0.1` only |
 
 - **Only the gateway, Keycloak and the web app are published to the network** (`0.0.0.0`, ADR-013). Three admin pages are also published, but **only on `127.0.0.1`**, so only the demo laptop opens them: RabbitMQ's management UI, WireMock's admin API (the presenter uses it to trigger D1 and D2, §8) and Grafana. Nothing else is published: the services, PostgreSQL and RabbitMQ's AMQP port are reachable only inside Compose (assessment §9).
 - **One PostgreSQL instance, not six.** Separate databases with separate users keep the ownership rule. More containers would only add memory. Supersedes the "five PostgreSQL containers" suggestion in the [deployment research](../Research/architecture-investigation/deployment.md) (G6).
@@ -95,7 +95,7 @@ A checklist of commands, run by hand after starting, updating or rolling back. I
 | 2 | The web app opens | `curl -fsI http://localhost:${WEB_PORT}/`, and open `http://<LAN IP>:${WEB_PORT}` on a phone | HTTP 200; the page loads on the phone |
 | 3 | The gateway routes and validates tokens | `curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/v1/me` | `401`: the call reached the gateway and was refused without a token |
 | 4 | Login works | Log in with a demo account on the laptop (`localhost`); on a phone once HTTPS is decided (§8) | Keycloak's page opens; back in the app, the account's name is shown (`GET /me`) |
-| 5 | One round trip through RabbitMQ | The walking skeleton's end-to-end action: one service publishes an event and another consumes it. Tomás writes the exact command here when the skeleton exists | The consumer shows the change; the queue is empty afterwards |
+| 5 | One round trip through RabbitMQ | One service publishes an event and another consumes it. Tomás writes the exact command here in Sprint B: the Sprint A skeleton has no broker (#166) | The consumer shows the change; the queue is empty afterwards |
 
 Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9, Tomás), the same checks, without the phone and the login, will run in CI with Compose on every push to `main`, every tag and manual runs (Sprint B). Today `ci.yml` (#167) runs the Sprint A skeleton's smoke test instead (status, synthetic create and read, Swagger) on every pull request, push to `main`, tag and manual run.
 
@@ -119,7 +119,7 @@ Once `ci.yml` exists ([ADR-010](adr/0010-cicd-strategy.md) point 9, Tomás), the
 
 ## 9. What is still open
 
-- The minimum RAM of the demo laptop, and the measured RTO for rollback and restore: measured with the walking skeleton (Tomás).
-- The exact round-trip command in the smoke test: walking skeleton (Tomás).
+- The minimum RAM of the demo laptop, and the measured RTO for rollback and restore: measured with the Sprint B slice (Tomás); the in-memory Sprint A skeleton cannot measure them.
+- The exact round-trip command in the smoke test: Sprint B slice (Tomás).
 - HTTPS for the phones, which the PKCE login needs (§8): Guerra, with Tomás (assessment §9, finding 2).
-- The AI container or provider: guide K1 (Tomás). The degraded-mode script and the values of x and y: J1, J2 (Tiago).
+- Closed: the AI container is Ollama with `qwen3:4b` (guide K1, [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md)); the degraded-mode script and x = 30 s, y = 5 min (guide J1, J2; [`architecture.md` §9](architecture.md#9-degraded-modes)). Still open: the model measurements on the demo laptop (Tomás).

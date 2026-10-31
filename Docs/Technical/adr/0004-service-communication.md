@@ -41,7 +41,7 @@
 |---|---|
 | Apache Kafka | Built for high-volume event streams and replay, which Farol does not need; heavier to run locally and in the cloud |
 | Redis Streams | Would add Redis only for messaging; no built-in dead-letter handling |
-| Cloud queue (e.g. Azure Service Bus, Amazon SQS) | Ties the code to a deployment platform that is still open (guide G1) and cannot run the same way locally and in tests |
+| Cloud queue (e.g. Azure Service Bus, Amazon SQS) | Ties the code to one cloud platform (none is used: delivery is local, guide G1) and cannot run the same way locally and in tests |
 | Synchronous REST between services | Simpler to follow, but couples availability: a service that is down breaks its callers (driver D6) |
 | Publishing to the broker inside the business transaction, without an outbox | Simpler, but an event can be lost or sent for a change that was rolled back (assignment §6.3, lost messages) |
 | Debezium (change data capture) to publish the outbox | No polling job, but one more component to run; a polling job is enough for the MVP volume |
@@ -52,6 +52,4 @@
 
 - Resolved on 22 October 2026: retry values (guide C3) and Porto Digital poll values (guide J1: every 30 s, freshness limit 5 min); see [`architecture.md`](../architecture.md) §6 and §9. The DLQ is watched on the dashboard of [ADR-012](0012-observability.md) (accepted on 31 October 2026), not by an alert.
 - Resolved on 26 October 2026: the simulator tool is **WireMock**, confirmed by Guerra, owner of J4 (#155); see [ADR-008](0008-transport-data-source.md), decision 4.
-- Where RabbitMQ runs in the cloud: guide C1 and G1, Tomás.
-- API gateway, rate limiting and CORS: guide C6, Guerra.
-- API outline and event catalogue: guide C8, Bruno.
+- Resolved: RabbitMQ runs locally in a container (guide C1 and G1; the cloud is an alternative, [ADR-011](0011-deployment-and-infrastructure.md)); API gateway, rate limiting and CORS (guide C6, [ADR-013](0013-api-gateway.md), 22 October 2026); API outline and event catalogue (guide C8, [`api-outline.md`](../api-outline.md), #123).

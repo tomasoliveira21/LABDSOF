@@ -54,12 +54,12 @@ What the professor listed, with the document each section comes from today.
 - [x] **Bruno:** remove the mobile app from the documentation (P9). Done in #125, except the diagrams.
 - [x] **Bruno:** remove the mobile app from the diagrams (levels 1 to 3 and `*-level-4-mobile`) (P9). Done in #157 (#133) and #55: no diagram mentions a mobile app, and the `*-level-4-mobile` files were deleted (checked on 30 October 2026).
 - [ ] **Tiago:** review [ADR-007](../Technical/adr/0007-venue-map-representation.md), rewritten for the web (`react-zoom-pan-pinch` + SVG markers), and accept or change it (P9).
-- [ ] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2).
+- [x] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2). Done: own machine, Ollama with `qwen3:4b` (guide K1); ADR-005 accepted as architecture on 31 October 2026 (#166). Model measurements still to do.
 - [x] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2). Done in #43: x = 30 s, y = 5 min.
 - [ ] **No owner yet, done at the end:** the presentation deck (P5).
 - [ ] **No owner yet, done at the end:** the single PDF with the Sprint A documents (P6).
 - [x] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). Done in #134 ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md)), with the infrastructure from #53 (G2).
-- [ ] **Tomás:** the walking skeleton (P8).
+- [x] **Tomás:** the walking skeleton (P8). Done in its Sprint A minimum: one Reports service in memory, with build, tests, image and Compose in CI (#167; #166 and #58 closed on 31 October 2026). The authenticated multi-service slice is Sprint B.
 - [x] **Tiago:** one list of NFRs, for the deck. Done in #137 ([`non-functional-requirements.md`](../Product/non-functional-requirements.md)).
 - [x] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents. Done in #162 by Bruno: [`assumptions-and-dependencies.md`](../Deliverables/assumptions-and-dependencies.md).
 - [x] **Guerra:** simulator of the Porto Digital API or recorded responses (guide J4). Done in #155 (26 October 2026): WireMock, replaying the responses recorded on 25 October 2026 ([`infra/wiremock/`](../../infra/wiremock/README.md)).

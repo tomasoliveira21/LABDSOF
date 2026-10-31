@@ -18,7 +18,7 @@
 A user story or task is *Ready* when:
 
 - [ ] It is written as a user story (*As a … I want … so that …*) or as a task with a clear outcome
-- [ ] It names the persona it serves (P1, P2 or P3, see [`personas.md`](../Product/personas.md)) or the technical goal
+- [ ] It names the persona it serves (P1 to P5, see [`personas.md`](../Product/personas.md)) or the technical goal
 - [ ] It has acceptance criteria in *Given / When / Then* that can be tested
 - [ ] Dependencies (other stories, external data, decisions) are identified, and none of them blocks it
 - [ ] It has a GitHub issue on the GitHub Projects board, whose number goes in the branch and commits (README §1, §3)
@@ -51,7 +51,7 @@ A story is *Done* when its PR is merged and:
 - [ ] The Product Owner has accepted it
 - [ ] The GitHub issue is closed by the PR (`Closes #<issue>`)
 
-> **Note:** several items (CI, deployment, logs) cannot be met yet because there is no code or pipeline in the repository. They apply from the first story of the walking skeleton onwards (assignment §7.1.2, item 10).
+> **Note:** the items about CI and deployment apply since the walking skeleton (#167, 31 October 2026): `ci.yml` builds, tests and runs the Compose smoke test on every pull request. Logs and the rest of the observability apply once they exist (#148).
 
 ---
 

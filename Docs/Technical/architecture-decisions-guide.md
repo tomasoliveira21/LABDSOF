@@ -79,7 +79,7 @@ A avaliação de Azure/ECS/Vercel, alojamento e preços **mantém-se como evidê
 | # | Decisão | Estado |
 |---|---|---|
 | D1 | **PostgreSQL.** Uma só tecnologia (§6.4); o mapa é uma imagem, sem PostGIS | ✅ |
-| D2 | **Uma base de dados por serviço**, a que só esse serviço acede | ✅ (n.º de servidores: 🔍 Tomás) |
+| D2 | **Uma base de dados por serviço**, a que só esse serviço acede | ✅ (n.º de servidores: uma instância PostgreSQL com seis bases, fechado a 26/10: G5, [ADR-003](adr/0003-database-and-data-ownership.md)) |
 | D3 | **`event_id` + filtro na aplicação** em todas as tabelas com dados de um evento. Cada serviço tem um teste de integração que prova que um membro do evento X não lê nem altera dados do evento Y | ✅ |
 | D4 | Cache para o pico de leituras | 🔮 |
 | D5 | Retenção e backup. **Retenção decidida a 26/10** ([NFRs §5](../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026)): conteúdo dos pedidos de ajuda apagado 30 dias depois do fim do evento, eventos de login do Keycloak 30 dias ([assessment](security-and-privacy-assessment.md) §7; NFR-19); telemetria segundo o [plano de observabilidade](plans/local-observability.md) (#148, simplificado no #153): logs dos contentores com rotação de 10 MiB × 2, exportações de logs apagadas em 14 dias, métricas 1 dia ou 512 MiB, sem traces guardados. **Backup decidido a 26/10** (NFR-13): dump das seis bases de dados antes de cada demo e de cada atualização (PR #130, `local-delivery.md` §6), guardado no máximo 30 dias; as mensagens nas filas não ficam cobertas. Backup em produção fica para depois | ✅ retenção e backup local; 🔮 backup em produção |
