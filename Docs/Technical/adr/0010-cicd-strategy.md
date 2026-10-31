@@ -7,15 +7,15 @@
 ## Context
 
 - The assignment asks for an automated pipeline that compiles, tests, runs static analysis and dependency or security checks, builds container images and deploys to a suitable environment, with rapid and visible feedback when a change breaks something (§8.5). Builds must be reproducible, secrets handled securely and rollback documented (§8.4).
-- Five Spring Boot services and the API gateway ([ADR-013](0013-api-gateway.md), `backend/gateway/`), each its own Maven project in `backend/<name>/` with its own Dockerfile (ADR-001, ADR-002), and one React web app in `frontend/`, all in one private repository (guide H2, H8). The only workflow today is `.github/workflows/conventions.yml` (branch name, PR title, linked issue on every PR).
+- Five Spring Boot services and the API gateway ([ADR-013](0013-api-gateway.md), `backend/gateway/`), each its own Maven project in `backend/<name>/` with its own Dockerfile (ADR-001, ADR-002), and one React web app in `frontend/`, all planned in one monorepo (originally private, now public; guide H2, H8 and point 10). The initial workflow was `.github/workflows/conventions.yml` (branch name, PR title, linked issue on every PR); R0 now also has executable CI (point 9).
 - Delivery is **local only**, because cloud hosting costs were not justified ([ADR-011](0011-deployment-and-infrastructure.md)). The earlier "deploy to a cloud production environment on every merge" (guide H4, H5) no longer applies. Delivery means building from the release tag on a laptop with `docker compose` and running the smoke test by hand ([`local-delivery.md`](../local-delivery.md)). CI never reaches anyone's machine.
 - Versioning (guide H7): one SemVer version for the monorepo, an annotated tag `vX.Y.Z` on `main`, images `farol-<service>:X.Y.Z` (other builds `dev`), **no registry** and no GitHub Releases. Rolling back means building the previous tag.
 - The [Security and Privacy Assessment](../security-and-privacy-assessment.md) found no dependency or image scanning (finding 12, threat T18) and left the answer to this ADR.
-- The repository is **private**, so GitHub Actions minutes are limited (2,000 per month on GitHub Free, 3,000 on Pro). Four people open many pull requests, and during Sprint A almost all of them only change documentation. CodeQL, GitHub secret scanning and SonarCloud are paid for private repositories.
+- The 23 October pipeline was designed around a private repository and limited Actions minutes. On 31 October Tomás made the repository **public** and requested SonarQube Cloud analysis (#168). The earlier blanket claim that Sonar requires payment for private repositories was incorrect: its current Free offering also permits private projects up to 50k lines. See the [activation guide](../sonarqube-cloud.md); plan eligibility is confirmed in the owner account.
 
 ## Decision
 
-1. **Tool and layout (H1, H2, H3, H8).** **GitHub Actions** in the private monorepo. **Maven** with **Java 21** and **Spring Boot 4.x** for every service; every image is built from a **multi-stage Dockerfile** in its own folder (`backend/<name>/Dockerfile`, `frontend/Dockerfile`).
+1. **Tool and layout (H1, H2, H3, H8).** **GitHub Actions** in the monorepo (now public; point 10). **Maven** with **Java 21** and **Spring Boot 4.x** for every service; every image is built from a **multi-stage Dockerfile** in its own folder (`backend/<name>/Dockerfile`, `frontend/Dockerfile`).
 
 2. **Two workflows.**
    - `conventions.yml`, unchanged, on every PR. Dependabot PRs are exempt, because Dependabot cannot follow the branch, title and issue conventions.
@@ -41,7 +41,7 @@
 
 5. **Delivery (H5).** CD stops at a tested, tagged commit. The release is delivered by building that tag locally with `docker compose` and running the smoke test by hand ([`local-delivery.md`](../local-delivery.md)). The pipeline never connects to a team member's machine. Cloud deployment is **not part of the current scope** ([ADR-011](0011-deployment-and-infrastructure.md)); the pipeline's `delivery` job runs the same Compose file and smoke test on the CI runner instead.
 
-6. **Secrets and permissions (H6).** No registry and no cloud deployment, so the pipeline needs **no credentials and no repository secrets**. Workflows run with `permissions: contents: read` (`conventions.yml` with none). The CI smoke test uses the harmless values of `infra/.env.example`. Any secret added later (for example, a hosted AI key, guide K1) is a GitHub Actions secret, never a file in the repository.
+6. **Secrets and permissions (H6).** No registry or cloud deployment credentials are needed. **#168 adds `SONAR_TOKEN` as a repository secret solely for Sonar analysis**, with organization/project identifiers in repository variables; fork/Dependabot code never receives it. Workflows run with `permissions: contents: read` (`conventions.yml` with none). The CI smoke test uses the harmless values of `infra/.env.example`. Any secret added later (for example, a hosted AI key, guide K1) is a GitHub Actions secret, never a file in the repository.
 
 7. **Dependency and security checks.**
    - **Dependabot** (`.github/dependabot.yml`): security alerts and security update PRs on; version update PRs **monthly**, one grouped PR per ecosystem (Maven per service, npm, Docker, GitHub Actions), so they do not eat the Actions minutes.
@@ -53,6 +53,8 @@
 
 9. **Walking skeleton R0 — narrowed 31 October 2026 (#166).** Implement one Reports service, a synthetic help-request create/read demo plus diagnostic health, real HTTP tests, multi-stage Dockerfile and Compose. The actual `.github/workflows/ci.yml` has one required job named `CI`: Maven verify, container build/start, JSON smoke check and cleanup on **every PR**, main push, tag and manual run, including drafts/documentation changes. No path filters, cloud/registry access or deployment to a personal machine. The broader jobs in points 2–7 (matrix/web, Testcontainers, Checkstyle/ESLint, gitleaks, Trivy, Dependabot and release-tag ancestry/version handling) are the accepted **Sprint B target**, not implemented capabilities of the minimum. Two independently deployable backend components are a Sprint B requirement, not a Sprint A blocker. The first reviewed release tag remains `v0.1.0`; no release/tag is created by #166.
 
+10. **SonarQube Cloud addition (#168, 31 October 2026).** At Tomás's request, add an independent `SonarQube Cloud` job for same-repository PRs into main, main pushes and manual main runs. It builds/tests Reports with JaCoCo XML, then runs the pinned Maven scanner and waits for the quality gate; missing configuration or a failed gate fails the job. Fork/Dependabot PRs and tags/feature-branch manual runs skip this job. No documentation/draft filters apply to R0. This implements Java analysis for the current Reports module only, not the full matrix/security pipeline above. The owner has created the Sonar project; GitHub configuration and the first successful authenticated analysis remain pending. [Setup, scope and verification](../sonarqube-cloud.md). This is a user-requested implementation update, not a new team vote.
+
 ## Consequences
 
 - The R0 correction intentionally builds/tests and runs one container on every PR to provide visible evidence. The documentation/draft skip policy above applies when the full Sprint B pipeline is implemented, not to this minimum.
@@ -61,7 +63,7 @@
 - The smoke test runs on a clean runner every time something reaches `main`, so `local-delivery.md` stays executable. The manual smoke test on the demo laptop is still needed: CI does not cover the phones, the LAN or the laptop's resources.
 - Nothing is published, so a release is only as reproducible as its build. Base images are pinned in the Dockerfiles and Compose file (ADR-011); a rebuilt tag can still pick up newer OS packages.
 - The documentation-only rule is narrow on purpose (`Docs/` and `*.md` only): a change to a workflow, a Dockerfile, the Compose file or any code runs the code jobs. Tags and manual runs never skip anything.
-- No paid GitHub feature is needed: gitleaks replaces secret scanning, Checkstyle and ESLint replace CodeQL or SonarCloud, Trivy covers the images.
+- No paid GitHub feature is required by this implementation. SonarQube Cloud adds Java static analysis and measured coverage (#168); Checkstyle/ESLint remain planned style checks, and gitleaks/Trivy/Dependabot remain separate planned security checks.
 
 ## Alternatives considered
 
@@ -74,6 +76,6 @@
 | Keeping the images as workflow artefacts | Around 1–2 GB per run in Actions storage, and still a second way to deliver besides building the tag |
 | Deploying to the cloud from the pipeline | Out of scope because of cost ([ADR-011](0011-deployment-and-infrastructure.md)) |
 | A self-hosted runner on a team laptop, to deploy there | The pipeline would reach a personal machine and depend on it being on; rejected in ADR-011 |
-| SonarCloud, CodeQL, GitHub secret scanning | Paid for private repositories |
+| SonarQube Cloud | Originally excluded under an incorrect private-project pricing assumption; now selected by Tomás (#168), subject to account setup and a real quality-gate result. Other security checks retain their own scope. |
 | SpotBugs next to Checkstyle | More findings, more false positives and more minutes; can be added if Checkstyle proves too weak |
 | OWASP Dependency-Check | Slow (downloads the NVD database) and overlaps with Dependabot and Trivy |
