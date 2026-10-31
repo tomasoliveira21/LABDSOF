@@ -9,6 +9,11 @@
 > - No mark = fact with a source. IDs (all in section 9): `P#` = sources from 2026-10-06; `M#` = security, operations and app sources; `N#` = ticketing, payments and market sources; `F#` = reference case (Queima do Porto); `R:` = evidence cited in the repository's Problem and Opportunity Report.
 > - Competitors' features are **supplier claims** (websites, prices, app stores). We did not test any product.
 > - In the matrix, ❌ means "not found in the sources", not "does not exist".
+>
+> **Decisions taken since 6 October 2026** (added 31 October 2026, #162). This analysis was written on 6 October; the team decided later, and where the text below differs, these decisions win:
+> - **Transport:** live positions of the city buses near the venue come from the Porto Digital urban platform, plus the event shuttles and temporary stops entered by the team ([ADR-008](../Technical/adr/0008-transport-data-source.md), F9 in [`features.md`](../Product/features.md)). A link to Google Maps is no longer the plan for regular lines.
+> - **AI:** help-request triage was chosen on 8 October 2026; the participant Q&A assistant was rejected (a wrong transport answer at night is a safety risk; [`features.md` §5](../Product/features.md#5-ai-assisted-workflow-help-request-triage)).
+> - **Weak network:** offline mode (cached map and information) is F11, a *Could* since 9 October 2026; the time of the last update on each item stays in the MVP (SC7, [product vision](../Product/product-vision.md)). The rows C5, C9 and C10 below are corrected accordingly.
 
 ---
 
@@ -20,7 +25,7 @@
 | Is there a product that does all this for academic events in Portugal? | **We did not find one.** Each component exists in isolation: festival apps provide a map and alerts; professional control rooms handle incidents; Google Maps provides transport; WhatsApp receives help requests |
 | Who comes closest? | **Appmiral** (map, alerts and SOS in a festival app) on the participant side and **Raven Controls** (incidents with public reporting by QR) on the team side. Neither joins the two sides for academic teams, in Portuguese and without installation |
 | What is already common and does not set us apart? | Interactive map, timetables, push alerts, SOS button, incident dashboard, real-time transport |
-| What sets us apart? | (1) the two sides connected by the **map**; (2) **multi-event with per-event permissions**; (3) **no installation** and ready for a weak network; (4) **the event's own transport** maintained by the team; (5) Portuguese context |
+| What sets us apart? | (1) the two sides connected by the **map**; (2) **multi-event with per-event permissions**; (3) **no installation**, with the last-update time on every item; (4) **the event's own transport** maintained by the team; (5) Portuguese context |
 | Biggest threat | The free status quo: **Instagram + WhatsApp line + radio** |
 
 ---
@@ -37,8 +42,8 @@
 | **C6** | Help request by the participant, with the place marked on the map | **MVP** | Report; survey, questions 5, 8 and 10 |
 | **C7** | Backoffice: receive, prioritise and route incidents | **MVP** | Report, "Main user journeys" |
 | **C8** | Expected waiting time at the entrances | **Candidate** (survey option) | Survey, question 8. The physical capacity of the gates is out of scope |
-| **C9** | AI: assistant for questions about the event and support for prioritising requests | **Candidate** (the assignment requires at least one AI workflow) | Survey, question 8; report, assumption A7 |
-| **C10** | Work on a weak network (cache, degraded mode) and show the time of the last update | **Requirement** | Report, assumption A8 and technical risks |
+| **C9** | AI: support for prioritising help requests (triage); the participant Q&A assistant was rejected on 8 October 2026 | **MVP** (triage; the assignment requires at least one AI workflow) | Survey, question 8; report, assumption A7 |
+| **C10** | Work on a weak network (cache, degraded mode) and show the time of the last update | **MVP:** the last-update time (SC7). **Could:** the offline cache (F11, since 9 October 2026) | Report, assumption A8 and technical risks |
 | **C11** | Electronic ticket in the application | **Candidate** (survey option); ticketing is a partner, not part of the MVP | Survey, question 8; report, stakeholder map |
 
 **Out of scope (repository):** physical capacity of the entrances; heavy integrations; advanced crowd prediction; full automation.
@@ -114,7 +119,7 @@ Each profile answers: who already does this, with which strengths and weaknesses
 | **Puntos Violeta** (Spain) | Groups to "go home together" (M28) | Safe journey home | Another country; another focus |
 | **Ride-hailing** (Uber, Bolt) | Trip sharing (M35) | Already installed | Price at peaks |
 
-**What we learned:** since June 2026, real time for STCP's regular lines is **already solved** by Google Maps; there is no point in rebuilding it. Our part is what mobility apps do not know: **temporary stops on the map, the event shuttle's timetable and what changed tonight**, entered by the team (assumption A6 of the report). For the rest, a link to Google Maps is enough.
+**What we learned:** since June 2026, real time for STCP's regular lines is **already solved** by Google Maps; there is no point in rebuilding it. Our part is what mobility apps do not know: **temporary stops on the map, the event shuttle's timetable and what changed tonight**, entered by the team (assumption A6 of the report). For the rest, a link to Google Maps is enough. *Update 31 October 2026:* the team later chose to show live bus positions near the venue from the Porto Digital platform ([ADR-008](../Technical/adr/0008-transport-data-source.md)); temporary stops and the shuttle are still entered by the team.
 
 ### C6 — Help request with the place on the map
 
@@ -167,7 +172,7 @@ Each profile answers: who already does this, with which strengths and weaknesses
 | **Content moderation** | **Woov**, with 95% less human work (M6) | Scales | Does not apply to our MVP | — |
 | **Marketing and demand forecasting** | Eventbrite, Fever (N1; general document) | — | Outside our scope | — |
 
-**What we learned:** AI **does not set the product apart by itself**, because both candidate uses already exist. What counts is meeting the assignment better than suppliers show publicly: assistant answers **only from the information the team uploaded**, with the source and time shown; the AI never lowers a request's priority without a person; evaluation with a set of cases and comparison with the non-AI alternative (assumption A7).
+**What we learned:** AI **does not set the product apart by itself**, because both candidate uses already exist. What counts is meeting the assignment better than suppliers show publicly: the assistant would answer **only from the information the team uploaded** (it was rejected on 8 October 2026; triage was kept); the AI never lowers a request's priority without a person; evaluation with a set of cases and comparison with the non-AI alternative (assumption A7).
 
 ### C10 — Weak network and degraded mode
 
@@ -213,11 +218,11 @@ Legend: ✅ confirmed in the source · ◐ partial · ❌ not found in the sourc
 | Raven Controls (+ Eye) | ? | ✅ WhatsApp | ✅ for the control room | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ triage | ? | ❌ |
 | SafeZone | ❌ campus | ❌ | ◐ | ✅ | ◐ shuttles | ✅ | ✅ | ❌ | ❌ | ? | ? |
 | Waitwhile | ? | ✅ | ❌ | ◐ SMS | ❌ | ❌ | ❌ | ✅ virtual queue | ❌ | ? | ? |
-| **Us (MVP target)** | ✅ | ✅ | ✅ | ✅ | ✅ the event's | ✅ | ✅ | ◐ candidate | ◐ with fallback | ✅ | ✅ |
+| **Us (MVP target)** | ✅ | ✅ | ✅ | ✅ | ✅ the event's and live buses | ✅ | ✅ | ◐ candidate | ◐ triage with fallback | ◐ last-update time; offline is a Could | ✅ |
 
 **Reading:**
 1. **No alternative covers C3 + C5 + C6 + C7 at the same time**, which is the core of the MVP in the repository (map, transport, help request, incidents).
-2. Those with **C6 and C7** (Raven, SafeZone) do not have the participant information side or a Portuguese version. Those with **C3 and C4** (Appmiral, Woov, FEST) do not have an incident backoffice.
+2. Those with **C6 and C7** (Raven, SafeZone) have no Portuguese version; Raven has no participant information side, and SafeZone's alerts are for a campus, not an event. Those with **C3 and C4** (Appmiral, Woov, FEST) do not have an incident backoffice.
 3. **C2 (no install)** appears mostly in messaging channels (WhatsApp, SMS); the most feature-rich festival apps are native.
 4. The Portuguese status quo covers almost everything **partially and on different channels**. That is the real competitor.
 
@@ -247,7 +252,7 @@ Legend: ✅ confirmed in the source · ◐ partial · ❌ not found in the sourc
 | C2 No installation | Partly (messaging channels) | Full web application, not just a reporting channel | Time between scanning the QR and seeing the map |
 | C3 Map | Yes | Map uploaded by the team and used by both sides | Percentage of requests with a marked place |
 | C4 Alerts | Yes | Time of the last update on every piece of information | Percentage of content with a visible time |
-| C5 Transport | Yes, for regular lines | The event's shuttles and stops; link to Google Maps for the rest | Comparison with the official announcements |
+| C5 Transport | Yes, for regular lines | The event's shuttles and stops, plus live buses near the venue (ADR-008) | Comparison with the official announcements |
 | C6 Help request | Yes, in native apps | No installation; place on the map | Time until the request is submitted |
 | C7 Incidents | Yes, in professional control rooms | For academic teams, in PT, connected to the participant | Time between request and routing |
 | C8 Wait time | Rare | Manual version per gate | Only if the survey shows demand |
@@ -387,7 +392,7 @@ Only the sources cited in this annex are listed. The IDs come from the original 
 
 ---
 
-## 10. How I used AI in this research
+## 10. How AI was used in this research
 
 ### 10.1 Tool and role
 
@@ -395,7 +400,7 @@ Only the sources cited in this annex are listed. The IDs come from the original 
 |---|---|
 | Tool | **Claude** (Anthropic), with web search, page reading and read access to the project's local folder |
 | AI's role | Read the repository, extract the list of product components, search for alternatives for each one and organise the comparison |
-| My role | Ask for the iteration based on the repository and for the split between the general document and the specific annex; review the result |
+| Human role | The team member who wrote this analysis asked for the iteration based on the repository and for the split between the general document and the specific annex, and reviewed the result |
 | What the AI did **not** do | It did not change the repository, test products or generate user answers |
 
 ### 10.2 What was done in this iteration

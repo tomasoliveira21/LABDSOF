@@ -28,7 +28,7 @@ What the professor listed, with the document each section comes from today.
 | Customer journeys / general user workflow | [`user-workflows.md`](../Product/user-workflows.md) and the BPMN diagrams | Exists |
 | Domain model | [`domain-model.md`](../Technical/domain-model.md) | Exists |
 | Architecture & technology | [`architecture.md`](../Technical/architecture.md), ADRs, draw.io diagrams | Exists; diagrams change with P1 |
-| Assumptions & dependencies | Assumptions in [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md); dependencies spread across the ADRs | **Missing** as one list |
+| Assumptions & dependencies | Assumptions in [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md); dependencies spread across the ADRs | **Missing** as one list. *Update 31 October 2026:* one list now exists, [`assumptions-and-dependencies.md`](../Deliverables/assumptions-and-dependencies.md) (#162) |
 | Operating costs estimation | [`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md) (#134), with the infrastructure research of #53 (guide G2) | Exists |
 | Prioritised product backlog (epics) | [`features.md`](../Product/features.md) §2 and §7; issues #58 to #121 (§8.3) | Partial: issues created and on the [board](https://github.com/users/tomasoliveira21/projects/1); priority, size and *Ready* applied in #138 (24 October 2026) |
 | NFRs | [`non-functional-requirements.md`](../Product/non-functional-requirements.md), from the architecture drivers ([`architecture.md`](../Technical/architecture.md) §1) and the success criteria | Exists (#137) |

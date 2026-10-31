@@ -74,6 +74,6 @@ body:
         - [ ] Automated tests cover the acceptance criteria
         - [ ] Authorisation tested where the story touches event data (another event's user cannot read or change it)
         - [ ] Structured logs with a correlation ID for the new behaviour
-        - [ ] Deployed to the shared environment through the pipeline
+        - [ ] The pipeline on `main` is green after the merge, including the image build and the smoke test (delivery is local, ADR-010)
         - [ ] Accepted by the Product Owner
         - [ ] Closed by the PR (`Closes #<issue>`)

@@ -77,3 +77,32 @@ Compare the participant-category/default-team baseline with raw model outputs. P
 For the minimum local demo, run the selected Ollama model once on the frozen test split, review reasons and record actual latency/memory. Show one success and one AI-off fallback. Repeated candidate comparisons and concurrency studies are optional; the [current decision](../../Technical/plans/ai-provider-evaluation.md) supersedes the broader research experiment. This research supplies an offline scorer and baseline, not deployed latency instrumentation or inference results. No model/provider was called, so model accuracy, tokens, cloud capacity, safety and SC3/SC5 are **not measured** here.
 
 The original features AI-1–AI-11 questions are answered as **proposals** by the input/schema/rubric/provider/prompt/dataset/gates/UI/monitoring/risk sections above. Team acceptance and implementation follow separately.
+
+**Which gate decides what (added 31 October 2026, #162):** an offline run decides only the **quality gate** (accuracy, urgent cases, abstentions, floor and category/team checks). A direct model-call benchmark omits `elapsed_ms` ([evaluation README](evaluation/README.md), step 4), so the scorer reports no on-time coverage and its timing gate cannot pass; on-time coverage (≥ 95 % within 30 s) is measured on the instrumented one-hour cohort of the [local decision](../../Technical/plans/ai-provider-evaluation.md), not offline.
+
+## Baseline, known limitations and how users are informed (added 31 October 2026, #162)
+
+This section is added to the snapshot so that deliverable 6 states its numbers and its limits in one place (assignment §5.6.1, §5.6.2, §5.6.3). It adds no new decision.
+
+**Non-AI baseline, reproduced.** The [baseline report](evaluation/baseline-report.json) applies the no-AI policy (participant category, default team, category priority floor) to the 80 test cases (72 non-abstention references):
+
+| Measure | Baseline | Gate (ADR-005 decision 4) |
+|---|---|---|
+| Category accuracy | 0.708 (51 of 72) | ≥ 0.80 |
+| Team accuracy | 0.806 (58 of 72) | ≥ 0.80 |
+| Urgent cases missed (under-prioritised, abstained or missing) | 24 of 31 | 0 |
+| Correct expected abstentions | 0 of 8 | all |
+
+The baseline passes only the team-accuracy threshold. **Where the AI must beat it** is the existing gate on urgent cases: zero misses against the baseline's 24 of 31, plus category accuracy ≥ 0.80 and every expected abstention. No new gate is added here. The value the AI is expected to bring is therefore earlier attention to urgent requests whose participant category understates them; it is not measured until the model runs (guide K2).
+
+**Known limitations:**
+
+- **Synthetic, team-authored labels.** The 100 cases and their labels were written by the team; they are not independent expert ground truth, and the test split is visible in the repository, so it is not a blinded benchmark.
+- **Small slices.** The English, mixed-language, slang, injection, abstention and ambiguous slices have 3 to 8 test cases each, and multiple problems only one, too few to establish fairness or robustness.
+- **No calibrated confidence.** The model gives no score that has been checked against outcomes, so none is shown.
+- **One issue per suggestion.** The prompt asks for the most urgent described issue only ([system prompt](evaluation/system-prompt.txt)); a request describing several problems gets one suggestion.
+- **Latency not measured.** Time on the demo laptop's CPU is unknown until the model runs (ADR-005).
+- **Fixed team names.** The evaluation uses one frozen event's teams; other events' teams are an integration check.
+- **Provenance of retrieved information:** not applicable. The model has no tools and no retrieval; it sees only the minimised fields listed above.
+
+**How users are informed.** The operator always sees the original request next to the result, which is labelled **AI suggestion** with a short reason, never as a verified fact, and can change it; no confidence number is shown (§ *Opportunity, boundaries and human control* above). When the AI is unavailable, requests show *"Not triaged"* and a banner says so ([`features.md` §5](../../Product/features.md#5-ai-assisted-workflow-help-request-triage)). Participants are told in the sign-up terms that an AI may suggest a priority and that a person decides ([security and privacy assessment §8](../../Technical/security-and-privacy-assessment.md#8-consent-transparency-and-the-sign-up-terms)).

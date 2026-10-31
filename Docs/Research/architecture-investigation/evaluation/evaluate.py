@@ -9,7 +9,7 @@ HERE = Path(__file__).resolve().parent
 LEVEL = {"Low": 0, "Medium": 1, "High": 2, "Critical": 3}
 TEAM = {"Health": "Medical", "Safety": "Security", "LostPerson": "PCR", "Theft": "Security", "Other": "PCR"}
 FLOOR = {"Health": "Medium", "Safety": "High", "LostPerson": "Medium", "Theft": "Medium", "Other": "Low"}
-SCHEMA = json.loads((HERE / "output.schema.json").read_text())
+SCHEMA = json.loads((HERE / "output.schema.json").read_text(encoding="utf-8"))
 # ADR-005 coverage definition, aligned with observability in #145.
 MIN_SUGGESTION_COVERAGE = 0.95
 MIN_ON_TIME_COVERAGE = 0.95
@@ -17,7 +17,7 @@ DEADLINE_MS = 30000
 
 
 def read_jsonl(path):
-    return [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+    return [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def valid_output(output):
@@ -53,7 +53,7 @@ def validate_cases(cases):
         assert type(expected["abstain"]) is bool and case["origin"].startswith("synthetic-")
         assert case["tags"] and set(case["tags"]) <= {"plain", "urgent", "wrong-category", "slang", "ambiguous", "english", "mixed", "multiple", "abstain", "empty", "injection"}
     # Prompt few-shot examples are development-only.
-    prompt = (HERE / "system-prompt.txt").read_text()
+    prompt = (HERE / "system-prompt.txt").read_text(encoding="utf-8")
     for case in cases:
         if case["split"] == "test" and len(case["input"]["text"]) > 12:
             assert case["input"]["text"] not in prompt, "Test input leaked into few-shot prompt"

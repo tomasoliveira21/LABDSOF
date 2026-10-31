@@ -6,6 +6,11 @@
 > **Target market:** Portugal. International references are for comparison only.
 >
 > **Legend:** no mark = fact with a source · "Not identified" = we did not find it in the sources (it does not mean it does not exist). Competitors' features are the ones they claim themselves; we did not test them.
+>
+> **Decisions taken since 6 October 2026** (added 31 October 2026, #162). This analysis was written on 6 October; the team decided later, and where the text below differs, these decisions win:
+> - **Transport:** live positions of the city buses near the venue come from the Porto Digital urban platform, plus the event shuttles and temporary stops entered by the team ([ADR-008](../Technical/adr/0008-transport-data-source.md), F9 in [`features.md`](../Product/features.md)). A link to Google Maps is no longer the plan for regular lines.
+> - **AI:** help-request triage was chosen on 8 October 2026; the participant Q&A assistant was rejected (a wrong transport answer at night is a safety risk; [`features.md` §5](../Product/features.md#5-ai-assisted-workflow-help-request-triage)).
+> - **Weak network:** offline mode (cached map and information) is F11, a *Could* since 9 October 2026; the time of the last update on each item stays in the MVP (SC7, [product vision](../Product/product-vision.md)).
 
 ---
 
@@ -34,7 +39,7 @@ Today, each phase of the event is handled by a different tool, and the informati
 | **Fever (+ DICE) / Shotgun** | Event discovery; young audience; managed resale | Focused on consumption and marketing; organiser pricing is not public | **Yes** (Fever): recommendations and demand forecasting |
 | **Eventbrite** | Self-service; check-in app | Expensive on cheap tickets (about 15.6% on a US$20 ticket) | **Yes**: generates descriptions, emails and ads |
 | **APP FAP** | Official app; student discount; tops up the cashless wristband | A single federation; does not cover event operations | Not identified |
-| **Status quo** (Instagram + Google Forms + MB Way) | Free and familiar | Payments confirmed by hand; no control of places | — |
+| **Status quo** (Instagram + Google Forms + MB Way) | Free and familiar | Payments confirmed by hand; no control of capacity (how many tickets are left) | — |
 | *International ref.:* **FIXR / native** (United Kingdom) | Built for student unions; student-only tickets | Not present in Portugal; do not handle the venue | Not identified |
 
 ### Phase 2 — Entry and access control *(the product only informs; physical capacity is out of scope)*
@@ -101,12 +106,12 @@ Today, each phase of the event is handled by a different tool, and the informati
 | Phase | Situation in the Portuguese market | Our product |
 |---|---|---|
 | Purchase | **Well served** (BOL, Ticketline, Fever), with about a 6% fee | Out. Partner |
-| Entry | Technically solved at large events; the 2022 and 2023 queues show a lack of **information** for the participant | Information only (gates, alerts). Wait time is a survey option |
+| Entry | Technically solved at large events; the 2022 and 2023 queues show a lack of **information** for the participant | Information only (gates, alerts). Expected wait time at the gates is one of the features the survey asks about (component C8 of the annex) |
 | During: information | **Static** (Instagram, map image); existing apps cover a single event or a single federation | **In**: map, information and alerts |
 | During: help and incidents | **Fragmented and unrecorded** (radio, WhatsApp) | **In**: help request and backoffice |
 | Getting home | Scattered official information; STCP real time reached Google Maps in 2026 | **In**: the event's transport information |
 | After the event | **Manual** | Side effect: the incident history is kept |
-| AI | Exists in marketing (Eventbrite, Fever), in professional control rooms (Raven) and in Q&A assistants (42Chat). **We found no AI in the operation of academic events in Portugal** | Options: request triage and a Q&A assistant, always with a non-AI alternative |
+| AI | Exists in marketing (Eventbrite, Fever), in professional control rooms (Raven) and in Q&A assistants (42Chat). **We found no AI in the operation of academic events in Portugal** | Help-request triage, with a non-AI alternative (decided 8 October 2026; the Q&A assistant was rejected) |
 
 ---
 
@@ -125,8 +130,8 @@ Today, each phase of the event is handled by a different tool, and the informati
 
 1. **It connects participant and operations.** Festival apps stop at information; radio and WhatsApp stop at operations. The closest reference (Raven Controls) is for professional control rooms and has no Portuguese version.
 2. **Multi-event with independent teams.** One application for several Queimas and academic weeks. Classic festival apps are one per event (Appmiral); multi-event ones (Woov, LineUpr) have no operations.
-3. **The map as the common reference.** The participant finds their way with it and the team places requests on it. In the Portuguese alternatives, the map is an image on social media.
-4. **No installation and ready for a weak network.** Appmiral, Woov and SafeZone require a native app.
+3. **The map as the common reference.** The participant finds their way with it and the team places requests on it. In the Portuguese status quo, the map is an image on social media; the festival apps that have one (NOS Alive, Rock in Rio Lisboa) cover a single festival and do not place help requests on it.
+4. **No installation.** Appmiral, Woov and SafeZone require a native app. Every piece of information shows its last-update time; offline mode is a *Could* (F11).
 5. **Information that changes during the night**, with the time of the last update. The status quo is static.
 6. **Local:** European Portuguese and the event's special transport.
 7. **AI with a non-AI alternative.** It is not a differentiator in itself (Raven and 42Chat already use it); what counts is that it is evaluated and has a fallback, as the assignment requires.
@@ -137,23 +142,23 @@ Today, each phase of the event is handled by a different tool, and the informati
 |---|---|
 | "We already have Instagram and WhatsApp" | Show the gain in time to help and in up-to-date information; QR entry as fast as WhatsApp |
 | The supplier of the federation's current app feels replaced | Come in as a complement, through a link or QR, without requiring changes to the existing app |
-| An international supplier (Appmiral, Woov) moves down-market | Operations and incidents, which are not in their DNA; Portuguese context |
+| An international supplier (Appmiral, Woov) moves down-market | Operations and incidents, which their products do not cover; Portuguese context |
 | Use concentrated in a few days a year | Multi-event: the same user comes back for other events |
 | Large scope for the MVP | Priority: help request, map and transport (as in the repository) |
 
-The detail per feature (alternatives, comparison matrix, prices and hypotheses to validate) is in annex `02a`.
+The detail per feature (alternatives, comparison matrix, prices and hypotheses to validate) is in [annex 02a](market-and-competitor-analysis-product-specific.md).
 
 ---
 
 ## 4. Main sources
 
-[Problem and Opportunity Report (repository)](https://github.com/tomasoliveira21/LABDSOF) · [Ticketing fees in Portugal (Observador)](https://observador.pt/especiais/bilhetes-para-concertos-mais-caros-ha-espetaculos-com-taxa-extra-para-garantir-servidores-mais-potentes/) · [BOL — Enterro da Gata 2026](https://enterrodagata.bol.pt/Comprar/Bilhetes/176491-enterro_da_gata_2026_bilhete_geral-forum_braga_gatodromo/) · [Fever — Data & Analytics](https://business.feverup.com/en/event-data-and-analytics/) · [Shotgun](https://nevent.ai/en/ticketing-platforms/shotgun/) · [Eventbrite — AI tools](https://www.eventbrite.com/blog/press/newsroom/eventbrite-introduces-ai-powered-tools-to-empower-creators-and-reimagine-event-marketing/) · [Eventbrite fees 2026](https://www.tickpick.com/blog/organizer/eventbrite-2026-fee-changes) · [APP FAP](https://www.fap.pt/noticias/app-fap-fap-no-teu-bolso) · [Queima cashless wristband (JPN)](https://www.jpn.up.pt/2023/04/14/queima-das-fitas-no-queimodromo-pagamentos-vao-ser-feitos-com-uma-pulseira/) · [FIXR](https://blog.fixr.co/reasons-to-use-fixr-for-your-society-events/) · [native](https://knowledge.native.fm/kb/en/events-ticketing-227940) · [Weezevent](https://weezevent.com/en-gb/festivals/) · [Waitwhile — Tribeca](https://waitwhile.com/case-studies/tribeca-film-festival/) · [BindePaFesta (RFM)](https://rfm.pt/atualidade/23680/esta-app-portuguesa-mostra-te-onde-sao-as-festas-da-terrinha-e-ja-esta-entre-as-mais-descarregadas) · [Appmiral — pricing](https://appmiral.com/pricing) · [Woov (App Store)](https://apps.apple.com/nl/app/woov-your-festival-companion/id1580044680) · [LineUpr — pricing](https://lineupr.com/en/pricing/) · [42Chat FestivalBot](https://www.42chat.com/festivalbot) · [Zpos](https://en.zpos.pt/festivals/) · [SumUp PT](https://pt.mobiletransaction.org/sumup-leitor-cartoes/) · [ifthenpay](https://shelf.pt/blog/ifthenpay-review) · [Zello](https://zello.com/pricing/) · [Raven Controls](https://ravencontrols.com/) · [CriticalArc SafeZone](https://criticalarc.com/safezone-features/) · [Rosterfy](https://www.rosterfy.com/pricing/) · [STCP — Queima service](https://www.stcp.pt/pt/noticias/stcp-com-servico-dedicado-para-a-queima-das-fitas-do-porto/) · [STCP real time on Google Maps (Renascença, 2026)](https://rr.pt/noticia/pais/2026/06/09/stcp-disponibiliza-horarios-dos-autocarros-em-tempo-real-no-google-maps/473765/).
+[Problem and Opportunity Report](problem-opportunity-report-queima.md) · [Ticketing fees in Portugal (Observador)](https://observador.pt/especiais/bilhetes-para-concertos-mais-caros-ha-espetaculos-com-taxa-extra-para-garantir-servidores-mais-potentes/) · [BOL — Enterro da Gata 2026](https://enterrodagata.bol.pt/Comprar/Bilhetes/176491-enterro_da_gata_2026_bilhete_geral-forum_braga_gatodromo/) · [Fever — Data & Analytics](https://business.feverup.com/en/event-data-and-analytics/) · [Shotgun](https://nevent.ai/en/ticketing-platforms/shotgun/) · [Eventbrite — AI tools](https://www.eventbrite.com/blog/press/newsroom/eventbrite-introduces-ai-powered-tools-to-empower-creators-and-reimagine-event-marketing/) · [Eventbrite fees 2026](https://www.tickpick.com/blog/organizer/eventbrite-2026-fee-changes) · [APP FAP](https://www.fap.pt/noticias/app-fap-fap-no-teu-bolso) · [Queima cashless wristband (JPN)](https://www.jpn.up.pt/2023/04/14/queima-das-fitas-no-queimodromo-pagamentos-vao-ser-feitos-com-uma-pulseira/) · [FIXR](https://blog.fixr.co/reasons-to-use-fixr-for-your-society-events/) · [native](https://knowledge.native.fm/kb/en/events-ticketing-227940) · [Weezevent](https://weezevent.com/en-gb/festivals/) · [Waitwhile — Tribeca](https://waitwhile.com/case-studies/tribeca-film-festival/) · [BindePaFesta (RFM)](https://rfm.pt/atualidade/23680/esta-app-portuguesa-mostra-te-onde-sao-as-festas-da-terrinha-e-ja-esta-entre-as-mais-descarregadas) · [Appmiral — pricing](https://appmiral.com/pricing) · [Woov (App Store)](https://apps.apple.com/nl/app/woov-your-festival-companion/id1580044680) · [LineUpr — pricing](https://lineupr.com/en/pricing/) · [42Chat FestivalBot](https://www.42chat.com/festivalbot) · [Zpos](https://en.zpos.pt/festivals/) · [SumUp PT](https://pt.mobiletransaction.org/sumup-leitor-cartoes/) · [ifthenpay](https://shelf.pt/blog/ifthenpay-review) · [Zello](https://zello.com/pricing/) · [Raven Controls](https://ravencontrols.com/) · [CriticalArc SafeZone](https://criticalarc.com/safezone-features/) · [Rosterfy](https://www.rosterfy.com/pricing/) · [STCP — Queima service](https://www.stcp.pt/pt/noticias/stcp-com-servico-dedicado-para-a-queima-das-fitas-do-porto/) · [STCP real time on Google Maps (Renascença, 2026)](https://rr.pt/noticia/pais/2026/06/09/stcp-disponibiliza-horarios-dos-autocarros-em-tempo-real-no-google-maps/473765/).
 
-Remaining sources in annex `02a`, section 9.
+Remaining sources in [annex 02a](market-and-competitor-analysis-product-specific.md#9-sources), section 9.
 
 ---
 
-## 5. How I used AI in this research
+## 5. How AI was used in this research
 
 ### 5.1 Tool and role
 
@@ -161,19 +166,19 @@ Remaining sources in annex `02a`, section 9.
 |---|---|
 | Tool | **Claude** (Anthropic), in a project called "LABDSOF" that keeps the working documents, with web search and page reading enabled |
 | AI's role | **Research and writing assistant.** It searched for alternatives, read supplier pages and the press, summarised and organised them into tables |
-| My role | I set the scope and the questions in each round, decided what went in and out, and aligned the result with the group's decisions |
+| Human role | The team member who wrote this analysis set the scope and the questions in each round, decided what went in and out, and aligned the result with the group's decisions |
 | What the AI did **not** do | It did no user research, tested no products and made no product decisions |
 
 ### 5.2 Process, by iteration
 
-| Date | Version | What I asked | What the AI did |
+| Date | Version | What was asked | What the AI did |
 |---|---|---|---|
 | 2026-09-24 | v1.x | Competitors and non-digital alternatives for security coordination, along the assignment's dimensions | Three research rounds (8 → 20 → 29 profiles), with a 15-capability matrix. |
 | 2026-10-01 | v2.0 | Widen it to academic event management as a whole | Research per stage of the event lifecycle: 10 families, more than 50 products, public prices |
 | 2026-10-01 | v3.0 | A short version, by phase, with strengths, weaknesses and AI use, Portuguese market only | Condensed the previous research into 2–3 pages |
 | 2026-10-06 | **v4.0** (this document) | Iterate the analysis based on what is already in the repository | Read the Problem and Opportunity Report, the survey script and the repository's commit history; reorganised the phases; did new research on participant information, queues and getting home (sources P1–P10 of annex `02a`) |
 
-### 5.3 Rules I followed to keep the evidence reliable
+### 5.3 Rules followed to keep the evidence reliable
 
 | Rule | Where it shows in the document |
 |---|---|

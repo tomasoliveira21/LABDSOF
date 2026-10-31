@@ -2,7 +2,7 @@
 
 **Project:** Coordination platform for large-scale academic events
 **Pilot case:** Queima das Fitas do Porto (Queimódromo, 8 nights, May)
-**Course:** LABDSOF 2026/27, Sprint 1
+**Course:** LABDSOF 2026/27, Sprint A (the assignment's Sprint 1)
 **Assignment direction:** 4.3 *Local Event Coordination Platform*, applied to an event with crowds and road closures
 **Version:** revised with the group's alignment questionnaire and the backlog decisions (October 2026)
 
@@ -24,7 +24,7 @@ We propose a **platform built from scratch** to coordinate large-scale academic 
 
 ### Community
 
-The academic community that organises and attends large student festivals in Portugal: Queimas das Fitas, academic weeks and similar events. In the **pilot case**, Queima das Fitas do Porto, there are about **250 thousand entries over 8 nights**, in an academic community of more than 80 thousand students.
+The academic community that organises and attends large student festivals in Portugal: Queimas das Fitas, academic weeks and similar events. In the **pilot case**, Queima das Fitas do Porto, there are about **250 thousand entries over 8 nights** (evidence E1).
 
 The platform is not built for a single event. Each event joins the platform with its own team, so the community grows event by event without the product having to be redesigned.
 
@@ -201,7 +201,7 @@ The most critical assumptions are **A2, A3 and A4**. If participants do not use 
 
 ---
 
-## 3 key questions before the solution phase
+## Key questions before the solution phase
 
 1. **Would students use an application during the night**, and what information would they look for first? (survey)
 2. **How does a help request reach the right team today**, and how long does it take? (interview with the security volunteer)
@@ -231,24 +231,6 @@ TBD. The final product decisions will be refined after we receive feedback from 
 
 ## Product vision
 
-### Personas
-
-The main personas are the event team and the student participant. The event team includes the owner, the organisation members, the prevention teams, security coordination and other operational roles. This team uses the backoffice before and during the event to configure the event, manage the map, update transport information and handle incidents. The student participant is usually between 18 and 25 years old, goes to the event with friends and uses their phone during the night. This user needs short, reliable and easy-to-reach information, especially in a context where battery, network quality, noise and alcohol consumption can affect decision-making.
-
-### Value proposition
-
-The platform gives participants a single, reliable place to find practical information about the event and to ask for help when needed. At the same time, it gives the event team a shared operational view, helping it understand what is happening, where problems are and how to respond faster. The product's value is not only in publishing information, but in keeping that information tied to the real situation at the event.
-
-### Main user journeys
-
-A participant opens the web application through a link or QR code, selects the event, checks the map, finds entrances, services, transport options and safety information, and can ask for help if something goes wrong. The event team creates or selects an event in the backoffice, uploads or configures the venue map, adds key points such as entrances, stages, toilets, first aid and transport stops, and updates information during the night. When a participant sends a help request, the event team receives it with context and location, assesses its priority and routes it to the right operational team.
-
-### Success criteria
-
-The product will be successful if students can quickly find the information they need during the event, if help requests are easier to submit and manage, and if the event team gains a clearer view of what is happening at the venue. Success should also be measured by adoption during the event, by less confusion around entrances and transport, by a faster operational response and by positive feedback from students and event teams.
-
-### MVP definition
-
-The MVP should focus on the core coordination problem. It should include a web application for participants with event selection, a clear venue map, essential event information, transport information and a simple help-request flow. It should also include a backoffice for the event team, where each team can configure its own event, manage the venue map, update relevant information and view incoming incidents. Features that require heavy integrations, advanced crowd prediction or full automation should stay out of the first version, unless they are essential to validate the product.
+The product vision, personas, value proposition, principal user journeys, measurable success criteria and MVP definition are kept in their own documents, which replace the first draft that stood here: [Product Vision](../Product/product-vision.md), [Personas](../Product/personas.md), [User Workflows](../Product/user-workflows.md) and [Main Features and Backlog](../Product/features.md).
 
 **Out of scope:** the physical capacity of the entrances, including the number of gates and the physical design of the queue funnel. This is an infrastructure problem, not a software problem.
