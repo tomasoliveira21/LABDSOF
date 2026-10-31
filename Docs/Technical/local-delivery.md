@@ -20,7 +20,7 @@ One Compose file, `infra/compose.yaml`. Images are built from the repository: th
 | `auth-users`, `events`, `reports`, `transports`, `badges` | The five Spring Boot services, one container each, image `farol-<service>:${VERSION}` | default | none |
 | `gateway` | The API gateway, image `farol-gateway:${VERSION}` ([ADR-013](adr/0013-api-gateway.md)): the only entry point of the API, with CORS, JWT validation and the rate limits | default | `0.0.0.0:8080` |
 | `keycloak` | The identity provider ([ADR-006](adr/0006-identity-and-access.md)), pinned version, realm imported from `infra/keycloak/farol-realm.json` | default | `0.0.0.0:8180` |
-| `web` | Serves the React app, image `farol-web:${VERSION}`. The app calls the gateway and Keycloak directly | default | `0.0.0.0:${WEB_PORT}` |
+| `web` | Serves the React app, image `farol-web:${VERSION}`. The app calls the gateway and Keycloak directly | default | `0.0.0.0:${WEB_PORT}` (3000, guide F2) |
 | `postgres` | **One** PostgreSQL instance with **six databases and six users**: one per service and one for Keycloak. No user can read another's database (ADR-003) | default | none |
 | `rabbitmq` | The broker, with a fixed node name, a named volume and one user per service (ADR-006) | default | `127.0.0.1:15672` (management UI) |
 | `wiremock` | WireMock in front of Porto Digital and of the AI provider (the local `ai` container, guide K1): proxy, recorded responses and failure stubs (guide J2, J4). Its root is [`infra/wiremock/`](../../infra/wiremock/README.md), mounted at `/home/wiremock`, with the recorded Porto Digital stubs. Transports and Reports point at it by default | default | `127.0.0.1:8090` (admin API) |

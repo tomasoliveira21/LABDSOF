@@ -68,7 +68,7 @@ The team meets **twice a week**:
 |---|---|---|
 | GitHub (`tomasoliveira21/LABDSOF`) | Code, documentation, issues, pull requests, reviews | In use |
 | **GitHub Projects** | Backlog, sprints, decisions, sprint goals, investor feedback (the "Jira or equivalent" of assignment §8.2) | Chosen on 8 October 2026; in use: [board](https://github.com/users/tomasoliveira21/projects/1), linked from the README; field rules in [`features.md` §8.3](../Product/features.md#83-stories-on-the-board) |
-| GitHub Copilot | Automatic PR review | Defined in README §5 |
+| GitHub Copilot | Automatic PR review | Requested on every PR by the ruleset, but every review so far failed for lack of quota (README §5) |
 
 ### Deployment scope clarification (recorded 22 October 2026)
 
@@ -79,7 +79,7 @@ Tomás reported that the professor authorised **local-only delivery because of c
 | Check | Finding | Action (agreed 8 October 2026) |
 |---|---|---|
 | Branch protection on `main` | A repository ruleset protects `main` since 30 October 2026, 18:43 UTC: pull request with 1 approval, Copilot review, no force push (checked on 31 October 2026: `protected: true`). Not on yet: required checks (the list is empty), dismissal of stale approvals, resolved conversations (README §6). There were **no direct pushes**: every commit on `main` came through a PR, except the initial commit (checked on 30 October 2026). The commits once listed here as direct pushes belong to PRs: `5ef2c4a` and its merge commit `3a4ba04` to PR #1, `e853854` to PR #21 | Tomás (repo owner) turns the rules on in the repository settings, then ticks the boxes in README §6. **Ruleset on since 30 October 2026**; still to do: the unticked items of README §6 |
-| Merge method | README §4 requires **squash merge**, but PRs #18 to #21, #23, #25, #27 and #30 were merged with merge commits | Tomás restricts the repository to squash merging (Settings → General → Pull Requests). **Done**: only squash merging is allowed (checked on 31 October 2026) |
+| Merge method | README §4 requires **squash merge**, but PRs #18 to #21, #23, #25, #27 and #30 were merged with merge commits. By 30 October 2026, 38 PRs in all had been merged with a merge commit, the last #160 (`git log --first-parent --merges`); squash-only since then | Tomás restricts the repository to squash merging (Settings → General → Pull Requests). **Done**: only squash merging is allowed (checked on 31 October 2026) |
 | PR template | README §7 says to save it as `.github/pull_request_template.md`, but the file did not exist | Created in PR #21 |
 | Issue templates | The DoR and the story-level DoD were not in the tool | Since 12 October 2026: issue forms in `.github/ISSUE_TEMPLATE/` (user story and task) |
 | Commit message format | Several commits on `main` have no issue number or prefix (`3a4ba04`, `5159ff4`, `5ef2c4a`, `e853854`, and the commits of PR #21; later `58fb4e0`). Branch `feat/UpdateProductVisionPP` (PR #30) uses a prefix that does not exist | Agreed: every PR has an issue, and PR titles follow `<Prefix>: <Description>`. With squash merging, the PR title becomes the commit on `main`. Since 12 October 2026 the **Conventions** workflow (`.github/workflows/conventions.yml`) checks the branch name, the PR title and the `Closes #<issue>` line on every PR |
