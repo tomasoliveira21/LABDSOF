@@ -29,3 +29,9 @@ The CI workflow executes the build/test and container smoke on each PR. Its GitH
 ## Review checks
 
 Markdown links/anchors, XML/YAML syntax, Compose configuration and ignore rules were checked. #58/#148 remain open; the board was corrected from Done to In progress (#58) and Backlog (#148). #166's PR closes only the corrective issue and requires the repository's normal Copilot/team review.
+
+## Swagger UI follow-up (31 October 2026, #166)
+
+At Tomás's request, Springdoc 3.0.3 adds `/swagger-ui.html` with the existing handwritten contract served at `/openapi.yaml`. Maven packages that file directly from `contracts/`; Docker includes the same input. Automatic `/v3/api-docs` generation is disabled while the UI configuration endpoint remains available.
+
+Host `mvn verify` passed **two HTTP tests, zero failures/errors/skips** (14.881 s): the existing status response plus UI redirect/HTML, configuration pointing to the handwritten contract, exact served-contract contents and absence of a competing generated spec. CI also checks UI HTML and the packaged YAML against the repository file. The running local container is rebuilt for browser verification; CI results are linked in PR #167.

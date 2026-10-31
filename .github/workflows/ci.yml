@@ -37,6 +37,13 @@ jobs:
         run: |
           curl --fail --silent --show-error http://127.0.0.1:8080/api/v1/status |
             python3 -c 'import json, sys; assert json.load(sys.stdin) == {"service": "reports", "status": "ok"}'
+      - name: Check Swagger UI and the handwritten contract
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location http://127.0.0.1:8080/swagger-ui.html > /tmp/swagger-ui.html
+          grep -q 'Swagger UI' /tmp/swagger-ui.html
+          curl --fail --silent --show-error http://127.0.0.1:8080/openapi.yaml > /tmp/openapi.yaml
+          cmp backend/reports/contracts/openapi.yaml /tmp/openapi.yaml
       - name: Show container logs on failure
         if: failure()
         run: docker compose -p farol-ci -f infra/compose.yaml logs --no-color --tail=100

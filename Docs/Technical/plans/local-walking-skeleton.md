@@ -37,6 +37,8 @@ docker compose -p farol-skeleton -f infra/compose.yaml logs --tail=50 reports
 docker compose -p farol-skeleton -f infra/compose.yaml down
 ```
 
+Open **[Swagger UI](http://localhost:8080/swagger-ui.html)** to browse the contract and test the endpoint: expand `GET /api/v1/status`, choose **Try it out**, then **Execute**. The UI loads the existing handwritten contract at `/openapi.yaml`, packaged by Maven from `backend/reports/contracts/openapi.yaml`; there is no second maintained copy or generated competing specification. Springdoc 3.0.3 follows its [Spring Boot 4.0 compatibility line](https://springdoc.org/). Swagger assets are served locally; no external validator is configured.
+
 Expected HTTP response: `{"service":"reports","status":"ok"}`. To avoid a port already in use, run Compose with `REPORTS_PORT=18080` and call that loopback port. Optional local overrides: copy `infra/.env.example` to `infra/.env` and pass `--env-file infra/.env`; no credentials are required. An unavailable/conflicting port must fail startup, not be mistaken for a successful demonstration of another process.
 
 The health check means this diagnostic HTTP endpoint responds; it does not certify a database, auth provider, broker or SLO. A named Compose project limits cleanup to this demo's resources. No volume/backups exist in the stateless slice; a restart has no business state to preserve.
