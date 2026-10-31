@@ -1,7 +1,7 @@
 # Farol — Domain Model
 
 > Conceptual model organised into five services: **Auth & Users**, **Events**, **Reports**, **Transports** and **Badges**. Service boundaries, attributes and cardinalities are proposed for review.
-> **22 October 2026:** roles, teams and permissions follow the role model in [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026) (to confirm with the team). The draw.io export [`domain-model.svg`](domain-model.svg) still shows the previous model (fixed roles and four `ResponseTeam`s) and has to be redrawn from the diagram below.
+> **22 October 2026:** roles, teams and permissions follow the role model in [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026) (to confirm with the team). The draw.io export [`domain-model.svg`](domain-model.svg) was redrawn on 31 October 2026 (#170) to match the diagram below: event-defined `Team`, `TeamPermission` and `TeamAssignment`, `GlobalRoleGrant` / `FarolAdmin` and per-event `EventMembership` replace the fixed `ResponseTeam` types. This is documentary alignment only: no new team vote and no implementation. Open point still shown in the diagram: which team is the default when two teams handle the same category. The Mermaid diagram and this file remain the source; the SVG opens and edits in draw.io.
 
 ```mermaid
 classDiagram
@@ -172,6 +172,7 @@ classDiagram
     UserAccount "1" -- "0..*" BadgeProgress : earns
     Event "0..1" -- "0..*" BadgeProgress : event reporter scope
     note for FieldTask "Targets exactly one HelpRequest or CommunityReport"
+    note for Team "Open product decision:<br/>default team when two teams<br/>handle the same category"
     note for TeamPermission "Permission: fixed list (features §4.2)<br/>reportTypes only for Reports.Review"
     note for BusObservation "GeoPosition: longitude, latitude<br/>Separate from venue MapPosition"
     note for PortoDigitalAPI "Porto Digital FIWARE — NGSI v2<br/>GET /v2/entities<br/>q=vehicleType==bus, limit=1000"

@@ -94,6 +94,10 @@ Bruno updates the API outline draft (#123) and guide D7 to match this decision (
 - Email verification and password reset by email wait for an SMTP server. Keycloak's sign-up form reveals whether an email is taken; accepted for the MVP.
 - Tokens in browser memory are exposed to XSS; a backend-for-frontend is a later hardening.
 
+## Addendum · 31 October 2026 (#170)
+
+Documentary alignment only: no new decision and no new team vote. [`domain-model.svg`](../domain-model.svg) was redrawn to show this ADR's split: memberships, team assignments and the `FarolAdmin` grant (`GlobalRoleGrant`) in Auth & Users; teams and their permissions (`Team`, `TeamPermission`) in Events. The question of which team is the default when two teams handle the same category stays open (see [`domain-model.md`](../domain-model.md)).
+
 ## Alternatives considered
 
 | Option | Why not chosen |
