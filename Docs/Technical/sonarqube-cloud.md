@@ -19,8 +19,8 @@ The repository is **public** (verified on 31 October after Tomás changed it). T
 
 | Kind | Name | Value |
 |---|---|---|
-| Repository variable | `SONAR_ORGANIZATION` | Actual Sonar organization key |
-| Repository variable | `SONAR_PROJECT_KEY` | Actual Sonar project key |
+| Repository variable | `SONAR_ORGANIZATION` | `tomasoliveira21` (configured) |
+| Repository variable | `SONAR_PROJECT_KEY` | `tomasoliveira21_LABDSOF` (configured) |
 | Repository secret | `SONAR_TOKEN` | A token with Execute Analysis permission for this project |
 
 The token belongs only in the secret; never provide it as a `-Dsonar.token=...` CLI argument, repository variable or committed file. Keys are identifiers, not tokens. The workflow passes them through quoted environment variables and uses the EU endpoint `https://sonarcloud.io`.
@@ -28,7 +28,7 @@ The token belongs only in the secret; never provide it as a `-Dsonar.token=...` 
 5. Bootstrap the main-branch baseline before expecting a successful PR quality gate: once this workflow is available on main, use its manual **Run workflow** on **main** (or the first main push). A first setup PR may need review before that bootstrap; do not fabricate a successful PR analysis when the base has no Sonar analysis yet. If testing before merge, the owner can run the same pinned Maven scanner on a clean main checkout, using these actual keys and SONAR_TOKEN in the environment.
 6. Re-run the job on the setup PR. Confirm a real report in Sonar's **Pull requests** page, coverage import and the returned quality gate before treating analysis as operational. Then make **SonarQube Cloud** a required check if the team wants it to block merges. The documented required checks are **Conventions** / **CI**; branch protection is not active yet (ADR-010 §8). This PR does not modify it.
 
-Tomás confirmed creating the SonarQube Cloud project on 31 October. GitHub variables and secrets were still absent at the subsequent check, so remote scan acceptance is pending the remaining setup steps. The configuration check intentionally fails with missing **names only**; it does not silently skip trusted analyses or print secret values. A green build/test job alone is not evidence of Sonar analysis.
+Tomás provided the [public project](https://sonarcloud.io/project/overview?id=tomasoliveira21_LABDSOF) on 31 October. Its public API confirmed organization/project identifiers and a main analysis of commit `b298b1e` at 12:32 UTC. Both GitHub variables above are now configured. `SONAR_TOKEN` is still absent; CI-based analysis/Automatic Analysis settings require owner verification. The existing main analysis is not proof of this CI integration: its quality-gate API returned `NONE`, and no authenticated PR scan from this workflow has completed. The configuration check intentionally fails with missing **names only**; it does not silently skip trusted analyses or print secret values. A green build/test job alone is not evidence of Sonar analysis.
 
 ## Triggers and secret boundary
 
