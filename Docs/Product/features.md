@@ -18,12 +18,12 @@
 
 ## 2. Feature list and priority
 
-MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitigation: *"prioritise help requests, the map and transport information in the MVP"* (report §5, execution risks). *Rank* is the build order within the Must-haves.
+MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitigation: *"prioritise help requests, the map and transport information in the MVP"* (report §5, execution risks). *Rank* is the priority order within the Must-haves; the build order is the release plan (§8.2).
 
 | ID | Feature | Component (annex §1) | MoSCoW | Rank | Persona | Notes |
 |---|---|---|---|---|---|---|
-| F1 | Login and logout | — | Must | 1 | P1, P2, P3 | **Login is mandatory for every user**, participants included. Mocked authentication is allowed for the MVP (assignment §6.6, footnote 1) |
-| F2 | Personal account management | — | Must | 2 | P1, P2, P3 | Profile, password, consent, badge visibility, delete account (deletes badges and personal data) |
+| F1 | Login and logout | — | Must | 1 | P1–P5 | **Login is mandatory for every user**, participants included. Mocked authentication is allowed for the MVP (assignment §6.6, footnote 1) |
+| F2 | Personal account management | — | Must | 2 | P1–P5 | Profile, password, consent, badge visibility, delete account (deletes badges and personal data) |
 | F3 | Event management | C1 | Must | 3 | P4, P3 | Create, edit, publish and close events. Every other feature is scoped by event; isolation between events is a top technical risk (report §5). The `FarolAdmin` (P4) creates an event, for a verified organisation, and names its first `EventAdmin`; the EventAdmins edit, publish and close it (§4) |
 | F4 | Event roles, teams and permissions | C1 | Must | 4 | P3, P4 | **22 Oct:** roles per event, `EventAdmin` and `RegularUser`, plus the global `FarolAdmin`, who never sees an event's help requests, reports or participants. EventAdmins create the event's teams (e.g. *Security*, *Nursing*), set each team's permissions and add RegularUsers to them (§4) |
 | F5 | Venue map with points of interest | C3 | Must | 5 | P1, P3 | Map uploaded as an image or PDF; points placed on it (entrances, stages, WC, first aid, transport stops) |
@@ -56,7 +56,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | §5.5 Ethical engagement design | F12–F15: community reports, team confirmation and badges | Decided (§6) |
 | §5.6 At least one AI-assisted workflow, with evaluation and baseline or fallback | F8: help-request triage | Decided; details open (§5.2) |
 | §6.1 Client application | Participant web app (PWA) and backoffice, both behind login | Decided |
-| §6.3 At least one asynchronous workflow | Help request → AI triage → notification of the event team (see [`architecture.md`](../Technical/architecture.md)) | Decided ([ADR-004](../Technical/adr/0004-service-communication.md)) |
+| §6.3 At least one asynchronous workflow | Help request saved and shown to the event team at once; AI triage runs in parallel and adds a suggestion (see [`architecture.md`](../Technical/architecture.md)) | Decided ([ADR-004](../Technical/adr/0004-service-communication.md)) |
 | §6.5 Integration with at least one external system or realistic simulator | **Porto Digital urban platform**, FIWARE NGSI v2 bus API (F9; accepted by the professor, [ADR-008](../Technical/adr/0008-transport-data-source.md)) | Decided |
 | §6.6 Authentication and authorisation | F1 login for every user; F2 account and consent; F4 per-event roles and team permissions (§4); audit records for help requests (`AuditEntry` in the domain model; NFR-16) | Decided; mocked authentication allowed for the MVP |
 | §6.8 At least one degraded-mode scenario | **D1** AI unavailable and **D2** transport source unavailable (§3.1) | Decided |
@@ -74,7 +74,7 @@ Two scenarios, no more. Both are demoed by breaking one dependency while the res
 | **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down (circuit breaker open), a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
 | **What the operator does** | Sets the priority and team by hand. Nothing else changes in F7 |
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
-| **When the AI comes back** | The banner disappears after the first successful call. Requests from the last 15 min that the operator has not touched are sent to triage once more and may still receive a suggestion; a suggestion **never overwrites** an operator's decision and **never lowers** a priority (NFR-22) |
+| **When the AI comes back** | The banner disappears after the first successful call, and new requests are triaged again. Requests already shown as "Not triaged" stay for manual triage: a request is never sent to the AI again once its 30 s deadline has passed, and a late result is discarded ([AI runtime contract](../Technical/plans/ai-provider-evaluation.md#runtime-and-resilience-contract), [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md) decision 3). A suggestion **never overwrites** an operator's decision and **never lowers** a priority (NFR-22) |
 | **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard ([ADR-012](../Technical/adr/0012-observability.md)) |
 | **How it is demoed** | On the local machine (local-only delivery, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)), the triage worker points at **WireMock** (the simulator of guide J4), which normally passes requests to the real AI provider. The presenter makes it drop the connection (or answer late, or return invalid output) and a participant submits help requests from the web app's phone pages; the services carry no fault-injection code. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
 | **Test** | US-36 (SC5): 100 % of requests are shown to the operator with the AI off. Reports integration test on every PR, with WireMock in place of the provider (delay over the timeout, 503, dropped connection, invalid body); also under load in Sprint C (scenario L5) |
@@ -174,9 +174,9 @@ The help categories still need to be checked against the interview with the secu
 
 ### 5.2 Still to define
 
-**Research available (22 October 2026, #53):** [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md) proposes answers to AI-1–AI-11, with an [evaluation package](../Research/architecture-investigation/evaluation/README.md) and [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted as architecture on 31 October 2026 (#166). Still pending: independent labels, provider/privacy review and measured model/SC3/SC5 evidence (guide K1, K2). The original questions below remain the review checklist.
+**Research available (22 October 2026, #53):** [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md) proposes answers to AI-1–AI-11, with an [evaluation package](../Research/architecture-investigation/evaluation/README.md) and [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted as architecture on 31 October 2026 (#166). Still pending: the team review of the labels, provider/privacy review and measured model/SC3/SC5 evidence (guide K1, K2). The original questions below remain the review checklist.
 
-This is the list the team works through before the AI work starts. Owner: AI lead (see [`team-and-process.md`](../Process/team-and-process.md) §2).
+This is the list the team works through before the AI work starts. Status: guide K1 and K2 ([`architecture-decisions-guide.md`](../Technical/architecture-decisions-guide.md)).
 
 | # | Item | Open question | Needed for |
 |---|---|---|---|
@@ -254,14 +254,14 @@ Badges are always linked to the participant's **account** (F1, F2). There are no
    - the team can unconfirm a report, and the badge count goes back down;
    - reports are rate-limited per account;
    - reports expire;
-   - the team can hide reports and suspend an account from reporting;
+   - the team can hide reports; suspending an account from reporting is **[PROPOSED]** (no story yet);
    - reports never change official information automatically.
 4. **Exclusion or exposure:**
    - no public leaderboard and no public profile; badges are private by default;
    - nothing shows other participants who made a report;
    - attendance badges show neither which nights you were there nor where you were;
    - participants who don't report lose no information.
-5. **Control and opt-out:** reporting and badges are optional. In account management (F2) a participant can hide their badges, stop earning them, or delete them; deleting the account deletes the badges.
+5. **Control and opt-out:** reporting and badges are optional. In account management (F2) a participant can hide their badges or stop earning them (US-56); deleting them on their own is **[PROPOSED]** (no story yet); deleting the account deletes the badges (US-05).
 
 ## 7. Initial backlog: user stories
 
@@ -321,7 +321,9 @@ The 29 stories of 16 October became **62**. Each story is now **one user action,
 | US-23 Entrance status | US-59, US-60 |
 | US-24 Friends | US-61, US-62 |
 
-#### Why these numbers **[PROPOSED]**
+#### Why these numbers
+
+Both confirmed: the report limit on 24 October 2026 and the responder's 5 s (NFR-02) on 26 October 2026 ([NFRs §4–§5](non-functional-requirements.md#4-decided-on-24-october-2026)).
 
 | Number | Story | Why |
 |---|---|---|
@@ -518,7 +520,7 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 **US-31** · As a **field-team member** (`HelpRequests.Respond`), I want to see on my phone the requests routed to my team, so that I know where to go.
 *Persona:* P5 · *Depends on:* US-29
-- Given a request is routed to my team, then it appears on my phone within 5 s **[PROPOSED]**, with its category and its point on the venue map.
+- Given a request is routed to my team, then it appears on my phone within 5 s (NFR-02), with its category and its point on the venue map.
 - Given a request is routed to another team, then I do not see it.
 
 **US-32** · As a **field-team member**, I want to accept a request, so that the control room and the participant know someone is on the way.
@@ -692,13 +694,13 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 ## 8. Sprint goals and initial release plan **[PROPOSED]**
 
-Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 and updated on 22 October 2026 with the smaller stories, to confirm with the team at the next planning meeting. Order follows the MoSCoW rank in §2 and the dependencies in §7. The reasons are in §8.5.
+Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 and updated on 22 October 2026 with the smaller stories, to confirm with the team at the next planning meeting. Order follows the MoSCoW priority in §2 and the dependencies in §7; the rank is not the build order (§8.5). The reasons are in §8.5.
 
 ### 8.1 Sprint goals
 
 | Sprint | Dates | Goal |
 |---|---|---|
-| **B** · Build and operate the vertical slice | 2 Nov – 6 Dec 2026 | **A logged-in participant joins a published event and asks for help on its venue map; the control room sees the request at once with an AI suggestion, or without one when the AI is down, and routes it to a team whose member accepts and resolves it.** The event's teams and permissions are set by its EventAdmin. Deployed through the pipeline, with logs and metrics, and bus data read from the external source. Answers the Sprint B investor question: *does the product deliver observable user value, and can the team deploy, monitor and operate it?* |
+| **B** · Build and operate the vertical slice | 2 Nov – 6 Dec 2026 | **A logged-in participant joins a published event and asks for help on its venue map; the control room sees the request at once with an AI suggestion, or without one when the AI is down, and routes it to a team whose member accepts and resolves it.** The event's teams and permissions are set by its EventAdmin. Built and tested by the pipeline on every merge and run locally with Docker Compose ([ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)), with logs and metrics, and bus data read from the external source. Answers the Sprint B investor question: *does the product deliver observable user value, and can the team deploy, monitor and operate it?* |
 | **C** · Evaluate, harden and present | 7 Dec 2026 – 3 Jan 2027 | **The MVP is complete: accounts, transport with event shuttles and the D2 warning, live announcements, community reports reviewed by the right team, and badges.** The AI triage is evaluated against the non-AI baseline, and both degraded modes (D1, D2) are demoed. Answers: *is this a credible product and a maintainable system?* |
 
 ### 8.2 Initial release plan
@@ -716,7 +718,7 @@ Every merge to `main` is built and tested (guide H4). Delivery is local: a *rele
 
 ### 8.3 Stories on the board
 
-Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) stay open, but were archived from the board on 24 October 2026 (#138): each one is covered by the stories below or is out of scope (#6, #8, #10, #14). #11 (Problem and Opportunity Report) was closed as delivered.
+Each story is a GitHub issue created from the [user-story form](../../.github/ISSUE_TEMPLATE/user-story.yml), titled `[<Type>] US-XX: <Title>` (README §1). Type rule in §7.1. Created on 22 October 2026 with the label `user story` (the walking skeleton: `task`) and the milestone of their sprint (`Sprint A`, `Sprint B`, `Sprint C`; Could stories have none). Each issue's *Dependencies* links the issues it needs. The old feature issues #2 to #16 (Sprint A feature discovery) were archived from the board on 24 October 2026 (#138) and closed as *not planned* on 31 October 2026: each one is covered by the stories below or is out of scope (#6, #8, #10, #14). #11 (Problem and Opportunity Report) was closed as delivered on 24 October 2026.
 
 **Board:** [GitHub Projects, *LABDSOF*](https://github.com/users/tomasoliveira21/projects/1) (project 1 of `tomasoliveira21`; private, open to the team). Every issue in the table below is on it, with the other open issues of the repository (auto-add workflow). How its fields are used, decided and applied on 24 October 2026 (#138); the board is the source of truth for the values (they are not repeated in this table):
 
@@ -728,7 +730,7 @@ Each story is a GitHub issue created from the [user-story form](../../.github/IS
 | Sprint | Milestones *Sprint A*, *Sprint B*, *Sprint C* | The issue's milestone (this table's *Sprint* column); board views are grouped or filtered by *Milestone*. No *Iteration* field, so the sprint is kept in one place (decided on 24 October 2026 instead of the Iteration field of [`definition-of-ready-and-done.md`](../Process/definition-of-ready-and-done.md#in-the-tool)) |
 | *Estimate*, *Start date*, *Target date* | — | Not used for now |
 
-Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 16, **S** 22, **M** 16, **L** 9, **XL** 0. Only #58 is *Ready*: every story waits for at least one open blocker of §8.4 (the identity provider E1 alone blocks 60 of the 62 stories), so it stays in *Backlog* until that blocker is closed.
+Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 16, **S** 22, **M** 16, **L** 9, **XL** 0. Only #58 was *Ready* on that date. On 31 October 2026, with R0 merged (#167) and #58 closed, the stories with no open blocker of §8.4, directly or through *Depends on*, are US-01, US-02 and US-40 (Sprint B) and US-03, US-04, US-43, US-61 and US-62; every other story still waits for the role model, the venue map library (F3), the priority scale (AI-3) or the report types (§6.1). The board holds the current *Status* values.
 
 | Story | Issue | Type | Sprint |
 |---|---|---|---|
@@ -832,7 +834,7 @@ The goal also covers every Sprint B deliverable of §7.2.2:
 | 3 · Persistent data storage | Every story (PostgreSQL, one database per service, guide D1–D2) |
 | 4 · Documented API contracts | OpenAPI written first for each story (contract-first, guide C7) |
 | 5 · At least two backend components | Auth & Users, Events, Reports and Transports (guide A2) |
-| 6 · One asynchronous workflow | Help request → AI triage → backoffice (US-23, US-34; §3, row §6.3) |
+| 6 · One asynchronous workflow | Help request shown in the backoffice at once; AI triage adds a suggestion in the background (US-23, US-34; §3, row §6.3) |
 | 7 · Initial external-system integration | US-40, US-41 |
 | 8 · First version of the AI capability | US-34, US-35 |
 | 9 · Non-AI baseline or fallback | US-36 |
@@ -862,7 +864,7 @@ Nothing in Sprint B is there for convenience, so Sprint B has no cut line.
 
 | Risk | Plan |
 |---|---|
-| A blocker in §8.4 is not closed by 2 November | The stories that need it stay in *Backlog*; the team starts with the stories it does not block (US-02, US-11, US-12, US-28 to US-30) |
+| A blocker in §8.4 is not closed by 2 November | The stories that need it stay in *Backlog*; the team starts with the Sprint B stories that had no open blocker on 31 October 2026 (US-01, US-02, US-40; §8.3) |
 | The team does not confirm the role model (§4) | US-16 to US-18 are replaced by teams created by a seed script with the pilot set-up (§4.4); the other stories do not change, because they check permissions, not team names |
 
 #### Why US-40 and US-41 are in Sprint B, and US-42 and US-43 in Sprint C
@@ -898,4 +900,4 @@ Sprint C has 28 Must stories in four weeks, including Christmas, and it also hol
 
 #### Why the walking skeleton comes first
 
-It is a Sprint A deliverable (§7.1.2, item 10), so it stays in Sprint A (#58) and is done before Sprint B starts. DoD Level 2 asks for every story to be *deployed through the pipeline*, so no story can be *Done* before the skeleton exists. One week is enough for one endpoint, one test, a Dockerfile and the pipeline, because the CI/CD choices are decided (guide H1–H5). It needs the deployment platform (guide G1, #53) first. **Source:** [professor meeting of 22 October 2026](../Meetings/2026-10-22-professor-meeting.md).
+It is a Sprint A deliverable (§7.1.2, item 10), so it stays in Sprint A (#58) and is done before Sprint B starts. DoD Level 2 asks for a green pipeline on `main`, with the image build and the smoke test, so no story can be *Done* before the skeleton exists. One week is enough for one endpoint, one test, a Dockerfile and the pipeline, because the CI/CD choices are decided (guide H1–H5) and delivery is local (guide G1, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)). R0 was merged in #167 on 31 October 2026. **Source:** [professor meeting of 22 October 2026](../Meetings/2026-10-22-professor-meeting.md).

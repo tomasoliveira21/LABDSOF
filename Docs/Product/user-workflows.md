@@ -84,17 +84,18 @@ sequenceDiagram
     App->>Inc: Submit help request
     Inc-->>App: Request received, status Submitted
     App-->>P: Confirmation and live status
-    Inc-)AI: Request submitted (asynchronous)
+    Inc-->>BO: New request for this event (next poll)
+    BO-->>O: Request appears on list and map at once
+    Inc-)AI: Request submitted (asynchronous, in parallel)
     alt AI available
-        AI--)Inc: Suggested category and priority
+        AI--)Inc: Suggested category, priority and team
+        Inc-->>BO: Suggestion added to the request (next poll)
     else AI unavailable or times out
-        Inc->>Inc: Fallback: participant's category, order of arrival
+        Inc->>Inc: Fallback: "Not triaged", participant's category, order of arrival
     end
-    Inc-)BO: New request for this event
-    BO-->>O: Request appears on list and map
     O->>BO: Acknowledges, sets priority, routes it to a team
     BO->>Inc: Status Dispatched
-    Inc-)R: Appears on the phone of the team's members, with the point on the map
+    Inc-->>R: Appears on the phone of the team's members (next poll), with the point on the map
     R->>Inc: Accepts
     Inc-->>App: Status On the way
     App-->>P: "Help is on the way"
@@ -104,7 +105,7 @@ sequenceDiagram
 
 **Rules from the repository:**
 - Location is marked on the map by the participant and shared only with the request (annex C6, SafeZone pattern; survey Q10 tests acceptance).
-- The AI only **suggests**; it never lowers a priority without a person (annex C9).
+- The AI only **suggests**; it never lowers a priority (annex C9, NFR-22).
 
 **[PROPOSED]:** the participant sees the status of their request (the market annex notes that no current channel shows the status of a request, §4 *UX* row).
 
@@ -176,7 +177,8 @@ sequenceDiagram
 
     A->>BO: Publishes "Gate 3 closed, use Gate 1"
     BO->>Ev: Save announcement with timestamp
-    Ev-)App: New announcement for this event
+    App->>Ev: Polls the event's announcements
+    Ev-->>App: New announcement for this event
     App-->>P: Banner with the message and "updated at HH:MM"
 ```
 

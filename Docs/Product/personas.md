@@ -19,11 +19,11 @@ The report has two primary user groups with the same weight: the **event team** 
 
 | Persona | User group (report §1) | Role or job (features §4) | Main interface | Main journeys |
 |---|---|---|---|---|
-| **P1 · Rita, the participant** | Participants | `RegularUser` | Participant web app | W1, W2, W6 |
-| **P2 · Miguel, the control-room operator** | Event team (PCR, security coordination) | `RegularUser` in a team with `HelpRequests.Triage`, `Reports.Review` | Backoffice, live view (laptop) | W3, W7 |
+| **P1 · Rita, the participant** | Participants | `RegularUser` | Participant web app | W1, W2, W6, W7, W8 |
+| **P2 · Miguel, the control-room operator** | Event team (PCR, security coordination) | `RegularUser` in a team with `HelpRequests.Triage`, `Reports.Review` | Backoffice, live view (laptop) | W2, W3, W7 |
 | **P3 · Sofia, the event admin** | Event team (organisation) | `EventAdmin` | Backoffice, configuration | W4, W5 |
 | **P4 · Daniel, the FarolAdmin** **[PROPOSED]** | Farol team (internal user, not in report §1) | `FarolAdmin` (global) | Backoffice, platform area | W4 (first steps) |
-| **P5 · Inês, the responder** **[PROPOSED]** | Event team (field teams, e.g. Nursing, Security, PCR, Logistics) | `RegularUser` in a team with `HelpRequests.Respond`, `Reports.Respond` | Backoffice on the phone, field view | W3, W7 |
+| **P5 · Inês, the responder** **[PROPOSED]** | Event team (field teams, e.g. Nursing, Security, PCR, Logistics) | `RegularUser` in a team with `HelpRequests.Respond`, `Reports.Respond` | Backoffice on the phone, field view | W2, W3, W7 |
 
 Journeys W1–W7 are described in [`user-workflows.md`](user-workflows.md).
 
