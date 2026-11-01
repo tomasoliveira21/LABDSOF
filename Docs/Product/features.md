@@ -712,10 +712,10 @@ Every merge to `main` is built and tested (guide H4). Delivery is local: a *rele
 |---|---|---|---|
 | **R0 · Walking skeleton** | Sprint A, before Sprint B starts on 2 Nov 2026 (#58) | One Reports service with synthetic help-request create/read in memory, diagnostic health, HTTP tests, Dockerfile, Compose and CI smoke on every PR (#166; [run instructions](../Technical/plans/local-walking-skeleton.md)). Keycloak, persistence/outbox and the full application are Sprint B. Not a user story: a task issue | §7.1.2 item 10 (Sprint A) |
 | **R1 · Vertical slice** | Sprint B review (6 Dec 2026) | 27 stories: US-01, 02, 06, 11, 12, 14, 16, 17, 18, 19, 20, 21, 23, 24, 26 to 36, 40, 41. The help-request journey end to end (W2 + W3), with teams and permissions, AI triage, scenario D1 and the first external integration | §7.2.2 items 1–13 |
-| **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58, US-57, US-59 and US-60 if there is time | §7.3.2 items 1–2, 8 |
-| **Later** (product roadmap) | After the course | Could: US-46, US-61, US-62. Won't: F19, F20 | §7.3.2 item 13 |
+| **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58, US-57, US-59 and US-60 if there is time; then Could US-46, US-61 and US-62 (milestone *Sprint C* since 1 November 2026, #175) | §7.3.2 items 1–2, 8 |
+| **Later** (product roadmap) | After the course | Whatever Sprint C cuts. Won't: F19, F20 | §7.3.2 item 13 |
 
-**Cut line for Sprint C.** If Sprint C runs short, drop in this order: US-57 and US-58; then US-59 and US-60; then US-52 and US-53; then US-22; then US-08, US-09, US-10 and US-45 (reasons in §8.5).
+**Cut line for Sprint C.** If Sprint C runs short, drop in this order: US-46, US-61 and US-62; then US-57 and US-58; then US-59 and US-60; then US-52 and US-53; then US-22; then US-08, US-09, US-10 and US-45 (reasons in §8.5).
 
 ### 8.3 Stories on the board
 
