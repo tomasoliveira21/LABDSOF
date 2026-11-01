@@ -39,7 +39,7 @@ Defined in the README; summarised here for the presentation.
 | Branches | `<prefix>/<short-description>`, prefixes `feature/`, `bugfix/`, `refactor/`, `test/`, `docs/`, `ci/`, `chore/` | README §2 |
 | Commits | `<prefix> (#<issue>): <Title>`, title ≤ 50 characters, imperative mood | README §3 |
 | Pull requests | Title `<Prefix>: <Description>`; description with `Closes #<issue>`, summary and how it was tested. **Every PR has an issue** | README §4 |
-| Code review | Two reviews: GitHub Copilot (automatic) and one team member; review within 1 working day; blocking comments start with `blocking:` | README §5 |
+| Code review | One review by a team member; GitHub Copilot is requested automatically but does not count, for lack of quota (1 November 2026, #175); review within 1 working day; blocking comments start with `blocking:` | README §5 |
 | Branch protection | No direct pushes, Copilot review, 1 approval, stale approvals dismissed, conversations resolved, CI must pass, branch up to date. **Active since 30 October 2026** (repository ruleset; checked on 31 October 2026: `protected: true`), without required checks, dismissal of stale approvals or resolved conversations yet (§4) | README §6 |
 | Definition of Ready / Done | See [`definition-of-ready-and-done.md`](definition-of-ready-and-done.md). One user story = one issue = one PR | — |
 | Language | All branches, commits, PRs and repository documentation in **English**. Exceptions: survey questions and presentation speaker notes, which are for a Portuguese audience (decided 12 October 2026) | README (introduction) |

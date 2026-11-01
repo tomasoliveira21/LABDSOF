@@ -109,23 +109,22 @@ Example: `docs (#1): Add conventions chapter to global report`
 
 ## 5. Code review
 
-A pull request can only be merged after **two reviews**:
+A pull request can only be merged after **one review by a team member**: 1 approval from someone other than the author.
 
-1. **GitHub Copilot**: requested automatically by the ruleset when the PR is opened. *So far every Copilot review has failed for lack of quota (17 attempts on ten PRs up to #174, checked on 1 November 2026), and no request appeared on #172, so in practice only the team member's review has happened.*
-2. **A team member**: 1 approval from someone other than the author.
+GitHub Copilot is also requested automatically by the ruleset when the PR is opened, but it **does not count as a review** (decided on 1 November 2026, #175): every Copilot review so far failed for lack of quota (17 attempts on ten PRs up to #174, checked on 1 November 2026), and no request appeared on #172. If a Copilot review does arrive, its comments are handled like any other.
 
 ### As the author
 
 - One issue per PR. Keep it small.
 - Review your own diff and wait for CI to pass before asking for a review.
-- Address every Copilot comment: fix it, or reply explaining why not.
+- Address every comment, Copilot's included: fix it, or reply explaining why not.
 - Reply to every comment and resolve all conversations.
-- Merge the PR yourself (squash) once both reviews are done.
+- Merge the PR yourself (squash) once a team member has approved it.
 
 ### As the reviewer
 
 - Review within **1 working day**.
-- Read Copilot's comments first. Copilot helps, but does not replace your review.
+- If Copilot commented, read its comments first. Copilot helps, but does not replace your review.
 - Be respectful: comment on the code, not the person.
 - Check that:
   - it does what the issue asks

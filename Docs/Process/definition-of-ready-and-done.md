@@ -37,7 +37,7 @@ From the README (§7, PR template):
 - [ ] Documentation updated (if applicable)
 - [ ] No secrets committed
 
-Plus the review rules in README §5: Copilot review addressed, one approval from another team member, all conversations resolved.
+Plus the review rules in README §5: one approval from another team member, every comment addressed (Copilot's too, if it reviewed), all conversations resolved.
 
 ### Level 2 · User story
 
