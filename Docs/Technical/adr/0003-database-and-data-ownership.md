@@ -7,7 +7,7 @@
 ## Context
 
 - The assignment asks for **one** database technology unless more are justified (§6.4).
-- Farol is split into five services (guide A2), deployed independently from Sprint A (guide A4; planned, see the note of 31 October 2026), that talk only through events (guide C4). A service that reads another service's tables would break that boundary.
+- Farol is split into five services (guide A2), deployed independently from Sprint B (guide A4, [ADR-001](0001-architectural-style.md) decision 3; see the note of 31 October 2026), that talk only through events (guide C4). A service that reads another service's tables would break that boundary.
 - **One team must never see or change another event's data** (architecture driver D1). The report asks for automated tests that prove it.
 - The venue map is an uploaded image with coordinates on it, not a geographic map (annex C3), so no spatial queries are needed.
 - With local delivery (guide H5, [ADR-011](0011-deployment-and-infrastructure.md)), one service can be replaced or rolled back on its own (`docker compose up -d --no-deps`, [`local-delivery.md`](../local-delivery.md)), so a new version of a service can start while the old schema is still in use, and an old version can start on a newer schema.

@@ -137,7 +137,7 @@ The three critical assumptions are **A2** (participants use the app during the n
 | Method | Status | Validates | Source |
 |---|---|---|---|
 | Online student survey (Google Forms, 11 questions) | Done: 33 answers, 32 valid, n = 30 to 31 after the filter (3 to 6 and 30 October 2026) | A2, A3, A4, problem | [`inquerito-estudantes-google-forms.gs`](../Research/inquerito-estudantes-google-forms.gs); results in the report, *User Research* |
-| Interview with a security volunteer | **TBD** | A4, root cause 4 | Report §4 |
+| Interview with a security volunteer | **Not done yet**: planned for Sprint B (Sprint A deck, *Next*) | A4, root cause 4 | Report §4 |
 | Public evidence (press, operators, FAP) | Done (E1–E7) | Problem | Report §4 |
 | Market and competitor analysis | Done | Differentiation | [`market-and-competitor-analysis.md`](../Deliverables/market-and-competitor-analysis.md) |
 

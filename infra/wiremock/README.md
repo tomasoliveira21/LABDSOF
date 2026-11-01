@@ -60,7 +60,7 @@ It checks every call against the zip: the right snapshot in order, only buses wi
 - **When:** Sunday 25 October 2026, 15:15 to 20:14 UTC, one response about every 60 s (55–69 s), with no gaps.
 - **Content:** NGSI v2 `Vehicle` entities, all with the same 17 attributes. No invalid entries: no missing or 0,0 positions, no duplicates, no positions in the future or older than 5 min.
 - **Personal data:** none. The driver's shift (`stcp:nr_turno`) is always `na`; vehicle and trip numbers do not identify a person ([Security and Privacy Assessment](../../Docs/Technical/security-and-privacy-assessment.md), M-13).
-- **Terms of use:** not checked yet. The repository has been public since 31 October 2026 ([ADR-010](../../Docs/Technical/adr/0010-cicd-strategy.md) point 10), so these recordings are already published: Porto Digital's terms and attribution still have to be checked (open).
+- **Terms of use:** checked on 1 November 2026. The source dataset, *Localização em tempo-real dos autocarros STCP* (Associação Porto Digital), is published under [Creative Commons CC0](https://creativecommons.org/publicdomain/zero/1.0/) on the [Porto open data portal](https://dadosabertos.cm-porto.pt/dataset/urban-platform-bus-location) (also on [dados.gov.pt](https://dados.gov.pt/datasets/urban-platform-bus-location)); its only resource is the URL above. CC0 asks for no attribution, and the recordings stay in the repository, which has been public since 31 October 2026 ([ADR-010](../../Docs/Technical/adr/0010-cicd-strategy.md) point 10). Credit, as good practice: data by Associação Porto Digital and STCP, CC0.
 
 ## Limits
 

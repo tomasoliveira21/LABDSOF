@@ -50,7 +50,7 @@ The identity provider, Keycloak, is self-hosted inside Farol ([ADR-006](adr/0006
 
 ## 3. Container view
 
-The five services are deployed independently from Sprint A (§11). The Sprint A skeleton runs only Reports (#166, §13); see the note in §11.
+The five services are deployed independently from Sprint B (§11). The Sprint A skeleton runs only Reports (#166, §13).
 
 ```mermaid
 flowchart LR
@@ -296,7 +296,7 @@ Why these pass criteria: **p95 < 500 ms** on the server leaves most of SC1's 5 s
 
 **Decided:** **microservices from the start** ([ADR-001](adr/0001-architectural-style.md)). They meet assignment §6.2 directly, isolate failures (a read peak does not stop help requests) and give small, closed contracts per service.
 
-**Evolution (decided 21 October 2026, guide A4; professor's answer):** the architecture is defined from the start: the five services are independently deployable from Sprint A, each with its own `main`, Dockerfile and database, which already meets the Sprint B requirement of two independently deployable backend components (§6.2); there is **no modular-monolith phase**. There is no imposed path: any change is **motivated by evidence** (measurements, tests, failures), not by the calendar, and is recorded as a new or superseding ADR. For example, scaling a service for the peak (J3) would be recorded with the evidence that motivated it. Those ADRs are the *architecture evolution narrative* of §7.3.2 (item 11). This replaces the proposal of 15 October (modular monolith in Sprints A–B, split in Sprint C). **Note (31 October 2026):** the Sprint A skeleton runs only Reports (#166, [ADR-010](adr/0010-cicd-strategy.md) point 9); the team has not yet amended this decision for it.
+**Evolution (decided 21 October 2026, guide A4; professor's answer):** the architecture is defined from the start: the five services are independently deployable from Sprint B, each with its own `main`, Dockerfile and database, which meets the Sprint B requirement of two independently deployable backend components (§6.2); there is **no modular-monolith phase**. There is no imposed path: any change is **motivated by evidence** (measurements, tests, failures), not by the calendar, and is recorded as a new or superseding ADR. For example, scaling a service for the peak (J3) would be recorded with the evidence that motivated it. Those ADRs are the *architecture evolution narrative* of §7.3.2 (item 11). This replaces the proposal of 15 October (modular monolith in Sprints A–B, split in Sprint C). **Note (31 October 2026):** the Sprint A skeleton runs only Reports (#166, [ADR-010](adr/0010-cicd-strategy.md) point 9); ADR-001 decision 3 was amended for it on 1 November 2026 (#175, [record](../Meetings/2026-11-01-sprint-a-close-decisions.md)): the first service in Sprint A, all five from Sprint B.
 
 ## 12. Technology choices
 

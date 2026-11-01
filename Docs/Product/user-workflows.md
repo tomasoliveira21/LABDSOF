@@ -105,7 +105,7 @@ sequenceDiagram
 ```
 
 **Rules from the repository:**
-- Location is marked on the map by the participant and shared only with the request (annex C6, SafeZone pattern). Survey Q10: 71 % would share the phone's location; product decision 4 of 30 October 2026 (report, *User Research*) asks for it first, with the map as the fallback, to be reconciled with [assessment M-1](../Technical/security-and-privacy-assessment.md#6-data-minimisation-measures) and ADR-007 at Sprint B planning.
+- Location is marked on the map by the participant and shared only with the request (annex C6, SafeZone pattern). Survey Q10: 71 % would share the phone's location; product decision 4 of 30 October 2026 (report, *User Research*) asks for it first, with the map as the fallback. Phased on 1 November 2026 (#175): this journey uses the map in Sprint B; the phone's location comes from Sprint C, after [ADR-007](../Technical/adr/0007-venue-map-representation.md) and [assessment M-1](../Technical/security-and-privacy-assessment.md#6-data-minimisation-measures) are amended.
 - The AI only **suggests**; it never lowers a priority (annex C9, NFR-22).
 
 **[PROPOSED]:** the participant sees the status of their request (the market annex notes that no current channel shows the status of a request, §4 *UX* row).

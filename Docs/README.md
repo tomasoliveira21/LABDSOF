@@ -21,6 +21,8 @@ One row per deliverable of assignment §7.1.2, with its real status on 31 Octobe
 | 9 | Security and Privacy Assessment: threat model, sensitive data, access control, data minimisation, retention | [Security and Privacy Assessment](Technical/security-and-privacy-assessment.md) §3–§7 | ✅ Written on 25 October 2026 (guide E5); retention and consent confirmed by the team on 26 October, the rest not yet reviewed by the team |
 | 10 | Walking Skeleton: minimal end-to-end implementation, source repository, automated build, initial test, containerised deployment | [`backend/reports/`](../backend/reports/pom.xml) · [`infra/compose.yaml`](../infra/compose.yaml) · [`ci.yml`](../.github/workflows/ci.yml) · [Run instructions](Technical/plans/local-walking-skeleton.md) · [Evidence](Technical/evidence/walking-skeleton-2026-10-31.md) | ⚠️ One Reports service creates and reads synthetic help requests **in memory**; Maven build, 10 HTTP tests, a Docker image and a Compose smoke test run in CI on every PR and on `main` (#166, #167). No database, client app or second service yet: they are Sprint B |
 
+All the documents above in one PDF, in this order, as asked in the meeting of 22 October 2026 (P6): [`Farol_Sprint_A_Documents.pdf`](Deliverables/Farol_Sprint_A_Documents.pdf), generated on 1 November 2026 from commit `9e9afc2` (#175), with the architecture diagrams in an annex.
+
 Also asked for the deck by the professor (meeting of 22 October 2026): [Operating Cost Estimation](Deliverables/operating-cost-estimation.md), [Assumptions and dependencies](Deliverables/assumptions-and-dependencies.md), [Non-Functional Requirements](Product/non-functional-requirements.md), [Team and process](Process/team-and-process.md), [Definition of Ready and Done](Process/definition-of-ready-and-done.md).
 
 Other Sprint A requirements of the assignment: **§5.5 Ethical engagement design** (one mechanism and the five questions) in [`features.md` §6](Product/features.md#6-ethical-engagement-mechanism-community-reports-and-badges) and [§6.4](Product/features.md#64-the-five-questions-of-assignment-55) · **§5.7 Investor engagement** (decisions revised after the professor's feedback, with the reason) in the meeting records of [12 October](Meetings/2026-10-12-sprint-1-presentation-feedback.md) (T5: no 112) and [22 October 2026](Meetings/2026-10-22-professor-meeting.md) (P9: one web app instead of a mobile app, [ADR-002](Technical/adr/0002-backend-and-frontend-technology.md)), in [ADR-008](Technical/adr/0008-transport-data-source.md) (live bus data, with a simulator the professor asked for) and in the [local delivery clarification](Meetings/2026-10-22-local-deployment-clarification.md) ([ADR-011](Technical/adr/0011-deployment-and-infrastructure.md)).
@@ -42,7 +44,7 @@ Other Sprint A requirements of the assignment: **§5.5 Ethical engagement design
 | Security and privacy | [Security and Privacy Assessment](Technical/security-and-privacy-assessment.md): threat model, sensitive data, access control, data minimisation, retention, consent | EN |
 | Architecture research | [Deployment, observability and AI](Research/architecture-investigation/README.md) ([deployment](Research/architecture-investigation/deployment.md), [observability](Research/architecture-investigation/observability.md)) · [Responsible AI assessment](Research/architecture-investigation/responsible-ai.md) · [Triage evaluation](Research/architecture-investigation/evaluation/README.md) · ADRs: [005, accepted architecture](Technical/adr/0005-ai-triage-provider-and-evaluation.md), [011, local delivery scope](Technical/adr/0011-deployment-and-infrastructure.md), [012, accepted architecture](Technical/adr/0012-observability.md) | EN |
 | Technical (working document) | [Architecture decisions](Technical/architecture-decisions-guide.md): every architecture decision taken by the team, its status and owner, and next steps | PT |
-| Meetings | [2026-10-08 Sprint A gap review and decisions](Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Meetings/2026-10-12-sprint-1-presentation-feedback.md) · [2026-10-22 Local deployment clarification](Meetings/2026-10-22-local-deployment-clarification.md) · [2026-10-22 Meeting with the professor](Meetings/2026-10-22-professor-meeting.md) · [2026-10-22 Identity and API gateway decisions](Meetings/2026-10-22-identity-and-gateway-decisions.md) | EN |
+| Meetings | [2026-10-08 Sprint A gap review and decisions](Meetings/2026-10-08-sprint-1-gap-review.md) · [2026-10-12 Presentation feedback](Meetings/2026-10-12-sprint-1-presentation-feedback.md) · [2026-10-22 Local deployment clarification](Meetings/2026-10-22-local-deployment-clarification.md) · [2026-10-22 Meeting with the professor](Meetings/2026-10-22-professor-meeting.md) · [2026-10-22 Identity and API gateway decisions](Meetings/2026-10-22-identity-and-gateway-decisions.md) · [2026-11-01 Sprint A close decisions](Meetings/2026-11-01-sprint-a-close-decisions.md) | EN |
 | History | [CHANGELOG](../CHANGELOG.md) | EN |
 
 # Contributing Guidelines
@@ -109,23 +111,22 @@ Example: `docs (#1): Add conventions chapter to global report`
 
 ## 5. Code review
 
-A pull request can only be merged after **two reviews**:
+A pull request can only be merged after **one review by a team member**: 1 approval from someone other than the author.
 
-1. **GitHub Copilot**: requested automatically by the ruleset when the PR is opened. *So far every Copilot review has failed for lack of quota (17 attempts on ten PRs up to #174, checked on 1 November 2026), and no request appeared on #172, so in practice only the team member's review has happened.*
-2. **A team member**: 1 approval from someone other than the author.
+GitHub Copilot is also requested automatically by the ruleset when the PR is opened, but it **does not count as a review** (decided on 1 November 2026, #175): every Copilot review so far failed for lack of quota (17 attempts on ten PRs up to #174, checked on 1 November 2026), and no request appeared on #172. If a Copilot review does arrive, its comments are handled like any other.
 
 ### As the author
 
 - One issue per PR. Keep it small.
 - Review your own diff and wait for CI to pass before asking for a review.
-- Address every Copilot comment: fix it, or reply explaining why not.
+- Address every comment, Copilot's included: fix it, or reply explaining why not.
 - Reply to every comment and resolve all conversations.
-- Merge the PR yourself (squash) once both reviews are done.
+- Merge the PR yourself (squash) once a team member has approved it.
 
 ### As the reviewer
 
 - Review within **1 working day**.
-- Read Copilot's comments first. Copilot helps, but does not replace your review.
+- If Copilot commented, read its comments first. Copilot helps, but does not replace your review.
 - Be respectful: comment on the code, not the person.
 - Check that:
   - it does what the issue asks

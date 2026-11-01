@@ -27,7 +27,7 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F3 | Event management | C1 | Must | 3 | P4, P3 | Create, edit, publish and close events. Every other feature is scoped by event; isolation between events is a top technical risk (report §5). The `FarolAdmin` (P4) creates an event, for a verified organisation, and names its first `EventAdmin`; the EventAdmins edit, publish and close it (§4) |
 | F4 | Event roles, teams and permissions | C1 | Must | 4 | P3, P4 | **22 Oct:** roles per event, `EventAdmin` and `RegularUser`, plus the global `FarolAdmin`, who never sees an event's help requests, reports or participants. EventAdmins create the event's teams (e.g. *Security*, *Nursing*), set each team's permissions and add RegularUsers to them (§4) |
 | F5 | Venue map with points of interest | C3 | Must | 5 | P1, P3 | Map uploaded as an image or PDF; points placed on it (entrances, stages, WC, first aid, transport stops) |
-| F6 | Help request | C6 | Must | 6 | P1 | Category and location: the app asks for the phone's location; if the participant refuses, they mark the place on the map (survey, 30 October 2026). Location shared only with the request |
+| F6 | Help request | C6 | Must | 6 | P1 | Category and location: the participant marks the place on the map; from Sprint C the app first asks for the phone's location, with the map as the fallback (survey, 30 October 2026; phased on 1 November 2026, #175). Location shared only with the request |
 | F7 | Incident backoffice | C7 | Must | 7 | P2, P5 | Receive, prioritise, route to a team and close help requests; live list and map; full status history. Members of a team with the *respond* permission get what is routed to their team on the phone and update its status (§4.3) |
 | F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Suggests category, priority and team (one of the event's teams that handles the category, §4.2); the operator decides. Kept separate from F7 on purpose (see note below). See §5 |
 | F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **Porto Digital urban platform** (FIWARE NGSI v2): live positions of the city buses (§3), plus event shuttles and temporary stops entered by the team |
@@ -478,9 +478,8 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 **US-23** · As a **participant**, I want to ask for help by choosing a category and sharing where I am, so that the team can reach me.
 *Persona:* P1 · *Depends on:* US-14, US-21
-- Given I choose a category, when I ask for help, then the app asks for permission to use the phone's location.
-- Given I allow it, when I submit, then the request carries the phone's location and I see a confirmation.
-- Given I refuse it or the location is not available, then I mark where I am on the map, and when I submit I see a confirmation.
+- Given I choose a category, when I ask for help, then I mark where I am on the map, and when I submit I see a confirmation.
+- From Sprint C (survey decision 4, phased on 1 November 2026, #175): given I choose a category, when I ask for help, then the app first asks for permission to use the phone's location; if I allow it, the request carries it; if I refuse or it is not available, I mark where I am on the map.
 - Given I submitted a request, then my location is visible only to members with `HelpRequests.Triage`, to EventAdmins and to the team it is routed to.
 - Given I have sent 5 help requests in the last 10 minutes, when I submit another, then it is refused with a message saying when I can ask again, and the first-aid points are shown on the map (ADR-013, L-2: answer 429 with `Retry-After`).
 
@@ -713,10 +712,10 @@ Every merge to `main` is built and tested (guide H4). Delivery is local: a *rele
 |---|---|---|---|
 | **R0 · Walking skeleton** | Sprint A, before Sprint B starts on 2 Nov 2026 (#58) | One Reports service with synthetic help-request create/read in memory, diagnostic health, HTTP tests, Dockerfile, Compose and CI smoke on every PR (#166; [run instructions](../Technical/plans/local-walking-skeleton.md)). Keycloak, persistence/outbox and the full application are Sprint B. Not a user story: a task issue | §7.1.2 item 10 (Sprint A) |
 | **R1 · Vertical slice** | Sprint B review (6 Dec 2026) | 27 stories: US-01, 02, 06, 11, 12, 14, 16, 17, 18, 19, 20, 21, 23, 24, 26 to 36, 40, 41. The help-request journey end to end (W2 + W3), with teams and permissions, AI triage, scenario D1 and the first external integration | §7.2.2 items 1–13 |
-| **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58, US-57, US-59 and US-60 if there is time | §7.3.2 items 1–2, 8 |
-| **Later** (product roadmap) | After the course | Could: US-46, US-61, US-62. Won't: F19, F20 | §7.3.2 item 13 |
+| **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58, US-57, US-59 and US-60 if there is time; then Could US-46, US-61 and US-62 (milestone *Sprint C* since 1 November 2026, #175) | §7.3.2 items 1–2, 8 |
+| **Later** (product roadmap) | After the course | Whatever Sprint C cuts. Won't: F19, F20 | §7.3.2 item 13 |
 
-**Cut line for Sprint C.** If Sprint C runs short, drop in this order: US-57 and US-58; then US-59 and US-60; then US-52 and US-53; then US-22; then US-08, US-09, US-10 and US-45 (reasons in §8.5).
+**Cut line for Sprint C.** If Sprint C runs short, drop in this order: US-46, US-61 and US-62; then US-57 and US-58; then US-59 and US-60; then US-52 and US-53; then US-22; then US-08, US-09, US-10 and US-45 (reasons in §8.5).
 
 ### 8.3 Stories on the board
 

@@ -6,7 +6,7 @@
 
 ## Context
 
-Farol needs a backend made of five services, deployed independently from Sprint A (guide A2, A4; Sprint A delivered one service, see [ADR-001](0001-architectural-style.md) *Status*), a client for event management (P3, on a laptop) and for participants and responders, who use it on their phones at the venue. The assignment asks the team to justify its technology choices (§7.1.2, item 8). The team is small and has three sprints (architecture driver D9), so learning a new stack would take time away from the product.
+Farol needs a backend made of five services, deployed independently from Sprint B (guide A2, A4; Sprint A delivered one service, [ADR-001](0001-architectural-style.md) decision 3), a client for event management (P3, on a laptop) and for participants and responders, who use it on their phones at the venue. The assignment asks the team to justify its technology choices (§7.1.2, item 8). The team is small and has three sprints (architecture driver D9), so learning a new stack would take time away from the product.
 
 ## Decision
 
@@ -20,7 +20,7 @@ Farol needs a backend made of five services, deployed independently from Sprint 
 - No time spent learning a new language or framework; the team can start building features in the walking skeleton.
 - Spring has ready-made support for the other decisions: Spring AMQP for RabbitMQ ([ADR-004](0004-service-communication.md)), Spring Data JPA and Flyway for PostgreSQL ([ADR-003](0003-database-and-data-ownership.md)), and `openapi-generator` server stubs for the contract-first APIs (guide C7).
 - One frontend to build and maintain. Phone pages and laptop pages share the components, the generated API client and the login.
-- A JVM service uses more memory and starts more slowly than, for example, a Node.js or Go service. With five services running from Sprint A (no monolith phase) this raises hosting cost from the start; acceptable while each service runs as a single instance (guide C5).
+- A JVM service uses more memory and starts more slowly than, for example, a Node.js or Go service. With five services running from Sprint B (no monolith phase) this raises hosting cost from the start; acceptable while each service runs as a single instance (guide C5).
 - What a browser on a phone cannot do well: reliable push notifications and background location. The product needs neither (polling, guide C5; the location is marked on the map, US-23). Working offline (US-46, Could) needs a service worker, decided with that story.
 
 ## Alternatives considered
