@@ -14,7 +14,7 @@
 <line x1="-30" y1="460" x2="2484" y2="460" stroke="#333"/>
 <line x1="0" y1="460" x2="0" y2="690" stroke="#333"/>
 <rect x="0" y="460" width="2484" height="230" fill="#fef3c7" opacity="0.35"/>
-<text transform="translate(-12,575) rotate(-90)" text-anchor="middle"><tspan x="0" dy="0">Team operator (Miguel, P2)</tspan></text>
+<text transform="translate(-12,575) rotate(-90)" text-anchor="middle"><tspan x="0" dy="-6.5">Report reviewer</tspan><tspan x="0" dy="13">(Miguel, P2)</tspan></text>
 <line x1="-30" y1="690" x2="2484" y2="690" stroke="#333"/>
 <line x1="0" y1="690" x2="0" y2="840" stroke="#333"/>
 <rect x="0" y="690" width="2484" height="150" fill="#dcfce7" opacity="0.35"/>

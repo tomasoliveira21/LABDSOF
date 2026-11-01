@@ -31,7 +31,8 @@ Added after the presentation of 12 October 2026 (professor feedback): one BPMN d
 - The request reaches the control room **at once**. The AI suggestion runs in parallel and never holds it back (scenario D1).
 - The **operator decides** (priority, team, whether someone must go); the **responder acts** (accepts, goes to the point, resolves).
 - The participant sees two changes: *On the way* and *Resolved*.
-- Not drawn, to keep it readable: the participant cancels, duplicates (see W3).
+- Field teams see a routed request in their list on the phone, by polling; there is no push alert (US-29, US-31, guide C5).
+- Not drawn, to keep it readable: the participant cancels, duplicates (see W3); the help-request consent was declined, the request fails or the rate limit is reached, where the app shows the first-aid points instead (NFR-19, US-23, US-25).
 
 ### Community report, end to end (W7)
 

@@ -22,7 +22,7 @@
         <bpmn:flowNodeRef>Task_Remove</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>End_Fixed</bpmn:flowNodeRef>
       </bpmn:lane>
-      <bpmn:lane id="Lane_O" name="Team operator (Miguel, P2)">
+      <bpmn:lane id="Lane_O" name="Report reviewer (Miguel, P2)">
         <bpmn:flowNodeRef>Task_SeeReport</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gw_Check</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gw_True</bpmn:flowNodeRef>
