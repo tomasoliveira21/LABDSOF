@@ -62,6 +62,7 @@ The venue map (F5, Must) is the shared spatial reference of the product: points 
 
 ## Open points
 
+- **Phone location (1 November 2026, [record](../../Meetings/2026-11-01-sprint-a-close-decisions.md), #175):** product decision 4 of 30 October 2026 (phone location first, map as the fallback) is phased. Sprint B uses map points only. Before the phone's location arrives in Sprint C, this ADR must say how a phone position (latitude, longitude, accuracy) is placed on a map version with no geographic data, e.g. two or three reference points set by the EventAdmin; assessment M-1 changes with it.
 - Phone spike on a real iPhone and a real Android phone (*Decision* 4): before US-21 and US-22; owner to be set when the stories are planned.
 - ~~Where the original and rendered files are stored: guide G1.~~ Closed: a volume of the Events service ([`api-outline.md`](../api-outline.md) §10.1, decision D6).
 - ~~Upload file-size limit: set when US-19 is specified.~~ Closed: 20 MB at the gateway for the map upload route ([ADR-013](0013-api-gateway.md), limit L-4).
