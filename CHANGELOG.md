@@ -2,6 +2,18 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-01 · Sprint A deck split into T/TP and PL (#173, António Guerra)
+
+**Why:** the T/TP and PL classes each present a different list of topics, so one deck per class.
+
+### Added
+- `Docs/Presentation/Farol_Sprint_A_TTP_Presentation.pptx`: 9 slides, source slides 1–6, 12, 14 and 18 (cover, product vision, survey results and decisions, personas, core journey, prioritised backlog, scope of the next sprints, next steps).
+- `Docs/Presentation/Farol_Sprint_A_PL_Presentation.pptx`: 10 slides, source slides 1, 7–11, 13 and 15–17 (cover, domain model, architecture and technology, assumptions and dependencies, operating costs, NFRs, people, methodology, DoR and DoD).
+
+### Not changed
+- `Farol_Sprint_A_Presentation.pptx` stays as it was. Slides and speaker notes are copied unchanged; only the slide numbers follow the new position.
+- The survey slides and the next steps are in neither of the two topic lists; they went to the T/TP deck because they are about the product and the backlog. The cover is in both decks.
+
 ## [Unreleased] · 2026-10-31 · Documentation organised (#162, Bruno Lopes)
 
 **Why:** a reader had to know the repository to find each Sprint A deliverable, and several documents no longer matched the decisions in force or GitHub. Every change below was checked against its source on 31 October 2026.
