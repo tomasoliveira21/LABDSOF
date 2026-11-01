@@ -6,7 +6,7 @@
 
 ## Context
 
-- One React web app (guide F1) calls five services deployed independently from Sprint A (guide A2, A4; Sprint A delivered one service, see [ADR-001](0001-architectural-style.md) *Status*). Any later change of shape must be driven by evidence, and should not change the public API.
+- One React web app (guide F1) calls five services deployed independently from Sprint B (guide A2, A4; Sprint A delivered one service, [ADR-001](0001-architectural-style.md) decision 3). Any later change of shape must be driven by evidence, and should not change the public API.
 - Every request is authenticated ([ADR-006](0006-identity-and-access.md)). Reports must be rate-limited per account (US-48); help requests needed a decision.
 - At the venue, thousands of phones share a few public IP addresses (carrier-grade NAT), so limits per IP would block crowds.
 - The web app must be told to slow down at the read peak (429 or 503 with `Retry-After`, #43).

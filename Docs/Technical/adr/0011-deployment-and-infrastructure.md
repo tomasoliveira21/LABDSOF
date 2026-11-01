@@ -8,7 +8,7 @@ This supersedes this ADR's initial proposal to validate Azure as the current dep
 
 ## Context
 
-Five services are independently deployable from Sprint A (ADR-001), each with its own database (ADR-003), communicating via RabbitMQ (ADR-004). Hosting the application, broker, databases and telemetry incurs costs not covered by an assumption of free student hosting. As relayed to the team (recorded 22 October 2026), the professor agreed the project may proceed locally, provided the team explains that cloud deployment was omitted because of cost.
+Five services are independently deployable from Sprint B; Sprint A runs one, the R0 skeleton of Reports (ADR-001 decision 3, amended on 1 November 2026), each with its own database (ADR-003), communicating via RabbitMQ (ADR-004). Hosting the application, broker, databases and telemetry incurs costs not covered by an assumption of free student hosting. As relayed to the team (recorded 22 October 2026), the professor agreed the project may proceed locally, provided the team explains that cloud deployment was omitted because of cost.
 
 ## Decision and proposed implementation
 
