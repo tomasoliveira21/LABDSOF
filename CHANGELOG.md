@@ -2,6 +2,30 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-01 · Open points of the Sprint A review closed (#175, Bruno Lopes)
+
+**Why:** the review of PR #172 left points that the documents alone could not close: the deck, the Porto Digital terms, two team decisions, the single PDF and the backlog. Each one is now done, decided, or has an issue.
+
+### Added
+- `Docs/Deliverables/Farol_Sprint_A_Documents.pdf`: the Sprint A documents in one PDF, in the order of the deliverables index, with the documents asked for the deck and the architecture diagrams in an annex (professor meeting of 22 October 2026, P6).
+- `Docs/Meetings/2026-11-01-sprint-a-close-decisions.md`: the two team decisions below.
+
+### Decided (1 November 2026)
+- **ADR-001 decision 3 amended:** five services from the start and no monolith phase; Sprint A delivers the R0 of Reports and every service is deployed with its own database from Sprint B. ADR-002, ADR-003, ADR-004, ADR-011, ADR-013, guide A4 and `architecture.md` follow.
+- **Phone location phased:** survey decision 4 stays the direction; Sprint B uses the point on the map, and the phone's location comes in Sprint C, after ADR-007 and assessment M-1 are amended. Applied to M-1, ADR-007, `features.md` F6 and US-23 (issue #71), W2, personas and the report.
+- **Code review:** only the team member's approval counts (README §5, `team-and-process.md`, DoD); Copilot stays on in the ruleset but every review so far failed for lack of quota.
+
+### Changed
+- Sprint A decks (original, T/TP, PL): slide 3 n = 30 and n = 31, slide 4 phone location phased, slide 9 notes (eleven ADRs accepted) and ADR-001 "from the start", slide 11 377 € infrastructure (358 € cloud) and six databases from Sprint B, slide 16 only the approval is required by the ruleset.
+- `infra/wiremock/README.md`: the Porto Digital bus dataset is CC0 (Porto open data portal and dados.gov.pt, checked on 1 November 2026); the recordings stay.
+- `domain-model.md`: the Porto Digital note shows the 2 km geo-query; `product-vision.md`: the security-volunteer interview is "not done yet, planned for Sprint B" instead of TBD.
+- Backlog: #48 closed in Sprint A (proof of concept kept as a branch); #117, #120 and #121 in Sprint C, first to drop (`features.md` §8.2); follow-up issues #176–#179 in Sprint B.
+
+### Not done
+- Ruleset 26232165 still has no required checks, no dismissal of stale approvals and no required conversation resolution: it needs a repository admin.
+- The 17 text-edited `.drawio.svg` files keep their old PNG fallbacks, and `domain-model.svg` lacks seven fields and the 2 km note; browsers and the PDF show the current text.
+- Tag `v0.1.0`: after #172 and #175 are merged.
+
 ## [Unreleased] · 2026-11-01 · Sprint A deck split into T/TP and PL (#173, António Guerra)
 
 **Why:** the T/TP and PL classes each present a different list of topics, so one deck per class.
