@@ -6,7 +6,7 @@
 
 ## Context
 
-Farol needs a backend made of five services, deployed independently from Sprint A (guide A2, A4), a client for event management (P3, on a laptop) and for participants and responders, who use it on their phones at the venue. The assignment asks the team to justify its technology choices (§7.1.2, item 8). The team is small and has three sprints (architecture driver D9), so learning a new stack would take time away from the product.
+Farol needs a backend made of five services, deployed independently from Sprint A (guide A2, A4; Sprint A delivered one service, see [ADR-001](0001-architectural-style.md) *Status*), a client for event management (P3, on a laptop) and for participants and responders, who use it on their phones at the venue. The assignment asks the team to justify its technology choices (§7.1.2, item 8). The team is small and has three sprints (architecture driver D9), so learning a new stack would take time away from the product.
 
 ## Decision
 

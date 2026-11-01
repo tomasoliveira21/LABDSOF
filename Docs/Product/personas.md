@@ -1,7 +1,7 @@
 # Personas
 
 > LABDSOF 2026/27 · Sprint 1 · Assignment §7.1.2 (deliverable 4, *Personas*)
-> **Status:** **proto-personas [PROPOSED]**. They are built only from what is in the repository: the user groups and context in the report (§1), the stakeholder map (§3), the public evidence (§4) and the hypotheses the survey is designed to test. **They are not based on user research yet.** Names and ages are fictional. The assignment forbids fabricating research evidence (§5.3, §11), so every attribute below is either sourced or marked as a hypothesis.
+> **Status:** **proto-personas [PROPOSED]**. They are built only from what is in the repository: the user groups and context in the report (§1), the stakeholder map (§3), the public evidence (§4) and the hypotheses the survey is designed to test. **Only P1 is checked against user research so far:** the student survey of October 2026 (report, *User Research*; PE-1). The other personas are not based on user research yet (PE-2, PE-3). Names and ages are fictional. The assignment forbids fabricating research evidence (§5.3, §11), so every attribute below is either sourced or marked as a hypothesis.
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
 ## Why five personas
@@ -111,7 +111,7 @@ Journeys W1–W8 are described in [`user-workflows.md`](user-workflows.md).
 
 | # | Item | Needed to close it |
 |---|---|---|
-| PE-1 | Validate P1's hypotheses (current information sources, barriers, location sharing) | Survey results, questions 4, 5, 9, 10 |
+| PE-1 | Validate P1's hypotheses (current information sources, barriers, location sharing) | Done with the survey (Q4, Q5, Q9, Q10; P1 above). Still open: reconcile the phone location (product decision 4) with assessment M-1 and ADR-007 |
 | PE-2 | Validate P2's current workflow and pain points | Interview with the security volunteer |
 | PE-3 | Validate P3's willingness to configure and maintain the event | Conversation with an event organiser (assumption A1) |
 | PE-4 | Team agrees on splitting the event team into P2 and P3 | Team decision |

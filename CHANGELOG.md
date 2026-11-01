@@ -19,7 +19,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 **Why:** a reader had to know the repository to find each Sprint A deliverable, and several documents no longer matched the decisions in force or GitHub. Every change below was checked against its source on 31 October 2026.
 
 ### Added
-- `Docs/README.md`: a *Sprint A deliverables* table, one row per item of assignment §7.1.2 with its document and its real status. Item 3 (user research) is missing on `main`: findings, limitations and decisions are "TBD" (the results are in PR #165, not merged). Item 10 is one Reports service in memory, with build, tests, image and Compose smoke test in CI. Documents that no table listed are now indexed.
+- `Docs/README.md`: a *Sprint A deliverables* table, one row per item of assignment §7.1.2 with its document and its real status. Item 3 (user research) is complete since the survey results of #165; only the security-volunteer interview (A4) is missing. Item 10 is one Reports service in memory, with build, tests, image and Compose smoke test in CI. Documents that no table listed are now indexed.
 - `Docs/Deliverables/assumptions-and-dependencies.md`: one list for the deck (professor meeting of 22 October 2026): assumptions A1–A9 with their validation status, and the external dependencies of the ADRs, each with its source.
 
 ### Changed
@@ -56,6 +56,12 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Market analysis: a dated note on the decisions taken since 6 October 2026 (live buses, no Q&A assistant, offline mode a Could); first person removed. Cost estimate: rounding, six databases, Keycloak and observability not priced.
 - Survey results (#165) reflected in the deliverables table, the assumptions list and persona P1; product decision 4 (phone location first) is marked as still to reconcile with assessment M-1 and ADR-007.
 - `.gitattributes` keeps the evaluation files LF, so their SHA-256 hashes match on Windows; `evaluate.py` reads UTF-8.
+
+### Corrected after merging the split decks (1 November 2026)
+- BPMN help-request journey (`.bpmn` and `.svg`): field teams see a routed request in their list by polling, not as a phone alert (US-29, US-31, guide C5); the participant may add a short text; the operator sees the AI's reason (ADR-005). Report journey: the lane is the report reviewer (`Reports.Review`). `user-workflows.md` lists what is not drawn, including the first-aid points shown when consent is declined, sending fails or the rate limit is reached.
+- `personas.md` and the deliverables table: P1 is checked against the survey (#165); PE-1 done, apart from the phone location still to reconcile with assessment M-1.
+- `Docs/README.md` indexes the three Sprint A decks; the Copilot count is 17 failed attempts on ten PRs up to #174. `team-and-process.md` §1 counts 48 merged PRs (#174).
+- ADR-002 and ADR-013 point to ADR-001 *Status* where they say the services are deployed from Sprint A. Professor meeting record: the deck action (P5) ticked, with #165 and #174.
 
 ### Not changed
 - Older entries of this changelog and the meeting records, except ticking two finished actions and two dated *Update 31 October 2026* notes (meetings of 12 and 22 October).
