@@ -1,0 +1,2 @@
+# Keep the AI evaluation files byte-identical on every OS, so their SHA-256 matches baseline-report.json
+Docs/Research/architecture-investigation/evaluation/** text eol=lf

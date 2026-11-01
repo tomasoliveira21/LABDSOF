@@ -1,8 +1,10 @@
 # Responsible AI Opportunity Assessment and provider investigation
 
+> **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md), [NFR-11 and NFR-20](../../Product/non-functional-requirements.md#2-requirements). Where this document differs, they win: for example, local Ollama with `qwen3:4b`, one 20 s attempt and no hosted fallback.
+
 **22 October 2026 · #53 · K1–K2 / AI-1–AI-11 · PROPOSED.** Research artefacts for the academic MVP; no clinical validation, production deployment or measured model performance.
 
-**Current decision update (26 October 2026):** [Local-only delivery is authorised because of cloud costs](../../Meetings/2026-10-22-local-deployment-clarification.md). Tomás selects local Ollama `qwen3:4b` Q4_K_M for team review. The [complete decision](../../Technical/plans/ai-provider-evaluation.md) fixes runtime/cost, dynamic event-team contract, safeguards, dataset review and evaluation procedure. The historical cloud/API assessment below is retained as an alternative; it is not the current default. No inference test is claimed.
+**Current decision update (26 October 2026):** [Local-only delivery is authorised because of cloud costs](../../Meetings/2026-10-22-local-deployment-clarification.md). Local Ollama `qwen3:4b` Q4_K_M is selected for team review. The [complete decision](../../Technical/plans/ai-provider-evaluation.md) fixes runtime/cost, dynamic event-team contract, safeguards, dataset review and evaluation procedure. The historical cloud/API assessment below is retained as an alternative; it is not the current default. No inference test is claimed.
 
 **Compatibility after merging the 22 October role model:** the fixed Medical/Security/PCR names in this evaluation are a frozen synthetic event fixture, not a global production team list. Current `features.md` §4 allows event-defined teams with permissions and handled categories. Implementation must supply/validate the current event's eligible teams, abstain when none is eligible, and evaluate another event with different names/permissions. The existing draft labels/baseline remain research evidence and do not prove that cross-event team selection.
 
@@ -44,7 +46,7 @@ Send only participant `category` and optional sanitised text (max 500 characters
 
 Proposed deterministic baseline floors: Health=Medium, Safety=High, LostPerson=Medium, Theft=Medium, Other=Low. Effective stored priority is `max(existing priority, baseline floor, accepted suggestion)`; compare the **raw suggestion before clamping** in the evaluator so guards cannot hide model under-prioritisation. These operational labels require review by the team and a suitably experienced responder; no dataset label is medical advice.
 
-Save the request and its outbox event before inference; show it to the operator immediately. The 30 s deadline includes queue time, inference, validation and storage. For the selected local profile use connect 2 s, response 20 s, one attempt, no retry and the remaining overall deadline; the full admission/circuit policy is specified for review with Tiago in the local decision. Ignore late suggestions if an operator acted; concurrent updates must enforce that atomically. Never wait for AI before acknowledging a durable request.
+Save the request and its outbox event before inference; show it to the operator immediately. The 30 s deadline includes queue time, inference, validation and storage. For the selected local profile use connect 2 s, response 20 s, one attempt, no retry and the remaining overall deadline; the full admission/circuit policy is specified for review in the local decision. Ignore late suggestions if an operator acted; concurrent updates must enforce that atomically. Never wait for AI before acknowledging a durable request.
 
 ## K2: Responsible AI risks and controls
 
@@ -54,7 +56,7 @@ This assessment uses the risk-identification/measurement/management approach of 
 |---|---|---|
 | Wrong category/team, missed urgent case | Operator approval, conservative priority floor, bounded teams/schema, raw-output quality gate | Zero urgent under-prioritisations on the held-out set; cannot prove real-world safety from 100 synthetic cases |
 | Prompt injection | Untrusted JSON input, no tools, fixed schema, allowlisted labels, adversarial examples | Injection tests; semantic manipulation remains possible despite valid JSON |
-| Sensitive text disclosure | Field minimisation/redaction, no prompt logs, provider gate; local inference alternative | Guerra reviews data flow, lawful basis, access, processors and assessment need before any real data |
+| Sensitive text disclosure | Field minimisation/redaction, no prompt logs, provider gate; local inference alternative | Security review of data flow, lawful basis, access, processors and assessment need before any real data |
 | Bias in language/style | PT-PT slang/typos, English/mixed-language cases and paired paraphrases | Report per-slice failures/counts; small synthetic slices cannot establish fairness |
 | Harmful or diagnostic output | Category/priority/team only, short operator-facing reason; escape rendered text, no advice | Human review of reasons, not just JSON validation; reason may repeat sensitive text |
 | Automation bias | Explicit AI label, original input visible, easy correction; no fabricated confidence | Review accepted/changed suggestions and operator feedback |
@@ -62,11 +64,11 @@ This assessment uses the risk-identification/measurement/management approach of 
 | Reproducibility/leakage | Versioned artefacts and documented label review for the academic demo; fresh blinded holdout as a future improvement | Record hashes and split use; public-in-repo test labels are not a blinded benchmark |
 | Drift or provider model replacement | Dated model ID where possible, canary re-evaluation on model/prompt changes | Re-run full quality and latency tests; provider availability may change |
 
-Mistral documents [default EU hosting with possible feature-dependent transfers](https://help.mistral.ai/en/articles/347629-where-do-you-store-my-data-or-my-organization-s-data). Its [privacy policy](https://legal.mistral.ai/terms/privacy-policy/) describes ordinary abuse-monitoring retention, and [ZDR documentation](https://docs.mistral.ai/admin/monitor-comply/zero-data-retention) describes eligibility/request requirements for supported stateless endpoints. EU hosting, training opt-out and zero retention are different controls. Do not assume ZDR is automatic or that a European vendor makes every use lawful. Guerra must check the actual paid plan, training setting, DPA/subprocessors and endpoint before real data; until then use synthetic inputs only.
+Mistral documents [default EU hosting with possible feature-dependent transfers](https://help.mistral.ai/en/articles/347629-where-do-you-store-my-data-or-my-organization-s-data). Its [privacy policy](https://legal.mistral.ai/terms/privacy-policy/) describes ordinary abuse-monitoring retention, and [ZDR documentation](https://docs.mistral.ai/admin/monitor-comply/zero-data-retention) describes eligibility/request requirements for supported stateless endpoints. EU hosting, training opt-out and zero retention are different controls. Do not assume ZDR is automatic or that a European vendor makes every use lawful. The security assessment must check the actual paid plan, training setting, DPA/subprocessors and endpoint before real data; until then use synthetic inputs only.
 
 ## Evaluation plan and current evidence
 
-The [evaluation package](evaluation/README.md) contains 100 explicitly synthetic authored cases, 20 development / 80 test, including empty text, ambiguous requests, slang/typos, English/mixed text, multiple problems and prompt injection. The labels are draft operational judgements created for this investigation, **not independently validated expert ground truth**. For the minimum demo, a teammate reviews/adjudicates the proposed labels with Tomás and records that review. Independent blinded labels/fresh holdout are optional future improvements; the existing test split remains visible and cannot be presented as blinded.
+The [evaluation package](evaluation/README.md) contains 100 explicitly synthetic authored cases, 20 development / 80 test, including empty text, ambiguous requests, slang/typos, English/mixed text, multiple problems and prompt injection. The labels are draft operational judgements created for this investigation, **not independently validated expert ground truth**. For the minimum demo, a second teammate reviews/adjudicates the proposed labels and records that review. Independent blinded labels/fresh holdout are optional future improvements; the existing test split remains visible and cannot be presented as blinded.
 
 Compare the participant-category/default-team baseline with raw model outputs. Proposed gates: zero urgent under-prioritisation or urgent abstention/timeout; category/team accuracy ≥80% on non-abstention reference cases; valid on-time suggestions for ≥95% of those cases; correct abstention on every reference abstention case; end-to-end SC3 ≤30 s for accepted suggestions; SC5 100% visibility with AI disabled. Report all cases and slice counts, errors, coverage, latency and cost; do not score missing/invalid predictions as successful fallback.
 
@@ -75,3 +77,32 @@ Compare the participant-category/default-team baseline with raw model outputs. P
 For the minimum local demo, run the selected Ollama model once on the frozen test split, review reasons and record actual latency/memory. Show one success and one AI-off fallback. Repeated candidate comparisons and concurrency studies are optional; the [current decision](../../Technical/plans/ai-provider-evaluation.md) supersedes the broader research experiment. This research supplies an offline scorer and baseline, not deployed latency instrumentation or inference results. No model/provider was called, so model accuracy, tokens, cloud capacity, safety and SC3/SC5 are **not measured** here.
 
 The original features AI-1–AI-11 questions are answered as **proposals** by the input/schema/rubric/provider/prompt/dataset/gates/UI/monitoring/risk sections above. Team acceptance and implementation follow separately.
+
+**Which gate decides what (added 31 October 2026, #162):** an offline run decides only the **quality gate** (accuracy, urgent cases, abstentions, floor and category/team checks). A direct model-call benchmark omits `elapsed_ms` ([evaluation README](evaluation/README.md), step 4), so the scorer reports no on-time coverage and its timing gate cannot pass; on-time coverage (≥ 95 % within 30 s) is measured on the instrumented one-hour cohort of the [local decision](../../Technical/plans/ai-provider-evaluation.md), not offline.
+
+## Baseline, known limitations and how users are informed (added 31 October 2026, #162)
+
+This section is added to the snapshot so that deliverable 6 states its numbers and its limits in one place (assignment §5.6.1, §5.6.2, §5.6.3). It adds no new decision.
+
+**Non-AI baseline, reproduced.** The [baseline report](evaluation/baseline-report.json) applies the no-AI policy (participant category, default team, category priority floor) to the 80 test cases (72 non-abstention references):
+
+| Measure | Baseline | Gate (ADR-005 decision 4; evaluation README) |
+|---|---|---|
+| Category accuracy | 0.708 (51 of 72) | ≥ 0.80 |
+| Team accuracy | 0.806 (58 of 72) | ≥ 0.80 |
+| Urgent cases missed (under-prioritised, abstained or missing) | 24 of 31 | 0 |
+| Correct expected abstentions | 0 of 8 | all |
+
+Of the gates in this table, the baseline passes only team accuracy; it meets suggestion coverage, the priority floor and consistency trivially, because it always suggests. **Where the AI must beat it** is the existing gate on urgent cases: zero misses against the baseline's 24 of 31, plus category accuracy ≥ 0.80 and every expected abstention. No new gate is added here. The value the AI is expected to bring is therefore earlier attention to urgent requests whose participant category understates them; it is not measured until the model runs (guide K2).
+
+**Known limitations:**
+
+- **Synthetic, team-authored labels.** The 100 cases and their labels were written by the team; they are not independent expert ground truth, and the test split is visible in the repository, so it is not a blinded benchmark.
+- **Small slices.** The English, mixed-language, slang, injection, abstention and ambiguous slices have 3 to 8 test cases each, and multiple problems only one, too few to establish fairness or robustness.
+- **No calibrated confidence.** The model gives no score that has been checked against outcomes, so none is shown.
+- **One issue per suggestion.** The prompt asks for the most urgent described issue only ([system prompt](evaluation/system-prompt.txt)); a request describing several problems gets one suggestion.
+- **Latency not measured.** Time on the demo laptop's CPU is unknown until the model runs (ADR-005).
+- **Fixed team names.** The evaluation uses one frozen event's teams; other events' teams are an integration check.
+- **Provenance of retrieved information:** not applicable. The model has no tools and no retrieval; it sees only the minimised fields listed above.
+
+**How users are informed.** The operator always sees the original request next to the result, which is labelled **AI suggestion** with a short reason, never as a verified fact, and can change it; no confidence number is shown (§ *Opportunity, boundaries and human control* above). When the AI is unavailable, requests show *"Not triaged"* and a banner says so ([`features.md` §5](../../Product/features.md#5-ai-assisted-workflow-help-request-triage)). Participants are told in the sign-up terms that an AI may suggest a priority and that a person decides ([security and privacy assessment §8](../../Technical/security-and-privacy-assessment.md#8-consent-transparency-and-the-sign-up-terms)).

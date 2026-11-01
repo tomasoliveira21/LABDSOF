@@ -1,5 +1,7 @@
 # Observability investigation
 
+> **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-012](../../Technical/adr/0012-observability.md), the [local observability decisions](../../Technical/plans/local-observability.md), [NFR-03, NFR-33 and NFR-34](../../Product/non-functional-requirements.md#2-requirements). Where this document differs, they win: for example, Prometheus and Grafana with three core alerts, without a Collector, Tempo or Alertmanager.
+
 **22 October 2026 · #53 · I1–I3 · PROPOSED.** The targets below are design proposals, not measured service levels. SC3 (30 s) and SC5 (no requests lost with AI off) come from the product vision.
 
 **Current scope update:** [Local-only delivery is authorised because of cloud costs](../../Meetings/2026-10-22-local-deployment-clarification.md). Implement the minimum local Prometheus/Grafana plus correlated Docker logs option for the demo; Azure Monitor, cloud alert routing and cloud ingestion costs below are retained alternatives. The proposed SLIs/SLOs and evidence checks still apply locally; no cloud dashboard is required.
@@ -32,7 +34,7 @@ JSON logs: time, level, service, environment, release SHA, operation, trace ID, 
 | Useful triage (SC3) | Valid, non-abstained suggestions stored within 30 s end to end / all AI-eligible requests submitted in the one-hour cohort, including failures | **≥95% over 1 h [PROPOSED]**; finalise after the last 30 s deadline; report the complete ratio and degraded periods |
 | AI fallback | Fallback outcomes / all AI-eligible requests | Observed ratio, not an availability substitute; any loss of a request is a failing test |
 | Event propagation | Oldest unpublished outbox age and publish-to-consumer delay | p95 ≤10 s over 15 min in normal mode; queues may lag during dependency failure |
-| Transport freshness | Time since the last successfully validated import | Show data timestamp; use Tiago's agreed freshness threshold, not a newly invented one |
+| Transport freshness | Time since the last successfully validated import | Show data timestamp; use the agreed freshness threshold, not a newly invented one |
 | AI quality | Under-prioritised urgent cases, category/team accuracy, schema failures on the versioned evaluation set | 0 urgent under-prioritisations; ≥80% category and team accuracy proposed; dataset-only gate, not clinical safety evidence |
 
 **Coverage alignment (26 October 2026, #145):** the canonical [ADR-005 coverage definition](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145) now uses **≥95%**, replacing the earlier 90% offline proposal. A valid result passes schema/semantic checks, event-team eligibility and the raw priority floor; queue wait, all provider attempts and storage are inside 30 s. Provider errors, circuit-open calls, timeouts, refusals, invalid/late output and abstentions are misses even when fallback works. Determine eligibility before seeing the result. A one-hour submission cohort is finalised 30 s after it closes; rolling cohorts use the same deadline lag. Do not discard failures or degraded periods from the complete ratio; no eligible requests means no data. Offline evaluation applies the same percentage to non-abstention reference cases, with expected abstentions scored separately. It is not the same population as operational traffic and is not evidence of a measured SLO. SC5's 100% visibility remains separate.
@@ -54,17 +56,17 @@ Metric names below are **proposed custom contracts**, not already emitted metric
 
 | Signal | Initial trigger | Owner action / recovery |
 |---|---|---|
-| `farol_probe_success` + scrape age | Two consecutive 30 s create/read probe failures or >2 min no sample | Tomás checks ingress/revision/DB; show missing telemetry separately from application failure |
+| `farol_probe_success` + scrape age | Two consecutive 30 s create/read probe failures or >2 min no sample | Check ingress/revision/DB; show missing telemetry separately from application failure |
 | `farol_requests_not_visible` | Any reconciled committed request still absent after 5 s on two checks | Immediate investigation; disable AI if implicated, preserve saved rows and reconcile visibility |
-| `farol_triage_pending_oldest_seconds` | >30 s for 2 min while eligible requests exist | Mark AI degraded, verify fallback, check worker/provider with Tiago |
-| `farol_outbox_oldest_seconds` | >60 s for 2 min (decided 24 October 2026, Tiago; first proposed here as 30 s) | Check broker alarms, connectivity and confirms; never delete rows to silence alert |
+| `farol_triage_pending_oldest_seconds` | >30 s for 2 min while eligible requests exist | Mark AI degraded, verify fallback, check worker/provider |
+| `farol_outbox_oldest_seconds` | >60 s for 2 min (decided 24 October 2026; first proposed here as 30 s) | Check broker alarms, connectivity and confirms; never delete rows to silence alert |
 | `farol_dlq_added_total` | Any increase over 5 min | Preserve poison message evidence without sensitive bodies; diagnose schema/retry cause before controlled replay |
 | `farol_broker_up` / disk alarm | Down >60 s or disk/memory alarm on two checks | Check VM/disk; DB/outbox should continue saving requests |
 | Create failure ratio | >5% over 5 min with ≥20 valid attempts, or repeated synthetic failure | Compare release/dependency traces, roll back bad release |
-| Spend | 50/80/100% of approved budget; sudden daily increase | Tomás checks usage/credits; alerts are notifications, not a hard spending cap |
+| Spend | 50/80/100% of approved budget; sudden daily increase | Check usage/credits; alerts are notifications, not a hard spending cap |
 
 For the local minimum, three core rules are Grafana-managed and displayed in its Alerting UI; other rows above are dashboard/manual acceptance signals. No external receiver or cloud action group is required. No notification integration was created by this investigation. Every alert needs a resolution condition and link to the rollback/recovery runbook in [deployment research](deployment.md#rollback-and-recovery-g7).
 
 ## Acceptance evidence still to collect
 
-Create a request and find its HTTP → outbox → AMQP → model → stored-suggestion milestones using the same correlation ID in structured logs; no distributed trace UI is required. Stop AI and broker separately; prove visibility and recovery, trigger/resolve alerts, inspect logs for sensitive data, and record telemetry volume/cost. Bruno implements export/dashboard provisioning with the pipeline; Tiago supplies failure/load runs. Dashboard and alerts here are reviewable specifications, not a claim of running monitoring.
+Create a request and find its HTTP → outbox → AMQP → model → stored-suggestion milestones using the same correlation ID in structured logs; no distributed trace UI is required. Stop AI and broker separately; prove visibility and recovery, trigger/resolve alerts, inspect logs for sensitive data, and record telemetry volume/cost. Export/dashboard provisioning comes with the pipeline; failure/load runs come from the resilience work (#43). Dashboard and alerts here are reviewable specifications, not a claim of running monitoring.

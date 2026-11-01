@@ -53,7 +53,7 @@
 <circle cx="139" cy="75" r="18" fill="#fff" stroke="#333" stroke-width="1.5"/>
 <text x="139" y="107" text-anchor="middle" font-size="11"><tspan x="139" dy="0">Needs help</tspan></text>
 <rect x="225" y="39" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
-<text x="289" y="68" text-anchor="middle"><tspan x="289" dy="0">Opens Ask for help</tspan><tspan x="289" dy="14">and chooses a</tspan><tspan x="289" dy="14">category</tspan></text>
+<text x="289" y="68" text-anchor="middle"><tspan x="289" dy="0">Opens Ask for help,</tspan><tspan x="289" dy="14">chooses a category,</tspan><tspan x="289" dy="14">may add a short text</tspan></text>
 <g transform="translate(231,44)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
 <rect x="375" y="39" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
 <text x="439" y="75" text-anchor="middle"><tspan x="439" dy="0">Marks the place on</tspan><tspan x="439" dy="14">the map and sends</tspan></text>
@@ -75,7 +75,7 @@
 <path d="M1032,258 L1046,272 M1046,258 L1032,272" stroke="#333" stroke-width="3"/>
 <text x="1035" y="210" text-anchor="end" font-size="11"><tspan x="1035" dy="0">Valid answer within 30</tspan><tspan x="1035" dy="14">s?</tspan></text>
 <rect x="1125" y="181" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
-<text x="1189" y="217" text-anchor="middle"><tspan x="1189" dy="0">Shows the suggestion</tspan><tspan x="1189" dy="14">to the operator</tspan></text>
+<text x="1189" y="210" text-anchor="middle"><tspan x="1189" dy="0">Shows the suggestion</tspan><tspan x="1189" dy="14">and its reason to the</tspan><tspan x="1189" dy="14">operator</tspan></text>
 <g transform="translate(1137,193)" fill="none" stroke="#555" stroke-width="1.2"><circle r="5.5"/><circle r="2"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(0)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(45)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(90)"/><line x1="0" y1="-8" x2="0" y2="8" transform="rotate(135)"/></g>
 <rect x="1125" y="277" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
 <text x="1189" y="313" text-anchor="middle"><tspan x="1189" dy="0">Marks it &quot;Not</tspan><tspan x="1189" dy="14">triaged&quot; (D1)</tspan></text>
@@ -92,13 +92,13 @@
 <path d="M1182,488 L1196,502 M1196,488 L1182,502" stroke="#333" stroke-width="3"/>
 <text x="1185" y="454" text-anchor="end" font-size="11"><tspan x="1185" dy="0">Someone needed on site?</tspan></text>
 <rect x="1275" y="507" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
-<text x="1339" y="543" text-anchor="middle"><tspan x="1339" dy="0">Dispatches it to the</tspan><tspan x="1339" dy="14">response team</tspan></text>
+<text x="1339" y="543" text-anchor="middle"><tspan x="1339" dy="0">Routes it to the</tspan><tspan x="1339" dy="14">field team</tspan></text>
 <g transform="translate(1281,512)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
 <rect x="1425" y="411" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
 <text x="1489" y="440" text-anchor="middle"><tspan x="1489" dy="0">Handles it from the</tspan><tspan x="1489" dy="14">control room and</tspan><tspan x="1489" dy="14">closes it</tspan></text>
 <g transform="translate(1431,416)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
 <rect x="1425" y="649" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
-<text x="1489" y="685" text-anchor="middle"><tspan x="1489" dy="0">Gets the alert on the</tspan><tspan x="1489" dy="14">phone and accepts</tspan></text>
+<text x="1489" y="678" text-anchor="middle"><tspan x="1489" dy="0">Sees it in the team's</tspan><tspan x="1489" dy="14">list on the phone and</tspan><tspan x="1489" dy="14">accepts</tspan></text>
 <g transform="translate(1431,654)" fill="none" stroke="#555"><circle cx="6" cy="4" r="3.2"/><path d="M0,14 C0,8 12,8 12,14"/></g>
 <rect x="1575" y="229" width="128" height="72" rx="9" fill="#fff" stroke="#333" stroke-width="1.5"/>
 <text x="1639" y="265" text-anchor="middle"><tspan x="1639" dy="0">Sets the status On</tspan><tspan x="1639" dy="14">the way</tspan></text>

@@ -1,6 +1,6 @@
 # Farol — API Outline and Event Catalogue
 
-> Sprint A deliverable 7 (assignment §7.1.2; guide C8). Issue #123. Owner: Bruno.
+> Sprint A deliverable 7 (assignment §7.1.2; guide C8). Issue #123.
 > What each service exposes over REST and which domain events it publishes and consumes. This is an **outline**: the complete `openapi.yaml` of each service and the formal event schemas are written per story, contract-first (guide C7, [`spec-driven-development.md`](../Process/spec-driven-development.md)).
 > Stories follow the numbering in [`features.md` §7](../Product/features.md#7-initial-backlog-user-stories) (US-01 to US-62). Entities follow [`domain-model.md`](domain-model.md). Roles and permissions follow [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026).
 > Items marked **[WAITS: On]** follow the current proposal and wait for another owner's decision On. The outline's own decisions and those still waiting are in §10.
@@ -14,6 +14,7 @@
 - **Must** and **Should** features (F1–F10, F12–F16). The **Could** features (F11, F17, F18) are listed by name in §9.
 - Per endpoint: method, path, purpose, the role or permission required, and the story. Request and response fields only for the core flow (help request, triage, field tasks).
 - No service calls another service's REST API: services talk only through events (guide C4, [ADR-004](adr/0004-service-communication.md)).
+- Not in this outline: the endpoints of the Sprint A walking skeleton in Reports (`GET /api/v1/status` and the synthetic `/api/v1/demo/help-requests`, only with the `demo` profile). They are diagnostic, not part of the product API ([`openapi.yaml`](../../backend/reports/contracts/openapi.yaml), [run instructions](plans/local-walking-skeleton.md), #166).
 
 ### 1.2 Paths
 
@@ -48,7 +49,7 @@
 
 - **Problem Details** (RFC 9457), `application/problem+json`.
 - **Rate limits** ([ADR-013](adr/0013-api-gateway.md#rate-limits)), per account, never per IP: 120 calls per minute on every path and **5 help requests per 10 minutes**, at the gateway; 5 reports per 10 minutes per event, in Reports (US-48). Login and sign-up are protected by Keycloak's brute-force detection.
-- `400` invalid input, `401` not logged in, `403` no permission, `404` not found **or not a member of the event** (so as not to reveal that the event exists;), `409` state conflict (e.g. a field task already accepted), `422` breaks a business rule (e.g. removing the last EventAdmin), `413` file too large (map upload over 20 MB), `429` too many requests, with `Retry-After`, `503` service unavailable, with `Retry-After`.
+- `400` invalid input, `401` not logged in, `403` no permission, `404` not found **or not a member of the event** (so as not to reveal that the event exists), `409` state conflict (e.g. a field task already accepted), `422` breaks a business rule (e.g. removing the last EventAdmin), `413` file too large (map upload over 20 MB), `429` too many requests, with `Retry-After`, `503` service unavailable, with `Retry-After`.
 
 ## 2. Auth & Users
 
@@ -131,7 +132,7 @@ Owns events, teams with their permissions and help categories, map versions and 
 
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
-| `GET` | `/events/{eventId}/announcements?updatedSince=` | Live list of announcements; removed ones come back once as `removed: true`, so the web app drops them (SC6, 10 s) | Member | US-44, US-45 |
+| `GET` | `/events/{eventId}/announcements?updatedSince=` | Live list of announcements; removed ones come back once as `removed: true`, so the web app drops them (polling every 10 s; SC6 ≤ 15 s) | Member | US-44, US-45 |
 | `POST` | `/events/{eventId}/announcements` | Publish an announcement (`{ message, expiresAt }`) | `Announcements.Publish` | US-44 |
 | `PATCH` | `/events/{eventId}/announcements/{announcementId}` | Edit it; it shows the time of the edit | `Announcements.Publish` | US-45 |
 | `DELETE` | `/events/{eventId}/announcements/{announcementId}` | Remove it | `Announcements.Publish` | US-45 |
@@ -218,13 +219,15 @@ Owns help requests, triage suggestions, community reports, field tasks and their
     "suggestedCategory": "Health",
     "suggestedPriority": "High",
     "suggestedTeamId": "tm-03…",
-    "notTriagedReason": null           // Timeout | ProviderError | InvalidOutput (US-36)
+    "suggestedReason": "Fainting reported; needs first aid",  // short plain text from the AI, escaped when shown (ADR-005 decision 2; assessment T10)
+    "notTriagedReason": null           // Timeout | ProviderError | InvalidOutput | Abstained | Unavailable | NoEligibleTeam (US-36; ADR-005)
   }
 }
 ```
 
 - The participant gets only `id`, `category`, `status` and `updatedAt`, which the app shows as *Sent*, *Seen*, *On the way*, *Resolved* or *Closed* (US-24).
-- The request is saved and shown at once, with `triage.state: Pending`. If no valid suggestion arrives within 30 s it becomes `NotTriaged` (scenario D1, US-36). A suggestion never overwrites a value a member already set, and never lowers the default priority (domain model I4).
+- `Unavailable`: the AI was not called because the circuit was open or the request could not start in time ([AI plan](plans/ai-provider-evaluation.md#runtime-and-resilience-contract), *Admission*). `NoEligibleTeam`: no team of the event can respond to the category, so inference is skipped ([AI plan](plans/ai-provider-evaluation.md#event-specific-production-contract), item 3). Added on 31 October 2026 (#162).
+- The request is saved and shown at once, with `triage.state: Pending`. If no valid suggestion arrives within 30 s it becomes `NotTriaged` (scenario D1, US-36). A suggestion never overwrites a value a member already set, and never lowers the default priority (NFR-22).
 
 **A field task:** `GET /events/{eventId}/field-tasks?updatedSince=`
 
@@ -263,7 +266,7 @@ Owns the event's transport options (shuttles and external bus routes), their dep
 | `DELETE` | `/events/{eventId}/transport-options/{optionId}` | Remove it | `Transport.Edit` | US-37 |
 | `POST` | `/events/{eventId}/transport-options/{optionId}/delay` | Mark a shuttle delayed (`{ delayMinutes, note }`); `0` clears it; stored with the time of the change | `Transport.Edit` | US-38 |
 | `POST` | `/events/{eventId}/transport-options/{optionId}/cancel` | Mark a shuttle cancelled | `Transport.Edit` | US-38 |
-| `GET` | `/events/{eventId}/bus-observations` | Latest bus positions on the event's external routes, with `dataFrom` (time of the data) and `stale: true` when the source is down or the data is older than the freshness limit | Member | US-40, US-41, US-42 |
+| `GET` | `/events/{eventId}/bus-observations` | Latest bus positions on the event's external routes, with `dataAsOf` (time of the data) and `stale: true` when the source is down or the data is older than the freshness limit | Member | US-40, US-41, US-42 |
 | `GET` | `/events/{eventId}/transport-source-status` | Whether the Porto Digital source is available, and the time of the last valid import, for the backoffice warning | EventAdmin, `Transport.Edit` | US-40, US-43 |
 
 - The import from Porto Digital (US-40) is a scheduled job inside Transports, with a timeout and validation; it is never called inside a user's request, and there is no endpoint for it. An invalid import is rejected as a whole and the previous data stays.
@@ -428,7 +431,7 @@ Every Must and Should story (US-01 to US-58, except the Could US-46) has at leas
 - **US-25** (request not sent) is mostly in the app; the API only makes the resend safe with `clientRequestId`.
 - **US-40** (import) is a scheduled job inside Transports with no endpoint of its own; its result is what the two endpoints return.
 
-**No service calls another's REST API** (guide C4): every row in §7.4 is a message on RabbitMQ, every consumer in §7.5 reads from its own queue, and each "Requires" column is checked against a local copy. The only outbound HTTP call is Transports → Porto Digital, an external system, from a scheduled job (§5).
+**No service calls another's REST API** (guide C4): every row in §7.4 is a message on RabbitMQ, every consumer in §7.5 reads from its own queue, and each "Requires" column is checked against a local copy. The outbound HTTP calls go only to external or infrastructure systems, never to another Farol service: Transports → Porto Digital, from a scheduled job (§5); Reports → the AI provider, from the triage worker; Auth & Users → the Keycloak Admin API, on account deletion (§2); and every service → Keycloak's keys (JWKS), when they change ([`architecture.md` §9.1](architecture.md#91-resilience-patterns-and-values-j1)).
 
 ## 9. Future (Could features)
 
@@ -440,7 +443,7 @@ Not outlined; listed by name only.
 
 ## 10. Decisions to take
 
-### 10.1 Outline decisions (owner: Bruno)
+### 10.1 Outline decisions
 
 Decided on 23 October 2026. The outline above already follows them.
 
@@ -461,14 +464,14 @@ Decided on 23 October 2026. The outline above already follows them.
 
 ### 10.2 Decisions of other owners
 
-The outline follows the current proposal and marks it **[WAITS: On]**. When the owner decides, the outline is updated in the documentation review. O1 to O4 are closed.
+The outline follows the current proposal and marks it **[WAITS: On]**. When it is decided, the outline is updated in the documentation review. O1 to O4 are closed.
 
-| # | Decision | What the outline assumes | Owner | Where |
-|---|---|---|---|---|
-| O1 | Gateway routing (guide C6) | ✅ **Closed** (22 October 2026): the route table of [ADR-013](adr/0013-api-gateway.md#route-table) follows the outline's paths | Guerra | §1.2 |
-| O2 | Sign-up and login (guide E1) | ✅ **Closed** (22 October 2026, [ADR-006](adr/0006-identity-and-access.md)): sign-up, login and logout in Keycloak; `POST /accounts` removed, the account is created at the first `GET /me` | Guerra | §1.4, §2 |
-| O3 | What the token carries (guide E2) | ✅ **Closed** (22 October 2026, ADR-006): only the identity; roles and teams come from local copies (`MembershipChanged`, `TeamChanged`) | Guerra | §1.5 |
-| O4 | Account lookup by e-mail (privacy) | ✅ **Closed** (26 October 2026): `GET /accounts?email=` for the FarolAdmin, with the rules of the assessment's AC-9 | Guerra | §2 |
-| O5 | Where the badge preferences live (domain model) | In Badges (`/me/badges/preferences`); if they stay in Auth & Users, it publishes `EngagementPreferencesChanged` | Tomás and Guerra | §6 |
-| O6 | US-41 and the Porto Digital data (backlog) | Shows the buses on the event's routes, not timetables; the story still says STCP | Tiago | §5 |
-| O7 | Priority scale (`features.md` §5.2, AI-3) | Named levels such as `High`; the values come from AI-3 | Tomás | §4.1 |
+| # | Decision | What the outline assumes | Where |
+|---|---|---|---|
+| O1 | Gateway routing (guide C6) | ✅ **Closed** (22 October 2026): the route table of [ADR-013](adr/0013-api-gateway.md#route-table) follows the outline's paths | §1.2 |
+| O2 | Sign-up and login (guide E1) | ✅ **Closed** (22 October 2026, [ADR-006](adr/0006-identity-and-access.md)): sign-up, login and logout in Keycloak; `POST /accounts` removed, the account is created at the first `GET /me` | §1.4, §2 |
+| O3 | What the token carries (guide E2) | ✅ **Closed** (22 October 2026, ADR-006): only the identity; roles and teams come from local copies (`MembershipChanged`, `TeamChanged`) | §1.5 |
+| O4 | Account lookup by e-mail (privacy) | ✅ **Closed** (26 October 2026): `GET /accounts?email=` for the FarolAdmin, with the rules of the assessment's AC-9 | §2 |
+| O5 | Where the badge preferences live (domain model) | In Badges (`/me/badges/preferences`); if they stay in Auth & Users, it publishes `EngagementPreferencesChanged` | §6 |
+| O6 | US-41 and the Porto Digital data (backlog) | Shows the buses on the event's routes, not timetables; the story still says STCP | §5 |
+| O7 | Priority scale (`features.md` §5.2, AI-3) | Named levels such as `High`; the values come from AI-3 | §4.1 |

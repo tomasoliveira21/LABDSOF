@@ -6,12 +6,14 @@
 
 ## 1. Team
 
-| Member | GitHub | Student Number | Contributions so far (from commits) |
-|---|---|---|---|
-| Tomás Oliveira | `tomasoliveira21` | 1230213 | Repository owner; initial commit; Product Vision and User Research sections of the report (#17); merged PR #19 |
-| Tiago Teixeira | `tteixeira30` | 1240493 | Problem and Opportunity Report (#11); student survey script (#11); merged PR #18 and #21; added the assignment PDF |
-| Bruno de Abreu Lopes | `BrunoLopes1190` | 1240441 | Contributing guidelines (README); market and competitor analysis; merged PR #20 |
-| António Guerra | `AntonioGuerra1190409` | 1190409 | Product Vision and User Research sections of the report (#17); |
+What each member worked on, from the pull requests they wrote; open investigations and their owners are in the [decisions guide](../Technical/architecture-decisions-guide.md#responsáveis-pelas-investigações-em-curso). Counts on 1 November 2026, from GitHub (48 merged pull requests): pull requests written and merged, and pull requests the member approved.
+
+| Member | GitHub | Student Number | Areas (pull requests) | PRs merged | PRs approved |
+|---|---|---|---|---:|---:|
+| Tomás Oliveira | `tomasoliveira21` | 1230213 | Repository owner. Product vision (#19, #30); domain model, with Guerra (#37, #171); architecture research on deployment, observability and AI (#54, #146, #151, #152, #154); walking skeleton (#150, #167); CI with SonarQube Cloud (#169) | 13 | 15 |
+| Tiago Teixeira | `tteixeira30` | 1240493 | Problem and Opportunity Report and survey script (#18); Sprint 1 presentation and personas (#21, #27); venue map, ADR-007 (#51); resilience, degraded modes and load testing (#52); role model (#57); backlog issues and board (#122, #140, #142); non-functional requirements (#139); survey results and the Sprint A deck (#165) | 11 | 5 |
+| Bruno de Abreu Lopes | `BrunoLopes1190` | 1240441 | Contributing guidelines and process (#1, #33); market and competitor analysis (#20); main features (#25); decisions guide and ADR-002/003/004 (#36, #49); architecture diagrams and ADR-009 (#50, #157); meeting records (#23, #96); API outline (#124); one web app (#126); versioning, local delivery and ADR-010 CI/CD (#128, #130, #132); operating costs (#136); account deletion (#158); documentation corrections (#163) | 18 | 9 |
+| António Guerra | `AntonioGuerra1190409` | 1190409 | User workflows slide (#31); identity and API gateway, ADR-006 and ADR-013 (#47); security and privacy assessment (#144, #160); Porto Digital simulator in WireMock (#156); Sprint A deck split for the T/TP and PL classes (#174) | 6 | 9 |
 
 ## 2. Roles
 
@@ -38,7 +40,7 @@ Defined in the README; summarised here for the presentation.
 | Commits | `<prefix> (#<issue>): <Title>`, title ≤ 50 characters, imperative mood | README §3 |
 | Pull requests | Title `<Prefix>: <Description>`; description with `Closes #<issue>`, summary and how it was tested. **Every PR has an issue** | README §4 |
 | Code review | Two reviews: GitHub Copilot (automatic) and one team member; review within 1 working day; blocking comments start with `blocking:` | README §5 |
-| Branch protection | No direct pushes, Copilot review, 1 approval, stale approvals dismissed, conversations resolved, CI must pass, branch up to date. **Not active yet** (checked on 30 October 2026: `protected: false`). **To do: Tomás turns it on** (§4) | README §6 |
+| Branch protection | No direct pushes, Copilot review, 1 approval, stale approvals dismissed, conversations resolved, CI must pass, branch up to date. **Active since 30 October 2026** (repository ruleset; checked on 31 October 2026: `protected: true`), without required checks, dismissal of stale approvals or resolved conversations yet (§4) | README §6 |
 | Definition of Ready / Done | See [`definition-of-ready-and-done.md`](definition-of-ready-and-done.md). One user story = one issue = one PR | — |
 | Language | All branches, commits, PRs and repository documentation in **English**. Exceptions: survey questions and presentation speaker notes, which are for a Portuguese audience (decided 12 October 2026) | README (introduction) |
 
@@ -66,19 +68,19 @@ The team meets **twice a week**:
 |---|---|---|
 | GitHub (`tomasoliveira21/LABDSOF`) | Code, documentation, issues, pull requests, reviews | In use |
 | **GitHub Projects** | Backlog, sprints, decisions, sprint goals, investor feedback (the "Jira or equivalent" of assignment §8.2) | Chosen on 8 October 2026; in use: [board](https://github.com/users/tomasoliveira21/projects/1), linked from the README; field rules in [`features.md` §8.3](../Product/features.md#83-stories-on-the-board) |
-| GitHub Copilot | Automatic PR review | Defined in README §5 |
+| GitHub Copilot | Automatic PR review | The ruleset asks for it on every PR, but every review so far failed for lack of quota (README §5), and on PR #172 no request appeared at all (timeline checked on 31 October 2026) |
 
 ### Deployment scope clarification (recorded 22 October 2026)
 
-Tomás reported that the professor authorised **local-only delivery because of cloud costs**, which must be explained in the final report/presentation ([record](../Meetings/2026-10-22-local-deployment-clarification.md), [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)). Keep the cloud cost/hosting evaluation as justification. Builds, tests, independently replaceable service images and local smoke/failure demonstrations remain required; the earlier automatic cloud-production deployment expectation is superseded. Bruno adapts the local delivery handoff; no unattended access to a developer's machine is assumed.
+As relayed to the team, the professor authorised **local-only delivery because of cloud costs**, which must be explained in the final report/presentation ([record](../Meetings/2026-10-22-local-deployment-clarification.md), [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)). Keep the cloud cost/hosting evaluation as justification. Builds, tests, independently replaceable service images and local smoke/failure demonstrations remain required; the earlier automatic cloud-production deployment expectation is superseded, and the local delivery handoff is adapted to local execution; no unattended access to a developer's machine is assumed.
 
 ## 4. Process health check (what the repository shows today)
 
 | Check | Finding | Action (agreed 8 October 2026) |
 |---|---|---|
-| Branch protection on `main` | Every item in README §6 is an unticked checkbox, and protection is still off (checked on 30 October 2026: the GitHub API returns `protected: false` for `main`). There were **no direct pushes**: every commit on `main` came through a PR, except the initial commit (checked on 30 October 2026). The commits once listed here as direct pushes belong to PRs: `5ef2c4a` and its merge commit `3a4ba04` to PR #1, `e853854` to PR #21 | Tomás (repo owner) turns the rules on in the repository settings, then ticks the boxes in README §6 |
-| Merge method | README §4 requires **squash merge**, but PRs #18 to #21, #23, #25, #27 and #30 were merged with merge commits | Tomás restricts the repository to squash merging (Settings → General → Pull Requests) |
+| Branch protection on `main` | A repository ruleset protects `main` since 30 October 2026, 18:43 UTC: pull request with 1 approval, Copilot review, no force push (checked on 31 October 2026: `protected: true`). Not on yet: required checks (the list is empty), dismissal of stale approvals, resolved conversations (README §6). There were **no direct pushes**: every commit on `main` came through a PR, except the initial commit (checked on 30 October 2026). The commits once listed here as direct pushes belong to PRs: `5ef2c4a` and its merge commit `3a4ba04` to PR #1, `e853854` to PR #21 | Turn the rules on in the repository settings, then tick the boxes in README §6. **Ruleset on since 30 October 2026**; still to do: the unticked items of README §6 |
+| Merge method | README §4 requires **squash merge**, but PRs #18 to #21, #23, #25, #27 and #30 were merged with merge commits. By 30 October 2026, 39 PRs in all had been merged with a merge commit (#1 included), the last #160 (`git log --first-parent --merges`); squash-only since then | Restrict the repository to squash merging (Settings → General → Pull Requests). **Done**: only squash merging is allowed (checked on 31 October 2026) |
 | PR template | README §7 says to save it as `.github/pull_request_template.md`, but the file did not exist | Created in PR #21 |
 | Issue templates | The DoR and the story-level DoD were not in the tool | Since 12 October 2026: issue forms in `.github/ISSUE_TEMPLATE/` (user story and task) |
-| Commit message format | Several commits on `main` have no issue number or prefix (`3a4ba04`, `5159ff4`, `5ef2c4a`, `e853854`, and the commits of PR #21; later `58fb4e0`). Branch `feat/UpdateProductVisionPP` (PR #30) uses a prefix that does not exist | Agreed: every PR has an issue, and PR titles follow `<Prefix>: <Description>`. With squash merging, the PR title becomes the commit on `main`. Since 12 October 2026 the **Conventions** workflow (`.github/workflows/conventions.yml`) checks the branch name, the PR title and the `Closes #<issue>` line on every PR |
+| Commit message format | Several commits on `main` have no issue number or prefix (`3a4ba04`, `5159ff4`, `5ef2c4a`, `e853854`, and the commits of PR #21; later `58fb4e0`). Branch `feat/UpdateProductVisionPP` (PR #30) uses a prefix that does not exist | Agreed: every PR has an issue, and PR titles follow `<Prefix>: <Description>`. With squash merging, the PR title becomes the commit on `main` when the PR has more than one commit; a one-commit PR keeps its commit title, because the repository's squash title setting is *default message* (`COMMIT_OR_PR_TITLE`, checked on 31 October 2026), e.g. PR #171 → `4571cb4 docs (#170): …`. Since 12 October 2026 the **Conventions** workflow (`.github/workflows/conventions.yml`) checks the branch name, the PR title and the `Closes #<issue>` line on every PR |
 | Documentation language | The README requires English, but the three deliverables in `Docs/Deliverables/` are in Portuguese | **Decided 12 October 2026:** all documentation is in English and stays that way. The three deliverables were translated |

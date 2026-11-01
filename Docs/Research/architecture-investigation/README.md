@@ -1,12 +1,14 @@
 # Architecture investigation
 
-**Issue:** [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53) · **Date:** 22 October 2026 · **Owner:** Tomás Oliveira
+> **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-003](../../Technical/adr/0003-database-and-data-ownership.md), [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md), [ADR-012](../../Technical/adr/0012-observability.md), the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md) and the [local observability decisions](../../Technical/plans/local-observability.md). Where this document differs, they win: for example, one PostgreSQL instance with six databases (five services and Keycloak), not five (ADR-003).
+
+**Issue:** [#53](https://github.com/tomasoliveira21/LABDSOF/issues/53) · **Date:** 22 October 2026
 
 **Status: research delivered; local AI/observability architecture accepted in ADR-005/012, reconciled on 31 October (#166) against the guide/NFR agreement of 26–27 October.** Original alternatives remain research proposals. No cloud deployment, model benchmark or real-data privacy approval is claimed. Repository baseline: `5ee70a3`. Primary sources were checked on the date above; prices and provider terms must be rechecked before purchase or real-data use.
 
 ## Current delivery scope
 
-The professor authorised **local-only execution because of cloud costs**, as [reported by Tomás](../../Meetings/2026-10-22-local-deployment-clarification.md) on 22 October. The final report/presentation must explain this reason. The cloud recommendations in the original investigation below are retained as an evaluated alternative, not a requirement to provision services. [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md) records the local scope. Its exact topology, AI choice and monitoring implementation still need review/evidence.
+The professor authorised **local-only execution because of cloud costs**, as [recorded](../../Meetings/2026-10-22-local-deployment-clarification.md) on 22 October. The final report/presentation must explain this reason. The cloud recommendations in the original investigation below are retained as an evaluated alternative, not a requirement to provision services. [ADR-011](../../Technical/adr/0011-deployment-and-infrastructure.md) records the local scope. Its exact topology, AI choice and monitoring implementation still need review/evidence.
 
 ## Scope and findings
 
@@ -14,12 +16,12 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 |---|---|---|
 | G1 | Local Compose execution authorised; [cloud evaluation](deployment.md) retained with cost rationale | Local startup and independent service smoke tests |
 | G2 | [Cost evaluation](deployment.md#cost-and-budget-gates) retained to explain why cloud hosting was omitted | Include the cost reason and authorisation in report/presentation |
-| G3 | No cloud region required for local delivery; West Europe remains a studied alternative | Guerra's local/provider data-flow review |
-| G4 | Local development/test/demo environments; no required cloud production target | Reproducible local handoff with Bruno |
+| G3 | No cloud region required for local delivery; West Europe remains a studied alternative | Local/provider data-flow review (guide E5) |
+| G4 | Local development/test/demo environments; no required cloud production target | Reproducible local handoff (guide G4–G7) |
 | G5 | Compose for the current local target; Bicep design retained for possible future Azure hosting | Versioned local infrastructure specification |
 | G6 | Docker Compose service/health/volume specification | Backend, frontend and simulator implementation |
 | G7 | Image-digest rollback and stateful recovery drill | Measured RTO/RPO; team decision on backup scope |
-| F2 | Serve React management assets locally; cloud static hosting remains an alternative | Local SPA/auth/CORS tests with Guerra |
+| F2 | Serve React management assets locally; cloud static hosting remains an alternative | Local SPA/auth/CORS tests |
 | C1 hosting | Local RabbitMQ container with persistent volume; cloud VM assessment retained | Local identity/permissions, replay/recovery drill |
 | D2 topology | One PostgreSQL server per environment, five distinct databases and restricted service users | Integration proof of privilege separation and capacity |
 | I1–I3 | [Observability](observability.md): local Actuator/Micrometer + Prometheus/Grafana and correlated Docker logs; Azure Monitor retained as a cloud alternative | Local instrumentation/dashboard and load evidence |
@@ -48,7 +50,7 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 
 ## Dependencies and handoff
 
-Guerra owns identity, gateway, secrets and Security & Privacy (#46). Tiago owns retry/circuit-breaker values, message redelivery and load tests (#43). Bruno owns pipeline authentication, tags and API/event contracts. This research gives constraints and acceptance checks without replacing their decisions. The joint domain-model work with Guerra is outside #53.
+Identity, gateway, secrets and Security & Privacy are decided in #46; retry/circuit-breaker values, message redelivery and load tests in #43; pipeline authentication, tags and API/event contracts in the CI/CD and API outline decisions. This research gives constraints and acceptance checks without replacing those decisions. The domain-model work is outside #53.
 
 The local-only scope is recorded separately from the remaining proposals. The team can review AI, observability and detailed local implementation independently; do not treat the professor's cloud exemption as acceptance of all technical recommendations. A future implementation issue should cover the deployment skeleton, minimum telemetry and local model evaluation; closing this research issue does not mean those systems exist.
 

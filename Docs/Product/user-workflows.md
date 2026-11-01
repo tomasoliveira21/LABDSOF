@@ -22,7 +22,7 @@ For the 5–7 minute presentation, **W2 + W3 tell the whole story**: a participa
 
 ## Complete journeys (BPMN)
 
-Added after the presentation of 12 October 2026 (teacher feedback): one BPMN diagram per core journey, from the participant's first tap to the end, with one lane per actor. The Mermaid diagrams in W1–W8 stay as the step-by-step detail. Who receives what is in [`features.md` §4.3](features.md#43-who-receives-what-and-who-acts). The lanes are personas, and since 22 October 2026 they are jobs given by team permissions, not roles ([`features.md` §4.2](features.md#42-teams-and-permissions)): P2 stands for the members with `HelpRequests.Triage` or `Reports.Review`, P5 for the members with `HelpRequests.Respond` or `Reports.Respond`.
+Added after the presentation of 12 October 2026 (professor feedback): one BPMN diagram per core journey, from the participant's first tap to the end, with one lane per actor. The Mermaid diagrams in W1–W8 stay as the step-by-step detail. Who receives what is in [`features.md` §4.3](features.md#43-who-receives-what-and-who-acts). The lanes are personas, and since 22 October 2026 they are jobs given by team permissions, not roles ([`features.md` §4.2](features.md#42-teams-and-permissions)): P2 stands for the members with `HelpRequests.Triage` or `Reports.Review`, P5 for the members with `HelpRequests.Respond` or `Reports.Respond`.
 
 ### Help request, end to end (W2 + W3)
 
@@ -31,7 +31,8 @@ Added after the presentation of 12 October 2026 (teacher feedback): one BPMN dia
 - The request reaches the control room **at once**. The AI suggestion runs in parallel and never holds it back (scenario D1).
 - The **operator decides** (priority, team, whether someone must go); the **responder acts** (accepts, goes to the point, resolves).
 - The participant sees two changes: *On the way* and *Resolved*.
-- Not drawn, to keep it readable: the participant cancels, duplicates (see W3).
+- Field teams see a routed request in their list on the phone, by polling; there is no push alert (US-29, US-31, guide C5).
+- Not drawn, to keep it readable: the participant cancels, duplicates (see W3); the help-request consent was declined, the request fails or the rate limit is reached, where the app shows the first-aid points instead (NFR-19, US-23, US-25).
 
 ### Community report, end to end (W7)
 
@@ -73,7 +74,7 @@ Source: report, third journey: *"When a participant sends a help request, the ev
 sequenceDiagram
     actor P as Participant (Rita, logged in)
     participant App as Participant web app
-    participant Inc as Incident service
+    participant Inc as Reports service
     participant AI as AI triage
     participant BO as Backoffice
     actor O as Control room (Miguel, HelpRequests.Triage)
@@ -84,17 +85,18 @@ sequenceDiagram
     App->>Inc: Submit help request
     Inc-->>App: Request received, status Submitted
     App-->>P: Confirmation and live status
-    Inc-)AI: Request submitted (asynchronous)
+    Inc-->>BO: New request for this event (next poll)
+    BO-->>O: Request appears on list and map at once
+    Inc-)AI: Request submitted (asynchronous, in parallel)
     alt AI available
-        AI--)Inc: Suggested category and priority
+        AI--)Inc: Suggested category, priority and team
+        Inc-->>BO: Suggestion added to the request (next poll)
     else AI unavailable or times out
-        Inc->>Inc: Fallback: participant's category, order of arrival
+        Inc->>Inc: Fallback: "Not triaged", participant's category, order of arrival
     end
-    Inc-)BO: New request for this event
-    BO-->>O: Request appears on list and map
     O->>BO: Acknowledges, sets priority, routes it to a team
     BO->>Inc: Status Dispatched
-    Inc-)R: Appears on the phone of the team's members, with the point on the map
+    Inc-->>R: Appears on the phone of the team's members (next poll), with the point on the map
     R->>Inc: Accepts
     Inc-->>App: Status On the way
     App-->>P: "Help is on the way"
@@ -103,14 +105,14 @@ sequenceDiagram
 ```
 
 **Rules from the repository:**
-- Location is marked on the map by the participant and shared only with the request (annex C6, SafeZone pattern; survey Q10 tests acceptance).
-- The AI only **suggests**; it never lowers a priority without a person (annex C9).
+- Location is marked on the map by the participant and shared only with the request (annex C6, SafeZone pattern). Survey Q10: 71 % would share the phone's location; product decision 4 of 30 October 2026 (report, *User Research*) asks for it first, with the map as the fallback, to be reconciled with [assessment M-1](../Technical/security-and-privacy-assessment.md#6-data-minimisation-measures) and ADR-007 at Sprint B planning.
+- The AI only **suggests**; it never lowers a priority (annex C9, NFR-22).
 
 **[PROPOSED]:** the participant sees the status of their request (the market annex notes that no current channel shows the status of a request, §4 *UX* row).
 
 ## W3 · Control room handles a help request
 
-Lifecycle of a help request **[PROPOSED]**. The report says the team *"avalia a sua prioridade e encaminha-o"*, but does not define statuses.
+Lifecycle of a help request **[PROPOSED]**. The report says the team *"assesses its priority and routes it to the right operational team"*, but does not define statuses.
 
 ```mermaid
 stateDiagram-v2
@@ -170,19 +172,20 @@ Source: report, *"updates information during the night"*; root cause 2.
 sequenceDiagram
     actor A as EventAdmin (Sofia, or a member with Announcements.Publish)
     participant BO as Backoffice
-    participant Ev as Event service
+    participant Ev as Events service
     participant App as Participant web app
     actor P as Participant
 
     A->>BO: Publishes "Gate 3 closed, use Gate 1"
     BO->>Ev: Save announcement with timestamp
-    Ev-)App: New announcement for this event
+    App->>Ev: Polls the event's announcements
+    Ev-->>App: New announcement for this event
     App-->>P: Banner with the message and "updated at HH:MM"
 ```
 
 ## W6 · Participant loses the network (F11, Could)
 
-Source: report §5, technical risks (*"Rede móvel congestionada no recinto: exige cache, modo offline e mensagens curtas"*); assumption A8; assignment §6.8.
+Source: report §5, technical risks (*"Congested mobile network at the venue: requires caching, offline mode and short messages"*); assumption A8; assignment §6.8.
 
 ```mermaid
 flowchart TD

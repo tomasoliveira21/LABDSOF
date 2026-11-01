@@ -1,8 +1,8 @@
 # Security and Privacy Assessment
 
 > LABDSOF 2026/27 · Sprint A · Assignment §7.1.2 (deliverable 9: *initial threat model, sensitive data, access-control requirements, data-minimisation measures, retention considerations*), §6.4, §6.6 and §11
-> **Owner:** António Guerra (guide E5). **Status (25 October 2026):** first version, **to review with the team**. **Updated 29 October 2026** (#159): retention and backups (§7) follow the values the team decided for NFR-13 and NFR-19. Controls that are already decided link to their ADR; every new control or number is marked **[PROPOSED]**. Nothing is implemented yet, so this assesses the design, and §11 names the test that will prove each control. The threat model is updated with the implementation in Sprint C (assignment §7.3.2, item 6).
-> **Sources:** [`architecture.md`](architecture.md), [`domain-model.md`](domain-model.md), [ADR-003](adr/0003-database-and-data-ownership.md), [ADR-004](adr/0004-service-communication.md), [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md), [ADR-006](adr/0006-identity-and-access.md), [ADR-007](adr/0007-venue-map-representation.md), [ADR-011](adr/0011-deployment-and-infrastructure.md), [ADR-012](adr/0012-observability.md), [ADR-013](adr/0013-api-gateway.md), [`features.md`](../Product/features.md), the [non-functional requirements](../Product/non-functional-requirements.md), [`local-delivery.md`](local-delivery.md), the [local observability plan](plans/local-observability.md), the API outline draft (#123, not merged yet) and the [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md).
+> **Guide item:** E5. **Status (25 October 2026):** first version, **to review with the team**. **Updated 29 October 2026** (#159): retention and backups (§7) follow the values the team decided for NFR-13 and NFR-19. **Retention and consent confirmed by the team on 26 October 2026** ([NFRs §5](../Product/non-functional-requirements.md#5-validated-with-the-team-on-26-october-2026)). **Updated 31 October 2026** (#162): ADR-005 and ADR-012 accepted, K1 chose a local model, and the Sprint A skeleton is assessed in §9.1. Controls that are already decided link to their ADR or NFR; every new control or number is marked **[PROPOSED]**. Apart from the Sprint A skeleton (§9.1), nothing is implemented yet, so this assesses the design, and §11 names the test that will prove each control. The threat model is updated with the implementation in Sprint C (assignment §7.3.2, item 6).
+> **Sources:** [`architecture.md`](architecture.md), [`domain-model.md`](domain-model.md), [ADR-003](adr/0003-database-and-data-ownership.md), [ADR-004](adr/0004-service-communication.md), [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md), [ADR-006](adr/0006-identity-and-access.md), [ADR-007](adr/0007-venue-map-representation.md), [ADR-011](adr/0011-deployment-and-infrastructure.md), [ADR-012](adr/0012-observability.md), [ADR-013](adr/0013-api-gateway.md), [`features.md`](../Product/features.md), the [non-functional requirements](../Product/non-functional-requirements.md), [`local-delivery.md`](local-delivery.md), the [local observability plan](plans/local-observability.md), the [API outline](api-outline.md) (#123, merged on 26 October 2026 in #124) and the [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md).
 
 ## Summary
 
@@ -113,12 +113,12 @@ Every item Farol stores, where it lives and who can see it. Retention is in §7.
 | T9 | Hostile venue-map upload: decompression or PDF bomb, script inside an SVG or PDF, a file disguised by its extension | T, D | Medium | *Decided:* at most 20 MB at the gateway (ADR-013, L-4); single-page PDFs rendered to PNG of at most 4096 px; clients download only the rendered image (ADR-007). **[PROPOSED]:** type read from the file content (PNG, JPEG or PDF; never SVG); every upload re-encoded to PNG, which drops EXIF and PDF metadata and any active content; PDFBox with a memory limit and a render timeout; served with a fixed `Content-Type` and `X-Content-Type-Options: nosniff` |
 | T10 | Stored cross-site scripting through text other people see (help-request text, team, point and announcement names, the AI's reason, route names from Porto Digital), which could steal the tokens held in memory | T, I, E | High | *Decided:* tokens in memory only, refresh tokens rotated (ADR-006). **[PROPOSED]:** all such text is rendered as plain text (React escaping; no `dangerouslySetInnerHTML`; no HTML or Markdown in user text); a Content Security Policy on the web container: `default-src 'self'`, `connect-src` only the gateway and Keycloak, `object-src 'none'`, `frame-ancestors 'none'`; no third-party scripts, fonts or analytics |
 | T11 | **Personal data in logs, traces, queues or test recordings.** The outline's `HelpRequestSubmitted` carries the location and text, so they sit in RabbitMQ, in a dead-letter queue if the message fails, and in message traces | I | **High** | *Decided:* no request text, prompts, exact locations, names or tokens in logs or metric labels (ADR-012). **[PROPOSED]:** the triage message carries only `requestId`, and the triage worker, which is part of Reports, reads the request from Reports' own database (M-5); dead-letter handling logs the message id, type and reason, never the body; WireMock records Porto Digital only, never the AI provider |
-| T12 | Help-request text sent to a hosted AI provider that keeps it or trains on it | I | High with real data | *Proposed in ADR-005:* only the category and sanitised text, no ids or location; synthetic data until the provider is reviewed. **[PROPOSED]:** the redaction of M-4 and the provider checklist of §8.5 |
+| T12 | Help-request text sent to a hosted AI provider that keeps it or trains on it | I | Low in the MVP: K1 chose the local model and there is no hosted fallback (NFR-20). High with real data if the hosted alternative is resumed | *Decided* (ADR-005, accepted 31 October 2026): local Ollama, no text leaves the demo machine; the AI gets only the category and sanitised text, no ids or location. If the hosted alternative is resumed: synthetic data until the provider is reviewed, and **[PROPOSED]** the redaction of M-4 and the provider checklist of §8.5 |
 | T13 | A lost or shared phone of a field-team member with an open session (sessions last up to 30 days with *Remember me*) | S, I | Medium | *Decided:* access token of 5 min, refresh tokens rotated, logout (ADR-006, US-02). **[PROPOSED]:** actions that need an operational permission require a login in the last 12 h (AC-7); a routed team sees a request only while its field task is open (AC-3) |
 | T14 | Account enumeration, and the wrong person named EventAdmin: an account with the organiser's e-mail may not belong to the organiser, because e-mails are not verified | S, I | Medium | *Decided:* Keycloak's sign-up form reveals whether an e-mail is taken; accepted for the MVP (ADR-006). **[PROPOSED]:** the lookup rules of AC-9, which answer outline O4 |
 | T15 | Floods: help requests, polling or uploads from one account; scripted sign-ups once sign-up opens | D | Medium | *Decided:* limits L-1 to L-5 per account, Keycloak brute-force detection (ADR-013). **[PROPOSED]:** calls with no valid token get a per-IP limit at the gateway; only broken clients or attackers send them, so crowds behind one address are not affected. Scripted sign-ups without e-mail verification: known limitation (§12) |
 | T16 | Exposed admin surfaces: Keycloak admin console, RabbitMQ management, WireMock admin API (fake bus data or fake AI suggestions), Grafana, Actuator, PostgreSQL | E, T | High | *Decided:* Actuator on a management port that is not published (ADR-013). **[PROPOSED]:** the port rules of §9 |
-| T17 | Secrets in the repository: `.env`, the realm export (client secret of `farol-auth-users`, test passwords), an AI API key | I, E | Medium | *Decided:* `.env` outside git, GitHub Actions secrets in CI, gitleaks on every PR (ADR-006, E4). **[PROPOSED]:** the realm export uses `${…}` placeholders for client secrets, filled from the environment at import; a `.env.example` lists names, never values; test passwords exist only for seeded test accounts |
+| T17 | Secrets in the repository: `.env`, the realm export (client secret of `farol-auth-users`, test passwords), an AI API key | I, E | Medium | *Decided:* `.env` outside git, GitHub Actions secrets in CI (ADR-006, E4); gitleaks on every PR is planned for Sprint B ([ADR-010](adr/0010-cicd-strategy.md) points 7 and 9) and is not in `ci.yml` yet. **[PROPOSED]:** the realm export uses `${…}` placeholders for client secrets, filled from the environment at import; a `.env.example` lists names, never values; test passwords exist only for seeded test accounts |
 | T18 | A vulnerable dependency or base image | T, E | Medium | **[PROPOSED]** for the pipeline (ADR-010): dependency updates and checks (e.g. Dependabot) and a container-image scan (e.g. Trivy) on every PR, failing on critical findings (assignment §8.5, *dependency or security checks*) |
 | T19 | A team member denies having changed a priority, closed a request or unconfirmed a report | R | Medium | *Decided:* audit entry with actor, time, old and new values (SC9, US-28, US-51); the acting user's `sub` in the event envelope (ADR-006). **[PROPOSED]:** the application only appends audit entries; it has no code path that updates or deletes them, except the retention clean-up (§7) |
 | T20 | Invalid or hostile data from Porto Digital: oversized payloads, strings shown in the UI | T, D | Low | *Decided:* timeouts, validation, whole import rejected, geo-query that limits the size (ADR-008, J1, US-40). Strings rendered as text (T10) |
@@ -157,16 +157,16 @@ The permission model is decided in [ADR-006](adr/0006-identity-and-access.md) (*
 
 | # | Measure | Status |
 |---|---|---|
-| M-1 | **Location is a point the participant marks on the venue map**, normalised to one map version; the app never asks the phone for GPS. It is less precise on purpose and works inside a crowd | *Decided* (F6, user-workflows W2) |
+| M-1 | **Location is a point the participant marks on the venue map**, normalised to one map version; the app never asks the phone for GPS. It is less precise on purpose and works inside a crowd | *Decided* (F6, user-workflows W2). **Open:** product decision 4 of 30 October 2026 (#164, report *User Research*) asks for the phone's location first, with the map as the fallback. It needs this measure, [ADR-007](adr/0007-venue-map-representation.md) (a map with no geographic data) and the API location field reviewed together at Sprint B planning |
 | M-2 | The help-request text is **optional, at most 500 characters**, with a hint above it: *"Describe what is happening. Do not write names or phone numbers."* | **[PROPOSED]** (500, as in the Responsible AI assessment) |
 | M-3 | The requester sees only the status of their request; its location goes only to the people who handle it (AC-3) | *Decided* (US-23, US-24) |
-| M-4 | The AI gets only the category, the sanitised text and the priority floor: no account or event id, no location, no names (ADR-005). **[PROPOSED]:** before sending, phone numbers, e-mail addresses and document numbers are replaced with a placeholder. Redaction is not anonymisation: the text can still say something sensitive | *Proposed in ADR-005*; redaction **[PROPOSED]** |
-| M-5 | **The triage message carries only `requestId`.** Producer and consumer are both Reports, so the worker can read the request from its own database: no personal text in RabbitMQ, in dead-letter queues or in message traces. An exception to the outline's full-state rule for one internal queue | *Decided* (Bruno, API outline §7.3, #123, 26 October 2026) |
-| M-6 | **The account holds an e-mail and a display name only.** No phone number, birth date, student number, photo or university. The display name can be a nickname | **[PROPOSED]** |
-| M-7 | Names are copied only where they are shown: `userId` and display name, to Reports and Events (`UserProfileChanged`); Badges and Transports get no names | *Decided* in the API outline draft (#123, its decision D4) |
-| M-8 | Other participants never see who made a report; Badges receives the reporter, type and status of a report, not its location | *Decided* (US-49; `ReportConfirmed` in the API outline draft) |
+| M-4 | The AI gets only the category, the sanitised text and the priority floor: no account or event id, no location, no names (ADR-005). **[PROPOSED]:** before sending, phone numbers, e-mail addresses and document numbers are replaced with a placeholder. Redaction is not anonymisation: the text can still say something sensitive | *Decided* (ADR-005, accepted 31 October 2026); redaction **[PROPOSED]** |
+| M-5 | **The triage message carries only `requestId`.** Producer and consumer are both Reports, so the worker can read the request from its own database: no personal text in RabbitMQ, in dead-letter queues or in message traces. An exception to the outline's full-state rule for one internal queue | *Decided* (API outline §7.3, #123, 26 October 2026) |
+| M-6 | **The account holds an e-mail and a display name only.** No phone number, birth date, student number, photo or university. The display name can be a nickname | *Decided* 26 October 2026 (NFR-19, NFRs §5) |
+| M-7 | Names are copied only where they are shown: `userId` and display name, to Reports and Events (`UserProfileChanged`); Badges and Transports get no names | *Decided* in the API outline (#123, its decision D4; merged on 26 October 2026) |
+| M-8 | Other participants never see who made a report; Badges receives the reporter, type and status of a report, not its location | *Decided* (US-49; `ReportConfirmed` in the API outline, #123, merged in #124) |
 | M-9 | A check-in is one time per account and event: no location, no list of nights; badges never show which nights or where (features §6.4) | *Decided* (US-58) |
-| M-10 | Logs and metrics hold no request text, locations, names or tokens; only `sub` and the correlation id identify a request (ADR-012). **[PROPOSED]:** no client IP addresses in application logs; Keycloak's login events keep them for account protection (§7) | *Proposed in ADR-012*; IPs **[PROPOSED]** |
+| M-10 | Logs and metrics hold no request text, locations, names or tokens; only `sub` and the correlation id identify a request (ADR-012). **[PROPOSED]:** no client IP addresses in application logs; Keycloak's login events keep them for account protection (§7) | *Decided* (ADR-012, accepted 31 October 2026); IPs **[PROPOSED]** |
 | M-11 | Map uploads are re-encoded to PNG, so the photo's GPS position and the PDF's author are dropped; participants receive only that image | *Proposed in ADR-007*; re-encoding **[PROPOSED]** (T9) |
 | M-12 | Bus data: only buses within 2 km of the venue, and only the latest position of each; no history of vehicle positions | *Decided* (J1, domain model) |
 | M-13 | **Tests and demo use synthetic data only:** seeded accounts with fictitious names and e-mails under the reserved `.test` domain; help-request texts written for the purpose; WireMock records Porto Digital, never the AI provider | *Decided:* synthetic data (assignment §11, ADR-005). **[PROPOSED]:** the rest |
@@ -194,7 +194,7 @@ Assignment §6.4 asks for retention and deletion, and the privacy notice (§8) m
 
 **Restoring a dump.** A restored dump brings back everything deleted after it was taken, accounts deleted with US-05 included, and Keycloak's dump brings back their login. The MVP holds only synthetic data (M-13), so this is accepted as a known limitation (§12). A real deployment would need a list of deleted accounts kept outside the dumps and applied again after every restore.
 
-**Account deletion** (US-05). *Decided* (Bruno, guide D7, #135, 27 October 2026), from the proposal of this section; flow in the [API outline §2](api-outline.md#2-auth--users). The account is refused at once (`UserStatusChanged`, `Disabled`); Auth & Users deletes the user in Keycloak, then its own data, then publishes `UserDeleted`. Every service keeps a tombstone with only the opaque `sub`, so the account stays refused and late events do not bring a copy back. What each service does with it:
+**Account deletion** (US-05). *Decided* (guide D7, #135, 27 October 2026), from the proposal of this section; flow in the [API outline §2](api-outline.md#2-auth--users). The account is refused at once (`UserStatusChanged`, `Disabled`); Auth & Users deletes the user in Keycloak, then its own data, then publishes `UserDeleted`. Every service keeps a tombstone with only the opaque `sub`, so the account stays refused and late events do not bring a copy back. What each service does with it:
 
 | Service | On `UserDeleted` |
 |---|---|
@@ -223,21 +223,23 @@ For the course, Farol runs only on the team's machine with test accounts, so no 
 | Badges and check-in | Consent: optional, and the user can stop or hide them at any time (US-56) |
 | Security logs (logins, refused access, audit) | Legitimate interest (art. 6(1)(f)): protecting accounts and the events' data |
 
-### 8.3 Consent for help requests **[PROPOSED]**
+### 8.3 Consent for help requests
 
-- Asked **when the participant joins an event** (US-12), so it is never seen for the first time in an emergency. One short screen: the control room and the team sent to help see the category, the map point and the text; the text can describe health; an AI may suggest a priority and a person decides; how long it is kept (§7); *"Farol is not an emergency service. In an emergency, call 112."*
-- Optional when joining. If it was declined, *Ask for help* shows the same screen again. If it is declined again, the page shows **112 and the first-aid points on the map**, so nobody is left without a way to get help.
+*Decided* 26 October 2026: the consent is asked when joining an event (NFR-19, NFRs §5). The wording and the screen below are **[PROPOSED]**.
+
+- Asked **when the participant joins an event** (US-12), so it is never seen for the first time in an emergency. One short screen: the control room and the team sent to help see the category, the map point and the text; the text can describe health; an AI may suggest a priority and a person decides; how long it is kept (§7); *"Farol is not an emergency service."* No emergency number is named (decision of 12 October 2026, T5; NFR-19).
+- Optional when joining. If it was declined, *Ask for help* shows the same screen again. If it is declined again, the page says that Farol is not an emergency service and shows **the first-aid points on the map**, so nobody is left without a way to get help.
 - Recorded with its time and the version of the text; it can be withdrawn in the account (F2) and applies to later requests.
 
 ### 8.4 What the sign-up terms must say (US-03)
 
 - Who runs Farol, who runs each event, and how to contact them about personal data.
 - What is collected and why, who sees it and how long it is kept: a short version of §3 and §7.
-- That help requests are not an emergency service, and the 112 number.
+- That help requests are not an emergency service.
 - That an AI may suggest a priority for help requests, that a person decides, and, if a hosted provider is used, which one and where it processes the text.
 - The user's rights: access, correction (US-04), deletion (US-05), withdrawing a consent, objecting; and the right to complain to the CNPD.
 - **Not bundled into the terms:** the help-request consent (§8.3) and badges (US-56) are separate, optional choices.
-- **[PROPOSED] records:** Auth & Users stores the version and time of the accepted terms, and each membership the version and time of the help-request consent. Domain-model owners: Tomás and Guerra.
+- **[PROPOSED] records:** Auth & Users stores the version and time of the accepted terms, and each membership the version and time of the help-request consent.
 
 ### 8.5 Before a hosted AI provider receives real text
 
@@ -249,7 +251,7 @@ The gate of ADR-005, item 5, written as a checklist **[PROPOSED]**. All of it mu
 - [ ] The endpoint and the model version are fixed and recorded.
 - [ ] The provider is named in the privacy notice (§8.4).
 
-A local model (Ollama) avoids the transfer altogether; that is a privacy argument for it in K1.
+A local model (Ollama) avoids the transfer altogether; this is one reason K1 chose it (27 October 2026, NFR-20), so this checklist applies only if the hosted alternative is resumed.
 
 ## 9. The local demo environment
 
@@ -270,26 +272,35 @@ The delivery runs on one machine ([ADR-011](adr/0011-deployment-and-infrastructu
 - The demo machine and the backup laptop have full-disk encryption (BitLocker or FileVault) and a screen lock: they hold every database and its dumps (§7). Dumps are never committed or copied anywhere else.
 - Every security control stays on during the demo: rate limits, token validation, isolation, CORS (assignment §11). Scenarios D1 and D2 break a dependency, not a control.
 
+### 9.1 Sprint A skeleton (R0)
+
+The Sprint A walking skeleton ([plan](plans/local-walking-skeleton.md), #166) is one Reports service that creates and reads synthetic help requests in memory. It is the only running code, and it does not follow the controls above yet:
+
+- **Limits:** synthetic data only; the routes exist only with the `demo` profile; the port is published on `127.0.0.1:8080` only; there is no authentication, and every request uses a fixed identity. The assignment allows mocked authentication for the MVP (§6.6, footnote). AC-1 and AC-3 apply from the Sprint B slice, when Keycloak and the gateway arrive ([skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)).
+- **Controls already in place:** unknown JSON fields are rejected with 400 (`fail-on-unknown-properties`, part of T7); the image runs as a non-root user (`10001`) from base images pinned by digest; the container is `read_only`, with `cap_drop: ALL`, `no-new-privileges`, memory and process limits, and rotated logs (§7) (`backend/reports/Dockerfile`, `infra/compose.yaml`).
+- **Deviation:** the text is required (`@NotBlank`), while M-2 makes it optional.
+- **Open gap:** when validation rejects a `description` (blank or over 500 characters), Spring's `DefaultHandlerExceptionResolver` writes the rejected value in full to the log at WARN, as seen in a local `mvn verify` on 31 October 2026. This breaks M-10 and NFR-21; the fix and the log test of §11 (T11, M-10) are due with the Sprint B slice.
+
 ## 10. Findings and proposed actions
 
-Who decides follows the owners in the [decisions guide](architecture-decisions-guide.md); none of this is agreed until the team reviews it.
+The owners of each decision are in the [decisions guide](architecture-decisions-guide.md); none of this is agreed until the team reviews it.
 
-| # | Finding | Proposal | Who decides | Needed by |
+| # | Finding | Proposal | Decided in | Needed by |
 |---|---|---|---|---|
-| 1 | FarolAdmin bootstrap trusts an unverified e-mail (T4) | Grant only with `email_verified: true`; amend ADR-006 | Guerra | Walking skeleton, and before sign-up opens (US-03) |
-| 2 | Phones and plain HTTP: tokens exposed and PKCE login broken (§9) | Local HTTPS with mkcert, or device mode | Guerra, with Tomás (Compose, G5–G6) | First demo on phones, Sprint B |
-| 3 | Help-request text and location travel through RabbitMQ (T11) | Triage message with `requestId` only (M-5) | Bruno (API outline and event catalogue): ✅ decided in #123 (26 October 2026) | Before US-34 |
-| 4 | Object access inside an event is not tested (T6) | Within-event case in US-14 | Tiago (backlog) | Sprint B planning |
-| 5 | WireMock admin API and recordings (T11, T16) | Admin API only on the demo machine; never record the AI provider | Guerra (J4) | Done: admin API on `127.0.0.1:8090` (`local-delivery.md` §1); only Porto Digital recorded, with no personal data ([`infra/wiremock/`](../../infra/wiremock/README.md), #155) |
-| 6 | 30-day sessions on field-team phones (T13) | AC-7: login in the last 12 h for operational actions | Guerra (ADR-006) | US-17, Sprint B |
-| 7 | Account lookup by e-mail, outline O4 (T14) | AC-9 | Guerra; Bruno updates the outline | Now |
-| 8 | Client secrets in the realm export (T17) | `${…}` placeholders | Guerra | Walking skeleton |
-| 9 | RabbitMQ and PostgreSQL grants not specified (T8) | AC-8 | Guerra, with Tomás (Compose) | Walking skeleton |
-| 10 | Upload hardening (T9) | Content type, re-encoding, PDFBox limits | Tiago (ADR-007) | US-19 |
-| 11 | Content Security Policy, no third-party scripts (T10, M-14) | Headers on the web container | Whoever builds the web container | Walking skeleton |
-| 12 | No dependency or image scanning (T18) | Checks in CI | Bruno (ADR-010) | Sprint B |
+| 1 | FarolAdmin bootstrap trusts an unverified e-mail (T4) | Grant only with `email_verified: true`; amend ADR-006 | ADR-006 | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)), and before sign-up opens (US-03) |
+| 2 | Phones and plain HTTP: tokens exposed and PKCE login broken (§9) | Local HTTPS with mkcert, or device mode | Guide G4, with Compose (G5–G6) | First demo on phones, Sprint B |
+| 3 | Help-request text and location travel through RabbitMQ (T11) | Triage message with `requestId` only (M-5) | API outline and event catalogue: ✅ decided in #123 (26 October 2026) | Before US-34 |
+| 4 | Object access inside an event is not tested (T6) | Within-event case in US-14 | Backlog (US-14) | Sprint B planning |
+| 5 | WireMock admin API and recordings (T11, T16) | Admin API only on the demo machine; never record the AI provider | Guide J4 | Decided: admin API on `127.0.0.1:8090` (`local-delivery.md` §1); WireMock enters Compose in Sprint B. Done: only Porto Digital recorded, with no personal data ([`infra/wiremock/`](../../infra/wiremock/README.md), #155) |
+| 6 | 30-day sessions on field-team phones (T13) | AC-7: login in the last 12 h for operational actions | ADR-006 | US-17, Sprint B |
+| 7 | Account lookup by e-mail, outline O4 (T14) | AC-9 | API outline O4 | Now |
+| 8 | Client secrets in the realm export (T17) | `${…}` placeholders | ADR-006 | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
+| 9 | RabbitMQ and PostgreSQL grants not specified (T8) | AC-8 | This assessment, with Compose (G5–G6) | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
+| 10 | Upload hardening (T9) | Content type, re-encoding, PDFBox limits | ADR-007 | US-19 |
+| 11 | Content Security Policy, no third-party scripts (T10, M-14) | Headers on the web container | The web container | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
+| 12 | No dependency or image scanning (T18) | Checks in CI | ADR-010 | Sprint B |
 | 13 | Retention periods and clean-up jobs (§7) | The periods of §7 | Team (guide D5): ✅ decided as NFR-19 and NFR-13 (26 October 2026; telemetry simplified 27 October 2026) | Clean-up jobs in Sprint C |
-| 14 | Consent records and the help-request consent (§8.3, §8.4) | New fields; criteria in US-03 and US-12 | Tomás and Guerra (domain model); Tiago (stories) | US-12, Sprint B |
+| 14 | Consent records and the help-request consent (§8.3, §8.4) | New fields; criteria in US-03 and US-12 | Domain model; stories | US-12, Sprint B |
 | 15 | Reviewers see who made a report (AC-3) | Reporter visible to EventAdmins only | Team | Before US-50 |
 
 ## 11. How the controls are verified
@@ -306,7 +317,7 @@ The security tests that the strategy in assignment §8.3 asks for.
 | T9 | Uploads that are too large, of the wrong type, disguised by their extension, or multi-page PDFs are refused; a JPEG's EXIF is gone from the stored image | Every PR (Events) |
 | T11, M-10 | Logs captured during the help-request integration test contain neither the text nor the map point | Every PR (Reports) |
 | T15 | The 121st call in a minute and the 6th help request in 10 minutes get 429 with `Retry-After` (L-1, L-2) | Every PR (gateway) |
-| T17 | gitleaks | Every PR (E4) |
+| T17 | gitleaks | Every PR (E4), from Sprint B (ADR-010 point 9) |
 | T18 | Dependency check and image scan | Every PR |
 | §9 | From another computer on the network, only the gateway, Keycloak and the web container answer, and only over HTTPS | Before each demo |
 | Whole system | An OWASP ZAP baseline scan against the local stack; its results update §4 | Sprint C (assignment §7.3.2, item 6) |

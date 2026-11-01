@@ -2,9 +2,9 @@
 
 **Project:** Coordination platform for large-scale academic events
 **Pilot case:** Queima das Fitas do Porto (Queimódromo, 8 nights, May)
-**Course:** LABDSOF 2026/27, Sprint 1
+**Course:** LABDSOF 2026/27, Sprint A (the assignment's Sprint 1)
 **Assignment direction:** 4.3 *Local Event Coordination Platform*, applied to an event with crowds and road closures
-**Version:** revised with the group's alignment questionnaire and Tiago's decisions (October 2026)
+**Version:** revised with the group's alignment questionnaire and the backlog decisions (October 2026)
 
 ---
 
@@ -24,7 +24,7 @@ We propose a **platform built from scratch** to coordinate large-scale academic 
 
 ### Community
 
-The academic community that organises and attends large student festivals in Portugal: Queimas das Fitas, academic weeks and similar events. In the **pilot case**, Queima das Fitas do Porto, there are about **250 thousand entries over 8 nights**, in an academic community of more than 80 thousand students.
+The academic community that organises and attends large student festivals in Portugal: Queimas das Fitas, academic weeks and similar events. In the **pilot case**, Queima das Fitas do Porto, there are about **250 thousand entries over 8 nights** (evidence E1).
 
 The platform is not built for a single event. Each event joins the platform with its own team, so the community grows event by event without the product having to be redesigned.
 
@@ -201,7 +201,7 @@ The most critical assumptions are **A2, A3 and A4**. If participants do not use 
 
 ---
 
-## 3 key questions before the solution phase
+## Key questions before the solution phase
 
 1. **Would students use an application during the night**, and what information would they look for first? (survey)
 2. **How does a help request reach the right team today**, and how long does it take? (interview with the security volunteer)
@@ -298,7 +298,7 @@ Most respondents are experienced festival-goers: 25 of 32 have been several time
 
 ### Resulting product decisions
 
-Decided by the backlog owner from the data on 30 October 2026 (#164), and presented to the team at the next planning meeting. Decisions 2, 3 and 4 are applied in [`features.md`](../Product/features.md) (30 October 2026); the board fields still have to follow.
+Decided on 30 October 2026 from the survey data (#164), and presented to the team at the next planning meeting. Decisions 2, 3 and 4 are applied in [`features.md`](../Product/features.md) (30 October 2026); the board fields still have to follow.
 
 | # | Decision | Data | Before → after |
 |---|---|---|---|
@@ -313,6 +313,8 @@ Decided by the backlog owner from the data on 30 October 2026 (#164), and presen
 ---
 
 ## Product vision
+
+The product vision, personas, value proposition, principal user journeys, measurable success criteria and MVP definition are kept in their own documents, which replace the first draft that stood here: [Product Vision](../Product/product-vision.md), [Personas](../Product/personas.md), [User Workflows](../Product/user-workflows.md) and [Main Features and Backlog](../Product/features.md). The first draft is kept below because those documents cite it; where they differ, they win.
 
 ### Personas
 

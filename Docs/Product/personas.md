@@ -1,7 +1,7 @@
 # Personas
 
 > LABDSOF 2026/27 · Sprint 1 · Assignment §7.1.2 (deliverable 4, *Personas*)
-> **Status:** **proto-personas [PROPOSED]**. They are built only from what is in the repository: the user groups and context in the report (§1), the stakeholder map (§3), the public evidence (§4) and the hypotheses the survey is designed to test. **They are not based on user research yet.** Names and ages are fictional. The assignment forbids fabricating research evidence (§5.3, §11), so every attribute below is either sourced or marked as a hypothesis.
+> **Status:** **proto-personas [PROPOSED]**. They are built only from what is in the repository: the user groups and context in the report (§1), the stakeholder map (§3), the public evidence (§4) and the hypotheses the survey is designed to test. **Only P1 is checked against user research so far:** the student survey of October 2026 (report, *User Research*; PE-1). The other personas are not based on user research yet (PE-2, PE-3). Names and ages are fictional. The assignment forbids fabricating research evidence (§5.3, §11), so every attribute below is either sourced or marked as a hypothesis.
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
 ## Why five personas
@@ -10,7 +10,7 @@ The report has two primary user groups with the same weight: the **event team** 
 
 **[PROPOSED] 10 October 2026:** Farol hosts **many events** (Queima do Porto, Braga, Coimbra, Lisboa, …), and each organisation manages only its own. Someone outside every event has to create events, decide who runs each one, and step in when an event has no EventAdmin left. That is the fourth persona, **P4**, an internal user from the Farol team, with the global role `FarolAdmin`.
 
-**[PROPOSED] 12 October 2026** (teacher feedback on the presentation: who receives the reports and how they are handled was not clear): the people who handle requests during the night do two different jobs. The **control-room operator** receives help requests and reports and **decides** what happens to each one; the **responder** is in the field, gets what the control room routes to their team and **acts** on it. They work in different places, on different screens, so the old P2 is split into **P2** and **P5**.
+**[PROPOSED] 12 October 2026** (professor feedback on the presentation: who receives the reports and how they are handled was not clear): the people who handle requests during the night do two different jobs. The **control-room operator** receives help requests and reports and **decides** what happens to each one; the **responder** is in the field, gets what the control room routes to their team and **acts** on it. They work in different places, on different screens, so the old P2 is split into **P2** and **P5**.
 
 **22 October 2026:** the role model in [`features.md` §4](features.md#4-roles-teams-and-permissions-22-october-2026) (to confirm with the team) gives each persona a role or a job:
 
@@ -19,13 +19,13 @@ The report has two primary user groups with the same weight: the **event team** 
 
 | Persona | User group (report §1) | Role or job (features §4) | Main interface | Main journeys |
 |---|---|---|---|---|
-| **P1 · Rita, the participant** | Participants | `RegularUser` | Participant web app | W1, W2, W6 |
-| **P2 · Miguel, the control-room operator** | Event team (PCR, security coordination) | `RegularUser` in a team with `HelpRequests.Triage`, `Reports.Review` | Backoffice, live view (laptop) | W3, W7 |
+| **P1 · Rita, the participant** | Participants | `RegularUser` | Participant web app | W1, W2, W6, W7, W8 |
+| **P2 · Miguel, the control-room operator** | Event team (PCR, security coordination) | `RegularUser` in a team with `HelpRequests.Triage`, `Reports.Review` | Backoffice, live view (laptop) | W2, W3, W7 |
 | **P3 · Sofia, the event admin** | Event team (organisation) | `EventAdmin` | Backoffice, configuration | W4, W5 |
 | **P4 · Daniel, the FarolAdmin** **[PROPOSED]** | Farol team (internal user, not in report §1) | `FarolAdmin` (global) | Backoffice, platform area | W4 (first steps) |
-| **P5 · Inês, the responder** **[PROPOSED]** | Event team (field teams, e.g. Nursing, Security, PCR, Logistics) | `RegularUser` in a team with `HelpRequests.Respond`, `Reports.Respond` | Backoffice on the phone, field view | W3, W7 |
+| **P5 · Inês, the responder** **[PROPOSED]** | Event team (field teams, e.g. Nursing, Security, PCR, Logistics) | `RegularUser` in a team with `HelpRequests.Respond`, `Reports.Respond` | Backoffice on the phone, field view | W2, W3, W7 |
 
-Journeys W1–W7 are described in [`user-workflows.md`](user-workflows.md).
+Journeys W1–W8 are described in [`user-workflows.md`](user-workflows.md).
 
 ---
 
@@ -37,9 +37,9 @@ Journeys W1–W7 are described in [`user-workflows.md`](user-workflows.md).
 | **Context of use** | At night, phone in hand, limited battery, congested network, loud environment, often after drinking (report §1) |
 | **Goals** | Know where things are (WC, stages, first aid, entrances); know how and when to get home; know whom to ask for help, fast |
 | **Frustrations (sourced)** | Long, badly distributed entrance queues and lack of information and signage (E3); information published before the event that does not reflect what changes during the night (root cause 2); the venue map is an image on social media (root cause 3) |
-| **What she does today (hypothesis)** | Looks for information on Instagram, the event site and WhatsApp groups; looks for a security guard or staff member when she needs help. *To validate with survey Q4 and Q5* |
-| **Barriers to adoption (hypothesis)** | Installing another app, battery use, sharing her location, weak network, not trusting that the information is up to date. *To validate with survey Q9* |
-| **Location sharing (hypothesis)** | Prefers to mark where she is on the venue map rather than share GPS. *To validate with survey Q10* |
+| **What she does today (hypothesis)** | Looks for information on Instagram, the event site and WhatsApp groups; looks for a security guard or staff member when she needs help. Survey (n = 30): information comes from the organisation's social media (77 %) and WhatsApp groups (60 %); in need, 40 % would first ask friends and 33 % look for staff (Q4, Q5; report, *User Research*) |
+| **Barriers to adoption (hypothesis)** | Installing another app, battery use, sharing her location, weak network, not trusting that the information is up to date. Survey Q9 (n = 31): battery 48 %, installing another app 39 %, weak network 32 %, outdated information 23 %, sharing location 6 % (report, *User Research*) |
+| **Location sharing (hypothesis)** | Survey Q10 (n = 31): 71 % would share the phone's location with a help request, 26 % only a place on the venue map. Product decision 4 of 30 October 2026 (report, *User Research*) asks for the phone's location first, with the map as the fallback; still to reconcile with [assessment M-1](../Technical/security-and-privacy-assessment.md#6-data-minimisation-measures) and [ADR-007](../Technical/adr/0007-venue-map-representation.md) |
 | **What success looks like** | Opens the link from the QR code on her ticket or at the venue (annex §7), already logged in from the first time, sees the map in seconds, finds the next shuttle, and can ask for help for a friend in under 30 s (success criteria SC1, SC11) |
 | **Design implications** | No installation; one account for every event, logged in once and kept logged in on the phone (login is mandatory, decided 9 October 2026); large tap targets; short text; works from cache; never asks for more data than needed (report §5, risks) |
 
@@ -111,7 +111,7 @@ Journeys W1–W7 are described in [`user-workflows.md`](user-workflows.md).
 
 | # | Item | Needed to close it |
 |---|---|---|
-| PE-1 | Validate P1's hypotheses (current information sources, barriers, location sharing) | Survey results, questions 4, 5, 9, 10 |
+| PE-1 | Validate P1's hypotheses (current information sources, barriers, location sharing) | Done with the survey (Q4, Q5, Q9, Q10; P1 above). Still open: reconcile the phone location (product decision 4) with assessment M-1 and ADR-007 |
 | PE-2 | Validate P2's current workflow and pain points | Interview with the security volunteer |
 | PE-3 | Validate P3's willingness to configure and maintain the event | Conversation with an event organiser (assumption A1) |
 | PE-4 | Team agrees on splitting the event team into P2 and P3 | Team decision |

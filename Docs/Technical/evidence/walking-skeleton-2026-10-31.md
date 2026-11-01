@@ -28,17 +28,17 @@ The CI workflow executes the build/test and container smoke on each PR. Its GitH
 
 ## Review checks
 
-Markdown links/anchors, XML/YAML syntax, Compose configuration and ignore rules were checked. #58/#148 remain open; the board was corrected from Done to In progress (#58) and Backlog (#148). #166's PR closes only the corrective issue and requires the repository's normal Copilot/team review.
+Markdown links/anchors, XML/YAML syntax, Compose configuration and ignore rules were checked. #58/#148 remain open; the board was corrected from Done to In progress (#58) and Backlog (#148). #166's PR closes only the corrective issue and requires the repository's normal Copilot/team review. **Update (31 October 2026):** #58 was closed at 13:07 UTC, after #167 merged; #148 is still open.
 
 ## Swagger UI follow-up (31 October 2026, #166)
 
-At Tomás's request, Springdoc 3.0.3 adds `/swagger-ui.html` with the existing handwritten contract served at `/openapi.yaml`. Maven packages that file directly from `contracts/`; Docker includes the same input. Automatic `/v3/api-docs` generation is disabled while the UI configuration endpoint remains available.
+Springdoc 3.0.3 adds `/swagger-ui.html` with the existing handwritten contract served at `/openapi.yaml`. Maven packages that file directly from `contracts/`; Docker includes the same input. Automatic `/v3/api-docs` generation is disabled while the UI configuration endpoint remains available.
 
 Host `mvn verify` passed **two HTTP tests, zero failures/errors/skips** (14.881 s): the existing status response plus UI redirect/HTML, configuration pointing to the handwritten contract, exact served-contract contents and absence of a competing generated spec. CI also checks UI HTML and the packaged YAML against the repository file. The running local container is rebuilt for browser verification; CI results are linked in PR #167.
 
 ## Product-related synthetic slice (31 October 2026, #166)
 
-Tomás requested a meaningful Reports operation instead of using only the diagnostic as the demonstration. The new demo-profile routes create and read a synthetic help request in memory. Status is `Submitted`; `triage.state` is `NotTriaged`, matching the production terminology without claiming AI ran. Identity/event are fixed on the server; every record marks `demo: true`. No real request is sent, persisted durably or dispatched.
+The 31 October review (#166) asked for a meaningful Reports operation instead of using only the diagnostic as the demonstration. The new demo-profile routes create and read a synthetic help request in memory. Status is `Submitted`; `triage.state` is `NotTriaged`, matching the production terminology without claiming AI ran. Identity/event are fixed on the server; every record marks `demo: true`. No real request is sent, persisted durably or dispatched.
 
 - Host `mvn verify`: **10 HTTP test cases, 0 failures/errors/skips**, 23.350 s. Coverage includes create→read the same record, invalid category, missing category, blank/oversized description, forged identity field rejection, missing record, disabled demo routes without the profile, and the existing status/UI/contract checks.
 - Actual rebuilt Compose container: POST `/api/v1/demo/help-requests` returned **201** with generated UUID, demo identity/event, Submitted and NotTriaged. GET of the Location returned **200** and the exact same record.

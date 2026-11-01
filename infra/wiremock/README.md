@@ -1,6 +1,6 @@
 # WireMock: simulator of the Porto Digital API
 
-WireMock is the simulator of the Porto Digital urban platform (guide J4, [ADR-008](../../Docs/Technical/adr/0008-transport-data-source.md)). This folder is its root: the `wiremock` container of `infra/compose.yaml` mounts it at `/home/wiremock` ([`local-delivery.md`](../../Docs/Technical/local-delivery.md) §1). It replays real bus positions recorded on 25 October 2026, so the tests and the demo do not depend on the real API.
+WireMock is the simulator of the Porto Digital urban platform (guide J4, [ADR-008](../../Docs/Technical/adr/0008-transport-data-source.md)). This folder is its root: the `wiremock` container, added to `infra/compose.yaml` in Sprint B (today the file has only `reports`), mounts it at `/home/wiremock` ([`local-delivery.md`](../../Docs/Technical/local-delivery.md) §1). It replays real bus positions recorded on 25 October 2026, so the tests and the demo do not depend on the real API.
 
 | Path | What |
 |---|---|
@@ -40,7 +40,7 @@ python infra/wiremock/scripts/convert_porto_digital.py --zip infra/wiremock/reco
 
 `--calls-per-snapshot` (default 2) and `--max-distance` (default 2000 m) change the pace and the radius; `--coords` must be what Transports sends.
 
-Until `infra/compose.yaml` exists, WireMock runs on its own, published only on this machine like the admin API in `local-delivery.md` §1 (in Git Bash on Windows, prefix the command with `MSYS_NO_PATHCONV=1`):
+Until the `wiremock` service is in `infra/compose.yaml` (Sprint B), WireMock runs on its own, published only on this machine like the admin API in `local-delivery.md` §1 (in Git Bash on Windows, prefix the command with `MSYS_NO_PATHCONV=1`):
 
 ```bash
 docker run --rm -p 127.0.0.1:8090:8080 -v "$PWD/infra/wiremock:/home/wiremock:ro" wiremock/wiremock:3.13.2
@@ -60,7 +60,7 @@ It checks every call against the zip: the right snapshot in order, only buses wi
 - **When:** Sunday 25 October 2026, 15:15 to 20:14 UTC, one response about every 60 s (55–69 s), with no gaps.
 - **Content:** NGSI v2 `Vehicle` entities, all with the same 17 attributes. No invalid entries: no missing or 0,0 positions, no duplicates, no positions in the future or older than 5 min.
 - **Personal data:** none. The driver's shift (`stcp:nr_turno`) is always `na`; vehicle and trip numbers do not identify a person ([Security and Privacy Assessment](../../Docs/Technical/security-and-privacy-assessment.md), M-13).
-- **Terms of use:** not checked yet. The repository is private (guide H8); check Porto Digital's terms and attribution before the data leaves the team.
+- **Terms of use:** not checked yet. The repository has been public since 31 October 2026 ([ADR-010](../../Docs/Technical/adr/0010-cicd-strategy.md) point 10), so these recordings are already published: Porto Digital's terms and attribution still have to be checked (open).
 
 ## Limits
 

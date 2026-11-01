@@ -1,6 +1,6 @@
 # Operating Cost Estimation
 
-**Course:** LABDSOF 2026/27, Sprint A · **Issue:** #134 · **Owner:** Bruno Lopes · **Date:** 23 October 2026
+**Course:** LABDSOF 2026/27, Sprint A · **Issue:** #134 · **Date:** 23 October 2026 · **Updated:** 31 October 2026 (#162)
 **Asked for by:** the professor, meeting of 22 October 2026 (P7, [minutes](../Meetings/2026-10-22-professor-meeting.md)): salaries and infrastructure, simple, reasonable assumptions.
 **Infrastructure figures:** from the cloud research of #53 ([`deployment.md`](../Research/architecture-investigation/deployment.md), prices of **22 October 2026** in the [price snapshot](../Research/architecture-investigation/azure-price-snapshot.json)).
 
@@ -8,7 +8,7 @@ What Farol would cost to build and to keep running if the team were a startup pa
 
 ## 1. Summary (one slide)
 
-All amounts in euros, without VAT, rounded to the euro.
+All amounts in euros, without VAT, rounded to the euro. Totals are computed from the unrounded amounts, so a rounded figure × 12 can differ from the yearly total by a few euros (e.g. 377 € × 12 = 4,524 €, against 376.53 € × 12 = 4,518 €).
 
 | Phase | Salaries | Infrastructure | Total |
 |---|---:|---:|---:|
@@ -62,24 +62,24 @@ Delivery is local only ([ADR-011](../Technical/adr/0011-deployment-and-infrastru
 
 | Item | Per month | Assumption |
 |---|---:|---|
-| Laptops (demo and backup), Docker, PostgreSQL (one instance, five databases), RabbitMQ | 0 € | Equipment the team already owns. Electricity and wear are not measured, so they are not zero, only not counted (ADR-011) |
-| Container registry | 0 € | No registry: images built locally from the git tag (proposed in #127; guide H7 still open) |
+| Laptops (demo and backup), Docker, PostgreSQL (one instance, six databases: five services and Keycloak, [ADR-003](../Technical/adr/0003-database-and-data-ownership.md)), RabbitMQ | 0 € | Equipment the team already owns. Electricity and wear are not measured, so they are not zero, only not counted (ADR-011) |
+| Container registry | 0 € | No registry: images built locally from the git tag (guide H7, decided on 23 October 2026, [ADR-010](../Technical/adr/0010-cicd-strategy.md)) |
 | App stores, mobile builds | 0 € | No mobile app: one React web app (guide F1, #125) |
-| GitHub Free, private repository, GitHub Actions | 0 € | 2,000 Actions minutes per month; the pipeline is designed to fit them and uses no paid feature ([ADR-010](../Technical/adr/0010-cicd-strategy.md)) |
-| AI triage with local Ollama | 0 € | No API charges; runs on the demo laptop if guide K1 picks it ([`responsible-ai.md`](../Research/architecture-investigation/responsible-ai.md)) |
+| GitHub Free, public repository, GitHub Actions, SonarQube Cloud | 0 € | Actions is free for public repositories; the repository was private until 31 October 2026, and the pipeline was designed to fit the 2,000 free minutes per month. SonarQube Cloud on its Free plan; no paid feature ([ADR-010](../Technical/adr/0010-cicd-strategy.md) point 10, [setup](../Technical/sonarqube-cloud.md)) |
+| AI triage with local Ollama | 0 € | No API charges; runs on the demo laptop; guide K1 chose it (Ollama with `qwen3:4b`, [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), [local AI plan](../Technical/plans/ai-provider-evaluation.md)) |
 | GitHub Copilot Business (automatic code review, README §5) | 6 × $19 = $114 = **102 €** | Copilot Business, the plan for organisations, $19 per user per month ([GitHub plans](https://docs.github.com/en/copilot/get-started/plans), checked 26 Oct 2026), one licence per person (A1). Notional, like the salaries: the team uses Copilot Pro free through GitHub Education, so the real cost is 0 € |
 | **Total per month** | **102 €** | × 3.35 months (A2) = **341 €** |
 
 ### 4.2 Cloud scenario (researched in #53, not used)
 
-Azure Container Apps for the five services, Azure Database for PostgreSQL Flexible Server (one server, five databases), a VM for RabbitMQ, Azure Container Registry, West Europe. All figures from [`deployment.md`](../Research/architecture-investigation/deployment.md) §*Cost and budget gates*, prices of 22 Oct 2026:
+Azure Container Apps for the five services, Azure Database for PostgreSQL Flexible Server (one server; #53 priced five databases, the design now has six with Keycloak's, on the same server, [ADR-003](../Technical/adr/0003-database-and-data-ownership.md)), a VM for RabbitMQ, Azure Container Registry, West Europe. All figures from [`deployment.md`](../Research/architecture-investigation/deployment.md) §*Cost and budget gates*, prices of 22 Oct 2026:
 
 | Scenario | USD per month | EUR per month (A10) | Used for |
 |---|---:|---:|---|
 | **Demo, 100 h/month** of application time; database, broker and registry always on | 162.84 | **145** | Development: Sprint B and C, × 2.07 months (A3) = **301 €**, plus Copilot (341 €) = 642 € |
 | **Continuous, 730 h/month** | 400.98 | **358** | Maintenance: a production system runs all the time |
 
-Both include $30 of unquoted allowances (disks, networking, telemetry). They do **not** include AI, VAT, an API gateway, overlapping revisions or private-network charges (deployment.md), so the real bill would be higher. In the cloud scenario a registry is needed, because the platform pulls images from it; the "no registry" proposal (#127) is for local delivery.
+Both include $30 of unquoted allowances (disks, networking, telemetry). They do **not** include AI, VAT, an API gateway, Keycloak, the observability stack (Prometheus and Grafana, [ADR-012](../Technical/adr/0012-observability.md)), overlapping revisions or private-network charges (deployment.md), so the real bill would be higher. In the cloud scenario a registry is needed, because the platform pulls images from it; the "no registry" decision (guide H7) is for local delivery.
 
 ### 4.3 AI (ADR-005)
 
@@ -104,7 +104,7 @@ Even at hosted prices the AI is negligible next to hosting. The choice of provid
 
 1. **Salaries are notional; infrastructure is real money.** The team is not paid, so the only cash it would spend is on infrastructure. That is the part that decides where the system runs.
 2. **The cloud does not fit the available credit.** Azure for Students gives a one-off credit of $100 (89 €), not $100 per month ([`deployment.md`](../Research/architecture-investigation/deployment.md)). The reduced demo would cost about 301 € over Sprint B and C, 3.4 times the credit; continuous operation would cost 358 € every month, 4 times the credit, with costs still missing from the quote (§4.2).
-3. **Locally the extra cost is 0 € beyond Copilot**, which is the same in both scenarios (and free for the team through GitHub Education). The same five independent services, five databases and RabbitMQ run on a laptop the team already has, which shows independent deployment without a cloud bill.
+3. **Locally the extra cost is 0 € beyond Copilot**, which is the same in both scenarios (and free for the team through GitHub Education). From Sprint B, the same five independent services, six databases (five services and Keycloak) and RabbitMQ will run on a laptop the team already has, which shows independent deployment without a cloud bill. Sprint A runs one of them, Reports ([walking skeleton](../Technical/plans/local-walking-skeleton.md), #167).
 4. **The professor agreed.** After discussing these costs, the professor authorised local delivery, provided the report and presentation explain that cost is the reason ([clarification](../Meetings/2026-10-22-local-deployment-clarification.md), ADR-011).
 
 **What this costs the project:** cloud operation, managed scaling and cloud recovery are not demonstrated. The local topology, the smoke test and the degraded-mode tests are shown instead ([`local-delivery.md`](../Technical/local-delivery.md)).

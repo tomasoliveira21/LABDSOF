@@ -7,26 +7,33 @@
 ## Context
 
 - The assignment asks for **one** database technology unless more are justified (§6.4).
-- Farol is split into five services (guide A2), deployed independently from Sprint A (guide A4), that talk only through events (guide C4). A service that reads another service's tables would break that boundary.
+- Farol is split into five services (guide A2), deployed independently from Sprint A (guide A4; planned, see the note of 31 October 2026), that talk only through events (guide C4). A service that reads another service's tables would break that boundary.
 - **One team must never see or change another event's data** (architecture driver D1). The report asks for automated tests that prove it.
 - The venue map is an uploaded image with coordinates on it, not a geographic map (annex C3), so no spatial queries are needed.
-- With continuous deployment (guide H5), a new version of a service starts while the old schema is still in use.
+- With local delivery (guide H5, [ADR-011](0011-deployment-and-infrastructure.md)), one service can be replaced or rolled back on its own (`docker compose up -d --no-deps`, [`local-delivery.md`](../local-delivery.md)), so a new version of a service can start while the old schema is still in use, and an old version can start on a newer schema.
 
 ## Decision
 
 1. **PostgreSQL** is the only database technology (D1). No PostGIS: the map is an image.
-2. **One database per service**, which only that service reads and writes (D2). Data that a service needs from another arrives through events and is kept as a local copy ([ADR-004](0004-service-communication.md)). This applies from Sprint A: there is no shared-database monolith phase (guide A4).
+2. **One database per service**, which only that service reads and writes (D2). Data that a service needs from another arrives through events and is kept as a local copy ([ADR-004](0004-service-communication.md)). This applies from the first sprint that runs more than one service: there is no shared-database monolith phase (guide A4). The Sprint A skeleton has one service and no database (R0, #166); the databases arrive in Sprint B (note of 31 October 2026).
 3. **Per-event isolation:** every table that holds data of an event has an `event_id` column, and the application filters by it on every query (D3). **Each service has an integration test** that proves a member of event X cannot read or change data of event Y.
 4. **Flyway** runs the migrations when the service starts (D6). Every migration stays compatible with the previous version of the service (*expand and contract*): add first, switch the code, remove in a later release.
 5. **Account deletion** (D7): each service deletes or anonymises its own data about the user, local copies included, when it consumes `UserDeleted`, and keeps a tombstone with only the opaque `sub`, so the account is refused and late events do not bring a copy back. Audit entries keep the opaque `sub` without a name. What each service does is in the [API outline §7.4](../api-outline.md#74-events).
 
 ## Consequences
 
-- One technology to learn, run and back up. The same PostgreSQL runs locally, in the tests (Testcontainers) and in the cloud.
+- One technology to learn, run and back up. The same PostgreSQL runs locally and in the tests (Testcontainers); the cloud is an alternative only (ADR-011).
 - Services cannot join across databases. Cross-service views (e.g. the event's teams and their permissions inside Reports) come from local copies and are **eventually consistent**.
 - Isolation depends on the application filter being present in every query; a missing filter is a data leak. The per-service isolation test is the safety net, so it must cover every new event-scoped table.
 - *Expand and contract* makes some changes (renames, type changes) take two releases.
-- Five databases from Sprint A cost more than one. Locally they share **one PostgreSQL server** with Keycloak's database, six databases with one user each (guide G6, [`local-delivery.md`](../local-delivery.md)).
+- Five databases (from Sprint B; see the note of 31 October 2026) cost more than one. Locally they share **one PostgreSQL server** with Keycloak's database, six databases with one user each (guide G5, [`local-delivery.md`](../local-delivery.md)).
+
+## Rationale
+
+- The data is relational and the outbox needs transactions, so one relational technology covers every service (§6.4).
+- A database per service keeps the boundaries of guide C4: no service can couple to another through its tables.
+- An `event_id` filter with a mandatory test gives per-event isolation without the set-up cost of row-level security or a database per event.
+- *Expand and contract* lets one service be replaced or rolled back while the others keep running.
 
 ## Alternatives considered
 
@@ -41,6 +48,6 @@
 
 ## Open points
 
-- Number of PostgreSQL servers and where they run: ✅ closed on 26 October 2026. One PostgreSQL server on the local machine, with six databases and six users (five services and Keycloak); no user can read another's database (guide G6, ADR-011, [`local-delivery.md`](../local-delivery.md)).
-- ~~Account deletion (anonymise or delete per service): guide D7, Bruno.~~ Closed on 27 October 2026 (decision 5, #135).
-- Cache for read peaks (D4) and retention and backup (D5): future improvements, outside the MVP.
+- Number of PostgreSQL servers and where they run: ✅ closed on 26 October 2026. One PostgreSQL server on the local machine, with six databases and six users (five services and Keycloak); no user can read another's database (guide G5, ADR-011, [`local-delivery.md`](../local-delivery.md)).
+- ~~Account deletion (anonymise or delete per service): guide D7.~~ Closed on 27 October 2026 (decision 5, #135).
+- Cache for read peaks (D4): future improvement, outside the MVP. Retention and local backup (D5) were decided on 26 October 2026: help-request content deleted 30 days after the event ends, Keycloak login events kept 30 days (NFR-19); a `pg_dump` of the six databases before every demo and every update, kept at most 30 days, queued messages not covered (NFR-13, [`local-delivery.md`](../local-delivery.md) §6). Production backup stays a future improvement (guide D5).

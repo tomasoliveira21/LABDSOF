@@ -6,7 +6,7 @@
 
 ## Context
 
-- One React web app (guide F1) calls five services deployed independently from Sprint A (guide A2, A4). Any later change of shape must be driven by evidence, and should not change the public API.
+- One React web app (guide F1) calls five services deployed independently from Sprint A (guide A2, A4; Sprint A delivered one service, see [ADR-001](0001-architectural-style.md) *Status*). Any later change of shape must be driven by evidence, and should not change the public API.
 - Every request is authenticated ([ADR-006](0006-identity-and-access.md)). Reports must be rate-limited per account (US-48); help requests needed a decision.
 - At the venue, thousands of phones share a few public IP addresses (carrier-grade NAT), so limits per IP would block crowds.
 - The web app must be told to slow down at the read peak (429 or 503 with `Retry-After`, #43).
@@ -21,12 +21,12 @@
 4. The gateway **validates the JWT** (services validate again) and checks no event roles or permissions: it holds no business logic.
 5. **Rate limits per account** (the token's `sub`), never per IP, with Bucket4j. A limit answers 429 with `Retry-After` in `application/problem+json`.
 6. **Reports per account** (5 per 10 min, US-48) are a **business rule in the Reports service**, not gateway configuration.
-7. The gateway starts the W3C trace and returns `X-Correlation-Id`; it counts 429s per policy.
+7. The gateway creates the correlation ID and returns it as `X-Correlation-Id`; there is no distributed tracing ([ADR-012](0012-observability.md), decision 1). It counts 429s per policy.
 8. **Hosting:** local `docker compose`, with only the gateway (`localhost:8080`), Keycloak and the web app published. If the cloud alternative is resumed, **Azure Container Apps**: gateway, Keycloak and web app with external ingress, services with internal ingress.
 
 ### Route table
 
-Paths from the API outline draft (#123). The outline owns the paths; the table follows it, most specific first.
+Paths from the API outline (#123, merged on 26 October 2026 in #124). The outline owns the paths; the table follows it, most specific first.
 
 | Order | Path | Service |
 |---|---|---|

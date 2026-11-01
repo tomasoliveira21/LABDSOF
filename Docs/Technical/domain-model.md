@@ -1,15 +1,18 @@
 # Farol — Domain Model
 
 > Conceptual model organised into five services: **Auth & Users**, **Events**, **Reports**, **Transports** and **Badges**. Service boundaries, attributes and cardinalities are proposed for review.
-> **22 October 2026:** roles, teams and permissions follow the role model in [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026) (to confirm with the team). The draw.io export [`domain-model.svg`](domain-model.svg) was redrawn on 31 October 2026 (#170) to match the diagram below: event-defined `Team`, `TeamPermission` and `TeamAssignment`, `GlobalRoleGrant` / `FarolAdmin` and per-event `EventMembership` replace the fixed `ResponseTeam` types. This is documentary alignment only: no new team vote and no implementation. Open point still shown in the diagram: which team is the default when two teams handle the same category. The Mermaid diagram and this file remain the source; the SVG opens and edits in draw.io.
+> **22 October 2026:** roles, teams and permissions follow the role model in [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026) (to confirm with the team). The draw.io export [`domain-model.svg`](domain-model.svg) was redrawn on 31 October 2026 (#170) to match the diagram below: event-defined `Team`, `TeamPermission` and `TeamAssignment`, `GlobalRoleGrant` / `FarolAdmin` and per-event `EventMembership` replace the fixed `ResponseTeam` types. This is documentary alignment only: no new team vote and no implementation. Open point still shown in the diagram: which team is the default when two teams handle the same category. The Mermaid diagram and this file remain the source; the SVG opens and edits in draw.io. **31 October 2026 (#162):** the diagram below gained the help-request text, the AI reason, the e-mail, the consent fields and an optional first membership (API outline D3); `domain-model.svg` does not show them yet and must be updated in draw.io.
 
 ```mermaid
 classDiagram
     direction LR
     namespace AuthAndUsers {
         class UserAccount {
+            +string email
             +string displayName
             +AccountStatus status
+            +string termsVersion
+            +datetime termsAcceptedAt
         }
         class EngagementPreferences {
             +bool earningEnabled
@@ -21,6 +24,8 @@ classDiagram
         class EventMembership {
             +EventRole role
             +MembershipStatus status
+            +string helpConsentVersion
+            +datetime helpConsentedAt
         }
         class TeamAssignment {
             <<association>>
@@ -63,6 +68,7 @@ classDiagram
         class HelpRequest {
             +HelpCategory category
             +MapPosition location
+            +string description
             +Priority priority
             +RequestStatus status
             +datetime submittedAt
@@ -71,6 +77,7 @@ classDiagram
             +HelpCategory suggestedCategory
             +Priority suggestedPriority
             +TeamId suggestedTeamId
+            +string reason
             +SuggestionDecision decision
         }
         class CommunityReport {
@@ -134,7 +141,7 @@ classDiagram
     UserAccount "1" *-- "1" EngagementPreferences
     UserAccount "1" -- "0..*" GlobalRoleGrant
     UserAccount "1" -- "0..*" EventMembership
-    Event "1" -- "1..*" EventMembership
+    Event "1" -- "0..*" EventMembership
     Event "1" -- "0..*" Team
     Team "1" *-- "0..*" TeamPermission
     EventMembership "1" -- "0..*" TeamAssignment
@@ -159,7 +166,6 @@ classDiagram
     UserAccount "1" -- "0..*" HelpRequest : submits
     Event "1" -- "0..*" HelpRequest : receives
     HelpRequest "0..*" --> "0..1" Team : routed to
-    UserAccount "0..1" <-- "0..*" HelpRequest : accepted by
     UserAccount "1" -- "0..*" CommunityReport : submits
     Event "1" -- "0..*" CommunityReport : receives
     CommunityReport "0..*" ..> "0..*" TeamPermission : reviewed under Reports.Review for its type
@@ -182,10 +188,10 @@ classDiagram
 
 | Service / area | Entity or concept | Purpose and main rule |
 |---|---|---|
-| Auth & Users | **UserAccount** | One account across events for participants and event teams. What a user can do in an event comes from their membership of that event and the teams they are in, not from simply having an account. |
+| Auth & Users | **UserAccount** | One account across events for participants and event teams. Holds the e-mail (login name, also kept by Keycloak; assessment §3) and the display name only (NFR-19, assessment M-6). **[PROPOSED]** (assessment §8.4): the version and time of the accepted terms. What a user can do in an event comes from their membership of that event and the teams they are in, not from simply having an account. |
 | Auth & Users | **EngagementPreferences** | The account's badge earning and visibility preferences. Badges are private by default; earning is optional. |
 | Auth & Users | **GlobalRoleGrant** | Grants the only platform-wide role, `FarolAdmin` (persona P4): creates events for verified organisations, names EventAdmins, suspends and reactivates events. It does not grant access to any event's help requests, reports or participants. |
-| Auth & Users | **EventMembership** | Links an account to one event with a role (`EventAdmin` or `RegularUser`) and a membership status. Created as `RegularUser` when the user joins the event (US-12), or as `EventAdmin` when the FarolAdmin names them (US-06, US-08). The same account can be EventAdmin in one event and RegularUser in another. An event keeps at least one active EventAdmin: the last one cannot be removed or demoted. |
+| Auth & Users | **EventMembership** | Links an account to one event with a role (`EventAdmin` or `RegularUser`) and a membership status. Created as `RegularUser` when the user joins the event (US-12), or as `EventAdmin` when the FarolAdmin names them (US-06, US-08). The same account can be EventAdmin in one event and RegularUser in another. Once the first EventAdmin is named, the event keeps at least one active EventAdmin: the last one cannot be removed or demoted. A new event has no membership until then (API outline D3 = B). **[PROPOSED]** (assessment §8.3): the version and time of the help-request consent given when joining. |
 | Auth & Users | **TeamAssignment** | Puts a member of an event in one of that event's teams. Only members of the event can be assigned (US-18). A member can be in several teams and gets the permissions of all of them. |
 | Events | **Event** | A festival edition with its own organiser, dates, status and operational data. Defines the isolation boundary for event-specific information. |
 | Events | **Team** | A team created by an EventAdmin for one event (e.g. *Control room*, *Nursing*, *Security*), with a name unique in the event and the help categories it handles. The handled categories give the default team when a request is routed and the teams the AI may suggest. Deleting a team returns the requests routed to it to the control-room queue (US-16). Which team is the default when two teams handle the same category is still open. |
@@ -194,8 +200,8 @@ classDiagram
 | Events | **PointOfInterest** | A named place on a map version, such as an entrance, stage, WC, first-aid point or transport stop. Edited by an EventAdmin or a member with `Map.Edit`. |
 | Events | **Announcement** | Official event information published by an EventAdmin or a member with `Announcements.Publish`, with publication time and optional expiry. |
 | Events | **AttendanceCheckIn** | Records an authenticated participant's attendance at the venue during the event dates. Counts once per account/event; included as a Should-have feature. |
-| Reports | **HelpRequest** | A participant's request for assistance, with category, map location, priority and status. Goes to the shared queue of the members with `HelpRequests.Triage` (the control room), who route it to a team with `HelpRequests.Respond`; it never earns badges. |
-| Reports | **TriageSuggestion** | Optional AI recommendation attached to a help request. The suggested team is one of the event's teams that handles the category. A member with `HelpRequests.Triage` accepts or changes it; it never overwrites a human decision or blocks the request. |
+| Reports | **HelpRequest** | A participant's request for assistance, with category, map location, an optional text of at most 500 characters (assessment M-2), priority and status. Goes to the shared queue of the members with `HelpRequests.Triage` (the control room), who route it to a team with `HelpRequests.Respond`; it never earns badges. |
+| Reports | **TriageSuggestion** | Optional AI recommendation attached to a help request, with a short reason shown to the operator (ADR-005 decision 2). The suggested team is one of the event's teams that handles the category. A member with `HelpRequests.Triage` accepts or changes it; it never overwrites a human decision or blocks the request. |
 | Reports | **CommunityReport** | A report about a place or service, routed by type to the members with `Reports.Review` for that type. Visible to other participants only while confirmed and active. |
 | Reports | **FieldTask** | Work dispatched to a team to assist with a request (team with `HelpRequests.Respond`), or to verify or fix a report (team with `Reports.Respond`). Targets exactly one request or report; only one member of that team can accept it. |
 | Cross-cutting; shown in Reports | **AuditEntry** | Records the actor, time and previous/new values of a change. Each service owns its own audit history; the diagram shows request/report history as the operational example. |

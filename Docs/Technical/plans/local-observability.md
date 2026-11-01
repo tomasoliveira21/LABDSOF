@@ -1,6 +1,6 @@
 # Local observability decisions
 
-**Issue:** [#148](https://github.com/tomasoliveira21/LABDSOF/issues/148) · **Tracker:** [#147](https://github.com/tomasoliveira21/LABDSOF/issues/147) · **Owner:** Tomás Oliveira · **Updated:** 26 October 2026
+**Issue:** [#148](https://github.com/tomasoliveira21/LABDSOF/issues/148) · **Tracker:** [#147](https://github.com/tomasoliveira21/LABDSOF/issues/147) · **Updated:** 26 October 2026
 
 **I1–I3 architecture accepted; implementation/evidence pending.** Status reconciled on 31 October (#166) against the guide/NFR agreement recorded on 26–27 October. This document selects the local software, data paths, endpoints, storage bounds, SLIs, dashboard and alert rules. Instrumentation, configuration files, live panels and measured compliance remain implementation/evidence, not an unanswered architectural choice or a result fabricated by this PR.
 
@@ -42,7 +42,7 @@ The [ADR-005 coverage definition](../adr/0005-ai-triage-provider-and-evaluation.
 | Operator visibility | Committed request visible through authorised polling within 5 s / committed requests, 1 h | ≥99.9% operational target; **100% with AI off in SC5 test** |
 | Useful AI triage | Schema/semantic/eligible-team-valid non-abstained suggestion stored within 30 s / **all pre-defined AI-eligible submissions in a 1 h cohort** | **≥95%**; errors, invalid/late output and abstentions remain misses |
 | Event propagation | Oldest unpublished outbox age and publish-to-consumer delay | p95 ≤10 s in normal 15 min windows; expose broker failures explicitly |
-| Transport freshness | Age of the last validated import | Warning after **5 min**, polling **30 s**, matching Tiago's J1/J2 |
+| Transport freshness | Age of the last validated import | Warning after **5 min**, polling **30 s**, matching guide J1/J2 |
 | Quality | Reviewed offline dataset and raw model output, separate from live traffic | ≥80% category/team accuracy; zero urgent-case failures and correct expected abstentions |
 
 **One-hour accounting implementation:** at time `T`, the cohort contains submissions in `[T−3630 s, T−30 s)`, so every included request's 30 s deadline has expired. Query the persisted submission/outcome timestamps in a single consistent snapshot and expose two bounded-label gauges: `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`. Export these every 15 s; the ratio is numerator/denominator **only when the denominator > 0**. Do not reconstruct submission cohorts from successful completion timestamps or omit unprocessed requests. Provider outcome counters are complementary, not a substitute for this denominator.
@@ -62,12 +62,12 @@ Show the full cohort count/ratio and degraded periods together. Empty cohorts di
 
 | Rule | Trigger/window | Severity and local response |
 |---|---|---|
-| API probe failed | Two failed 30 s authenticated probes in succession | Critical: inspect gateway/DB/release; preserve data and roll back bad code |
+| **Service down** | **Prometheus `up == 0` for an expected service for 2 min** (the core rule below). An authenticated API probe (two failed 30 s probes in succession) is a later option: nothing in the stack obtains a Keycloak token for it yet | Critical: inspect gateway/DB/release; preserve data and roll back bad code |
 | Committed request not visible | Any reconciled committed request still missing after 5 s on two checks | Critical: reconcile request visibility; AI may be disabled but the saved request cannot disappear |
 | Useful triage below target | Mature 1 h ratio <95%, at least 20 eligible requests, for 5 min | Warning: inspect queue/model/validation; keep manual handling. With fewer than 20 requests show the ratio/count but avoid noisy percentage paging |
 | Urgent suggestion failure | Any reviewed/known urgent case under-prioritised or missing/late | Critical test/review failure; do not suppress it behind an aggregate percentage |
 | Triage stuck | Oldest eligible pending request >30 s for 2 min | Warning: mark degraded, verify fallback and worker/provider |
-| **Outbox stalled** | **Oldest pending row >60 s for 2 min** | Warning: inspect broker alarm/connection/confirm. This adopts Tiago's 60 s decision in NFR #139/resilience; the old 30 s research trigger is superseded |
+| **Outbox stalled** | **Oldest pending row >60 s for 2 min** | Warning: inspect broker alarm/connection/confirm. This adopts the 60 s decision in NFR #139/resilience; the old 30 s research trigger is superseded |
 | DLQ not empty | DLQ depth >0 for 1 min | Warning: inspect sanitised reason/schema, fix then replay manually; never auto-delete to silence it |
 | Broker down / alarm | Broker down >60 s, or memory/disk alarm persists 30 s | Critical: check container/disk; durable saves should continue through outbox |
 | Telemetry missing | Expected target/collector produces no sample for 2 min | Warning: monitoring failure, separate from application success/failure |

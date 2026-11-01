@@ -1,8 +1,8 @@
 # Product Vision
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §5.4 and §7.1.2 (deliverable 4)
-> **Status:** vision statement, pitch and success-criteria rule agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Product name **Farol** decided on 9 October 2026. Open: some target numbers.
-> **Source of truth for the problem:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (PT). This document summarises it and links back to it; it does not replace it.
+> **Status:** vision statement, pitch and success-criteria rule agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Product name **Farol** decided on 9 October 2026. All target numbers were set by 26 October 2026 ([NFRs](non-functional-requirements.md#3-open-points)).
+> **Source of truth for the problem:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md). This document summarises it and links back to it; it does not replace it.
 
 ## Legend
 
@@ -65,7 +65,17 @@ Both primary users carry **the same weight** (unanimous team decision, report §
 
 Source: report *Product vision > Value proposition*; market analysis §3 *Differentiation opportunity*.
 
-**Why it is different** (market analysis §3 and annex §5): no alternative found in Portugal covers the map, transport, help requests and incident handling together (annex §3, matrix). The difference lies in the **combination** (two faces linked by the map), the **segment** (Portuguese academic event teams) and the **delivery** (multi-event, no installation, weak-network ready).
+### Expected community benefit
+
+Assignment §5.4. Beyond each user's gain, the festival community as a whole is expected to benefit in three ways, all taken from the report:
+
+- **Help reaches people sooner:** requests arrive structured, with a point on the venue map, at the team that handles them, instead of by radio and phone (report §2, root cause 4 and *Consequences of not solving it*).
+- **Less confusion at entrances and on the way home:** updates from the event team reach every participant at once, with their time, instead of being published before the night (report §2, root causes 1 and 2).
+- **Problems are known before they become incidents:** confirmed community reports let other participants avoid queues and broken services, and tell the team early ([`features.md` §6.4](features.md#64-the-five-questions-of-assignment-55), question 2).
+
+These need a real event to measure, so they stay as long-term outcomes (§5), not success criteria.
+
+**Why it is different** (market analysis §3 and annex §5): no alternative found in Portugal covers the map, transport, help requests and incident handling together (annex §3, matrix). The difference lies in the **combination** (two faces linked by the map), the **segment** (Portuguese academic event teams) and the **delivery** (multi-event, no installation, fast on a slow network).
 
 ## 5. Measurable success criteria
 
@@ -73,17 +83,17 @@ Source: report *Product vision > Value proposition*; market analysis §3 *Differ
 
 | # | Success criterion | Metric | How it is measured | Target |
 |---|---|---|---|---|
-| SC1 | The app opens fast, even on a weak network | Time from scanning the QR code to seeing the venue map, participant already logged in | Automated test with network throttling (slow 3G profile) | ≤ 5 s cold, ≤ 1 s from cache (confirmed by Tiago, 24 October 2026) |
-| SC2 | A help request reaches the event team at once | Time from "submit" on the phone to the request appearing in the backoffice, without reloading | Automated end-to-end test | p95 ≤ 5 s (confirmed by Tiago, 24 October 2026) |
-| SC3 | **The AI triage routes a request fast** | Time from submission to a stored suggestion of category, priority and team | Timer in the triage worker; load test with the evaluation set | **≤ 30 s** (team decision) |
-| SC4 | The AI triage is correct where it matters | Urgent cases under-prioritised; category accuracy | Evaluation set, compared with the non-AI fallback | 0 urgent cases under-prioritised; category accuracy ≥ 80 % (confirmed by Tiago, 24 October 2026) |
+| SC1 | The app opens fast, even on a weak network | Time from scanning the QR code to seeing the venue map, participant already logged in | Automated test with network throttling (slow 3G profile) | ≤ 5 s cold, ≤ 1 s from cache (confirmed on 24 October 2026, #137) |
+| SC2 | A help request reaches the event team at once | Time from "submit" on the phone to the request appearing in the backoffice, without reloading | Automated end-to-end test | p95 ≤ 5 s (confirmed on 24 October 2026, #137) |
+| SC3 | **The AI triage routes a request fast** | Time from submission to a stored suggestion of category, priority and team | Timer in the triage worker; load test with the evaluation set | **≤ 30 s** (team decision); in operation ≥ 95 % valid suggestions within 30 s over a one-hour window (NFR-03) |
+| SC4 | The AI triage is correct where it matters | Urgent cases under-prioritised; category accuracy | Evaluation set, compared with the non-AI fallback | 0 urgent cases under-prioritised; category accuracy ≥ 80 % (confirmed on 24 October 2026, #137) |
 | SC5 | No request is lost when the AI fails | % of requests shown to the operator when the AI is off or slow | Automated test with the AI stopped | 100 %, with the fallback after 30 s |
-| SC6 | Live updates reach participants | Time from publishing an announcement to it appearing on an open participant app | Automated end-to-end test | ≤ 15 s (confirmed by Tiago, 24 October 2026: participant pages poll every 10 s, so the worst case is one interval plus the server time) |
+| SC6 | Live updates reach participants | Time from publishing an announcement to it appearing on an open participant app | Automated end-to-end test | ≤ 15 s (confirmed on 24 October 2026, #137: participant pages poll every 10 s, so the worst case is one interval plus the server time) |
 | SC7 | Information shows how fresh it is | % of information items showing their last-update time | Automated UI test | 100 % |
 | SC8 | Each event's data stays private to its team | Cross-event access attempts that succeed | Automated authorisation tests (report §5, technical risks) | 0 |
 | SC9 | Every change to a request is recorded | % of request changes with an audit record (who, when, from, to) | Database query after the test suite | 100 % |
 | SC10 | The app works without network | Map and information shown from cache after the network is cut | Automated offline test. Only if F11 (Could) is built; not a §6.8 scenario | Passes, with "data from HH:MM" |
-| SC11 | Asking for help is quick | Time from opening "Ask for help" to request submitted | Usability test with students | Median ≤ 30 s (confirmed by Tiago, 24 October 2026) |
+| SC11 | Asking for help is quick | Time from opening "Ask for help" to request submitted | Usability test with students | Median ≤ 30 s (confirmed on 24 October 2026, #137) |
 
 ### Validation of the problem (not success criteria)
 
@@ -96,7 +106,9 @@ These measure whether the product is worth building, not whether it works. They 
 
 Outcomes the MVP cannot measure (they need a real event): adoption during the event, faster response by the team, less confusion at entrances and transport, positive feedback from event teams (report, *Success criteria*). They stay as long-term outcomes.
 
-**Targets:** SC3 (30 s) set by the team on 8 October 2026; SC1, SC2, SC4, SC6 and SC11 confirmed by Tiago on 24 October 2026 (#137), with SC6 raised from 10 s to 15 s to fit the 10 s polling of guide J3.
+SC11 is the only criterion measured with users rather than by the system: it measures how easy the product is to use, not how fast the operators react.
+
+**Targets:** SC3 (30 s) set by the team on 8 October 2026; SC1, SC2, SC4, SC6 and SC11 confirmed on 24 October 2026 (#137), with SC6 raised from 10 s to 15 s to fit the 10 s polling of guide J3.
 
 **Results (student survey, 3 to 6 and 30 October 2026, n = 30 to 31):** **V1 met**, 87 % (27/31). **V2 met**, 2.97, by a small margin and dependent on the answers of 30 October (report, *Limitations*); to confirm with a test in night conditions. The main pain reported is the wait at the entrance (80 %). Details, limitations and the decisions taken from them: report, *User Research*.
 
@@ -107,13 +119,18 @@ Outcomes the MVP cannot measure (they need a real event): adoption during the ev
 | Participant web app, behind login: event selection, venue map, essential information, transport information, simple help-request flow | Physical capacity of entrances (number of gates, queue funnel design): infrastructure, not software |
 | Backoffice: each team configures its own event, manages the venue map, updates information, handles incoming help requests | Heavy integrations with operators |
 | Multi-event with per-event permissions | Advanced crowd prediction, full automation |
-| Weak-network support with "last updated" times | Own ticketing (link to the ticketing partner at most) |
+| Accounts: login for every user, sign-up, consent and account deletion (F1, F2) | Own ticketing (link to the ticketing partner at most) |
+| AI help-request triage, with the non-AI fallback D1 (F8; assignment §5.6) | Offline cache of the map and information (F11, Could) |
+| Community reports, their confirmation by the responsible team, and badges (F12–F14; assignment §5.5) | Attendance badges, check-in, entrance status and friends (F15–F18, Should or Could) |
+| Fast load on a slow network (SC1) and the last-update time on every item (SC7) | |
 
-Source: report *MVP definition* and *Out of scope*; annex §1. Feature-level detail and priorities: [`features.md`](features.md).
+The MVP is every Must of [`features.md` §2](features.md#2-feature-list-and-priority), delivered as release R2 ([`features.md` §8.2](features.md#82-initial-release-plan)). Source: report *MVP definition* and *Out of scope*; annex §1. Feature-level detail and priorities: [`features.md`](features.md).
+
+**Is this the smallest credible product experiment?** (assignment §7.1.3) The first release that can be tried, R1 (Sprint B), is built around the help-request journey W2 + W3: it is the smallest product with which the critical assumptions A2 and A4 can be tried (report §5), and a participant joins the event by its QR code or link (US-12), which A3 needs. R1 also carries what the assignment requires in Sprint B: AI triage with its fallback D1 (§5.6, §6.8) and the bus import, the external integration of §6.5. R2 adds what the assignment or privacy requires: community reports and badges, the engagement mechanism of §5.5, and sign-up, consent and account deletion (US-03 to US-05), which handle personal data. Everything else is Should, Could or out of the MVP.
 
 ## 7. Key risks (summary)
 
-The three critical assumptions are **A2** (participants use the app during the night), **A3** (they accept one app for many events, opened by link or QR) and **A4** (help requests through the app reach the right team faster). If any of them fails, the product loses its reason to exist (report §5). Full list of assumptions A1–A9 and risks: report §5.
+The three critical assumptions are **A2** (participants use the app during the night), **A3** (they accept one app for many events, opened by link or QR) and **A4** (help requests through the app reach the right team faster). If any of them fails, the product loses its reason to exist (report §5). Full list of assumptions A1–A9 and risks: report §5; with their status and dependencies: [Assumptions and dependencies](../Deliverables/assumptions-and-dependencies.md).
 
 ## 8. Research status
 

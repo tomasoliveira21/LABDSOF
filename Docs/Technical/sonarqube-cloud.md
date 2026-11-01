@@ -1,6 +1,6 @@
 # SonarQube Cloud analysis in CI
 
-**Issue:** [#168](https://github.com/tomasoliveira21/LABDSOF/issues/168) · **Owner:** Tomás Oliveira · **31 October 2026**
+**Issue:** [#168](https://github.com/tomasoliveira21/LABDSOF/issues/168) · **31 October 2026**
 
 ## What this implements
 
@@ -10,7 +10,7 @@ Current scope is Reports, including its demo classes and tests. There is no root
 
 ## One-time activation by the repository owner
 
-The repository is **public** (verified on 31 October after Tomás changed it). This PR does not change visibility. SonarQube Cloud's current Free offering also supports private projects up to 50k lines; the old ADR claim that private analysis always requires payment was outdated. Choose the appropriate Free plan and confirm project visibility matches the repository; no paid subscription/trial is required by this implementation. Making GitHub public alone does not create a Sonar project or authentication token.
+The repository is **public** (verified on 31 October, after the change). This PR does not change visibility. SonarQube Cloud's current Free offering also supports private projects up to 50k lines; the old ADR claim that private analysis always requires payment was outdated. Choose the appropriate Free plan and confirm project visibility matches the repository; no paid subscription/trial is required by this implementation. Making GitHub public alone does not create a Sonar project or authentication token.
 
 1. Sign in to [SonarQube Cloud EU](https://sonarcloud.io/) with GitHub. Import the GitHub personal account/organization and select **only LABDSOF** for the project binding. The owner completes any account terms or GitHub App permissions; do not publish credentials in chat, Git or logs.
 2. Create/import the project, with **main** as its main branch and the GitHub binding enabled for PR decoration. Copy the actual **organization key** and **project key** from the project setup; do not guess them from the GitHub name.
@@ -26,9 +26,9 @@ The repository is **public** (verified on 31 October after Tomás changed it). T
 The token belongs only in the secret; never provide it as a `-Dsonar.token=...` CLI argument, repository variable or committed file. Keys are identifiers, not tokens. The workflow passes them through quoted environment variables and uses the EU endpoint `https://sonarcloud.io`.
 
 5. Bootstrap the main-branch baseline before expecting a successful PR quality gate: once this workflow is available on main, use its manual **Run workflow** on **main** (or the first main push). A first setup PR may need review before that bootstrap; do not fabricate a successful PR analysis when the base has no Sonar analysis yet. If testing before merge, the owner can run the same pinned Maven scanner on a clean main checkout, using these actual keys and SONAR_TOKEN in the environment.
-6. Re-run the job on the setup PR. Confirm a real report in Sonar's **Pull requests** page, coverage import and the returned quality gate before treating analysis as operational. Then make **SonarQube Cloud** a required check if the team wants it to block merges. The documented required checks are **Conventions** / **CI**; branch protection is not active yet (ADR-010 §8). This PR does not modify it.
+6. Re-run the job on the setup PR. Confirm a real report in Sonar's **Pull requests** page, coverage import and the returned quality gate before treating analysis as operational. Then make **SonarQube Cloud** a required check if the team wants it to block merges. The documented required checks are **Conventions** / **CI**; branch protection has been active since 30 October 2026, with no required check yet (ADR-010 point 8). This PR does not modify it.
 
-Tomás provided the [public project](https://sonarcloud.io/project/overview?id=tomasoliveira21_LABDSOF) on 31 October. Its public API confirmed organization/project identifiers and a main analysis of commit `b298b1e` at 12:32 UTC. Both GitHub variables above are now configured. Tomás added `SONAR_TOKEN` as a repository secret. The existing main analysis was not proof of this CI integration (its quality-gate API initially returned `NONE`). The authenticated CI rerun below now validates the integration. The configuration check intentionally fails with missing **names only**; it does not silently skip trusted analyses or print secret values. A green build/test job alone is not evidence of Sonar analysis.
+The [public project](https://sonarcloud.io/project/overview?id=tomasoliveira21_LABDSOF) was provided on 31 October. Its public API confirmed organization/project identifiers and a main analysis of commit `b298b1e` at 12:32 UTC. Both GitHub variables above are now configured. `SONAR_TOKEN` was added as a repository secret. The existing main analysis was not proof of this CI integration (its quality-gate API initially returned `NONE`). The authenticated CI rerun below now validates the integration. The configuration check intentionally fails with missing **names only**; it does not silently skip trusted analyses or print secret values. A green build/test job alone is not evidence of Sonar analysis.
 
 ## Observed activation evidence — 31 October 2026
 

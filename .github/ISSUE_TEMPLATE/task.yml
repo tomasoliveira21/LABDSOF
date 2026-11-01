@@ -13,7 +13,7 @@ body:
     id: type
     attributes:
       label: Type
-      description: Same as the branch prefix (README §2)
+      description: Same as the branch prefix (Docs/README.md §2)
       options:
         - docs
         - ci

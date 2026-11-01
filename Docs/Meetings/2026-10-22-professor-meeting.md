@@ -28,7 +28,7 @@ What the professor listed, with the document each section comes from today.
 | Customer journeys / general user workflow | [`user-workflows.md`](../Product/user-workflows.md) and the BPMN diagrams | Exists |
 | Domain model | [`domain-model.md`](../Technical/domain-model.md) | Exists |
 | Architecture & technology | [`architecture.md`](../Technical/architecture.md), ADRs, draw.io diagrams | Exists; diagrams change with P1 |
-| Assumptions & dependencies | Assumptions in [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md); dependencies spread across the ADRs | **Missing** as one list |
+| Assumptions & dependencies | Assumptions in [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md); dependencies spread across the ADRs | **Missing** as one list. *Update 31 October 2026:* one list now exists, [`assumptions-and-dependencies.md`](../Deliverables/assumptions-and-dependencies.md) (#162) |
 | Operating costs estimation | [`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md) (#134), with the infrastructure research of #53 (guide G2) | Exists |
 | Prioritised product backlog (epics) | [`features.md`](../Product/features.md) §2 and §7; issues #58 to #121 (§8.3) | Partial: issues created and on the [board](https://github.com/users/tomasoliveira21/projects/1); priority, size and *Ready* applied in #138 (24 October 2026) |
 | NFRs | [`non-functional-requirements.md`](../Product/non-functional-requirements.md), from the architecture drivers ([`architecture.md`](../Technical/architecture.md) §1) and the success criteria | Exists (#137) |
@@ -54,12 +54,12 @@ What the professor listed, with the document each section comes from today.
 - [x] **Bruno:** remove the mobile app from the documentation (P9). Done in #125, except the diagrams.
 - [x] **Bruno:** remove the mobile app from the diagrams (levels 1 to 3 and `*-level-4-mobile`) (P9). Done in #157 (#133) and #55: no diagram mentions a mobile app, and the `*-level-4-mobile` files were deleted (checked on 30 October 2026).
 - [ ] **Tiago:** review [ADR-007](../Technical/adr/0007-venue-map-representation.md), rewritten for the web (`react-zoom-pan-pinch` + SVG markers), and accept or change it (P9).
-- [ ] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2).
+- [x] **Tomás:** close K1 (own machine or API key) with ADR-005 (P2). Done: own machine, Ollama with `qwen3:4b` (guide K1); ADR-005 accepted as architecture on 31 October 2026 (#166). Model measurements still to do.
 - [x] **Tiago:** set x (poll interval) and y (freshness limit) for the transport data (P4, guide J1 and D2). Done in #43: x = 30 s, y = 5 min.
-- [ ] **Tiago:** the presentation deck (P5). First version on 30 October 2026: [`Farol_Sprint_A_Presentation.pptx`](../Presentation/Farol_Sprint_A_Presentation.pptx), to review with the team.
+- [x] **Tiago:** the presentation deck (P5). First version on 30 October 2026: [`Farol_Sprint_A_Presentation.pptx`](../Presentation/Farol_Sprint_A_Presentation.pptx), to review with the team. *Update 1 November 2026:* merged in #165 and split by class into [T/TP](../Presentation/Farol_Sprint_A_TTP_Presentation.pptx) and [PL](../Presentation/Farol_Sprint_A_PL_Presentation.pptx) in #174, each approved by a team member.
 - [ ] **No owner yet, done at the end:** the single PDF with the Sprint A documents (P6).
 - [x] **Bruno:** the operating cost estimation, salaries + infrastructure (P7). Done in #134 ([`operating-cost-estimation.md`](../Deliverables/operating-cost-estimation.md)), with the infrastructure from #53 (G2).
-- [ ] **Tomás:** the walking skeleton (P8).
+- [x] **Tomás:** the walking skeleton (P8). Done in its Sprint A minimum: one Reports service in memory, with build, tests, image and Compose in CI (#167; #166 and #58 closed on 31 October 2026). The authenticated multi-service slice is Sprint B.
 - [x] **Tiago:** one list of NFRs, for the deck. Done in #137 ([`non-functional-requirements.md`](../Product/non-functional-requirements.md)).
-- [ ] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents.
+- [x] **No owner yet, done at the end:** one list of assumptions and dependencies, for the deck, put together from the other documents. Done in #162 by Bruno: [`assumptions-and-dependencies.md`](../Deliverables/assumptions-and-dependencies.md).
 - [x] **Guerra:** simulator of the Porto Digital API or recorded responses (guide J4). Done in #155 (26 October 2026): WireMock, replaying the responses recorded on 25 October 2026 ([`infra/wiremock/`](../../infra/wiremock/README.md)).

@@ -14,6 +14,59 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `Farol_Sprint_A_Presentation.pptx` stays as it was. Slides and speaker notes are copied unchanged; only the slide numbers follow the new position.
 - The survey slides and the next steps are in neither of the two topic lists; they went to the T/TP deck because they are about the product and the backlog. The cover is in both decks.
 
+## [Unreleased] · 2026-10-31 · Documentation organised (#162, Bruno Lopes)
+
+**Why:** a reader had to know the repository to find each Sprint A deliverable, and several documents no longer matched the decisions in force or GitHub. Every change below was checked against its source on 31 October 2026.
+
+### Added
+- `Docs/README.md`: a *Sprint A deliverables* table, one row per item of assignment §7.1.2 with its document and its real status. Item 3 (user research) is complete since the survey results of #165; only the security-volunteer interview (A4) is missing. Item 10 is one Reports service in memory, with build, tests, image and Compose smoke test in CI. Documents that no table listed are now indexed.
+- `Docs/Deliverables/assumptions-and-dependencies.md`: one list for the deck (professor meeting of 22 October 2026): assumptions A1–A9 with their validation status, and the external dependencies of the ADRs, each with its source.
+
+### Changed
+- `team-and-process.md` §1: each member's areas with the pull requests that show them, and the pull requests merged and approved on 31 October 2026. The roles in §2 stay unassigned, as the team agreed.
+- Research documents of #53: a notice at the top that they are a snapshot of 22 October 2026, naming the decisions in force. They are not rewritten.
+- Markers closed with their source: `features.md` §6.3 and §8.4 (walking skeleton, K1, J1, D7), the ADR-005 and ADR-012 "proposed" notes, the product-vision header, guide D2, ADR-004's open points, `local-delivery.md` §9, two actions in the professor meeting record. Status headers of `architecture.md` and `features.md`.
+- `operating-cost-estimation.md`: six databases, guide H7 decided, K1 chosen, repository public. No amount changes.
+
+### Corrected
+- Branch protection: the notes of #163 said it was off (`protected: false`, checked on 30 October 2026). A repository ruleset turned it on at 18:43 UTC that day. README §6, `team-and-process.md`, ADR-010 point 8 and guide H8 now tick what is on (pull request with one approval, Copilot review, no force push, squash merge only, branches deleted) and leave unticked what is not (required checks, stale-approval dismissal, resolved conversations).
+- `architecture.md` §7 still had the AI provider as "[PROPOSED for review]" with "retry", and `features.md` D1 had "10 s, 2 attempts": the local profile is one 20 s attempt (ADR-005, NFR-11).
+- References to domain-model invariants I1, I4, I5 and to `StatusChange`, removed from the model on 15 October, now point to `AuditEntry`, NFR-14, NFR-16 and NFR-22 (text, and three diagrams in both the model and the picture).
+- A DLQ that is not empty is a dashboard panel and an acceptance check, not an alert (ADR-012, NFR-34): `architecture.md` §6, ADR-004, NFR-10, guide C3.
+- `local-delivery.md` said CI was not running; `ci.yml` has run since #167. #58 was closed on 31 October 2026, not "open". ADR-011's old R0 slice is marked as superseded by #166. `architecture.md` §3 and §11 now say that Sprint A runs only Reports, and that ADR-001 was not amended for it. The repository has been public since 31 October 2026 (`architecture.md` §12, guide H8, four diagrams).
+
+### Corrected after a review of the whole repository against assignment §7
+- NFR-19 showed 112 when help-request consent is declined; the meeting of 12 October 2026 decided "No mention of 112" (T5).
+- ADR-003 put retention and backup outside the MVP (decided on 26 October 2026, NFR-13, NFR-19); ADR-006 said gitleaks runs on every PR (planned for Sprint B); ADR-011 and `local-delivery.md` §9 said only "the walking skeleton" measures the RTO; the in-memory skeleton cannot, so when it is measured is open (guide G7).
+- `api-outline.md`: the triage fallback reasons gain `Abstained` (ADR-005); the skeleton's status and demo endpoints are named as outside the product API.
+- README §5 and `team-and-process.md`: every Copilot review so far failed for lack of quota; 39 PRs, not 8, were merged with a merge commit, the last on 30 October 2026. `local-delivery.md`: the web port, 3000.
+- Two level-4 Reports diagrams labelled the call to the local AI "[HTTPS]"; it is HTTP.
+- People's names removed from the documentation: each statement keeps its source (date, issue, pull request, meeting record or guide item). Names stay only in the team list (README, `team-and-process.md` §1), the owners of the architecture decisions guide, the meeting records and older changelog entries. Owner columns removed from `features.md` §8.4 and `api-outline.md` §10.2; the assessment's §10 column now names the decision that settles each finding.
+- English: Portuguese quotes in `user-workflows.md` and its service names, "teacher", stray spaces, and two false claims in the market analysis (§5.4).
+
+### Corrected after a second check against assignment §5 to §8 (31 October 2026)
+- D1 (`architecture.md` §9, `features.md` D1): the demo script assumed the hosted two-attempt profile; with the local profile (one attempt, minimum 4 calls) the circuit opens after the third failed request, so the script has one more request and the counter +3. The 15-minute re-triage after recovery is removed: it contradicted the accepted AI contract (the 30 s deadline is never reset, late results are discarded).
+- `api-outline.md`: `suggestedReason` added to the triage object (the reason the operator must see, ADR-005); fallback reasons gain `Unavailable` and `NoEligibleTeam`; every outbound HTTP call is listed; `dataAsOf` used everywhere; SC6 is 15 s.
+- `domain-model.md`: the help-request text, the suggestion's reason, the e-mail and the consent fields ([PROPOSED]) are in the model; an event can have no EventAdmin yet (D3 = B). The SVG still needs the same change in draw.io.
+- `product-vision.md`: an *Expected community benefit* section (assignment §5.4), the MVP boundary now lists every Must, and §6 answers the Sprint A investor question (assignment §7.1.3).
+- `responsible-ai.md`: the baseline numbers, where the AI must beat it (zero urgent misses), and the known limitations and how users are told (assignment §5.6.3).
+- Security assessment: retention and consent shown as decided on 26 October 2026, 112 removed (decision of 12 October), ADR-005 and ADR-012 shown as accepted, and a section on the Sprint A skeleton, including the open gap: a rejected help-request text is written to the log by Spring's default handler.
+- ADRs: a *Rationale* section in ADR-001, 003, 004, 008 and 009; dated notes that Sprint A runs one service (ADR-010 point 9); ADR-007's open points closed by later decisions; ADR-010 has the measured CI times; ADR-012 lists the dropped Collector/Tempo/Alertmanager stack.
+- 18 diagrams: the AI suggests a team too, the DLQ is a panel, Auth & Users has no login, the `infra/` folders that exist, and "from Sprint B" for the independent deployment of each service. Their PNG fallback must be refreshed in draw.io.
+- Market analysis: a dated note on the decisions taken since 6 October 2026 (live buses, no Q&A assistant, offline mode a Could); first person removed. Cost estimate: rounding, six databases, Keycloak and observability not priced.
+- Survey results (#165) reflected in the deliverables table, the assumptions list and persona P1; product decision 4 (phone location first) is marked as still to reconcile with assessment M-1 and ADR-007.
+- `.gitattributes` keeps the evaluation files LF, so their SHA-256 hashes match on Windows; `evaluate.py` reads UTF-8.
+
+### Corrected after merging the split decks (1 November 2026)
+- BPMN help-request journey (`.bpmn` and `.svg`): field teams see a routed request in their list by polling, not as a phone alert (US-29, US-31, guide C5); the participant may add a short text; the operator sees the AI's reason (ADR-005). Report journey: the lane is the report reviewer (`Reports.Review`). `user-workflows.md` lists what is not drawn, including the first-aid points shown when consent is declined, sending fails or the rate limit is reached.
+- `personas.md` and the deliverables table: P1 is checked against the survey (#165); PE-1 done, apart from the phone location still to reconcile with assessment M-1.
+- `Docs/README.md` indexes the three Sprint A decks; the Copilot count is 17 failed attempts on ten PRs up to #174. `team-and-process.md` §1 counts 48 merged PRs (#174).
+- ADR-002 and ADR-013 point to ADR-001 *Status* where they say the services are deployed from Sprint A. Professor meeting record: the deck action (P5) ticked, with #165 and #174.
+
+### Not changed
+- Older entries of this changelog and the meeting records, except ticking two finished actions and two dated *Update 31 October 2026* notes (meetings of 12 and 22 October).
+- Decisions that need the team or their owner; they are listed in the pull request under *Open for the team*.
+
 ## [Unreleased] · 2026-10-30 · Student survey results and Sprint A deck (Tiago Teixeira)
 
 **Why:** the report's *Results*, *Limitations* and *Resulting product decisions* were still "TBD" (Sprint 1 deliverable 3; gap review of 8 October 2026, G1), and the Sprint A deck had no owner (meeting with the professor, 22 October 2026, P5). Bruno gave both tasks to Tiago.
