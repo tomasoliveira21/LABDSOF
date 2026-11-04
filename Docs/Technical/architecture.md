@@ -319,7 +319,7 @@ Why these pass criteria: **p95 < 500 ms** on the server leaves most of SC1's 5 s
 | Observability | **[ACCEPTED architecture; implementation pending]** Local Micrometer/Actuator + Prometheus/Grafana (two containers), Grafana-managed alerts and correlated structured Docker logs. No separate trace/collector/alert container. Azure tooling retained only as an alternative. [ADR-012](adr/0012-observability.md) |
 | Identity | **Keycloak** (OpenID Connect), self-hosted; Spring Security resource server in every service; `oidc-client-ts` in the web app. [ADR-006](adr/0006-identity-and-access.md) |
 | API gateway | **Spring Cloud Gateway (Server WebMvc)**, CORS and Bucket4j rate limits per account. [ADR-013](adr/0013-api-gateway.md) |
-| Venue map | **[PROPOSED]** The image with an **SVG** overlay for the markers, inside a **`react-zoom-pan-pinch`** zoom/pan container; normalised `MapPosition` coordinates; the same component on phone and laptop pages (to confirm with a spike on a real iPhone and Android phone before the map is built). PDF maps are rendered to a PNG on upload by the Events service (**Apache PDFBox**). See [ADR-007](adr/0007-venue-map-representation.md), waits for review |
+| Venue map | The image with an **SVG** overlay for the markers, inside a **`react-zoom-pan-pinch`** zoom/pan container; normalised `MapPosition` coordinates; the same component on phone and laptop pages (to confirm with a spike on a real iPhone and Android phone before the map is built). Zoom buttons, keyboard pan and a list of the points for WCAG 2.1 AA (NFR-25). Every upload is checked by its content and re-encoded to PNG by the Events service, PDFs with **Apache PDFBox**. See [ADR-007](adr/0007-venue-map-representation.md), accepted on 4 November 2026 |
 
 ## 13. Architecture Decision Records
 
@@ -333,7 +333,7 @@ Location and format: `Docs/Technical/adr/NNNN-title.md`, Michael Nygard format p
 | [ADR-004](adr/0004-service-communication.md) | Service communication: message broker, delivery guarantees, communication only through events | Accepted |
 | [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md) | AI triage provider and evaluation | Accepted architecture; evaluation/privacy gates pending |
 | [ADR-006](adr/0006-identity-and-access.md) | Identity and access control | Accepted |
-| [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Proposed; rewritten for the web app on 23 October 2026, waits for review |
+| [ADR-007](adr/0007-venue-map-representation.md) | Venue map representation | Accepted on 4 November 2026 (#44), after the review of its web version; phone spike and phone location still open |
 | [ADR-008](adr/0008-transport-data-source.md) | Transport data source | Accepted |
 | [ADR-009](adr/0009-architecture-documentation.md) | Architecture documentation (C4, 4+1, draw.io) | Accepted |
 | [ADR-010](adr/0010-cicd-strategy.md) | CI/CD strategy, including versioning (§10, guide H4–H8) | Accepted |
