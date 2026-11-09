@@ -2,6 +2,25 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-04 · ADR-007 reviewed and accepted (#44, Tiago Teixeira)
+
+**Why:** issue #44, which held the original investigation, was reopened for this review. ADR-007 had been *Proposed* since its rendering part was rewritten for the web app on 23 October 2026. Its review was the last open action of the meeting with the professor of 22 October 2026 (P9, guide F3). The review kept decisions 1 to 4 and found three gaps. NFR-25 asks for WCAG 2.1 AA on the venue map, but the ADR did not say how the map works without touch or a mouse. Finding 10 of the security assessment names ADR-007 as the place where upload hardening is decided, but the ADR did not decide it. And the ADR did not mention the API outline's rule for new map versions.
+
+### Changed
+- `adr/0007-venue-map-representation.md`: status **Accepted**. Additions:
+  - decision 5, accessibility: zoom buttons and keyboard pan, focusable markers with names, a list of the points next to the map, marking a location from that list, and browser zoom left on;
+  - upload hardening in decision 2 (security assessment T9, M-11): type read from the content, pixel limit before decoding, re-encoding to PNG, PDFBox limits and response headers;
+  - in decision 3, the API outline's decision for new map versions (D5);
+  - two consequences and one alternative (a map with no list);
+  - two open points: the image size against SC1, and the pixel limit, to be set with US-19.
+- `architecture.md` §12 and §13, `Docs/README.md` (deliverable 8), guide F3 and *Próximos passos*, `features.md` §8.4: ADR-007 accepted; the spike and the pixel limit stay open.
+- `security-and-privacy-assessment.md`: T9, M-11 and finding 10 marked as decided in ADR-007.
+- `Meetings/2026-10-22-professor-meeting.md`: Tiago's ADR-007 action ticked, with an update note.
+
+### Not changed
+- The Sprint A decks: the notes of slide 4 of the PL deck (slide 9 of the full deck) say that ADR-007 is still proposed, which was true when the decks were approved (#174). If the decks are presented after this change is merged, the presenter says that ADR-007 was accepted on 4 November 2026.
+- `Farol_Sprint_A_Documents.pdf`: the Sprint A deliverable as generated on 1 November 2026.
+
 ## [Unreleased] · 2026-11-01 · Open points of the Sprint A review closed (#175, Bruno Lopes)
 
 **Why:** the review of PR #172 left points that the documents alone could not close: the deck, the Porto Digital terms, two team decisions, the single PDF and the backlog. Each one is now done, decided, or has an issue.
