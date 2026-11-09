@@ -2,6 +2,18 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-09 · Footer lines removed from the Sprint A decks (#184, Tiago Teixeira)
+
+**Why:** the 11 pt line at the bottom of the slides repeated sources and side notes that the speaker says or that are in the linked documents, and made the slides busier.
+
+### Removed
+- `Farol_Sprint_A_TTP_Presentation.pptx`, slides 2–8: the footer line (pilot and out of scope, survey source and n, backlog changes, personas source, workflows, MoSCoW legend, release and cut line).
+- `Farol_Sprint_A_PL_Presentation.pptx`, slides 3–7, 9 and 10: the footer line (views and local delivery, ADRs, assumptions, cost basis, NFR categories, board, DoR/DoD agreement).
+
+### Not changed
+- Slide count, slide numbers, speaker notes and every other shape of both decks; the original `Farol_Sprint_A_Presentation.pptx`.
+- The asterisks on F11 and F17 (T/TP slide 7) stay; their legend is now said by the speaker.
+
 ## [Unreleased] · 2026-11-01 · Open points of the Sprint A review closed (#175, Bruno Lopes)
 
 **Why:** the review of PR #172 left points that the documents alone could not close: the deck, the Porto Digital terms, two team decisions, the single PDF and the backlog. Each one is now done, decided, or has an issue.
