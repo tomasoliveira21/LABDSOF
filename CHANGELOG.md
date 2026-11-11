@@ -10,6 +10,9 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `Farol_Sprint_A_PL_Presentation.pptx`, slide 3: the captions "via WireMock, called by Reports" under Ollama and "via WireMock, read by Transports / 30 s" under the Porto Digital API, "(ADR-001, 003)" from the microservices note and "; local copies (ADR-004)" from the events note.
 - Slide 4: "every 30 s" from ADR-008.
 
+### Changed
+- Slide 4: "Compose" is now "Docker Compose" in the Delivery card, and "polling" is now "Polling" in the Messaging card.
+
 ### Not changed
 - Slide count, speaker notes (those of slide 3 still mention WireMock) and the text of every other slide; the T/TP deck, the original `Farol_Sprint_A_Presentation.pptx` and `Farol_Sprint_A_Documents.pdf`.
 
