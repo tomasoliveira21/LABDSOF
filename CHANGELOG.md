@@ -2,6 +2,23 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-12 · Feature codes and assumption ID removed from the Sprint A T/TP deck (#186, Bruno Lopes)
+
+**Why:** the codes (W1–W8, F1–F20, A4) are internal references that the audience does not know, and made the slides busier.
+
+### Removed
+- `Farol_Sprint_A_TTP_Presentation.pptx`, slide 6: the workflow codes W1, W4, W5, W7 and W8.
+- Slide 7: the feature codes F1–F20 and the asterisks on *Entrance status* and *Weak-network mode*.
+- Slide 9: "(F11)" from the weak-network decision.
+
+### Changed
+- Slide 4: "Assistant chosen by 3 of 31" is now "Chatbot chosen by 3 of 31".
+- Slide 7: *Attendance Badges* capitalised; in Could, *Friends* now comes before *Weak-network mode*.
+- Slide 9: "validate A4, Miguel and Inês" is now "validate help channel and personas".
+
+### Not changed
+- Slide count and speaker notes (slide 7 still mentions the asterisk; slide 9 still says "pressuposto A4"); the PL deck.
+
 ## [Unreleased] · 2026-11-11 · Slides 3 and 4 of the Sprint A PL deck simplified (#186, António Guerra)
 
 **Why:** the architecture slide and the ADR list carried details that the speaker says or that are in the linked documents (WireMock, the 30 s polling interval, ADR numbers), and made the slides busier.
