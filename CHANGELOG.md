@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-12 · Assumption IDs and ADR references removed from the Sprint A PL deck (#186, Bruno Lopes)
+
+**Why:** as in the T/TP deck, the IDs (A2–A5, ADR-011) are internal references that the audience does not know.
+
+### Removed
+- `Farol_Sprint_A_PL_Presentation.pptx`, slide 5: the A2, A3 and A4 circles and "(A5)" after the venue maps. The text of the three assumption cards now starts at the left edge of the card.
+- Slide 6: "notional" before the Copilot cost and "(ADR-011)" after the professor's authorisation.
+
+### Changed
+- Slide 6: "≈" before the development (58,511 €) and maintenance (3,406 €) figures, as the total already had.
+- Speaker notes of slides 1, 5 and 6, for a 15-minute PL presentation. Slide 1 (~30 s): the PL topics instead of the T/TP ones (product, survey). Slide 5 (~90 s): "Primeiro / Segundo / Terceiro" instead of A2 / A3 / A4, with why each assumption matters and how it is checked ([`assumptions-and-dependencies.md`](Docs/Deliverables/assumptions-and-dependencies.md)). Slide 6 (~90 s): how the estimate was made and what local delivery leaves out ([`operating-cost-estimation.md`](Docs/Deliverables/operating-cost-estimation.md) §5); the six roles are only named as presented later (slide 8). The notes of the whole deck now add up to about 9 min 20 s.
+- Speaker notes of slide 4: "eleven are accepted; ADR-007 is still proposed" is now "all are accepted", since ADR-007 was accepted on 4 November 2026 (#183).
+
+### Not changed
+- Slide count, the other slides and their speaker notes.
+
 ## [Unreleased] · 2026-11-12 · Feature codes and assumption ID removed from the Sprint A T/TP deck (#186, Bruno Lopes)
 
 **Why:** the codes (W1–W8, F1–F20, A4) are internal references that the audience does not know, and made the slides busier.
