@@ -35,19 +35,20 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Not changed
 - Slide count and speaker notes (slide 7 still mentions the asterisk; slide 9 still says "pressuposto A4"); the PL deck.
 
-## [Unreleased] · 2026-11-11 · Slides 3 and 4 of the Sprint A PL deck simplified (#186, António Guerra)
+## [Unreleased] · 2026-11-11 · Slides 3, 4 and 8 of the Sprint A PL deck simplified (#186, António Guerra)
 
-**Why:** the architecture slide and the ADR list carried details that the speaker says or that are in the linked documents (WireMock, the 30 s polling interval, ADR numbers), and made the slides busier.
+**Why:** the architecture slide, the ADR list and the responsibilities slide carried details that the speaker says or that are in the linked documents (WireMock, the 30 s polling interval, ADR numbers, how roles are taken), and made the slides busier.
 
 ### Removed
 - `Farol_Sprint_A_PL_Presentation.pptx`, slide 3: the captions "via WireMock, called by Reports" under Ollama and "via WireMock, read by Transports / 30 s" under the Porto Digital API, "(ADR-001, 003)" from the microservices note and "; local copies (ADR-004)" from the events note.
 - Slide 4: "every 30 s" from ADR-008.
+- Slide 8: the line "Roles are taken per task, not per person; everyone codes and reviews".
 
 ### Changed
 - Slide 4: "Compose" is now "Docker Compose" in the Delivery card, and "polling" is now "Polling" in the Messaging card.
 
 ### Not changed
-- Slide count, speaker notes (those of slide 3 still mention WireMock) and the text of every other slide; the T/TP deck, the original `Farol_Sprint_A_Presentation.pptx` and `Farol_Sprint_A_Documents.pdf`.
+- Slide count, speaker notes (those of slide 3 still mention WireMock, and those of slide 8 still say that roles are taken per task) and the text of every other slide; the T/TP deck, the original `Farol_Sprint_A_Presentation.pptx` and `Farol_Sprint_A_Documents.pdf`.
 
 ## [Unreleased] · 2026-11-09 · Footer lines removed from the Sprint A decks (#184, Tiago Teixeira)
 
