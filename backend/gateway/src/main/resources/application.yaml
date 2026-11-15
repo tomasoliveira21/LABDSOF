@@ -1,0 +1,62 @@
+# ADR-013: the only public entry point. Route table only; JWT, CORS and rate limits come in #190.
+spring:
+  threads:
+    virtual:
+      enabled: true
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            # ADR-013 route table, most specific first. Anything else is a 404 at the gateway.
+            - id: badges
+              uri: ${FAROL_ROUTE_BADGES_URI:http://badges:8080}
+              predicates:
+                - Path=/api/v1/me/badges/**
+            - id: auth-users
+              uri: ${FAROL_ROUTE_AUTH_USERS_URI:http://auth-users:8080}
+              predicates:
+                - Path=/api/v1/me/**,/api/v1/accounts/**,/api/v1/events/*/members/**
+            - id: reports
+              uri: ${FAROL_ROUTE_REPORTS_URI:http://reports:8080}
+              predicates:
+                - Path=/api/v1/events/*/help-requests/**,/api/v1/events/*/reports/**,/api/v1/events/*/field-tasks/**,/api/v1/events/*/triage-status
+            - id: transports
+              uri: ${FAROL_ROUTE_TRANSPORTS_URI:http://transports:8080}
+              predicates:
+                - Path=/api/v1/events/*/transport-options/**,/api/v1/events/*/bus-observations/**,/api/v1/events/*/transport-source-status
+            - id: events
+              uri: ${FAROL_ROUTE_EVENTS_URI:http://events:8080}
+              predicates:
+                - Path=/api/v1/events/**
+            # Diagnostic: each service's GET /api/v1/status, outside the product API (#202).
+            - id: auth-users-status
+              uri: ${FAROL_ROUTE_AUTH_USERS_URI:http://auth-users:8080}
+              predicates:
+                - Path=/status/auth-users
+              filters:
+                - SetPath=/api/v1/status
+            - id: events-status
+              uri: ${FAROL_ROUTE_EVENTS_URI:http://events:8080}
+              predicates:
+                - Path=/status/events
+              filters:
+                - SetPath=/api/v1/status
+            - id: reports-status
+              uri: ${FAROL_ROUTE_REPORTS_URI:http://reports:8080}
+              predicates:
+                - Path=/status/reports
+              filters:
+                - SetPath=/api/v1/status
+            - id: transports-status
+              uri: ${FAROL_ROUTE_TRANSPORTS_URI:http://transports:8080}
+              predicates:
+                - Path=/status/transports
+              filters:
+                - SetPath=/api/v1/status
+            - id: badges-status
+              uri: ${FAROL_ROUTE_BADGES_URI:http://badges:8080}
+              predicates:
+                - Path=/status/badges
+              filters:
+                - SetPath=/api/v1/status

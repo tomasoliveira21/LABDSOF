@@ -11,3 +11,7 @@ __pycache__/
 .idea/
 *.iml
 .DS_Store
+
+# Web app
+node_modules/
+dist/
