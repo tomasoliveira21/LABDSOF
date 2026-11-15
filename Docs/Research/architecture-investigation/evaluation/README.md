@@ -1,5 +1,7 @@
 # Triage evaluation package
 
+> **Design changed on 15 November 2026** ([meeting record](../../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decisions 1, 2 and 8): the participant no longer chooses a category and writes a required short description; the AI suggests only the **category and the priority** from that description; the team is no longer an AI output but follows from the suggested category by rule; `Theft` is replaced by `Infrastructure`. This research snapshot of 22 October 2026 is kept as it was; the dataset, schema, prompt, scorer and baseline are updated in #197. Where they differ, [ADR-005](../../../Technical/adr/0005-ai-triage-provider-and-evaluation.md) and the [local AI decisions](../../../Technical/plans/ai-provider-evaluation.md) win.
+
 **#53 · 22 October 2026 · research tooling only.** Every case is synthetic, authored in this investigation; none came from a real incident, user account or clinical dataset. Labels are unreviewed operational proposals. No model was called.
 
 **Role-model compatibility:** Medical/Security/PCR are fixture team names for this synthetic evaluation only. Current events create their own teams and assign permissions/categories (`features.md` §4). A production integration must accept the current event's eligible teams and reject cross-event or unauthorised choices. This frozen scorer is not that production contract and must not replace it. Add a separate multi-event routing evaluation before implementation acceptance.

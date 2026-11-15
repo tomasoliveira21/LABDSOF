@@ -1,5 +1,7 @@
 # Responsible AI Opportunity Assessment and provider investigation
 
+> **Design changed on 15 November 2026** ([meeting record](../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decisions 1, 2 and 8): the participant no longer chooses a category and writes a required short description; the AI suggests only the **category and the priority** from that description; the team is no longer an AI output but follows from the suggested category by rule; `Theft` is replaced by `Infrastructure`. This research snapshot of 22 October 2026 is kept as it was; the dataset, schema, prompt, scorer and baseline are updated in #197. Where they differ, [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md) and the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md) win.
+
 > **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md), [NFR-11 and NFR-20](../../Product/non-functional-requirements.md#2-requirements). Where this document differs, they win: for example, local Ollama with `qwen3:4b`, one 20 s attempt and no hosted fallback.
 
 **22 October 2026 · #53 · K1–K2 / AI-1–AI-11 · PROPOSED.** Research artefacts for the academic MVP; no clinical validation, production deployment or measured model performance.

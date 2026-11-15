@@ -15,7 +15,7 @@ public record DemoHelpRequest(
     Instant submittedAt,
     boolean demo) {
 
-  public enum Category { Health, Safety, LostPerson, Theft, Other }
+  public enum Category { Health, Safety, LostPerson, Infrastructure, Other }
 
   public record Triage(String state) {}
 }

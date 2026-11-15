@@ -2,7 +2,7 @@
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §7.1.2 (deliverables 4 *MVP definition* and 5 *Product Backlog*)
 > **Product name:** **Farol** (decided 9 October 2026).
-> **Status:** feature list and MoSCoW revised on **9 October 2026** on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: report types and expiry (§6.1) and the AI priority scale (AI-3, §5.2); the AI provider was decided on 27 October 2026 (guide K1; ADR-005 accepted on 31 October). **[PROPOSED] 10 October 2026:** a platform admin (persona P4) creates events and names their first admin (F3, F4), to confirm with the team. **16 October 2026:** user stories (§7) checked against the DoR; issues created on 22 October 2026 (#58 to #121, §8.3); sprint goals and initial release plan (§8) **[PROPOSED]**, to confirm with the team. **22 October 2026:** new role model, `FarolAdmin` (global), `EventAdmin` and `RegularUser` (per event), with teams and permissions defined by each event's admins (§4), replacing the fixed roles and teams of 9 October; stories split into smaller ones and renumbered US-01 to US-62 (§7.1). To confirm with the team.
+> **Status:** feature list and MoSCoW revised on **9 October 2026** on top of the team meeting of 8 October ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)). Decided: login is mandatory, response teams, degraded-mode scenarios, external integration, badge tiers, attendance check-in. Still open: report types and expiry (§6.1); the AI provider was decided on 27 October 2026 (guide K1; ADR-005 accepted on 31 October). **[PROPOSED] 10 October 2026:** a platform admin (persona P4) creates events and names their first admin (F3, F4), to confirm with the team. **16 October 2026:** user stories (§7) checked against the DoR; issues created on 22 October 2026 (#58 to #121, §8.3); sprint goals and initial release plan (§8) **[PROPOSED]**, to confirm with the team. **22 October 2026:** new role model, `FarolAdmin` (global), `EventAdmin` and `RegularUser` (per event), with teams and permissions defined by each event's admins (§4), replacing the fixed roles and teams of 9 October; stories split into smaller ones and renumbered US-01 to US-62 (§7.1). To confirm with the team. **15 November 2026** ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md)): the role model (§4), the platform admin and the sprint goals and release plan (§8) are confirmed, with a Sprint B cut line; the AI triage is revised (the participant writes a description, the AI suggests category and priority, §5.1) with the priority scale (§5.3); `Theft` is replaced by `Infrastructure` in the help categories (§4.2).
 > **Sources:** [`problem-opportunity-report-queima.md`](../Deliverables/problem-opportunity-report-queima.md) (*MVP definition*, §5 risks) · [`market-and-competitor-analysis-product-specific.md`](../Deliverables/market-and-competitor-analysis-product-specific.md) (§1, §2) · assignment PDF (§5.5, §5.6, §6).
 > Legend: see [`product-vision.md`](product-vision.md#legend).
 
@@ -27,9 +27,9 @@ MoSCoW revised on 9 October 2026. The MVP still follows the report's scope mitig
 | F3 | Event management | C1 | Must | 3 | P4, P3 | Create, edit, publish and close events. Every other feature is scoped by event; isolation between events is a top technical risk (report §5). The `FarolAdmin` (P4) creates an event, for a verified organisation, and names its first `EventAdmin`; the EventAdmins edit, publish and close it (§4) |
 | F4 | Event roles, teams and permissions | C1 | Must | 4 | P3, P4 | **22 Oct:** roles per event, `EventAdmin` and `RegularUser`, plus the global `FarolAdmin`, who never sees an event's help requests, reports or participants. EventAdmins create the event's teams (e.g. *Security*, *Nursing*), set each team's permissions and add RegularUsers to them (§4) |
 | F5 | Venue map with points of interest | C3 | Must | 5 | P1, P3 | Map uploaded as an image or PDF; points placed on it (entrances, stages, WC, first aid, transport stops) |
-| F6 | Help request | C6 | Must | 6 | P1 | Category and location: the participant marks the place on the map; from Sprint C the app first asks for the phone's location, with the map as the fallback (survey, 30 October 2026; phased on 1 November 2026, #175). Location shared only with the request |
+| F6 | Help request | C6 | Must | 6 | P1 | Short description and location (no category to choose since 15 November 2026: the AI suggests it, F8): the participant marks the place on the map; from Sprint C the app first asks for the phone's location, with the map as the fallback (survey, 30 October 2026; phased on 1 November 2026, #175). Location shared only with the request |
 | F7 | Incident backoffice | C7 | Must | 7 | P2, P5 | Receive, prioritise, route to a team and close help requests; live list and map; full status history. Members of a team with the *respond* permission get what is routed to their team on the phone and update its status (§4.3) |
-| F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Suggests category, priority and team (one of the event's teams that handles the category, §4.2); the operator decides. Kept separate from F7 on purpose (see note below). See §5 |
+| F8 | AI help-request triage, with non-AI fallback | C9 | Must (assignment §5.6) | 8 | P2 | Reads the participant's description and suggests the category and the priority; the default team follows from the category (§4.2), not from the AI; the operator decides (meeting of 15 November 2026). Kept separate from F7 on purpose (see note below). See §5 |
 | F9 | Transport information with external integration | C5 | Must (assignment §6.5) | 9 | P1, P3 | **Porto Digital urban platform** (FIWARE NGSI v2): live positions of the city buses (§3), plus event shuttles and temporary stops entered by the team |
 | F10 | Live announcements, with last-update time | C4 | Must | 10 | P1, P3 | |
 | F11 | Weak-network mode: cached map and information, "data from HH:MM" | C10 | Could | — | P1 | Not one of the §6.8 degraded-mode scenarios (§3.1). Moved from Must to Could on 9 October 2026. **Reopened on 30 October 2026:** candidate for Should at the next planning, since battery and weak network are top barriers in the student survey |
@@ -71,10 +71,10 @@ Two scenarios, no more. Both are demoed by breaking one dependency while the res
 |---|---|
 | **Dependency** | AI model provider used by the triage worker (F8) |
 | **Detected when** | No valid suggestion within **30 s** of submission (SC3), because of a timeout (response 20 s, one attempt: the local profile, NFR-11), a provider error, an invalid or incomplete answer (unknown category, missing field), or the provider being marked down after repeated failures (circuit breaker: at least half of the last 10 calls failed or were slow, minimum 4 calls). Values: [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1) |
-| **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with the participant's category, the label **"Not triaged"**, in order of arrival. While the provider is down (circuit breaker open), a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
-| **What the operator does** | Sets the priority and team by hand. Nothing else changes in F7 |
+| **What the operator sees** | The request appears in the backoffice **at once** (it never waits for the AI), with its description, no category and no priority, the label **"Not triaged"**, in order of arrival. While the provider is down (circuit breaker open), a banner says *"AI triage unavailable: requests are shown by order of arrival"* |
+| **What the operator does** | Reads the description and sets the category, priority and team by hand. Nothing else changes in F7 |
 | **What the participant sees** | Nothing different. Their request is sent and tracked as usual |
-| **When the AI comes back** | The banner disappears after the first successful call, and new requests are triaged again. Requests already shown as "Not triaged" stay for manual triage: a request is never sent to the AI again once its 30 s deadline has passed, and a late result is discarded ([AI runtime contract](../Technical/plans/ai-provider-evaluation.md#runtime-and-resilience-contract), [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md) decision 3). A suggestion **never overwrites** an operator's decision and **never lowers** a priority (NFR-22) |
+| **When the AI comes back** | The banner disappears after the first successful call, and new requests are triaged again. Requests already shown as "Not triaged" stay for manual triage: a request is never sent to the AI again once its 30 s deadline has passed, and a late result is discarded ([AI runtime contract](../Technical/plans/ai-provider-evaluation.md#runtime-and-resilience-contract), [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md) decision 3). A suggestion **never overwrites** an operator's decision (NFR-22) |
 | **Recorded** | Every fallback is logged with the reason (timeout, error, invalid output) and the correlation id, and counted as a metric (`farol.triage.fallback`); the circuit breaker state is on the dashboard ([ADR-012](../Technical/adr/0012-observability.md)) |
 | **How it is demoed** | On the local machine (local-only delivery, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)), the triage worker points at **WireMock** (the simulator of guide J4), which normally passes requests to the real AI provider. The presenter makes it drop the connection (or answer late, or return invalid output) and a participant submits help requests from the web app's phone pages; the services carry no fault-injection code. Step-by-step script: [`architecture.md` §9.3](../Technical/architecture.md#93-demo-script-d1-and-d2-about-5-minutes) |
 | **Test** | US-36 (SC5): 100 % of requests are shown to the operator with the AI off. Reports integration test on every PR, with WireMock in place of the provider (delay over the timeout, 503, dropped connection, invalid body); also under load in Sprint C (scenario L5) |
@@ -94,7 +94,7 @@ Two scenarios, no more. Both are demoed by breaking one dependency while the res
 
 ## 4. Roles, teams and permissions (22 October 2026)
 
-Defined on 22 October 2026, to confirm with the team. It **replaces** the fixed event roles (`Owner`, `Admin`, `Operator`, `Responder`) and the four fixed response teams decided on 9 October 2026: each event now creates its own teams and decides what each one may do. The personas do not change: P2 (operator) and P5 (responder) are now **jobs**, given by the permissions of the team a user belongs to, not roles.
+Defined on 22 October 2026 and **confirmed by the team on 15 November 2026** ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), #178). It **replaces** the fixed event roles (`Owner`, `Admin`, `Operator`, `Responder`) and the four fixed response teams decided on 9 October 2026: each event now creates its own teams and decides what each one may do. The personas do not change: P2 (operator) and P5 (responder) are now **jobs**, given by the permissions of the team a user belongs to, not roles.
 
 ### 4.1 Roles
 
@@ -123,7 +123,7 @@ An EventAdmin creates the teams of their event (e.g. *Security*, *Nursing*, *PCR
 | `Transport.Edit` | Add and change event shuttles and temporary stops | P3 |
 | `Entrances.Update` | Update the status of each entrance | P2, P5 |
 
-- Each team also has the **help categories it handles** (`Health`, `Safety`, `LostPerson`, `Theft`, `Other`). They give the default team when a request is routed, and the teams the AI may suggest (F8).
+- Each team also has the **help categories it handles** (`Health`, `Safety`, `LostPerson`, `Infrastructure`, `Other`; `Theft` removed and `Infrastructure` added on 15 November 2026: a theft is a `Safety` case, and `Infrastructure` is something broken or damaged on the site that needs a team now). The category the AI suggests (F8) gives the default team when a request is routed.
 - A user can be in **several teams** of the same event and gets the permissions of all of them.
 - A change to a team's permissions or members applies at the member's **next action** and is recorded with who made it and when.
 - An EventAdmin has every permission in their event without being in a team.
@@ -151,9 +151,9 @@ A suggested starting point for the pilot event. The EventAdmin creates it by han
 |---|---|---|---|
 | **Control room** | `HelpRequests.Triage`, `Reports.Review`, `Announcements.Publish`, `Entrances.Update` | — | All |
 | **Nursing** (medical) | `HelpRequests.Respond` | `Health` | — |
-| **Security** | `HelpRequests.Respond`, `Reports.Respond`, `Entrances.Update` | `Safety`, `Theft` | — |
+| **Security** | `HelpRequests.Respond`, `Reports.Respond`, `Entrances.Update` | `Safety` | — |
 | **PCR** (risk-prevention committee) | `HelpRequests.Respond`, `Reports.Respond` | `LostPerson`, `Other` | — |
-| **Logistics** | `Reports.Respond`, `Transport.Edit` | — | — |
+| **Logistics** | `HelpRequests.Respond`, `Reports.Respond`, `Transport.Edit` | `Infrastructure` | — |
 
 The help categories still need to be checked against the interview with the security volunteer (DM-4).
 
@@ -165,14 +165,16 @@ The help categories still need to be checked against the interview with the secu
 
 | | Help-request triage |
 |---|---|
-| What the AI does | Reads the participant's category and optional text, then suggests a **category, a priority and the team** (one of the event's teams that handles the category, §4.2). The operator accepts or changes the suggestion |
-| User need | Requests arrive without category or priority (root cause 4); assumption A4 |
-| Non-AI fallback | Scenario D1 (§3.1): participant's category, order of arrival, "Not triaged" |
-| Human control | The AI only suggests. It never lowers a priority, and it never overwrites an operator's decision (NFR-22) |
+| What the AI does | Reads **only the participant's short description** and suggests a **category** and a **priority**, each from a fixed set (§4.2, §5.3), with a short reason. The default team is the event's team that handles the suggested category (§4.2): a rule, not a model output. The operator accepts or changes the suggestion |
+| User need | Requests arrive without category or priority (root cause 4); assumption A4. The participant only describes what happens, so the AI does the work that is slow for the control room: telling what is urgent |
+| Non-AI fallback | Scenario D1 (§3.1): the description, no category and no priority, order of arrival, "Not triaged"; the operator sets both by hand |
+| Human control | The AI only suggests. It never overwrites a member's decision (NFR-22) |
 | Speed target | Suggestion within **30 s** of submission (SC3) |
 | Market | Raven Controls does this for professional control rooms (annex C9); nobody does it for academic events |
 
-### 5.2 Still to define
+**Revised on 15 November 2026** (professor feedback on the Sprint A T/TP presentation: use the AI where it is really useful; [record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decision 1). The participant no longer chooses a category; the AI suggests the category and the priority, and no longer the team. This replaces the design of 8 October 2026, where the participant chose the category and the AI also suggested the team. The evaluation package (dataset, schema, scorer, baseline) follows in #197.
+
+### 5.2 Review checklist
 
 **Research available (22 October 2026, #53):** [Responsible AI assessment](../Research/architecture-investigation/responsible-ai.md) proposes answers to AI-1–AI-11, with an [evaluation package](../Research/architecture-investigation/evaluation/README.md) and [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted as architecture on 31 October 2026 (#166). Still pending: the team review of the labels, provider/privacy review and measured model/SC3/SC5 evidence (guide K1, K2). The original questions below remain the review checklist.
 
@@ -180,17 +182,28 @@ This is the list the team works through before the AI work starts. Status: guide
 
 | # | Item | Open question | Needed for |
 |---|---|---|---|
-| AI-1 | **Input** | Exactly which fields go to the model: category, free text, map zone, time of night? Is the location sent, or only the zone? | Privacy, prompt design |
-| AI-2 | **Output format** | A fixed JSON schema: category (fixed list), priority (`Low`/`Medium`/`High`/`Critical`), team (one of the event's teams, §4.2), a short reason for the operator. What happens with an answer outside the schema (→ D1) | Validation, UI |
-| AI-3 | **Priority scale** | What each level means, with examples, so people and the AI apply the same rule. What is the "default priority" of each category, so that "never lowers a priority" is measurable | Evaluation, NFR-22 |
+| AI-1 | **Input** | Exactly which fields go to the model: category, free text, map zone, time of night? Is the location sent, or only the zone? **15 November 2026:** only the description (1 to 500 characters); no location, no identifiers | Privacy, prompt design |
+| AI-2 | **Output format** | A fixed JSON schema: category (fixed list), priority (`Low`/`Medium`/`High`/`Critical`), team (one of the event's teams, §4.2), a short reason for the operator. What happens with an answer outside the schema (→ D1). **15 November 2026:** category (§4.2) and priority (§5.3) with a short reason; no team | Validation, UI |
+| AI-3 | **Priority scale** | What each level means, with examples, so people and the AI apply the same rule. What is the "default priority" of each category, so that "never lowers a priority" is measurable. **Decided 15 November 2026:** §5.3; no default priority per category | Evaluation, NFR-22 |
 | AI-4 | **Model and provider** | Which provider and model; hosted API or local model; cost per request; what happens to the text sent (data retention by the provider, GDPR) | Cost, privacy, ADR |
 | AI-5 | **Prompt design** | System prompt, few-shot examples, European Portuguese informal language, how the participant's text is isolated from the instructions | Quality, prompt injection |
 | AI-6 | **Evaluation dataset** | Size (proposal: ≥ 100 cases), who writes and labels it, share of difficult cases (typos, slang, mixed languages, empty text, prompt injection, two problems in one request), how origin, scope and limits are documented (§5.6.1) | Evaluation |
-| AI-7 | **Acceptance criteria** | Confirm SC4: 0 urgent cases under-prioritised, category accuracy ≥ 80 %; add response-team accuracy? Compared with the non-AI baseline (participant's category only) | Go / no-go |
+| AI-7 | **Acceptance criteria** | Confirm SC4: 0 urgent cases under-prioritised, category accuracy ≥ 80 %; add response-team accuracy? Compared with the non-AI baseline (participant's category only). **15 November 2026:** priority first (0 urgent cases under-prioritised), then category accuracy; no team accuracy, the team is a rule. The baseline is redefined in #197, since there is no participant category any more | Go / no-go |
 | AI-8 | **What the operator sees** | Is the suggestion shown with a reason or a confidence? How is it marked as a suggestion, not a fact (§5.6.2)? One click to accept? | UI, trust |
 | AI-9 | **Monitoring** | Metrics: latency p95, fallback rate, % of suggestions accepted or changed by operators, cost per night | Observability (§6.7) |
 | AI-10 | **Safety and trust** | How each item of §5.6.3 is handled: inaccurate output, prompt injection, disclosure, harmful content, bias (e.g. by language), user correction, human approval | Responsible AI assessment |
 | AI-11 | **Responsible AI Opportunity Assessment** | The Sprint 1 document itself (deliverable 6): proposed workflow, expected value, risks, evaluation approach, fallback | Sprint 1 deliverable |
+
+### 5.3 Priority scale (AI-3)
+
+Decided on 15 November 2026 ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decision 2). People and the AI apply the same scale. There is no default priority per category: the participant chooses no category.
+
+| Level | Meaning | Examples |
+|---|---|---|
+| **Critical** | A life or someone's physical safety is at risk now; a team goes at once | Someone unconscious or needing emergency medical help; a fight with injuries; a structure about to fall on people; an exposed live cable where people walk |
+| **High** | Someone is hurt or at risk and needs a team within minutes, but no life is in danger | A lost child; a person very drunk and alone; a cut that keeps bleeding; harassment happening now; a fallen barrier next to the crowd |
+| **Medium** | Needs a team, but nobody is in danger | A lost adult friend; a small wound; someone unwell but conscious and accompanied; a stolen phone; a broken toilet door |
+| **Low** | An inconvenience that can wait | A spilled drink on the floor; a light out away from the paths; a question for the staff |
 
 ## 6. Ethical engagement mechanism: community reports and badges
 
@@ -476,10 +489,10 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 ### F6 · Help request
 
-**US-23** · As a **participant**, I want to ask for help by choosing a category and sharing where I am, so that the team can reach me.
+**US-23** · As a **participant**, I want to ask for help by describing briefly what is happening and sharing where I am, so that the team can reach me.
 *Persona:* P1 · *Depends on:* US-14, US-21
-- Given I choose a category, when I ask for help, then I mark where I am on the map, and when I submit I see a confirmation.
-- From Sprint C (survey decision 4, phased on 1 November 2026, #175): given I choose a category, when I ask for help, then the app first asks for permission to use the phone's location; if I allow it, the request carries it; if I refuse or it is not available, I mark where I am on the map.
+- Given I write a short description (1 to 500 characters; an empty one is refused) and mark where I am on the map, when I submit, then I see a confirmation. I do not choose a category: the AI suggests it (US-34; decided on 15 November 2026, [record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md)).
+- From Sprint C (survey decision 4, phased on 1 November 2026, #175): given I ask for help, then the app first asks for permission to use the phone's location; if I allow it, the request carries it; if I refuse or it is not available, I mark where I am on the map.
 - Given I submitted a request, then my location is visible only to members with `HelpRequests.Triage`, to EventAdmins and to the team it is routed to.
 - Given I have sent 5 help requests in the last 10 minutes, when I submit another, then it is refused with a message saying when I can ask again, and the first-aid points are shown on the map (ADR-013, L-2: answer 429 with `Retry-After`).
 
@@ -504,9 +517,9 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 *Persona:* P2 · *Depends on:* US-26
 - Given a request has a location, then it is shown at that point on the venue map, with its category and priority.
 
-**US-28** · As a **control-room member**, I want to set a request's priority and status, with every change recorded, so that everyone knows how urgent it is and what happened.
+**US-28** · As a **control-room member**, I want to set a request's category, priority and status, with every change recorded, so that everyone knows how urgent it is and what happened.
 *Persona:* P2 · *Depends on:* US-26
-- Given I change the priority or status of a request, then the change is recorded with my name, the time, and the old and new values (SC9).
+- Given I change the category, priority or status of a request, then the change is recorded with my name, the time, and the old and new values (SC9).
 - Given I open a request, then I see its full change history.
 
 **US-29** · As a **control-room member**, I want to route a request to a team, so that the right people deal with it.
@@ -535,20 +548,20 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 
 ### F8 · AI help-request triage
 
-**US-34** · As a **control-room member**, I want each new help request to arrive with a suggested category, priority and team, so that I can route it faster.
-*Persona:* P2 · *Depends on:* US-17, US-26; AI provider and model (guide K1); input, output schema and priority scale (§5.2 AI-1 to AI-3) · *AI fallback:* US-36 (scenario D1)
+**US-34** · As a **control-room member**, I want each new help request to arrive with a suggested category and priority, so that I see at once what is urgent and route it faster.
+*Persona:* P2 · *Depends on:* US-17, US-26; AI provider and model (guide K1); input and output schema (§5.2 AI-1, AI-2) and priority scale (§5.3) · *AI fallback:* US-36 (scenario D1)
 - Given a help request is submitted and the AI is available, then a suggestion is shown within 30 s, marked as a suggestion (SC3).
-- Given the event's teams and their help categories (US-17), then the AI only suggests a team of this event.
-- Given the AI suggests a priority lower than the category's default, then the default priority is kept (NFR-22; the per-category floor of the [local AI plan](../Technical/plans/ai-provider-evaluation.md)).
+- Given the AI suggests a category, then the event's team that handles it (US-17) is proposed as the default team; the AI does not choose the team.
+- Given a help request, then only its description is sent to the AI, with no location and no identifiers (§5.2 AI-1).
 
 **US-35** · As a **control-room member**, I want to accept or change the AI suggestion, so that I stay in control of the decision.
 *Persona:* P2 · *Depends on:* US-34 · *AI fallback:* US-36
 - Given I accept the suggestion, then its values become the request's values and the change is recorded as mine.
-- Given I already set a priority, when a suggestion arrives, then my priority is not changed.
+- Given I already set a category or priority, when a suggestion arrives, then my values are not changed (NFR-22).
 
 **US-36** · As a **control-room member**, I want requests to keep arriving when the AI is down, so that no one is left without help (scenario D1).
 *Persona:* P2 · *Depends on:* US-34 · *AI fallback:* this story is the fallback
-- Given the AI does not answer within 30 s, or answers with invalid data, then the request is shown with the participant's category, marked "Not triaged", in order of arrival (SC5).
+- Given the AI does not answer within 30 s, or answers with invalid data, then the request is shown with its description, no category and no priority, marked "Not triaged", in order of arrival, and I set them by hand (SC5).
 - Given the AI provider is down, then the backoffice shows a banner saying triage is unavailable.
 - Given a fallback happens, then it is logged with its reason (timeout, error or invalid output) and counted in the fallback-rate metric.
 
@@ -572,9 +585,9 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 - Given the source answers with valid data, when the import runs, then the data is stored with the time of the import.
 - Given the source answers with invalid or incomplete data, when the import runs, then the import is rejected as a whole and the previous data stays in use.
 
-**US-41** · As a **participant**, I want to see the next regular buses (STCP) home from the venue, so that I don't walk home or drive.
+**US-41** · As a **participant**, I want to see the city buses on the routes that serve the venue, so that I don't walk home or drive.
 *Persona:* P1 · *Depends on:* US-12, US-40
-- Given the external transport source was imported, then I see the next buses at the stops near the venue, with the time of the data.
+- Given the external transport source was imported, then I see the buses now on the event's routes near the venue, with the time of their last position. The source gives live positions, not timetables ([ADR-008](../Technical/adr/0008-transport-data-source.md); API outline O6, decided on 15 November 2026).
 
 **US-42** · As a **participant**, I want to know when the transport information may be out of date, so that I don't rely on it blindly (scenario D2).
 *Persona:* P1 · *Depends on:* US-39, US-41; resilience values (guide J1, #43)
@@ -693,9 +706,9 @@ README §1 allows four issue types. Rule used in §8.3, from the split between p
 *Persona:* P1 · *Depends on:* US-61
 - Given I remove a friend, then we no longer appear in each other's list.
 
-## 8. Sprint goals and initial release plan **[PROPOSED]**
+## 8. Sprint goals and initial release plan
 
-Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 and updated on 22 October 2026 with the smaller stories, to confirm with the team at the next planning meeting. Order follows the MoSCoW priority in §2 and the dependencies in §7; the rank is not the build order (§8.5). The reasons are in §8.5.
+Assignment §7.1.2, item 5, and §7.2–§7.3. Proposed on 16 October 2026 and updated on 22 October 2026 with the smaller stories; **confirmed by the team on 15 November 2026**, with the Sprint B cut line of §8.2 ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decision 11). Order follows the MoSCoW priority in §2 and the dependencies in §7; the rank is not the build order (§8.5). The reasons are in §8.5.
 
 ### 8.1 Sprint goals
 
@@ -714,6 +727,8 @@ Every merge to `main` is built and tested (guide H4). Delivery is local: a *rele
 | **R1 · Vertical slice** | Sprint B review (6 Dec 2026) | 27 stories: US-01, 02, 06, 11, 12, 14, 16, 17, 18, 19, 20, 21, 23, 24, 26 to 36, 40, 41. The help-request journey end to end (W2 + W3), with teams and permissions, AI triage, scenario D1 and the first external integration | §7.2.2 items 1–13 |
 | **R2 · MVP** | Sprint C review (3 Jan 2027) | Every remaining Must (28 stories): US-03, 04, 05, 07, 08, 09, 10, 13, 15, 22, 25, 37, 38, 39, 42, 43, 44, 45, 47 to 56. Should US-58, US-57, US-59 and US-60 if there is time; then Could US-46, US-61 and US-62 (milestone *Sprint C* since 1 November 2026, #175) | §7.3.2 items 1–2, 8 |
 | **Later** (product roadmap) | After the course | Whatever Sprint C cuts. Won't: F19, F20 | §7.3.2 item 13 |
+
+**Cut line for Sprint B** (decided on 15 November 2026). If Sprint B runs short, drop in this order: US-27; then US-20; then US-24; then the history of US-28 (setting category, priority and status stays); then US-30. The dropped stories move to Sprint C.
 
 **Cut line for Sprint C.** If Sprint C runs short, drop in this order: US-46, US-61 and US-62; then US-57 and US-58; then US-59 and US-60; then US-52 and US-53; then US-22; then US-08, US-09, US-10 and US-45 (reasons in §8.5).
 
@@ -801,17 +816,19 @@ Result of the rules on 24 October 2026: **P0** 28, **P1** 28, **P2** 7; **XS** 1
 
 ### 8.4 What still blocks *Ready*
 
-These dependencies were open on 22 October 2026; the struck-through ones were closed by 31 October 2026, with the source. A story that needs one stays in *Backlog*, not *Ready*, until it is closed. All are expected before Sprint B starts on 2 November.
+These dependencies were open on 22 October 2026; the struck-through ones are closed, with the date and the source. A story that needs one stays in *Backlog*, not *Ready*, until it is closed. All are expected before Sprint B starts on 2 November.
 
 | Open dependency | Blocks |
 |---|---|
 | ~~Walking skeleton (R0, #58), in Sprint A; needs the deployment platform (guide G1, #53)~~ Closed on 31 October 2026: local delivery (guide G1, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md)); R0 merged in #167 and #58 closed | ~~Every story (first to be built)~~ |
 | ~~Identity provider (guide E1)~~ Closed on 22 October 2026: Keycloak ([ADR-006](../Technical/adr/0006-identity-and-access.md)) | ~~US-01, US-03~~ |
-| Role, team and permission model (§4): team confirmation, then the domain model. ~~Where permissions are checked (guide E2)~~ closed on 22 October 2026: in each service's use cases, against local copies ([ADR-006](../Technical/adr/0006-identity-and-access.md)). Replaces personas PE-5 and PE-6 | US-06, US-14, US-15, US-16 |
+| ~~Role, team and permission model (§4): team confirmation, then the domain model.~~ Confirmed on 15 November 2026 ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), #178). ~~Where permissions are checked (guide E2)~~ closed on 22 October 2026: in each service's use cases, against local copies ([ADR-006](../Technical/adr/0006-identity-and-access.md)). Replaces personas PE-5 and PE-6 | ~~US-06, US-14, US-15, US-16~~ |
 | ~~Venue map library (guide F3, ADR-007, #44)~~ Closed on 4 November 2026: [ADR-007](../Technical/adr/0007-venue-map-representation.md) accepted (#44). Still open: the spike on real phones (ADR-007 decision 4) and the pixel limit for uploads (ADR-007 decision 2) | ~~US-19~~ The pixel limit is set with US-19; the spike comes before US-21 and US-22 |
-| ~~AI provider and model (guide K1); AI-1, AI-2~~ closed: Ollama with `qwen3:4b` ([ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted on 31 October 2026). Still open: AI-3, the priority scale ([API outline](../Technical/api-outline.md) O7) | US-34 |
+| ~~AI provider and model (guide K1); AI-1, AI-2~~ closed: Ollama with `qwen3:4b` ([ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md), accepted on 31 October 2026). ~~AI-3, the priority scale ([API outline](../Technical/api-outline.md) O7)~~ closed on 15 November 2026 (§5.3) | ~~US-34~~ |
 | ~~Resilience values (guide J1, #43)~~ Closed on 25 October 2026 (guide J1, #43, PR #52; [`architecture.md` §9.1](../Technical/architecture.md#91-resilience-patterns-and-values-j1)) | ~~US-42, US-43~~ |
 | Report types and expiry times (§6.1): team decision | US-47 |
+| Help-request lifecycle (#177): one status set. Decided on 15 November 2026 ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decision 6); applied to the API outline §4.1 and §7, `architecture.md` §6, ADR-004 and W3 in #188 (#177) | US-24, US-26, US-28 |
+| Since 15 November 2026 the DoR asks a story with front-end pages for **mockups** of them (#199, #200) and for the **states** of the entities it shows (#198) ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decisions 3 and 4) | Every Sprint B story with pages: US-06, US-11, US-12, US-16 to US-19, US-21, US-23, US-24, US-26, US-29, US-31 to US-36 |
 | ~~Account deletion (guide D7)~~ Closed on 27 October 2026 (guide D7, #135; [ADR-006](../Technical/adr/0006-identity-and-access.md#changes-for-the-api-outline-and-d7)) | ~~US-05~~ |
 
 Stories that depend on a blocked story wait for it too (see each story's *Depends on*).
@@ -834,7 +851,7 @@ The goal also covers every Sprint B deliverable of §7.2.2:
 | 2 · Authentication and authorisation | US-01, US-02, US-14, US-16 to US-18 |
 | 3 · Persistent data storage | Every story (PostgreSQL, one database per service, guide D1–D2) |
 | 4 · Documented API contracts | OpenAPI written first for each story (contract-first, guide C7) |
-| 5 · At least two backend components | Auth & Users, Events, Reports and Transports (guide A2) |
+| 5 · At least two backend components | Auth & Users, Events, Reports and Transports (guide A2); Badges deployed with its own database but no Sprint B story (decided on 15 November 2026) |
 | 6 · One asynchronous workflow | Help request shown in the backoffice at once; AI triage adds a suggestion in the background (US-23, US-34; §3, row §6.3) |
 | 7 · Initial external-system integration | US-40, US-41 |
 | 8 · First version of the AI capability | US-34, US-35 |
@@ -857,7 +874,7 @@ Every Sprint B story is a step of the journey or something it needs first:
 - **External integration:** US-40, US-41 (deliverable 7).
 - **Isolation:** US-14, a top technical risk and SC8.
 
-Nothing in Sprint B is there for convenience, so Sprint B has no cut line.
+Nothing in Sprint B is there for convenience, so Sprint B had no cut line. **15 November 2026:** with three weeks left and no product code merged since R0, the team set one (§8.2), keeping the help-request journey and dropping first what the journey can do without.
 
 **Capacity:** 27 stories in 5 weeks (the walking skeleton is done in Sprint A), for 4 people: about 7 stories per person, under 1.5 per person per week. After the split each story is one action and one PR of one to three days. The largest are US-17 (permission checks), US-21 and US-23 (first use of the map), US-26 (first use of polling) and US-34 (AI).
 
@@ -866,7 +883,7 @@ Nothing in Sprint B is there for convenience, so Sprint B has no cut line.
 | Risk | Plan |
 |---|---|
 | A blocker in §8.4 is not closed by 2 November | The stories that need it stay in *Backlog*; the team starts with the Sprint B stories that had no open blocker on 31 October 2026 (US-01, US-02, US-40; §8.3) |
-| The team does not confirm the role model (§4) | US-16 to US-18 are replaced by teams created by a seed script with the pilot set-up (§4.4); the other stories do not change, because they check permissions, not team names |
+| The team does not confirm the role model (§4) (confirmed on 15 November 2026) | US-16 to US-18 are replaced by teams created by a seed script with the pilot set-up (§4.4); the other stories do not change, because they check permissions, not team names |
 
 #### Why US-40 and US-41 are in Sprint B, and US-42 and US-43 in Sprint C
 

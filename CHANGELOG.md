@@ -18,6 +18,38 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `infra/.env.example` lists the three ports instead of `REPORTS_PORT`.
 - `ci.yml`: `mvn verify` in every module, then the smoke test starts the whole stack and checks each service's status through the gateway and the web page. The demo and Swagger checks of Sprint A left the smoke test; the Reports Maven tests still cover them.
 
+## [Unreleased] · 2026-11-15 · Sprint A review and Sprint B planning (#188, Bruno Lopes)
+
+**Why:** the professor's feedback on the Sprint A presentations asked for the AI to be used where it is really useful (the priority, T/TP class) and for mockups and entity states in the Definition of Ready (PL class). The Sprint B planning also had to close the decisions that kept most Sprint B stories out of *Ready*. Record: [`Docs/Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md`](Docs/Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md).
+
+### Decided (15 November 2026)
+- **AI triage on the priority** (decision revised after the review, assignment §5.7): the participant writes a required description (1–500 characters) and no longer chooses a category; the AI reads only that description and suggests category and priority, with a reason; the team follows from the category, by rule. Scenario D1: no category and no priority, *Not triaged*, set by hand.
+- **Priority scale** (AI-3, O7): `Critical`, `High`, `Medium`, `Low`, with meanings and examples; no default priority per category.
+- **Help categories:** `Health`, `Safety`, `LostPerson`, `Infrastructure`, `Other`; `Theft` removed.
+- **DoR:** front-end stories need mockups (generated with Claude, in `Docs/Product/mockups/`) and the states of the entities they use.
+- **Role model confirmed** (#178); **verified e-mail for the first FarolAdmin** (#179); **help-request lifecycle** (#177): one status set, *Not triaged* derived when read, queues declared at broker start-up.
+- **Demo only on the laptop** (participant pages at phone width on `localhost`); HTTPS for phones revisited with the phone location in Sprint C.
+- **Sprint B goal confirmed** with a cut line (US-27, US-20, US-24, US-28 history, US-30); **Badges deployed minimally in Sprint B** (#201); US-41 shows the buses on the event's routes (O6).
+
+### Added
+- Meeting record above; `Docs/Product/mockups/README.md`; priority scale in `features.md` §5.3; **[PROPOSED]** states and transitions of every entity in `domain-model.md` (to confirm in #198).
+- Issues: #202 (initial Docker base with every service skeleton), #189 (PostgreSQL and Keycloak in Compose), #190 (gateway), #191 to #194 and #201 (one per service), #195 (web app), #196 (map spike on real phones), #197 (AI evaluation package), #198 (entity states), #199 and #200 (mockups).
+
+### Changed
+- Product: `features.md` (§3.1, §4, §5, US-23, US-28, US-34 to US-36, US-41, §8 no longer `[PROPOSED]`), `product-vision.md` (SC3, SC4 note), `non-functional-requirements.md` (NFR-07, NFR-20, NFR-22), `personas.md`, `user-workflows.md` (W2, W3), help-request BPMN (`.bpmn` and `.svg`).
+- Technical: `api-outline.md` (§4, §4.1, §5, §7, O6 and O7 closed), `domain-model.md`, `architecture.md` (§6, §9, §10), `local-delivery.md`, ADR-004, ADR-005 (amendment of 15 November 2026), ADR-006 (#179), ADR-008, ADR-011, the AI plan, `local-observability.md`, the security assessment (M-2, M-4, T4, §9), guide C4, E2, E5, F2, G4 and new K3.
+- Process: DoR in `definition-of-ready-and-done.md` and the user-story form.
+- Code: `Theft` → `Infrastructure` in the Reports demo (`DemoHelpRequest`, `contracts/openapi.yaml`); `mvn verify` passes (10 tests).
+- Diagram labels: `logical-view-level-1`, `mapping-logical-implementation-level-1`, `mapping-logical-physical-level-1` and `process-view-level-1-help-request` (`.drawio.svg`); `domain-model.svg` (`suggestedTeamId` → `reason`).
+
+### Not changed
+- The Responsible AI assessment and the evaluation package are research snapshots of 22 October 2026: each has a dated note, and the dataset, schema, scorer and baseline are updated in #197.
+- The four `.drawio.svg` files above keep stale PNG fallbacks; browsers and the PDF show the current text.
+- The Sprint A decks and `Farol_Sprint_A_Documents.pdf`: Sprint A deliverables.
+
+### Not decided
+- Sprint A retrospective actions. Service owners were decided the same day (record, decision 13) and set as issue assignees.
+
 ## [Unreleased] · 2026-11-12 · Assumption IDs and ADR references removed from the Sprint A PL deck (#186, Bruno Lopes)
 
 **Why:** as in the T/TP deck, the IDs (A2–A5, ADR-011) are internal references that the audience does not know.

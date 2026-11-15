@@ -1,7 +1,7 @@
 # Farol — Domain Model
 
 > Conceptual model organised into five services: **Auth & Users**, **Events**, **Reports**, **Transports** and **Badges**. Service boundaries, attributes and cardinalities are proposed for review.
-> **22 October 2026:** roles, teams and permissions follow the role model in [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026) (to confirm with the team). The draw.io export [`domain-model.svg`](domain-model.svg) was redrawn on 31 October 2026 (#170) to match the diagram below: event-defined `Team`, `TeamPermission` and `TeamAssignment`, `GlobalRoleGrant` / `FarolAdmin` and per-event `EventMembership` replace the fixed `ResponseTeam` types. This is documentary alignment only: no new team vote and no implementation. Open point still shown in the diagram: which team is the default when two teams handle the same category. The Mermaid diagram and this file remain the source; the SVG opens and edits in draw.io. **31 October 2026 (#162):** the diagram below gained the help-request text, the AI reason, the e-mail, the consent fields and an optional first membership (API outline D3); `domain-model.svg` does not show them yet, nor the 2 km geo-query of the Porto Digital note (1 November 2026, #175), and must be updated in draw.io.
+> **22 October 2026:** roles, teams and permissions follow the role model in [`features.md` §4](../Product/features.md#4-roles-teams-and-permissions-22-october-2026) (confirmed by the team on 15 November 2026, [record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), #178). The draw.io export [`domain-model.svg`](domain-model.svg) was redrawn on 31 October 2026 (#170) to match the diagram below: event-defined `Team`, `TeamPermission` and `TeamAssignment`, `GlobalRoleGrant` / `FarolAdmin` and per-event `EventMembership` replace the fixed `ResponseTeam` types. This is documentary alignment only: no new team vote and no implementation. Open point still shown in the diagram: which team is the default when two teams handle the same category. The Mermaid diagram and this file remain the source; the SVG opens and edits in draw.io. **31 October 2026 (#162):** the diagram below gained the help-request text, the AI reason, the e-mail, the consent fields and an optional first membership (API outline D3); `domain-model.svg` does not show them yet, nor the 2 km geo-query of the Porto Digital note (1 November 2026, #175), and must be updated in draw.io. **15 November 2026 (#188):** the AI no longer suggests a team, so `suggestedTeamId` left the diagram below (it is still in `domain-model.svg`); the help categories and the priority scale are under *How to read the model*, and the proposed states under *States and transitions*.
 
 ```mermaid
 classDiagram
@@ -76,7 +76,6 @@ classDiagram
         class TriageSuggestion {
             +HelpCategory suggestedCategory
             +Priority suggestedPriority
-            +TeamId suggestedTeamId
             +string reason
             +SuggestionDecision decision
         }
@@ -194,14 +193,14 @@ classDiagram
 | Auth & Users | **EventMembership** | Links an account to one event with a role (`EventAdmin` or `RegularUser`) and a membership status. Created as `RegularUser` when the user joins the event (US-12), or as `EventAdmin` when the FarolAdmin names them (US-06, US-08). The same account can be EventAdmin in one event and RegularUser in another. Once the first EventAdmin is named, the event keeps at least one active EventAdmin: the last one cannot be removed or demoted. A new event has no membership until then (API outline D3 = B). **[PROPOSED]** (assessment §8.3): the version and time of the help-request consent given when joining. |
 | Auth & Users | **TeamAssignment** | Puts a member of an event in one of that event's teams. Only members of the event can be assigned (US-18). A member can be in several teams and gets the permissions of all of them. |
 | Events | **Event** | A festival edition with its own organiser, dates, status and operational data. Defines the isolation boundary for event-specific information. |
-| Events | **Team** | A team created by an EventAdmin for one event (e.g. *Control room*, *Nursing*, *Security*), with a name unique in the event and the help categories it handles. The handled categories give the default team when a request is routed and the teams the AI may suggest. Deleting a team returns the requests routed to it to the control-room queue (US-16). Which team is the default when two teams handle the same category is still open. |
+| Events | **Team** | A team created by an EventAdmin for one event (e.g. *Control room*, *Nursing*, *Security*), with a name unique in the event and the help categories it handles. The handled categories give the default team when a request is routed (the AI suggests a category, never a team). Deleting a team returns the requests routed to it to the control-room queue (US-16). Which team is the default when two teams handle the same category is still open. |
 | Events | **TeamPermission** | One permission given to a team, from the fixed list in features §4.2: `HelpRequests.Triage`, `HelpRequests.Respond`, `Reports.Review`, `Reports.Respond`, `Announcements.Publish`, `Map.Edit`, `Transport.Edit`, `Entrances.Update`. For `Reports.Review` it also lists the report types the team reviews. A change applies at the member's next action and is audited. |
 | Events | **VenueMapVersion** | A version of the uploaded venue image/PDF. Historical versions remain available for the requests and reports that refer to them. Uploaded by an EventAdmin or a member with `Map.Edit`. |
 | Events | **PointOfInterest** | A named place on a map version, such as an entrance, stage, WC, first-aid point or transport stop. Edited by an EventAdmin or a member with `Map.Edit`. |
 | Events | **Announcement** | Official event information published by an EventAdmin or a member with `Announcements.Publish`, with publication time and optional expiry. |
 | Events | **AttendanceCheckIn** | Records an authenticated participant's attendance at the venue during the event dates. Counts once per account/event; included as a Should-have feature. |
-| Reports | **HelpRequest** | A participant's request for assistance, with category, map location, an optional text of at most 500 characters (assessment M-2), priority and status. Goes to the shared queue of the members with `HelpRequests.Triage` (the control room), who route it to a team with `HelpRequests.Respond`; it never earns badges. |
-| Reports | **TriageSuggestion** | Optional AI recommendation attached to a help request, with a short reason shown to the operator (ADR-005 decision 2). The suggested team is one of the event's teams that handles the category. A member with `HelpRequests.Triage` accepts or changes it; it never overwrites a human decision or blocks the request. |
+| Reports | **HelpRequest** | A participant's request for assistance, with a map location and a required short description of 1 to 500 characters (assessment M-2), a status, and a category and priority that stay empty until the AI suggestion is accepted or a member sets them (the participant does not choose a category, 15 November 2026). Goes to the shared queue of the members with `HelpRequests.Triage` (the control room), who route it to a team with `HelpRequests.Respond`; it never earns badges. |
+| Reports | **TriageSuggestion** | Optional AI recommendation attached to a help request, with a suggested category and priority, read from the description only, and a short reason shown to the operator (ADR-005 decision 2). It suggests no team: the default team is the event's team that handles the category. A member with `HelpRequests.Triage` accepts or changes it; it never overwrites a human decision or blocks the request. |
 | Reports | **CommunityReport** | A report about a place or service, routed by type to the members with `Reports.Review` for that type. Visible to other participants only while confirmed and active. |
 | Reports | **FieldTask** | Work dispatched to a team to assist with a request (team with `HelpRequests.Respond`), or to verify or fix a report (team with `Reports.Respond`). Targets exactly one request or report; only one member of that team can accept it. |
 | Cross-cutting; shown in Reports | **AuditEntry** | Records the actor, time and previous/new values of a change. Each service owns its own audit history; the diagram shows request/report history as the operational example. |
@@ -219,3 +218,95 @@ classDiagram
 - **Locations:** `MapPosition` uses normalised coordinates on a specific venue-map version. `GeoPosition` uses geographic longitude/latitude for buses. They are different coordinate systems.
 - **Cardinalities:** `1` means exactly one; `0..1` means optional; `0..*` means zero or more; `1..*` means one or more. The optional Event association on BadgeProgress applies only to the EventReporter track.
 - **Notation:** a filled diamond denotes composition; a plain association connects concepts; a dashed arrow expresses a dependency or contribution. Namespace boxes group concepts by service; ExternalSystems contains the external provider.
+- **Value sets:** `HelpCategory` is `Health`, `Safety`, `LostPerson`, `Infrastructure` or `Other` (`Theft` removed on 15 November 2026: a theft is a `Safety` case; `Infrastructure` is something broken or damaged on the site that needs a team now). `Priority` is `Low`, `Medium`, `High` or `Critical`, with the meanings and examples of the [meeting record of 15 November 2026](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md#priority-scale-decision-2) (AI-3, API outline O7).
+
+## States and transitions **[PROPOSED]**
+
+Proposed on 15 November 2026 ([meeting record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md) §4), to be confirmed by the team in #198. The help-request status set and the triage state were decided at that meeting (#177). The professor's feedback on the PL presentation asks for every entity a front-end story shows to have its states defined (DoR).
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "UserAccount" as UA {
+        [*] --> Active
+        Active --> Disabled : disabled in Keycloak
+        Disabled --> Active : enabled again
+        Active --> DeletionPending : user deletes account (US-05)
+        DeletionPending --> [*] : Keycloak confirms, row deleted (D7)
+    }
+```
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "Event" as EV {
+        [*] --> Draft : FarolAdmin creates (US-06)
+        Draft --> Published : EventAdmin publishes (US-11)
+        Draft --> Suspended : FarolAdmin (US-09)
+        Published --> Suspended : FarolAdmin (US-09)
+        Suspended --> Draft : reactivated, was Draft
+        Suspended --> Published : reactivated, was Published
+        Published --> Closed : EventAdmin closes (US-13)
+        Closed --> [*]
+    }
+```
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "HelpRequest (decided, #177)" as HR {
+        [*] --> Submitted : participant asks (US-23)
+        Submitted --> Seen : control room acknowledges (US-28)
+        Seen --> OnTheWay : field member accepts the task (US-32)
+        OnTheWay --> Resolved : field member resolves (US-33)
+        OnTheWay --> Seen : task cancelled (US-16)
+        Resolved --> Closed : control room closes (US-30)
+        Submitted --> Closed : control room closes (US-30)
+        Seen --> Closed : control room closes (US-30)
+        OnTheWay --> Closed : control room closes (US-30)
+        Closed --> [*]
+    }
+```
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "Triage of a HelpRequest (decided, #177)" as TR {
+        [*] --> Pending : request saved
+        Pending --> Suggested : valid AI answer within 30 s (US-34)
+        Pending --> NotTriaged : derived when read, 30 s passed (US-36)
+        Suggested --> Accepted : control room accepts (US-35)
+        Suggested --> Changed : control room changes (US-35)
+        NotTriaged --> Changed : control room sets category and priority (US-35)
+    }
+```
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "CommunityReport" as CR {
+        [*] --> Pending : participant reports (US-47)
+        Pending --> Confirmed : reviewer (US-50)
+        Pending --> Rejected : reviewer (US-50)
+        Pending --> Expired : time of its type (features §6.1)
+        Confirmed --> Resolved : field team fixes (US-53)
+        Confirmed --> Expired : time of its type
+        Confirmed --> Unconfirmed : reviewer (US-51)
+    }
+```
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    state "FieldTask" as FT {
+        [*] --> Open : request routed or report dispatched (US-29, US-52)
+        Open --> Accepted : one team member (US-32, US-52)
+        Accepted --> Answered : Verify task (US-52)
+        Accepted --> Resolved : Assist or Fix task (US-33, US-53)
+        Open --> Cancelled : team deleted (US-16)
+        Accepted --> Cancelled : team deleted (US-16)
+    }
+```
+
+- **EventMembership:** no MVP story ends a membership other than account deletion, which deletes it. Proposal: drop `MembershipStatus` (and the `status` of `MembershipChanged`, API outline §7.4); a membership exists or it does not.
+- Routing a help request (US-29) creates a field task and does not change the request's status. `NotTriaged` is not stored: a read derives it (API outline §4.1).

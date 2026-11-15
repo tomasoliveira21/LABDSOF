@@ -41,7 +41,7 @@
 | Database | Its own `keycloak` database on the PostgreSQL server |
 | Address | `localhost:8180` locally, its own hostname on Azure. **Not** behind the API gateway: the browser talks to it during login. `KC_HOSTNAME` set to that public URL |
 | Start | `--import-realm`; `start-dev` while developing, `start` (production mode, HTTP on `localhost`) for the demo |
-| First FarolAdmin | `FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL` grants the role at provisioning when the email matches; no screen for it in the MVP |
+| First FarolAdmin | `FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL` grants the role at provisioning when the email matches **and the token has `email_verified: true`** (decided in the [meeting of 15 November 2026](../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), #179; [security assessment](../security-and-privacy-assessment.md) T4). The realm import creates the bootstrap account already verified; a self-registered account is never verified while there is no SMTP. No screen for it in the MVP |
 
 Each service sets the public issuer and the internal key address separately, so it starts even when Keycloak is down and fetches keys only when a token arrives (keys cached, refreshed on an unknown `kid`, #43):
 

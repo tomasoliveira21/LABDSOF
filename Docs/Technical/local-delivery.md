@@ -1,9 +1,10 @@
 # Local delivery and demo
 
 > **Decided 23 October 2026** (#129; guide G4–G7, H5 and H6). Implements [ADR-011](adr/0011-deployment-and-infrastructure.md) points 4–6. The Sprint B slice applies this procedure; the full stack below is the **Sprint B target**. Sprint A now has a separate minimum described in §0: one Reports synthetic in-memory demo service; it does not claim the full stack is implemented.
-> **Aligned on 26 October 2026** with [ADR-006](adr/0006-identity-and-access.md) (Keycloak), [ADR-013](adr/0013-api-gateway.md) (API gateway) and the [Security and Privacy Assessment](security-and-privacy-assessment.md) §9 (ports). HTTPS for the phones is open (§8).
+> **Aligned on 26 October 2026** with [ADR-006](adr/0006-identity-and-access.md) (Keycloak), [ADR-013](adr/0013-api-gateway.md) (API gateway) and the [Security and Privacy Assessment](security-and-privacy-assessment.md) §9 (ports).
+> **15 November 2026** ([meeting record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decision 10): the demo runs only on the laptop, so HTTPS for phones is not needed for the demo (§8).
 
-Delivery is local only, because cloud hosting costs were not justified ([clarification record](../Meetings/2026-10-22-local-deployment-clarification.md)). Everything runs on one laptop with Docker. The phones open the same React web app in their browser.
+Delivery is local only, because cloud hosting costs were not justified ([clarification record](../Meetings/2026-10-22-local-deployment-clarification.md)). Everything runs on one laptop with Docker. The participant pages are shown in the laptop's browser at phone width.
 
 ## 0. What runs today: the Sprint B base (#202)
 
@@ -62,7 +63,7 @@ One Compose file, `infra/compose.yaml`. Images are built from the repository: th
 
 - `infra/.env.example` is versioned and lists every variable with a harmless example value. `infra/.env` is in `.gitignore`. Each person copies the example once: `cp infra/.env.example infra/.env`.
 - Variables:
-  - `VERSION`, `WEB_PORT` and `PUBLIC_HOST`: the address the phones use, the laptop's LAN IP for the demo, `localhost` while developing. The Keycloak hostname (`KC_HOSTNAME`), the token issuer the services check (`FAROL_ISSUER_URI`), the gateway's allowed origin and the web app's API and login addresses are built from it.
+  - `VERSION`, `WEB_PORT` and `PUBLIC_HOST`: the address the browser uses, `localhost` for the demo and while developing (a LAN IP only if phones are used again, §8). The Keycloak hostname (`KC_HOSTNAME`), the token issuer the services check (`FAROL_ISSUER_URI`), the gateway's allowed origin and the web app's API and login addresses are built from it.
   - The PostgreSQL superuser and the six database users and passwords; the RabbitMQ admin and the five service users.
   - Keycloak's admin user, the `farol-auth-users` client secret and `FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL` (ADR-006).
   - `TRANSPORT_SOURCE_URL` (WireMock by default), the AI provider settings (guide K1) and `SPRING_PROFILES_ACTIVE`.
@@ -116,20 +117,18 @@ A checklist of commands, run by hand after starting, updating or rolling back. I
 | # | Check | Command | Pass |
 |---|---|---|---|
 | 1 | Every container is healthy. The health checks call `/actuator/health` and Keycloak's `/health/ready` | `docker compose -f infra/compose.yaml ps` | Every container `running (healthy)` |
-| 2 | The web app opens | `curl -fsI http://localhost:${WEB_PORT}/`, and open `http://<LAN IP>:${WEB_PORT}` on a phone | HTTP 200; the page loads on the phone |
+| 2 | The web app opens | `curl -fsI http://localhost:${WEB_PORT}/`, and open it in the laptop's browser at phone width | HTTP 200; the page loads |
 | 3 | The gateway routes and validates tokens | `curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/v1/me` | `401`: the call reached the gateway and was refused without a token |
-| 4 | Login works | Log in with a demo account on the laptop (`localhost`); on a phone once HTTPS is decided (§8) | Keycloak's page opens; back in the app, the account's name is shown (`GET /me`) |
+| 4 | Login works | Log in with a demo account on the laptop (`localhost`) | Keycloak's page opens; back in the app, the account's name is shown (`GET /me`) |
 | 5 | One round trip through RabbitMQ | One service publishes an event and another consumes it. The exact command is written here in Sprint B: the Sprint A skeleton has no broker (#166) | The consumer shows the change; the queue is empty afterwards |
 
-`ci.yml` exists since #167 ([ADR-010](adr/0010-cicd-strategy.md) point 9). In Sprint B the same checks, without the phone and the login, are added to it, to run in CI with Compose on every push to `main`, every tag and manual runs (Sprint B). Today `ci.yml` (#167) runs the Sprint A skeleton's smoke test instead (status, synthetic create and read, Swagger) on every pull request, push to `main`, tag and manual run.
+`ci.yml` exists since #167 ([ADR-010](adr/0010-cicd-strategy.md) point 9). In Sprint B the same checks, without the browser and the login, are added to it, to run in CI with Compose on every push to `main`, every tag and manual runs (Sprint B). Today `ci.yml` (#167) runs the Sprint A skeleton's smoke test instead (status, synthetic create and read, Swagger) on every pull request, push to `main`, tag and manual run.
 
 ## 8. The demo
 
 **Machine.** One team member's laptop runs the demo. A second laptop is ready as a backup: same tag, same `.env`, the latest dumps restored, smoke test passed the day before. The laptop has full-disk encryption and a screen lock: it holds every database (assessment §9).
 
-**Phones.** The phones and the laptop join the same network, preferably a phone hotspot or a router of our own: venue Wi-Fi often blocks traffic between clients. The phones open `http://<laptop LAN IP>:${WEB_PORT}`. Allow ports 8080, 8180 and `${WEB_PORT}` in the laptop's firewall (on Windows, Docker Desktop asks the first time). Show the URL as a QR code on the screen.
-
-- **Open: HTTPS for the phones** ([assessment](security-and-privacy-assessment.md) §9, finding 2). Over plain HTTP anyone on the network can read the tokens, and the browser blocks the Web Crypto call that the PKCE login needs on a page that is not HTTPS or `localhost`, so **login fails on a phone**. The assessment proposes a certificate from a local authority (e.g. mkcert) on the gateway, Keycloak and the web app, trusted once on each demo phone, or the phone pages in a laptop browser's device mode. This procedure is updated when it is decided. Until then, the phone pages are shown in device mode on `localhost`.
+**Phones: not used in the demo** (decided on 15 November 2026, [record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md) decision 10). The participant and field-team pages are shown in the laptop's browser at phone width (device mode), on `localhost`. Over plain HTTP on a LAN anyone on the network could read the tokens, and the browser blocks the Web Crypto call that the PKCE login needs on a page that is not HTTPS or `localhost`, so login would fail on a phone ([assessment](security-and-privacy-assessment.md) §9, finding 2); on `localhost` neither problem exists. HTTPS (e.g. a certificate from a local authority such as mkcert) is revisited for the phone's location in Sprint C, which also needs a secure page.
 - Turning off PKCE, token validation, CORS or Keycloak's HTTPS requirement to make the demo work is **not allowed** (assignment §11). Every security control stays on; D1 and D2 break a dependency, not a control.
 
 **Degraded modes** (scenarios D1 and D2, [`features.md` §3.1](../Product/features.md); the demo script and the values are in guide J2, [`architecture.md`](architecture.md) §9.3):
@@ -145,5 +144,5 @@ A checklist of commands, run by hand after starting, updating or rolling back. I
 
 - The minimum RAM of the demo laptop, and the measured RTO for rollback and restore (guide G7): the in-memory Sprint A skeleton cannot measure them (#166), so they are measured with the Sprint B slice.
 - The exact round-trip command in the smoke test: Sprint B slice.
-- HTTPS for the phones, which the PKCE login needs (§8): assessment §9, finding 2.
+- Closed: HTTPS for phones is not needed for the demo, which runs only on the laptop (§8, 15 November 2026); revisited for the phone's location in Sprint C.
 - Closed: the AI container is Ollama with `qwen3:4b` (guide K1, [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md)); the degraded-mode script and x = 30 s, y = 5 min (guide J1, J2; [`architecture.md` §9](architecture.md#9-degraded-modes)). Still open: the model measurements on the demo laptop (guide K1).

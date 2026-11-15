@@ -64,6 +64,8 @@ body:
         - label: Dependencies identified, and none of them blocks it
         - label: On the GitHub Projects board
         - label: If it uses AI, the fallback is described
+        - label: If it has front-end pages, mockups of each page, with every state the user can see, are linked (Docs/Product/mockups/)
+        - label: Every entity it shows or changes has its states defined in the domain model
   - type: textarea
     id: dod
     attributes:
