@@ -2,6 +2,19 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-15 · Google Forms questionnaires for security staff and nurses (#207, Tiago Teixeira)
+
+**Why:** the event team's side of the User Research has no primary data: the security interview has been missing since Sprint A, so assumption A4, root cause 4 and the help categories (DM-4) are not validated. The team will ask security staff and nurses of the support teams of past Queimas. An online form replaces the interview, because it is much easier to get them to fill in a form than to set up a meeting.
+
+### Added
+- `Docs/Research/inquerito-segurancas-google-forms.gs`: Apps Script that creates the security-staff form (29 questions, about 6 min, anonymous) and its response sheet. Every question is closed, with an *Outro* (other) option where the choices may not fit; only the last one, an optional comment, is free text. Six pages: profile; how a help request arrives today, and what delayed the response; locations and incident types (frequency grid against the help categories); entrances (only for who worked there); phone and records; and, last, the reaction to the W2 + W3 flow and to AI triage. The header maps each question to the assumption it tests.
+- `Docs/Research/inquerito-enfermeiros-google-forms.gs`: the same for nurses (34 questions), plus the information needed before leaving the post, how cases are prioritised, INEM escalation, cases that are not health ones, friends finding the person after care, and what other teams may see of a health request. No question asks for clinical data.
+- Both forms follow the help-request design decided in the Sprint A review of 15 November 2026 (decisions 1 and 8, PR #203): the idea describes a participant who writes a short description instead of choosing a category, and an AI that suggests the category and priority but not the team. The security grid adds damaged infrastructure (the new `Infrastructure` category); both lists of problems add "writing takes time for someone in distress"; nurses' question 13 (the three things that set urgency) also tells what the description should say, as examples for the field.
+
+### Changed
+- `product-vision.md` §8: the security-volunteer interview row is replaced by the two questionnaires; forms created in Google Forms on 15 November 2026, not sent yet.
+- `Docs/README.md`: the two scripts added to the Research rows of the index.
+
 ## [Unreleased] · 2026-11-15 · Initial Docker base with every service skeleton (#202, Bruno Lopes)
 
 **Why:** every service owner starts Sprint B from the same base: one `docker compose up` starts the web app, RabbitMQ, the API gateway and the five services (Sprint B planning of 15 November 2026, decision 13).
