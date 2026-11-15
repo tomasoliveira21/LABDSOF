@@ -17,7 +17,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Added
 - Meeting record above; `Docs/Product/mockups/README.md`; priority scale in `features.md` §5.3; **[PROPOSED]** states and transitions of every entity in `domain-model.md` (to confirm in #198).
-- Issues: #189 (Compose infrastructure), #190 (gateway), #191 to #194 and #201 (one per service), #195 (web app), #196 (map spike on real phones), #197 (AI evaluation package), #198 (entity states), #199 and #200 (mockups).
+- Issues: #202 (initial Docker base with every service skeleton), #189 (PostgreSQL and Keycloak in Compose), #190 (gateway), #191 to #194 and #201 (one per service), #195 (web app), #196 (map spike on real phones), #197 (AI evaluation package), #198 (entity states), #199 and #200 (mockups).
 
 ### Changed
 - Product: `features.md` (§3.1, §4, §5, US-23, US-28, US-34 to US-36, US-41, §8 no longer `[PROPOSED]`), `product-vision.md` (SC3, SC4 note), `non-functional-requirements.md` (NFR-07, NFR-20, NFR-22), `personas.md`, `user-workflows.md` (W2, W3), help-request BPMN (`.bpmn` and `.svg`).
@@ -32,7 +32,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The Sprint A decks and `Farol_Sprint_A_Documents.pdf`: Sprint A deliverables.
 
 ### Not decided
-- Who owns each service (next meeting); Sprint A retrospective actions.
+- Sprint A retrospective actions. Service owners were decided the same day (record, decision 13) and set as issue assignees.
 
 ## [Unreleased] · 2026-11-09 · Footer lines removed from the Sprint A decks (#184, Tiago Teixeira)
 

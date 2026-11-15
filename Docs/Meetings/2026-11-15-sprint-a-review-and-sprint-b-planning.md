@@ -27,7 +27,7 @@ No major problem was pointed out in either presentation.
 | 10 | HTTPS for phones on the LAN | **The demo runs only on the laptop.** The participant pages are shown in the laptop's browser at phone width, on `localhost`, where the PKCE login works without HTTPS; phones are not used in the demo. The phone's location (Sprint C, decision 2 of 1 November 2026) also needs HTTPS, so this is revisited then |
 | 11 | Sprint B scope | **Goal of `features.md` §8.1 confirmed**, with a cut line: US-27, US-20, US-24, US-28 (only the history) and US-30 are dropped first, in that order, if the sprint runs short |
 | 12 | Badges service in Sprint B | **Added**: a minimal Badges service is deployed with its own database in Sprint B, as decided on 1 November 2026, although its stories are in Sprint C |
-| 13 | Who owns each service | Not decided yet: next meeting |
+| 13 | Who owns each service | Decided later the same day: **Tomás Oliveira**, the web app and Badges; **António Guerra**, Transports; **Tiago Teixeira**, Events and Auth & Users; **Bruno de Abreu Lopes**, Reports, the AI triage and observability, and first the initial Docker base that every service starts from (#202). The issues carry the owner as assignee |
 | 14 | Sprint A retrospective actions | Not recorded |
 
 ### Priority scale (decision 2)
