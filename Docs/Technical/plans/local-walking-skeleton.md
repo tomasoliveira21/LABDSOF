@@ -28,6 +28,8 @@ The diagnostic and demo contracts are hand-written before implementation. This i
 
 ## 3. Run and demonstrate from the repository root
 
+> Since #202, `infra/compose.yaml` starts the whole Sprint B base and publishes only the gateway on port 8080 ([`local-delivery.md` §0](../local-delivery.md#0-what-runs-today-the-sprint-b-base-202)). To run these steps, first `git checkout v0.1.0`.
+
 Requirements: Docker Engine/Desktop with Compose v2; Java 21 and Maven 3.6.3+ only for the independent host build. Docker builds need no host JDK. No secrets, cloud account or database is needed.
 
 ```sh

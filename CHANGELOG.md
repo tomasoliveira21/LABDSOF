@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-15 · Initial Docker base with every service skeleton (#202, Bruno Lopes)
+
+**Why:** every service owner starts Sprint B from the same base: one `docker compose up` starts the web app, RabbitMQ, the API gateway and the five services (Sprint B planning of 15 November 2026, decision 13).
+
+### Added
+- `backend/auth-users`, `backend/events`, `backend/transports` and `backend/badges`: Spring Boot 4.0.9 skeletons with the layout, `pom.xml` and multi-stage `Dockerfile` of Reports. Each one answers only `GET /api/v1/status` and has one test that starts it. No business code or database.
+- `backend/gateway`: Spring Cloud Gateway Server WebMvc (Spring Cloud 2025.1.4) with the route table of ADR-013, each target set by `FAROL_ROUTE_<SERVICE>_URI`, and the diagnostic routes `/status/<service>` to each service's status. A test checks that a path of every row reaches its service. No JWT, CORS or rate limits yet (#190).
+- `frontend/`: React 19 and Vite 7 app with a placeholder page, served by an unprivileged nginx container.
+- `infra/compose.yaml`: the gateway, the five services, the web app and RabbitMQ 4.2.9 with its management UI and a named volume. Every container has a health check and the hardening of Reports (read-only file system, no capabilities, no new privileges, memory and process limits). Third-party images are pinned by digest.
+- [`local-delivery.md` §0](Docs/Technical/local-delivery.md#0-what-runs-today-the-sprint-b-base-202): how to run the base.
+
+### Changed
+- Only the gateway (8080), the web app (3000) and RabbitMQ's management UI (15672) are published, all on `127.0.0.1` until the gateway validates tokens (#190). Reports is no longer published and Compose no longer turns on its `demo` profile; the Sprint A demo is the tag `v0.1.0`.
+- `infra/.env.example` lists the three ports instead of `REPORTS_PORT`.
+- `ci.yml`: `mvn verify` in every module, then the smoke test starts the whole stack and checks each service's status through the gateway and the web page. The demo and Swagger checks of Sprint A left the smoke test; the Reports Maven tests still cover them.
+
 ## [Unreleased] · 2026-11-12 · Assumption IDs and ADR references removed from the Sprint A PL deck (#186, Bruno Lopes)
 
 **Why:** as in the T/TP deck, the IDs (A2–A5, ADR-011) are internal references that the audience does not know.

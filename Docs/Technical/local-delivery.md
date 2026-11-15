@@ -5,11 +5,35 @@
 
 Delivery is local only, because cloud hosting costs were not justified ([clarification record](../Meetings/2026-10-22-local-deployment-clarification.md)). Everything runs on one laptop with Docker. The phones open the same React web app in their browser.
 
-## 0. Sprint A: run the executable minimum first
+## 0. What runs today: the Sprint B base (#202)
 
-The 31 October review (#166) limits deliverable 10 to a small one-service slice, HTTP tests, Dockerfile, Compose and CI. Follow the [R0 run instructions](plans/local-walking-skeleton.md#3-run-and-demonstrate-from-the-repository-root) and [actual branch evidence](evidence/walking-skeleton-2026-10-31.md). The current `infra/compose.yaml` starts Reports only with profile `demo`, bound to `127.0.0.1:8080`: Swagger creates and reads synthetic help requests with fixed identity and in-memory storage. `GET /api/v1/status` remains diagnostic. No secret file is required. #58 was closed on 31 October 2026 after #167; #148 remains open until actual observability exists.
+`infra/compose.yaml` starts the base that every service is built on (#202; Sprint B planning of 15 November 2026, decision 13): the web app, RabbitMQ, the API gateway and the five services. Each service is an empty skeleton that answers only `GET /api/v1/status`. There is no database, Keycloak, authentication or use case yet (#189 to #195, #201). No secret file is required.
 
-The procedures in §§1–8 are retained for **Sprint B**, when the named services/configuration exist. They must not be followed as if Keycloak, a web UI, databases and the broker are already part of R0. Authentication and domain guarantees apply when business endpoints are introduced; the demo uses only fixed synthetic identity/event values and is absent without the demo profile.
+Requirements: Docker Desktop, or Docker Engine with Compose v2. Java 21 with Maven, and Node 22, only to build outside Docker. From the repository root:
+
+```sh
+docker compose -f infra/compose.yaml up --build --wait   # builds 7 images; returns when all 8 containers are healthy
+docker compose -f infra/compose.yaml ps                  # every container "running (healthy)"
+curl http://localhost:8080/status/reports                # {"service":"reports","status":"ok"}, through the gateway
+docker compose -f infra/compose.yaml down                # stop; add -v to also delete the RabbitMQ volume
+```
+
+| What | Where |
+|---|---|
+| Web app (placeholder page), Compose service `frontend` | `http://localhost:3000` (`WEB_PORT`) |
+| API gateway | `http://localhost:8080` (`GATEWAY_PORT`). Routes `/api/v1/**` by the route table of [ADR-013](adr/0013-api-gateway.md); any other path is a 404 at the gateway |
+| Each service's status, through the gateway | `/status/auth-users`, `/status/events`, `/status/reports`, `/status/transports` and `/status/badges` forward to that service's `GET /api/v1/status`. Diagnostic only, outside the product API |
+| RabbitMQ management UI | `http://localhost:15672` (`RABBITMQ_UI_PORT`). No one can log in yet: the image's `guest` user works only inside the container, and no other user exists |
+
+- Every port is published on `127.0.0.1` only, until the gateway validates tokens (#190). The services and RabbitMQ's AMQP port are not published.
+- Build and test one module without Docker: `mvn -f backend/<module>/pom.xml verify`. Web app with live reload: `cd frontend`, `npm ci`, `npm run dev` (`http://localhost:5173`).
+- `ci.yml` runs `mvn verify` in every module, starts this stack, and checks each status through the gateway and the web page, on every pull request, push to `main`, tag and manual run.
+- Each service keeps the layout of Reports: package `pt.isep.labdsof.<service>` (`authusers` for Auth & Users) with `adapters/in/web`, `application` and `domain`, its own `pom.xml` and multi-stage `Dockerfile`.
+- Differences from the target below: the web app's Compose service is `frontend` (§1 calls it `web`), and the health checks call `/api/v1/status` instead of `/actuator/health`.
+
+The Sprint A minimum (Reports alone, with the synthetic in-memory demo and Swagger on `127.0.0.1:8080`, #166) is the tag `v0.1.0`. Check it out to follow its [run instructions](plans/local-walking-skeleton.md#3-run-and-demonstrate-from-the-repository-root); [evidence](evidence/walking-skeleton-2026-10-31.md). Reports still has the `demo` profile, but Compose no longer turns it on and the gateway has no route to it.
+
+The procedures in §§1–8 are the **Sprint B target**. Follow each one only once what it needs exists: Keycloak and PostgreSQL (#189), authentication (#190), each service's database and events (#191 to #194, #201).
 
 ## 1. What runs
 
