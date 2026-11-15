@@ -34,6 +34,54 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Not decided
 - Sprint A retrospective actions. Service owners were decided the same day (record, decision 13) and set as issue assignees.
 
+## [Unreleased] · 2026-11-12 · Assumption IDs and ADR references removed from the Sprint A PL deck (#186, Bruno Lopes)
+
+**Why:** as in the T/TP deck, the IDs (A2–A5, ADR-011) are internal references that the audience does not know.
+
+### Removed
+- `Farol_Sprint_A_PL_Presentation.pptx`, slide 5: the A2, A3 and A4 circles and "(A5)" after the venue maps. The text of the three assumption cards now starts at the left edge of the card.
+- Slide 6: "notional" before the Copilot cost and "(ADR-011)" after the professor's authorisation.
+
+### Changed
+- Slide 6: "≈" before the development (58,511 €) and maintenance (3,406 €) figures, as the total already had.
+- Speaker notes of slides 1, 5 and 6, for a 15-minute PL presentation. Slide 1 (~30 s): the PL topics instead of the T/TP ones (product, survey). Slide 5 (~90 s): "Primeiro / Segundo / Terceiro" instead of A2 / A3 / A4, with why each assumption matters and how it is checked ([`assumptions-and-dependencies.md`](Docs/Deliverables/assumptions-and-dependencies.md)). Slide 6 (~90 s): how the estimate was made and what local delivery leaves out ([`operating-cost-estimation.md`](Docs/Deliverables/operating-cost-estimation.md) §5); the six roles are only named as presented later (slide 8). The notes of the whole deck now add up to about 9 min 20 s.
+- Speaker notes of slide 4: "eleven are accepted; ADR-007 is still proposed" is now "all are accepted", since ADR-007 was accepted on 4 November 2026 (#183).
+
+### Not changed
+- Slide count, the other slides and their speaker notes.
+
+## [Unreleased] · 2026-11-12 · Feature codes and assumption ID removed from the Sprint A T/TP deck (#186, Bruno Lopes)
+
+**Why:** the codes (W1–W8, F1–F20, A4) are internal references that the audience does not know, and made the slides busier.
+
+### Removed
+- `Farol_Sprint_A_TTP_Presentation.pptx`, slide 6: the workflow codes W1, W4, W5, W7 and W8.
+- Slide 7: the feature codes F1–F20 and the asterisks on *Entrance status* and *Weak-network mode*.
+- Slide 9: "(F11)" from the weak-network decision.
+
+### Changed
+- Slide 4: "Assistant chosen by 3 of 31" is now "Chatbot chosen by 3 of 31".
+- Slide 7: *Attendance Badges* capitalised; in Could, *Friends* now comes before *Weak-network mode*.
+- Slide 9: "validate A4, Miguel and Inês" is now "validate help channel and personas".
+
+### Not changed
+- Slide count and speaker notes (slide 7 still mentions the asterisk; slide 9 still says "pressuposto A4"); the PL deck.
+
+## [Unreleased] · 2026-11-11 · Slides 3, 4 and 8 of the Sprint A PL deck simplified (#186, António Guerra)
+
+**Why:** the architecture slide, the ADR list and the responsibilities slide carried details that the speaker says or that are in the linked documents (WireMock, the 30 s polling interval, ADR numbers, how roles are taken), and made the slides busier.
+
+### Removed
+- `Farol_Sprint_A_PL_Presentation.pptx`, slide 3: the captions "via WireMock, called by Reports" under Ollama and "via WireMock, read by Transports / 30 s" under the Porto Digital API, "(ADR-001, 003)" from the microservices note and "; local copies (ADR-004)" from the events note.
+- Slide 4: "every 30 s" from ADR-008.
+- Slide 8: the line "Roles are taken per task, not per person; everyone codes and reviews".
+
+### Changed
+- Slide 4: "Compose" is now "Docker Compose" in the Delivery card, and "polling" is now "Polling" in the Messaging card.
+
+### Not changed
+- Slide count, speaker notes (those of slide 3 still mention WireMock, and those of slide 8 still say that roles are taken per task) and the text of every other slide; the T/TP deck, the original `Farol_Sprint_A_Presentation.pptx` and `Farol_Sprint_A_Documents.pdf`.
+
 ## [Unreleased] · 2026-11-09 · Footer lines removed from the Sprint A decks (#184, Tiago Teixeira)
 
 **Why:** the 11 pt line at the bottom of the slides repeated sources and side notes that the speaker says or that are in the linked documents, and made the slides busier.
