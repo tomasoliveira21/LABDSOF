@@ -1,7 +1,7 @@
 # Definition of Ready and Definition of Done
 
 > LABDSOF 2026/27 · Sprint A (Sprint 1) · Assignment §8 (Development and Delivery Practices)
-> **Status:** agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)).
+> **Status:** agreed in the team meeting of 8 October 2026 ([minutes](../Meetings/2026-10-08-sprint-1-gap-review.md)); mockups and entity states added to the DoR on 15 November 2026 after the Sprint A review ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md)).
 > Legend: see [`product-vision.md`](../Product/product-vision.md#legend).
 
 ## Why both
@@ -23,6 +23,8 @@ A user story or task is *Ready* when:
 - [ ] Dependencies (other stories, external data, decisions) are identified, and none of them blocks it
 - [ ] It has a GitHub issue on the GitHub Projects board, whose number goes in the branch and commits (README §1, §3)
 - [ ] If it uses AI: the fallback behaviour is described (assignment §5.6.2)
+- [ ] If it has front-end pages: mockups of each page, covering every state the user can see (empty, loading, error and each status), are kept in [`Docs/Product/mockups/`](../Product/mockups/) and linked from the issue. Mockups are generated with Claude ([meeting of 15 November 2026](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decision 3)
+- [ ] Every entity it shows or changes has its states and transitions defined in the [domain model](../Technical/domain-model.md) (same meeting, decision 4)
 
 ## Definition of Done
 

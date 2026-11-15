@@ -21,7 +21,7 @@
 
 - Real, live data from an open API, with a controlled replacement for tests and the demo.
 - One more component to maintain (the simulator or the recordings), and it must stay close to the real NGSI v2 format.
-- The source gives **bus positions only**, not timetables or predicted arrivals (domain model, `TransportDeparture`); departures come from manual data or another validated source.
+- The source gives **bus positions only**, not timetables or predicted arrivals (domain model, `TransportDeparture`); departures come from manual data or another validated source. So US-41 shows the buses on the event's routes and how fresh their positions are, not timetables, and no longer names STCP (API outline O6, closed on 15 November 2026, [record](../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md) decision 9).
 - When the source is down, participants see the last valid data with its time and a warning ([`architecture.md`](../architecture.md) §7 and §9).
 - Positions are geographic coordinates, separate from the venue-map coordinates (`GeoPosition` vs `MapPosition`).
 
