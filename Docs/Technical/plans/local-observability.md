@@ -40,10 +40,10 @@ The [ADR-005 coverage definition](../adr/0005-ai-triage-provider-and-evaluation.
 | Durable help creation | Successful committed creates / valid authorised attempts, rolling 7 advertised-service days | ≥99.5%; 5xx, timeout and unresolved ambiguous commits are misses |
 | Commit latency | API ingress → DB/outbox commit; count failures separately, 15 min with ≥20 attempts | p95 ≤2 s |
 | Operator visibility | Committed request visible through authorised polling within 5 s / committed requests, 1 h | ≥99.9% operational target; **100% with AI off in SC5 test** |
-| Useful AI triage | Schema/semantic/eligible-team-valid non-abstained suggestion stored within 30 s / **all pre-defined AI-eligible submissions in a 1 h cohort** | **≥95%**; errors, invalid/late output and abstentions remain misses |
+| Useful AI triage | Schema/semantic-valid non-abstained suggestion (category and priority; the team is no longer an AI output since 15 November 2026) stored within 30 s / **all pre-defined AI-eligible submissions in a 1 h cohort** | **≥95%**; errors, invalid/late output and abstentions remain misses |
 | Event propagation | Oldest unpublished outbox age and publish-to-consumer delay | p95 ≤10 s in normal 15 min windows; expose broker failures explicitly |
 | Transport freshness | Age of the last validated import | Warning after **5 min**, polling **30 s**, matching guide J1/J2 |
-| Quality | Reviewed offline dataset and raw model output, separate from live traffic | ≥80% category/team accuracy; zero urgent-case failures and correct expected abstentions |
+| Quality | Reviewed offline dataset and raw model output, separate from live traffic | First zero urgent-case failures, then ≥80% category accuracy and correct expected abstentions (team gate dropped on 15 November 2026) |
 
 **One-hour accounting implementation:** at time `T`, the cohort contains submissions in `[T−3630 s, T−30 s)`, so every included request's 30 s deadline has expired. Query the persisted submission/outcome timestamps in a single consistent snapshot and expose two bounded-label gauges: `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`. Export these every 15 s; the ratio is numerator/denominator **only when the denominator > 0**. Do not reconstruct submission cohorts from successful completion timestamps or omit unprocessed requests. Provider outcome counters are complementary, not a substitute for this denominator.
 

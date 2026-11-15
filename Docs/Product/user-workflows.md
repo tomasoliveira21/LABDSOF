@@ -29,10 +29,10 @@ Added after the presentation of 12 October 2026 (professor feedback): one BPMN d
 ![Help request journey in BPMN](bpmn/help-request-journey.svg)
 
 - The request reaches the control room **at once**. The AI suggestion runs in parallel and never holds it back (scenario D1).
-- The **operator decides** (priority, team, whether someone must go); the **responder acts** (accepts, goes to the point, resolves).
+- The **operator decides** (category, priority, team, whether someone must go); the **responder acts** (accepts, goes to the point, resolves).
 - The participant sees two changes: *On the way* and *Resolved*.
 - Field teams see a routed request in their list on the phone, by polling; there is no push alert (US-29, US-31, guide C5).
-- Not drawn, to keep it readable: the participant cancels, duplicates (see W3); the help-request consent was declined, the request fails or the rate limit is reached, where the app shows the first-aid points instead (NFR-19, US-23, US-25).
+- Not drawn, to keep it readable: the *Seen* and *Closed* statuses (see W3); the help-request consent was declined, the request fails or the rate limit is reached, where the app shows the first-aid points instead (NFR-19, US-23, US-25).
 
 ### Community report, end to end (W7)
 
@@ -81,7 +81,7 @@ sequenceDiagram
     actor R as Field team (Inês, HelpRequests.Respond)
 
     P->>App: Taps "Ask for help"
-    P->>App: Chooses category, marks location on map, optional short text
+    P->>App: Writes a short description, marks location on map
     App->>Inc: Submit help request
     Inc-->>App: Request received, status Submitted
     App-->>P: Confirmation and live status
@@ -89,13 +89,13 @@ sequenceDiagram
     BO-->>O: Request appears on list and map at once
     Inc-)AI: Request submitted (asynchronous, in parallel)
     alt AI available
-        AI--)Inc: Suggested category, priority and team
+        AI--)Inc: Suggested category and priority, with a reason
         Inc-->>BO: Suggestion added to the request (next poll)
     else AI unavailable or times out
-        Inc->>Inc: Fallback: "Not triaged", participant's category, order of arrival
+        Inc->>Inc: Fallback: "Not triaged", description only, order of arrival
     end
-    O->>BO: Acknowledges, sets priority, routes it to a team
-    BO->>Inc: Status Dispatched
+    O->>BO: Acknowledges, accepts or sets category and priority, routes it to a team
+    BO->>Inc: Status Seen, field task for the team
     Inc-->>R: Appears on the phone of the team's members (next poll), with the point on the map
     R->>Inc: Accepts
     Inc-->>App: Status On the way
@@ -106,39 +106,48 @@ sequenceDiagram
 
 **Rules from the repository:**
 - Location is marked on the map by the participant and shared only with the request (annex C6, SafeZone pattern). Survey Q10: 71 % would share the phone's location; product decision 4 of 30 October 2026 (report, *User Research*) asks for it first, with the map as the fallback. Phased on 1 November 2026 (#175): this journey uses the map in Sprint B; the phone's location comes from Sprint C, after [ADR-007](../Technical/adr/0007-venue-map-representation.md) and [assessment M-1](../Technical/security-and-privacy-assessment.md#6-data-minimisation-measures) are amended.
-- The AI only **suggests**; it never lowers a priority (annex C9, NFR-22).
+- The AI only **suggests** the category and the priority, from the participant's description; it never overwrites a member's decision (annex C9, NFR-22). The default team follows from the category (features §4.2). Decided on 15 November 2026 ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decision 1).
 
 **[PROPOSED]:** the participant sees the status of their request (the market annex notes that no current channel shows the status of a request, §4 *UX* row).
 
 ## W3 · Control room handles a help request
 
-Lifecycle of a help request **[PROPOSED]**. The report says the team *"assesses its priority and routes it to the right operational team"*, but does not define statuses.
+Lifecycle of a help request. The report says the team *"assesses its priority and routes it to the right operational team"*, but does not define statuses. **One status set decided on 15 November 2026** ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decision 6, #177), with the triage as a separate state; the transitions are the proposal of the record (§4), to confirm in #198. This replaces the earlier proposal (`Triaged`, `Acknowledged`, `Dispatched`, `Cancelled`, `Duplicate`).
 
 ```mermaid
 stateDiagram-v2
     [*] --> Submitted
-    Submitted --> Triaged: AI suggestion stored
-    Submitted --> Acknowledged: control room opens it (fallback, no AI)
-    Triaged --> Acknowledged: control room accepts or changes suggestion
-    Acknowledged --> Dispatched: routed to a team
-    Acknowledged --> Resolved: handled without dispatch
-    Dispatched --> OnTheWay: a team member accepts it
-    OnTheWay --> Resolved: that member closes it
-    Submitted --> Cancelled: participant cancels
-    Acknowledged --> Duplicate: merged with another request
-    Resolved --> [*]
-    Cancelled --> [*]
-    Duplicate --> [*]
+    Submitted --> Seen: control room acknowledges it (US-28)
+    Seen --> OnTheWay: a field-team member accepts the routed task (US-32)
+    OnTheWay --> Resolved: that member marks it resolved (US-33)
+    OnTheWay --> Seen: the task is cancelled (team deleted, US-16)
+    Submitted --> Closed: control room closes it (US-30)
+    Seen --> Closed
+    OnTheWay --> Closed
+    Resolved --> Closed
+    Closed --> [*]
+```
+
+Routing to a team (US-29) creates a field task and keeps the status. The triage runs beside it:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Suggested: valid AI answer within 30 s (US-34)
+    Pending --> NotTriaged: still Pending 30 s after submission, derived when read (US-36)
+    Suggested --> Accepted: control room takes the suggestion (US-35)
+    Suggested --> Changed: control room sets other values (US-35)
+    NotTriaged --> Changed: control room sets category and priority by hand
 ```
 
 Steps:
-1. A new request appears on the list and the venue map of every member with `HelpRequests.Triage` (the control room, P2), with category, location, time and, if available, the AI suggestion (US-26, US-27).
-2. A control-room member acknowledges it and confirms or changes the priority (US-28).
+1. A new request appears on the list and the venue map of every member with `HelpRequests.Triage` (the control room, P2), with its description, location, time and, if available, the AI's suggested category and priority (US-26, US-27).
+2. A control-room member acknowledges it and accepts or changes the category and priority (US-28, US-35); without a suggestion, they set both (US-36).
 3. They route it to a team of the event with `HelpRequests.Respond`, by default the team that handles its help category (e.g. *Nursing* for `Health`; [`features.md` §4.2](features.md#42-teams-and-permissions), US-29), or handle it directly. The request appears on the phone of that team's members (P5, US-31); the first one who accepts it sets it *On the way* (US-32).
 4. Every change is recorded with who and when (audit, assignment §6.6).
 5. The team member who accepted it closes it as resolved (US-33), or the control room closes it, if it was handled from there (US-30).
 
-> ⚠️ **GAP:** the role model is defined (features §4, to confirm with the team), and each event creates its own teams; the statuses and who closes a request are still assumptions. Needed: the interview with the security volunteer (report §4) to confirm how requests are handled today and which teams the pilot set-up should have (features §4.4).
+> ⚠️ **GAP:** the role model is confirmed (features §4, 15 November 2026), each event creates its own teams, and the status set is decided (decision 6 of the [record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md)); who closes a request in practice is still an assumption. Needed: the interview with the security volunteer (report §4) to confirm how requests are handled today and which teams the pilot set-up should have (features §4.4).
 
 ## W4 · FarolAdmin creates an event, EventAdmin sets it up
 

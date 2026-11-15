@@ -176,7 +176,7 @@
 <text x="2345.0" y="282" font-size="13" font-weight="bold" text-anchor="middle" fill="#1f2328" style="fill: light-dark(#1f2328, #ededed);">TriageSuggestion</text>
 <text x="2228" y="308" fill="#1f2328" style="fill: light-dark(#1f2328, #ededed);">+HelpCategory suggestedCategory</text>
 <text x="2228" y="328" fill="#1f2328" style="fill: light-dark(#1f2328, #ededed);">+Priority suggestedPriority</text>
-<text x="2228" y="348" fill="#1f2328" style="fill: light-dark(#1f2328, #ededed);">+TeamId suggestedTeamId</text>
+<text x="2228" y="348" fill="#1f2328" style="fill: light-dark(#1f2328, #ededed);">+string reason</text>
 <text x="2228" y="368" fill="#1f2328" style="fill: light-dark(#1f2328, #ededed);">+SuggestionDecision decision</text>
 <rect x="2220" y="540" width="250" height="94" fill="#ffffff" stroke="#ea580c" stroke-width="1.5" style="fill: light-dark(#ffffff, #1a1a1d); stroke: light-dark(#ea580c, #fb923c);"/>
 <rect x="2220" y="540" width="250" height="34" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5" style="fill: light-dark(#fed7aa, #6b3410); stroke: light-dark(#ea580c, #fb923c);"/>
