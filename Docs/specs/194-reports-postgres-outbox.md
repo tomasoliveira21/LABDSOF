@@ -1,0 +1,113 @@
+# #194 · Move Reports to PostgreSQL with an outbox
+
+> **Issue:** [#194](https://github.com/tomasoliveira21/LABDSOF/issues/194) · **Type:** chore · **Owner:** Bruno de Abreu Lopes · **Spec rules:** [README](README.md)
+> **Sources:** issue #194 and its dependencies #202, #189 (PR #211), #212 (PR #213), #177; [ADR-003](../Technical/adr/0003-database-and-data-ownership.md), [ADR-004](../Technical/adr/0004-service-communication.md), [ADR-006](../Technical/adr/0006-identity-and-access.md), [ADR-012](../Technical/adr/0012-observability.md), [ADR-013](../Technical/adr/0013-api-gateway.md); [API outline](../Technical/api-outline.md) §1, §4, §4.1, §7; [`features.md`](../Product/features.md) §4 (roles, teams, permissions) and US-23 to US-36; [meeting of 15 November 2026](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md) decisions 1, 6 and 8; [Spec-Driven Development rules](../Process/spec-driven-development.md).
+> **Stacked on #213** (which is stacked on #211): Reports needs both the PostgreSQL database of #189 and the `reports` AMQP user and queues of #212; without #213 the broker has no user a service can log in with. Rebased onto `main` once both are merged.
+
+## 1. Source
+
+**Outcome (issue):** the Reports service keeps help requests in its own PostgreSQL database instead of memory, and publishes its events through an outbox to RabbitMQ, ready for its Sprint B stories (US-23, US-24, US-26 to US-36).
+
+| # | Acceptance criterion | Tests (name starts with `194 AC-<n>`) |
+|---|---|---|
+| AC-1 | `HelpRequest` and `TriageSuggestion` live in PostgreSQL with Flyway migrations; a saved request is still there after a restart (a new Spring context on the same database). Statuses follow decision 6 (`Submitted → Seen → OnTheWay → Resolved → Closed`; triage `Pending/Suggested/NotTriaged/Accepted/Changed`, `NotTriaged` derived on read) and categories follow decision 8 (`Health, Safety, LostPerson, Infrastructure, Other`) | `PersistenceIT`, `HelpRequestTest`, `TriageViewTest` |
+| AC-2 | Saving the request and its outbox row is one transaction; a single-instance publisher uses `FOR UPDATE SKIP LOCKED`; with real PostgreSQL and RabbitMQ, a crash between save and publish still delivers `HelpRequestSubmitted` to the queue **exactly once** (ADR-004). Events carry the full state and a version (except `HelpRequestSubmitted`, D3) | `OutboxIT`, `SubmitHelpRequestTest` |
+| AC-3 | Consumers of `MembershipChanged` and `TeamChanged` upsert by version; a duplicate event and an older version are ignored | `LocalCopiesIT`, `ApplyMembershipChangedTest`, `ApplyTeamChangedTest` |
+| AC-4 | Reports is a resource server validated against Keycloak (issuer and JWKS from configuration). No token, expired token, wrong signature, wrong issuer, wrong audience → `401`; a valid token passes; a user of another event → `404` | `SecurityIT`, CI step *Check that Reports validates Keycloak tokens* |
+| AC-5 | The synthetic in-memory demo is removed (or only behind a `demo` profile, off by default) | `DemoRemovedIT` |
+| AC-6 | Hand-written contracts: `contracts/openapi.yaml` with the Sprint B endpoints of API outline §4, one JSON Schema per event in `contracts/events/` | `ContractIT` |
+| AC-7 | Compose and CI: Reports connects to its database and to RabbitMQ in `infra/compose.yaml`, no secret in code (environment variables only, values in `infra/.env.example`); the CI smoke test still passes | `ComposeConfigIT`, CI job `CI` |
+| AC-8 | Documentation: `CHANGELOG.md`, `Docs/README.md`, `local-delivery.md` if the way to run changes | `DocumentationIT` |
+
+## 2. Quality gates (adopted from [README](README.md))
+
+The gates Tiago Teixeira set for Events and Auth & Users are **adopted for `backend/reports`** from this issue on:
+
+| Gate | Rule | Where |
+|---|---|---|
+| Build | `mvn -f backend/reports/pom.xml verify` green | local and CI |
+| Coverage | JaCoCo `check`: ≥ 90% lines and ≥ 90% branches for the module, unit and integration tests together; the build fails below | `pom.xml` |
+| Mutation | PIT `DEFAULTS`, mutation score ≥ 80% on `…reports.domain` and `…reports.application`; the build fails below | `pom.xml` |
+| Integration | Testcontainers with the PostgreSQL and RabbitMQ images of `infra/compose.yaml` (same digests), the production Flyway migrations, the broker set up by the production `infra/rabbitmq/setup.sh` and `topology.json`. No H2, no database mocks | `*IT` (failsafe) |
+| Security | The AC-4 matrix on every implemented endpoint | `SecurityIT` |
+| Smoke | `ci.yml` steps run locally: `docker compose -p farol-ci … up --build -d --wait`, every check, `down --volumes` | local before the PR, CI |
+| Conventions | branch `chore/194-…`, title `Chore: …`, `Closes #194` | `conventions.yml` |
+
+No threshold is lowered, no test is disabled or deleted, no exclusion is added to coverage or PIT, no `-DskipTests`, no `--no-verify`.
+
+## 3. Decisions
+
+Only what the issue, the ADRs, the API outline and the meeting records leave open.
+
+| # | Decision | Options weighed and why |
+|---|---|---|
+| D1 | **Persistence with Spring JDBC (`JdbcClient`) and hand-written SQL**, not JPA | *JPA/Hibernate:* less SQL for CRUD, but the outbox claim (`FOR UPDATE SKIP LOCKED`) and the versioned upserts (`ON CONFLICT … WHERE version <`) are native SQL anyway, and entity mapping adds a second model next to the domain records. *Spring Data JDBC:* aggregates map well, but upserts and locking still need custom queries. JDBC keeps every statement visible in review and the domain free of persistence annotations (hexagonal, B5) |
+| D2 | **Schema** (`V1__reports.sql`): `help_request` (one row per request, `event_id` on every row, `UNIQUE (event_id, requester_id, client_request_id)`, check constraints on status, category and priority), `triage_suggestion` (1:1 with the request, `state` limited to the stored states `Pending/Suggested/Accepted/Changed`), `outbox`, `processed_message`, `membership_copy` (PK `event_id, user_id`), `team_copy` (PK `team_id`, with `event_id`). Ids are `uuid`; `requester_id` and `user_id` are `text` (the token's `sub`) | Check constraints make decisions 6 and 8 hold in the database too. `NotTriaged` is **not** a stored state (decision 6): a check constraint refuses it |
+| D3 | **`HelpRequestSubmitted` carries only `requestId`**, inside the envelope of API outline §7.1 (`messageId`, `type`, `schemaVersion`, `occurredAt`, `producer`, `eventId`, `actorUserId`, `payload`). Every other event carries the full state with a `version` | API outline §7.3 makes this event the one exception to "full state and version" (assessment M-5, T11: no help-request text in the broker). The request itself keeps a `version` column for the events that will carry its state |
+| D4 | **Outbox table**: `id bigserial` (publishing order), `message_id uuid UNIQUE`, `exchange`, `routing_key`, `type`, `body jsonb` (the whole envelope, built at save time), `created_at`, `attempts`, `next_attempt_at`, `published_at`, `last_error`. Partial index on `next_attempt_at WHERE published_at IS NULL`. Published rows are kept (the age of the oldest unpublished row is the metric #148 needs; a clean-up job comes with retention, NFR-19) | *Delete on publish:* smaller table, but loses the audit of what was sent and when. *Envelope built at publish time:* smaller rows, but the message would depend on code at publish time, not at the business change |
+| D5 | **Publisher**: one `@Scheduled` job every `farol.outbox.poll-interval` (default 500 ms) claims up to `farol.outbox.batch-size` (default 50) due rows in `id` order with `SELECT … FOR UPDATE SKIP LOCKED`, publishes each with **publisher confirms** (`correlated`, wait up to `farol.outbox.confirm-timeout`, default 5 s) and **`mandatory`** (an unroutable message is a failure, not a silent drop), and marks it published in the same transaction. On a failure: `attempts + 1`, `next_attempt_at = now + min(2^attempts, 60) s`, `last_error`; the rest of the batch waits for the next run (the broker is most likely down) | *Publish after commit in the request thread:* lower latency, but a crash between commit and publish loses the event (the reason for the outbox, ADR-004). *Fixed retry interval:* simpler, but hammers a broker that is down; the cap of 60 s keeps the delay short once it comes back. Retries never stop: an unpublished event is never dropped, and the row's age shows the problem |
+| D6 | **Delivery guarantee**: a crash **before** the publish (row committed, not sent) delivers the message once after restart; a crash **after** the broker's confirm but before the row is marked can send it again, so consumers stay idempotent by `messageId` (ADR-004: at least once + idempotent consumers). "Exactly once at the queue" is proven for the crash between save and publish, as AC-2 asks | Two-phase commit between PostgreSQL and RabbitMQ is not available; the ADR already chose at-least-once with deduplication |
+| D7 | **Consumers**: `reports.auth-users-events` (`membership.changed`) and `reports.events-events` (`team.changed`). Each message: parse and validate the envelope and payload; then, in one transaction, insert its `messageId` in `processed_message` (`ON CONFLICT DO NOTHING`: a duplicate stops here) and upsert the copy with `ON CONFLICT … DO UPDATE … WHERE copy.version < excluded.version` (an older or equal version changes nothing). Types this issue does not handle yet (`user-profile.changed`, `user-status.changed`, `user.deleted`, `event.changed`, `venue-map-version.published`) are acknowledged and logged, not stored | *Ignore unknown types* vs *dead-letter them:* dead-lettering keeps them for later, but every first login (`UserProfileChanged`) would fill the DLQ panel with noise; decision 6 rebuilds copies by resetting the stack, so the stories that add these handlers (US-13, US-23, account deletion) start from a reset |
+| D8 | **Failures in consumers**: an invalid message (not JSON, missing or wrong fields, unknown enum, `eventId` missing) is **not retried**: it goes straight to `farol.dead-letters` with routing key `<queue>.dlq` and the reason in the `x-farol-error` header. Any other failure is retried **4 times** with backoff 1 s, 2 s, 4 s, then dead-lettered the same way (ADR-004 decision 3) | Retrying a malformed message cannot succeed; the reason header is what the DLQ panel (ADR-012) shows |
+| D9 | **Broker objects are not declared** by Reports (no `Queue`/`Exchange` beans): they come from `infra/rabbitmq/topology.json` (#212), and the `reports` user cannot declare anyway. Listeners use `missing-queues-fatal=false`, so Reports starts before `rabbitmq-setup` has run and starts consuming once the queues exist. The integration tests set the broker up with the same `setup.sh` and `topology.json` and connect as the `reports` user | A test broker declared by the test would hide a missing permission or binding |
+| D10 | **JWT**: Spring Security resource server with `issuer-uri` = `FAROL_ISSUER_URI`, `jwk-set-uri` = `FAROL_JWKS_URI`, `audiences` = `farol-api` (ADR-006, as written there). With both URIs set, Reports starts while Keycloak is down and fetches the keys at the first token. Stateless, no session, CSRF off (bearer tokens only). Public: `GET /api/v1/status` (Compose health check, CI), the Swagger UI and `/openapi.yaml`. Everything else needs a valid token | The tests sign tokens with their own RSA key served as a JWKS by a JDK `HttpServer` (no new dependency); CI checks a real Keycloak token end to end (AC-4) |
+| D11 | **Endpoints implemented here**: `POST /api/v1/events/{eventId}/help-requests` (Member; `clientRequestId` makes a retry return the saved request, `200` instead of `201`, and adds no second outbox row) and `GET /api/v1/events/{eventId}/help-requests/{requestId}` (the owner gets the participant view: `id`, `description`, `status`, `updatedAt`; a member with `HelpRequests.Triage` gets the control-room view of §4.1). Anything else returns `404` without saying whether the request exists | They are the persistence path the issue asks for, and the only way to test the isolation rule of AC-4 and ADR-003 decision 3. What US-23 and US-24 add beyond this (map version and event status checks with `EventChanged` and `VenueMapVersionPublished` copies, the live list) stays in those stories |
+| D12 | **Authorisation from local copies only** (ADR-006 decision 4): Member = an `Active` membership copy for `(eventId, sub)`; `HelpRequests.Triage` = role `EventAdmin`, or a non-deleted team copy of the same event in the membership's `teamIds` with that permission. No copy, `Removed`, or another event → `404` | "No copy means no access" (ADR-006) |
+| D13 | **`NotTriaged` derived on read**: a request whose triage is still `Pending` 30 s after `submittedAt` reads as `NotTriaged` with `notTriagedReason: Timeout` (API outline §4.1, decision 6). The clock is injected, so the rule is unit-tested | No sweeper job (decision 6) |
+| D14 | **Contracts by hand, no code generation in this issue**: `openapi.yaml` holds every Sprint B endpoint of API outline §4 (help requests, triage status, field tasks for US-31 to US-33); `ContractIT` checks that every endpoint Reports serves is in it. `openapi-generator` (ADR-004 decision 4, C7, SDD rule R4) is not introduced here | No service uses the generator yet (checked on 16 November 2026), R4 is still *[PROPOSED]*, and generated DTOs would count against the 90% coverage gate without an exclusion, which the gates forbid. **For the team:** decide how generated code meets the coverage gate before R4 is applied (open point, §6) |
+| D15 | **Event JSON Schemas** (draft 2020-12) in `contracts/events/`: the envelope, `help-request.submitted` (published), and `membership.changed` and `team.changed` as **Reports reads them** (the producers' own contracts win when #191 and #192 publish them). `ContractIT` validates the message the outbox sends and the consumed fixtures against them | R3 of the SDD rules; checking the real message keeps the contract honest. Test-only dependency `com.networknt:json-schema-validator` |
+| D16 | **Demo removed** (AC-5, first option): the controller, service, record, tests and the demo part of the contract go; the walking-skeleton run instructions say it was replaced by #194 | Keeping it behind a profile would need an unauthenticated route next to the authenticated API; deleting is less code and the evidence of Sprint A stays in `Docs/Technical/evidence/` |
+| D17 | **Build split**: tests that need Docker are `*IT` and run in `failsafe` during `verify`; the Dockerfile runs `mvn package` (unit tests only), because there is no Docker daemon inside `docker build`. JaCoCo merges both runs; CI keeps running `verify` before the image is built | Running `verify` inside the image build would need Docker-in-Docker; no test is skipped, they run in CI and locally |
+| D18 | **Compose**: Reports gets `SPRING_DATASOURCE_*` (`jdbc:postgresql://postgres:5432/reports`, user `reports`, `REPORTS_DB_PASSWORD`), `SPRING_RABBITMQ_*` (user `reports`, `RABBITMQ_REPORTS_PASSWORD`) and `FAROL_ISSUER_URI` / `FAROL_JWKS_URI`; it waits for a healthy PostgreSQL (Flyway runs at start-up), never for the broker (ADR-011). Hikari pool of 5 (≤ 10, #211 handoff). No new variable in `infra/.env.example`: the passwords already exist there | Flyway cannot run without the database; the broker is handled by D5 and D9 |
+| D19 | **Ids**: `eventId`, `teamId`, `requestId`, `clientRequestId` are UUIDs; a malformed one in a path is `400` | Events (#192) has not fixed its id format yet; a UUID is what the domain model and the Sprint A skeleton use. Changing it later is a migration (expand and contract) |
+
+## 4. Features (build order)
+
+| # | Feature | Tests |
+|---|---|---|
+| F1 | Build: dependencies, failsafe, JaCoCo merge and `check`, PIT; Dockerfile `package`; demo removed | `DemoRemovedIT`; build fails below thresholds |
+| F2 | Domain: `HelpRequest`, `TriageSuggestion`, enums of decisions 6 and 8, `Location`, `NotTriaged` derivation, `EventAccess` | `HelpRequestTest`, `TriageViewTest`, `EventAccessTest` |
+| F3 | Migration `V1`, JDBC adapters, `SubmitHelpRequest` with outbox row in one transaction | `SubmitHelpRequestTest`, `PersistenceIT` |
+| F4 | Outbox publisher with confirms, backoff, `SKIP LOCKED` | `OutboxIT` |
+| F5 | Consumers with idempotency and versioned upsert, DLQ | `ApplyMembershipChangedTest`, `ApplyTeamChangedTest`, `LocalCopiesIT` |
+| F6 | Resource server, endpoints, isolation | `SecurityIT`, `GetHelpRequestTest` |
+| F7 | Contracts and contract tests | `ContractIT` |
+| F8 | Compose, CI, docs | `ComposeConfigIT`, `DocumentationIT`, CI smoke |
+
+## 5. Edge-case matrix
+
+| Case | Expected | Test |
+|---|---|---|
+| Crash between save and publish | Row survives; next publisher sends it; exactly one message in `reports.reports-events` | `OutboxIT` · `194 AC-2 a crash between save and publish delivers HelpRequestSubmitted exactly once` |
+| Save rolls back | No request and no outbox row | `OutboxIT` · `194 AC-2 the request and its outbox row commit or roll back together` |
+| Same `clientRequestId` sent twice (publish duplicated at the source) | Same request returned (`200`), one outbox row, one message | `OutboxIT` · `194 AC-2 a retried submit adds no second event`; `SubmitHelpRequestTest` |
+| Two identical submits at once | One row (unique constraint), both answers carry the same id | `PersistenceIT` · `194 AC-1 concurrent identical submits keep one request` |
+| RabbitMQ down when publishing | Row kept, `attempts` and `next_attempt_at` grow, `last_error` set; published once when the broker is back | `OutboxIT` · `194 AC-2 the outbox keeps and retries events while RabbitMQ is down` |
+| Unroutable message (exchange missing) | Not marked published (mandatory + confirm) | `OutboxIT` · `194 AC-2 an unroutable event stays in the outbox` |
+| Two publishers at once | Disjoint rows (`SKIP LOCKED`), each message sent once | `OutboxIT` · `194 AC-2 two publishers never claim the same row` |
+| Publish after confirm, crash before marking | Message sent again; consumer ignores the duplicate `messageId` | `LocalCopiesIT` · `194 AC-3 a duplicate event is applied once` (same mechanism) |
+| Duplicate `MembershipChanged` / `TeamChanged` | Applied once, `processed_message` has one row | `LocalCopiesIT` · `194 AC-3 a duplicate event is applied once` |
+| Older or equal version arrives after a newer one | Ignored, copy keeps the newer state | `LocalCopiesIT` · `194 AC-3 an older MembershipChanged is ignored`, `194 AC-3 an older TeamChanged is ignored` |
+| Out-of-order versions (2 before 1) | Copy ends at version 2 | same tests |
+| Invalid payload (bad JSON, missing field, unknown enum, no `eventId`) | Not retried; in `<queue>.dlq` with `x-farol-error` | `LocalCopiesIT` · `194 AC-3 an invalid event goes to the dead-letter queue with its reason` |
+| Event type not handled yet | Acknowledged, nothing stored | `LocalCopiesIT` · `194 AC-3 an event type not handled yet is acknowledged` |
+| No token / expired / wrong signature / wrong issuer / wrong audience | `401` | `SecurityIT` · `194 AC-4 …` (one test per case) |
+| Valid token, member | `201` | `SecurityIT` · `194 AC-4 a valid token of a member submits a request` |
+| Valid token, user of another event | `404` | `SecurityIT` · `194 AC-4 a member of another event gets 404` |
+| Valid token, no membership copy, or `Removed` | `404` | `SecurityIT` · `194 AC-4 a removed member gets 404`; `EventAccessTest` |
+| Member of the event who is not the owner reads a request | `404` | `SecurityIT` · `194 AC-4 another member cannot read someone's request` |
+| Triage member reads a request | Control-room view | `SecurityIT` · `194 AC-4 a triage member sees the control-room view` |
+| Request id of another event in the path | `404` | `SecurityIT` · `194 AC-4 a request id under another event is not found` |
+| Malformed UUID in the path | `400` | `SecurityIT` · `194 AC-4 a malformed id is rejected` |
+| Description blank, > 500, location outside [0,1], `mapVersion` < 1, unknown field (mass assignment, forged `requesterId`) | `400`, nothing saved | `SecurityIT` · `194 AC-4 invalid submissions are rejected`; `HelpRequestTest` |
+| Description with SQL or HTML | Stored and returned as text (bound parameters) | `SecurityIT` · `194 AC-4 injection text is stored as plain text` |
+| Triage still `Pending` at 29 s / 30 s | `Pending` / `NotTriaged` (`Timeout`) | `TriageViewTest` |
+| Status, triage state or category outside decisions 6 and 8 written to the database | Refused by check constraints | `PersistenceIT` · `194 AC-1 the database refuses states outside decisions 6 and 8` |
+| Reports starts before `rabbitmq-setup` | Starts; consumes once queues exist | `D9`; Compose smoke |
+
+## 6. Handoff and changelog
+
+- **16 Nov 2026 · start.** Baseline `mvn verify` on `main`: green, 10 tests (run with JDK 23 `--release 21`; the machine's default Java is a JRE 17). Docker Desktop had to be restarted (the engine VM was unreachable). PR #211 and #213 not merged: branch stacked on #213.
+- **Open for the team:** D14 (how generated code meets the coverage gate before SDD rule R4 is applied).
+- **For #148 (observability):** the age of the oldest row `WHERE published_at IS NULL` in `outbox` is the outbox-lag metric; `attempts` and `last_error` show why.
+- **For US-34 (triage):** `reports.reports-events` receives `HelpRequestSubmitted` but has no consumer yet; messages wait there.
