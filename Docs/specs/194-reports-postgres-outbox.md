@@ -11,9 +11,9 @@
 | # | Acceptance criterion | Tests (name starts with `194 AC-<n>`) |
 |---|---|---|
 | AC-1 | `HelpRequest` and `TriageSuggestion` live in PostgreSQL with Flyway migrations; a saved request is still there after a restart (a new Spring context on the same database). Statuses follow decision 6 (`Submitted → Seen → OnTheWay → Resolved → Closed`; triage `Pending/Suggested/NotTriaged/Accepted/Changed`, `NotTriaged` derived on read) and categories follow decision 8 (`Health, Safety, LostPerson, Infrastructure, Other`) | `PersistenceIT`, `HelpRequestTest`, `TriageViewTest` |
-| AC-2 | Saving the request and its outbox row is one transaction; a single-instance publisher uses `FOR UPDATE SKIP LOCKED`; with real PostgreSQL and RabbitMQ, a crash between save and publish still delivers `HelpRequestSubmitted` to the queue **exactly once** (ADR-004). Events carry the full state and a version (except `HelpRequestSubmitted`, D3) | `OutboxIT`, `SubmitHelpRequestTest` |
-| AC-3 | Consumers of `MembershipChanged` and `TeamChanged` upsert by version; a duplicate event and an older version are ignored | `LocalCopiesIT`, `ApplyMembershipChangedTest`, `ApplyTeamChangedTest` |
-| AC-4 | Reports is a resource server validated against Keycloak (issuer and JWKS from configuration). No token, expired token, wrong signature, wrong issuer, wrong audience → `401`; a valid token passes; a user of another event → `404` | `SecurityIT`, CI step *Check that Reports validates Keycloak tokens* |
+| AC-2 | Saving the request and its outbox row is one transaction; a single-instance publisher uses `FOR UPDATE SKIP LOCKED`; with real PostgreSQL and RabbitMQ, a crash between save and publish still delivers `HelpRequestSubmitted` to the queue **exactly once** (ADR-004). Events carry the full state and a version (except `HelpRequestSubmitted`, D3) | `OutboxIT`, `HelpRequestServiceTest`, `SecurityIT` (retry answers 200) |
+| AC-3 | Consumers of `MembershipChanged` and `TeamChanged` upsert by version; a duplicate event and an older version are ignored | `LocalCopiesIT`, `LocalCopyServiceTest`, `EventAccessTest` |
+| AC-4 | Reports is a resource server validated against Keycloak (issuer and JWKS from configuration). No token, expired token, wrong signature, wrong issuer, wrong audience → `401`; a valid token passes; a user of another event → `404` | `SecurityIT`, `EventAccessTest`, `HelpRequestServiceTest`, CI step *Check that Reports validates Keycloak tokens and reaches its database* (`infra/tests/reports_smoke.py`, a real Keycloak token) |
 | AC-5 | The synthetic in-memory demo is removed (or only behind a `demo` profile, off by default) | `DemoRemovedIT` |
 | AC-6 | Hand-written contracts: `contracts/openapi.yaml` with the Sprint B endpoints of API outline §4, one JSON Schema per event in `contracts/events/` | `ContractIT` |
 | AC-7 | Compose and CI: Reports connects to its database and to RabbitMQ in `infra/compose.yaml`, no secret in code (environment variables only, values in `infra/.env.example`); the CI smoke test still passes | `ComposeConfigIT`, CI job `CI` |
@@ -66,11 +66,11 @@ Only what the issue, the ADRs, the API outline and the meeting records leave ope
 | # | Feature | Tests |
 |---|---|---|
 | F1 | Build: dependencies, failsafe, JaCoCo merge and `check`, PIT; Dockerfile `package`; demo removed | `DemoRemovedIT`; build fails below thresholds |
-| F2 | Domain: `HelpRequest`, `TriageSuggestion`, enums of decisions 6 and 8, `Location`, `NotTriaged` derivation, `EventAccess` | `HelpRequestTest`, `TriageViewTest`, `EventAccessTest` |
-| F3 | Migration `V1`, JDBC adapters, `SubmitHelpRequest` with outbox row in one transaction | `SubmitHelpRequestTest`, `PersistenceIT` |
+| F2 | Domain: `HelpRequest`, `TriageSuggestion`, enums of decisions 6 and 8, `Location`, `NotTriaged` derivation, `EventAccess`; application: `HelpRequestService`, `LocalCopyService` and their ports | `HelpRequestTest`, `TriageViewTest`, `EventAccessTest`, `HelpRequestServiceTest`, `LocalCopyServiceTest` |
+| F3 | Migration `V1`, JDBC adapters, submit with the outbox row in one transaction | `PersistenceIT` |
 | F4 | Outbox publisher with confirms, backoff, `SKIP LOCKED` | `OutboxIT` |
-| F5 | Consumers with idempotency and versioned upsert, DLQ | `ApplyMembershipChangedTest`, `ApplyTeamChangedTest`, `LocalCopiesIT` |
-| F6 | Resource server, endpoints, isolation | `SecurityIT`, `GetHelpRequestTest` |
+| F5 | Consumers with idempotency and versioned upsert, DLQ | `LocalCopiesIT` |
+| F6 | Resource server, endpoints, isolation | `SecurityIT` |
 | F7 | Contracts and contract tests | `ContractIT` |
 | F8 | Compose, CI, docs | `ComposeConfigIT`, `DocumentationIT`, CI smoke |
 
@@ -80,34 +80,41 @@ Only what the issue, the ADRs, the API outline and the meeting records leave ope
 |---|---|---|
 | Crash between save and publish | Row survives; next publisher sends it; exactly one message in `reports.reports-events` | `OutboxIT` · `194 AC-2 a crash between save and publish delivers HelpRequestSubmitted exactly once` |
 | Save rolls back | No request and no outbox row | `OutboxIT` · `194 AC-2 the request and its outbox row commit or roll back together` |
-| Same `clientRequestId` sent twice (publish duplicated at the source) | Same request returned (`200`), one outbox row, one message | `OutboxIT` · `194 AC-2 a retried submit adds no second event`; `SubmitHelpRequestTest` |
-| Two identical submits at once | One row (unique constraint), both answers carry the same id | `PersistenceIT` · `194 AC-1 concurrent identical submits keep one request` |
+| Same `clientRequestId` sent twice (publish duplicated at the source) | Same request returned (`200`), one outbox row, one message | `OutboxIT` · `194 AC-2 a retried submit adds no second event`; `SecurityIT` · `194 AC-2 a retried submit returns 200 with the request already saved` |
+| Two identical submits at once | One row (`ON CONFLICT` on the unique constraint), every answer carries the same id, one event | `PersistenceIT` · `194 AC-1 concurrent identical submits keep one request and one event` |
 | RabbitMQ down when publishing | Row kept, `attempts` and `next_attempt_at` grow, `last_error` set; published once when the broker is back | `OutboxIT` · `194 AC-2 the outbox keeps and retries events while RabbitMQ is down` |
 | Unroutable message (exchange missing) | Not marked published (mandatory + confirm) | `OutboxIT` · `194 AC-2 an unroutable event stays in the outbox` |
 | Two publishers at once | Disjoint rows (`SKIP LOCKED`), each message sent once | `OutboxIT` · `194 AC-2 two publishers never claim the same row` |
 | Publish after confirm, crash before marking | Message sent again; consumer ignores the duplicate `messageId` | `LocalCopiesIT` · `194 AC-3 a duplicate event is applied once` (same mechanism) |
 | Duplicate `MembershipChanged` / `TeamChanged` | Applied once, `processed_message` has one row | `LocalCopiesIT` · `194 AC-3 a duplicate event is applied once` |
-| Older or equal version arrives after a newer one | Ignored, copy keeps the newer state | `LocalCopiesIT` · `194 AC-3 an older MembershipChanged is ignored`, `194 AC-3 an older TeamChanged is ignored` |
+| Older or equal version arrives after a newer one | Ignored, copy keeps the newer state | `LocalCopiesIT` · `194 AC-3 an older MembershipChanged is ignored`, `194 AC-3 a TeamChanged creates the copy, an older TeamChanged is ignored`; `LocalCopyServiceTest` · `194 AC-3 an older or equal MembershipChanged version is ignored` |
+| A `TeamChanged` for a team id of another event | Ignored: a team never moves to another event | `LocalCopiesIT` · `194 AC-3 a team copy never moves to another event` |
 | Out-of-order versions (2 before 1) | Copy ends at version 2 | same tests |
 | Invalid payload (bad JSON, missing field, unknown enum, no `eventId`) | Not retried; in `<queue>.dlq` with `x-farol-error` | `LocalCopiesIT` · `194 AC-3 an invalid event goes to the dead-letter queue with its reason` |
-| Event type not handled yet | Acknowledged, nothing stored | `LocalCopiesIT` · `194 AC-3 an event type not handled yet is acknowledged` |
-| No token / expired / wrong signature / wrong issuer / wrong audience | `401` | `SecurityIT` · `194 AC-4 …` (one test per case) |
-| Valid token, member | `201` | `SecurityIT` · `194 AC-4 a valid token of a member submits a request` |
+| Event type not handled yet | Acknowledged, nothing stored | `LocalCopiesIT` · `194 AC-3 an event type not handled yet is acknowledged and not stored` |
+| No token / expired / wrong signature / wrong issuer / wrong audience / not a JWT | `401` | `SecurityIT` · `194 AC-4 a request without a token gets 401`, `194 AC-4 an expired token gets 401`, `194 AC-4 a token with a wrong signature gets 401`, `194 AC-4 a token from another issuer gets 401`, `194 AC-4 a token for another audience gets 401`, `194 AC-4 a malformed token gets 401` |
+| Valid token, member | `201`, then `200` on read with the participant view only | `SecurityIT` · `194 AC-4 a valid token of a member submits a request and reads it back` |
 | Valid token, user of another event | `404` | `SecurityIT` · `194 AC-4 a member of another event gets 404` |
-| Valid token, no membership copy, or `Removed` | `404` | `SecurityIT` · `194 AC-4 a removed member gets 404`; `EventAccessTest` |
+| Valid token, no membership copy, or `Removed` | `404` | `SecurityIT` · `194 AC-4 a removed member gets 404`; `EventAccessTest` · `194 AC-4 no membership copy or a removed membership gives no access` |
+| Team of another event, or deleted team, in the membership's `teamIds` | Grants nothing | `EventAccessTest` · `194 AC-4 a team of another event or a deleted team grants nothing` |
 | Member of the event who is not the owner reads a request | `404` | `SecurityIT` · `194 AC-4 another member cannot read someone's request` |
 | Triage member reads a request | Control-room view | `SecurityIT` · `194 AC-4 a triage member sees the control-room view` |
 | Request id of another event in the path | `404` | `SecurityIT` · `194 AC-4 a request id under another event is not found` |
 | Malformed UUID in the path | `400` | `SecurityIT` · `194 AC-4 a malformed id is rejected` |
-| Description blank, > 500, location outside [0,1], `mapVersion` < 1, unknown field (mass assignment, forged `requesterId`) | `400`, nothing saved | `SecurityIT` · `194 AC-4 invalid submissions are rejected`; `HelpRequestTest` |
-| Description with SQL or HTML | Stored and returned as text (bound parameters) | `SecurityIT` · `194 AC-4 injection text is stored as plain text` |
-| Triage still `Pending` at 29 s / 30 s | `Pending` / `NotTriaged` (`Timeout`) | `TriageViewTest` |
+| Description missing, blank or > 500, location outside [0,1], `mapVersion` < 1, missing `clientRequestId` or location, unknown field (mass assignment: forged `requesterId`, `status`), malformed JSON | `400`, nothing saved | `SecurityIT` · `194 AC-4 invalid submissions are rejected and nothing is saved`; `HelpRequestTest` · `194 AC-4 a point outside the map is refused, its edges are accepted` |
+| Description with SQL or HTML | Stored and returned as text (bound parameters) | `SecurityIT` · `194 AC-4 injection text is stored and returned as plain text` |
+| Triage still `Pending` at 29.999 s / 30 s | `Pending` / `NotTriaged` (`Timeout`) | `TriageViewTest` · `194 AC-1 a request still Pending before 30 s reads as Pending`, `194 AC-1 a request still Pending at 30 s reads as NotTriaged with reason Timeout` |
+| Time with nanoseconds | Kept to the microsecond, so a read equals what was saved | `HelpRequestTest` · `194 AC-1 times are kept to the microsecond, as the database stores them` |
 | Status, triage state or category outside decisions 6 and 8 written to the database | Refused by check constraints | `PersistenceIT` · `194 AC-1 the database refuses states outside decisions 6 and 8` |
-| Reports starts before `rabbitmq-setup` | Starts; consumes once queues exist | `D9`; Compose smoke |
+| Reports starts before `rabbitmq-setup` | Starts; consumes once queues exist | D9 (`missing-queues-fatal=false`); Compose smoke, where Reports and `rabbitmq-setup` start together |
+| A help-request text in the `HelpRequestSubmitted` payload | Refused by its JSON Schema (M-5) | `ContractIT` · `194 AC-6 the HelpRequestSubmitted the outbox sends matches its JSON Schema` |
+| Restart of the restarted service | The request is still there | `PersistenceIT` · `194 AC-1 a saved request survives a restart` |
 
 ## 6. Handoff and changelog
 
 - **16 Nov 2026 · start.** Baseline `mvn verify` on `main`: green, 10 tests (run with JDK 23 `--release 21`; the machine's default Java is a JRE 17). Docker Desktop had to be restarted (the engine VM was unreachable). PR #211 and #213 not merged: branch stacked on #213.
+- **16 Nov 2026 · AC-1 to AC-6.** Domain, application, JDBC adapters, outbox publisher, consumers, resource server, contracts. `mvn verify` green, JaCoCo 99.3 % lines and 99.0 % branches, PIT 50/50 mutants killed. Found on the way: identical submits at the same time use `INSERT … ON CONFLICT DO NOTHING` so they never fail; times are kept to the microsecond (PostgreSQL's precision); the dead-letter reason is the root cause; every outgoing event carries its message id, event id and actor.
+- **16 Nov 2026 · AC-7 and AC-8.** Compose wiring, CI smoke step (`infra/tests/reports_smoke.py`, a real Keycloak token through the gateway), changelog and documents. `mvn verify`: 42 unit and 76 integration tests, JaCoCo 99.3 % lines (457/460) and 99.0 % branches (104/105), PIT 50/50 killed. Local smoke: every check step of `ci.yml` passes against `docker compose -p farol-ci … up --build --wait`, then `down --volumes`. On this machine Docker Desktop's Resource Saver pauses the engine VM during long Testcontainers runs; a container kept running avoids it.
 - **Open for the team:** D14 (how generated code meets the coverage gate before SDD rule R4 is applied).
 - **For #148 (observability):** the age of the oldest row `WHERE published_at IS NULL` in `outbox` is the outbox-lag metric; `attempts` and `last_error` show why.
 - **For US-34 (triage):** `reports.reports-events` receives `HelpRequestSubmitted` but has no consumer yet; messages wait there.

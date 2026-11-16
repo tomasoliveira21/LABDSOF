@@ -2,6 +2,27 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-16 · Reports on PostgreSQL with an outbox (#194, Bruno Lopes)
+
+**Why:** Reports kept its synthetic help requests in memory, with no token check and no broker. Its Sprint B stories (US-23, US-24, US-26 to US-36) need the requests in its own database (ADR-003), events that are never lost (ADR-004) and validated tokens (ADR-006). Spec, decisions and edge-case matrix: [`Docs/specs/194-reports-postgres-outbox.md`](Docs/specs/194-reports-postgres-outbox.md).
+
+### Added
+- `backend/reports`: help requests and their triage in PostgreSQL (Flyway `V1`), with the statuses, triage states and categories of decisions 6 and 8 of 15 November 2026 enforced by check constraints; `NotTriaged` derived on read. `POST /api/v1/events/{eventId}/help-requests` (a retry with the same `clientRequestId` returns the saved request) and `GET …/{requestId}` (owner or `HelpRequests.Triage`; anyone else gets 404).
+- The outbox: `HelpRequestSubmitted` (only the `requestId`) is saved in the request's transaction and published by one job with `FOR UPDATE SKIP LOCKED`, publisher confirms, mandatory routing and backoff up to 60 s.
+- Consumers of `MembershipChanged` and `TeamChanged`: idempotent by `messageId`, upsert by version; an invalid message goes to its dead-letter queue with the reason, other failures after 4 attempts (1 s, 2 s, 4 s).
+- JWT validation against Keycloak (issuer, keys, audience `farol-api`, expiry); authorisation from the local copies.
+- Contracts: `contracts/openapi.yaml` with the Sprint B endpoints of API outline §4, and JSON Schemas of the envelope, `HelpRequestSubmitted`, and `MembershipChanged` and `TeamChanged` as Reports reads them.
+- Quality gates of [`Docs/specs/README.md`](Docs/specs/README.md) adopted for Reports: JaCoCo at least 90% of lines and branches, PIT at least 80% on `domain` and `application`, integration tests with Testcontainers on the Compose images and the production `infra/rabbitmq/setup.sh`.
+- `infra/tests/reports_smoke.py` and its CI step: Reports refuses a missing or tampered token and accepts a real Keycloak token through the gateway.
+
+### Changed
+- `infra/compose.yaml`: Reports connects to its database (and waits for it) and to RabbitMQ as the `reports` user, and gets the issuer and key addresses of Keycloak; no new variable in `infra/.env.example`.
+- The Reports image runs `mvn package` (unit tests); the integration tests need Docker and run in `mvn verify` in CI.
+- `local-delivery.md` §0, API outline §1.1, the walking-skeleton plan and assessment §9.1: the demo is gone.
+
+### Removed
+- The synthetic in-memory demo of Sprint A (`/api/v1/demo/help-requests` and its `demo` profile); the tag `v0.1.0` keeps it.
+
 ## [Unreleased] · 2026-11-16 · RabbitMQ topology and per-service users (#212, Tiago Teixeira)
 
 **Why:** no issue covered the broker's queues and users, and without them no service can publish or consume in the stack (the image's `guest` works only inside its container). Needed by #191 to #194 and #201.
