@@ -51,12 +51,12 @@ Journeys W1–W8 are described in [`user-workflows.md`](user-workflows.md).
 | **Role or job** | A `RegularUser` of the event, in the *Control room* team, whose permissions are `HelpRequests.Triage` and `Reports.Review` (features §4.2, §4.4). Not a role: if the EventAdmin takes him out of the team, he is a participant like any other |
 | **Context of use** | During the night, under time pressure, with many requests arriving at the same time; on a laptop in the control room |
 | **Goals** | See every help request with what happened and where; decide the priority; route it to the right team of the event (e.g. *Nursing*, *Security*, *PCR*); know what is still open; confirm or reject the reports of the types his team reviews |
-| **Frustrations (hypothesis)** | Requests arrive by radio and phone, with no structured history, no priority and no precise location. *Report root cause 4, explicitly marked as a hypothesis to confirm in the interview with the security volunteer* |
+| **Frustrations (hypothesis)** | Requests arrive by radio and phone, with no structured history, no priority and no precise location. *Report root cause 4, explicitly marked as a hypothesis to confirm with the security and nurses questionnaires (#207)* |
 | **What he needs from the product** | A live list and a map of open requests; category, location and status on every request; a suggested category and priority he can accept or change (the participant only describes the problem, decided 15 November 2026); a record of who did what |
 | **Constraints** | Must not depend on the product alone: radio stays as the backup channel (report §5, regulatory risks) |
 | **What success looks like** | Sees each new request within seconds, with its exact location on the map and an AI-suggested priority and team within 30 s (SC2, SC3). Knows, for every report of his team, whether it is pending, confirmed, rejected or resolved |
 
-> ⚠️ **GAP:** almost everything about P2 is a hypothesis until the **interview with the security volunteer** happens (report §4). Needed: interview notes on how a request reaches the team today, which channels are used, how long it takes, and who decides the priority. Then update the *Frustrations* and *Constraints* rows.
+> ⚠️ **GAP:** almost everything about P2 is a hypothesis until the **questionnaires for security staff and nurses** (#207, replacing the interview with the security volunteer, report §4) are answered. Needed: answers on how a request reaches the team today, which channels are used, how long it takes, and who decides the priority. Then update the *Frustrations* and *Constraints* rows.
 
 ## P3 · Sofia, the event admin
 
@@ -94,12 +94,12 @@ Journeys W1–W8 are described in [`user-workflows.md`](user-workflows.md).
 | **Role or job** | A `RegularUser` of the event, in a team whose permissions include `HelpRequests.Respond` and/or `Reports.Respond` (features §4.2, §4.4). Not a role: the job comes from the team she is in |
 | **Context of use** | During the night, on her phone, moving through the crowd, with noise, poor light and often her hands busy. The radio stays as her backup channel |
 | **Goals** | Know straight away when something is sent to her team, and exactly where it is; tell the control room that she is on the way and when it is done |
-| **Frustrations (hypothesis)** | Tasks arrive by radio, with a spoken description of the place that is hard to find in the crowd; nobody knows whether someone is already on the way. *To confirm in the interview with the security volunteer* |
+| **Frustrations (hypothesis)** | Tasks arrive by radio, with a spoken description of the place that is hard to find in the crowd; nobody knows whether someone is already on the way. *To confirm with the security and nurses questionnaires (#207)* |
 | **What she needs from the product** | Every help request or report routed to her team on her phone, with its point on the venue map (US-31, US-52); one tap to accept ("on my way") and one to close ("resolved") (US-32, US-33, US-53); for a report, a way to answer "true / not true" when the control room asks her team to check it |
 | **Constraints** | Sees only what is routed to her team, never the event's full list. Cannot set priorities, route requests or confirm reports: that needs `HelpRequests.Triage` or `Reports.Review`, the control room's permissions (P2) |
 | **What success looks like** | Accepts a routed request within seconds and reaches the marked place without asking the control room where it is |
 
-> ⚠️ **GAP:** like P2, everything about P5 is a hypothesis until the **interview with the security volunteer** (how teams in the field get their tasks today, and who decides what).
+> ⚠️ **GAP:** like P2, everything about P5 is a hypothesis until the **questionnaires for security staff and nurses** are answered (#207: how teams in the field get their tasks today, and who decides what).
 
 ---
 
@@ -112,8 +112,8 @@ Journeys W1–W8 are described in [`user-workflows.md`](user-workflows.md).
 | # | Item | Needed to close it |
 |---|---|---|
 | PE-1 | Validate P1's hypotheses (current information sources, barriers, location sharing) | Done with the survey (Q4, Q5, Q9, Q10; P1 above). Still open: reconcile the phone location (product decision 4) with assessment M-1 and ADR-007 |
-| PE-2 | Validate P2's current workflow and pain points | Interview with the security volunteer |
+| PE-2 | Validate P2's current workflow and pain points | Security and nurses questionnaires (#207) |
 | PE-3 | Validate P3's willingness to configure and maintain the event | Conversation with an event organiser (assumption A1) |
 | PE-4 | Team agrees on splitting the event team into P2 and P3 | Team decision |
 | PE-5 | Team agrees on P4 (FarolAdmin) and on who creates events. **Answered on 22 October** by the role model (features §4.1): only the FarolAdmin creates events, for an organisation that asks and is verified, and names its first EventAdmin (US-06). **Confirmed on 15 November 2026** with the role model ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), #178) | ~~Team confirmation of the role model (features §4)~~ Done |
-| PE-6 | Team agrees on splitting the incident operator into P2 (control room, decides) and P5 (responder, acts). **Updated on 22 October:** the proposed event role `Responder` is dropped; P2 and P5 are jobs given by team permissions (`HelpRequests.Triage` and `Reports.Review` for P2, `HelpRequests.Respond` and `Reports.Respond` for P5, features §4.2), not roles. **Confirmed on 15 November 2026** with the role model ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), #178) | ~~Team confirmation of the role model (features §4)~~ done; interview with the security volunteer (which teams exist and who decides what) |
+| PE-6 | Team agrees on splitting the incident operator into P2 (control room, decides) and P5 (responder, acts). **Updated on 22 October:** the proposed event role `Responder` is dropped; P2 and P5 are jobs given by team permissions (`HelpRequests.Triage` and `Reports.Review` for P2, `HelpRequests.Respond` and `Reports.Respond` for P5, features §4.2), not roles. **Confirmed on 15 November 2026** with the role model ([record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), #178) | ~~Team confirmation of the role model (features §4)~~ done; the security and nurses questionnaires (#207) (which teams exist and who decides what) |

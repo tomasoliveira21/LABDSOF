@@ -19,12 +19,13 @@
  *   Group separation after care (survey Q3: 47 % got separated)         → questions 23, 24
  *   Responder (P5) can use a phone on shift; A8 weak network            → questions 25, 26
  *   Health data is sensitive (GDPR): what other teams may see           → question 28
- *   Reaction to W2 + W3 and to AI triage (AI never lowers a priority)   → questions 29–33
+ *   Reaction to W2 + W3 and to AI triage (F8: AI only suggests)         → questions 29–33
  *
  * The idea on the last page follows the help-request design of the Sprint A review
  * (15 November 2026, decisions 1 and 8): the participant writes a short description
  * instead of choosing a category, the AI suggests category and priority (not the
- * team), Theft is now a Safety case and Infrastructure is a new category.
+ * team) and never overwrites a member's decision, Theft is now a Safety case and
+ * Infrastructure is a new category.
  * Question 13 (the 3 things that set urgency) also says what that description
  * should contain, as examples for the field.
  *
@@ -33,6 +34,15 @@
  * where the choices may not fit, so it takes about 6 minutes; only the last one,
  * an optional comment, is free text.
  * No question asks for clinical data or for anything that identifies a patient.
+ *
+ * The form was shared as this script creates it (by 16 November 2026), so the
+ * questions are not changed after the review of PR #208. Rules for the analysis:
+ *   - Exclusive options ("Nenhum", "Não", "Quase nenhuma", "Não, a lista cobre
+ *     tudo", "Nada, …") can be ticked with other options in a checkbox question.
+ *     When that happens, the exclusive option is dropped and the other options count.
+ *   - Some ranges share a boundary (10 a 30 / 30 a 60 / 60 a 100; 5 a 10 / 10 a 20 minutos), so a value on the
+ *     boundary fits two options. The ranges are read as approximate bins and the
+ *     results never compare values across a shared boundary.
  *
  * How to use:
  *   1. Open https://script.google.com and create a "New project"

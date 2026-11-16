@@ -22,13 +22,27 @@
  * The idea on the last page follows the help-request design of the Sprint A review
  * (15 November 2026, decisions 1 and 8): the participant writes a short description
  * instead of choosing a category, the AI suggests category and priority (not the
- * team), Theft is now a Safety case and Infrastructure is a new category.
+ * team) and never overwrites a member's decision, Theft is now a Safety case and
+ * Infrastructure is a new category.
  *
  * Questions about what happens today come before the product idea, so the idea
  * does not influence them. Every question is closed, with an "Outro" (other) option
  * where the choices may not fit, so it takes about 6 minutes; only the last one,
  * an optional comment, is free text.
- * Only people who worked at the entrances see the entrance page.
+ * Only people who worked at the entrances see the entrance page: they answer one
+ * unnumbered filter question at the end of page 3, so the form has 29 numbered
+ * questions + 1 filter question.
+ *
+ * The form was shared as this script creates it (by 16 November 2026), so the
+ * questions are not changed after the review of PR #208. Rules for the analysis:
+ *   - Exclusive options ("Nenhum", "Não", "Quase nenhuma", "Não, a lista cobre
+ *     tudo", "Nada, …") can be ticked with other options in a checkbox question.
+ *     When that happens, the exclusive option is dropped and the other options count.
+ *   - Some ranges share a boundary (10 a 30 / 30 a 60; 5 a 10 / 10 a 20 minutos), so a value on the
+ *     boundary fits two options. The ranges are read as approximate bins and the
+ *     results never compare values across a shared boundary.
+ *   - The respondent's own role is written in the masculine only ("Voluntário",
+ *     "colocado"), unlike the nurses form; it is read as covering everyone.
  *
  * How to use:
  *   1. Open https://script.google.com and create a "New project"
