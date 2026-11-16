@@ -147,7 +147,7 @@ Steps:
 4. Every change is recorded with who and when (audit, assignment §6.6).
 5. The team member who accepted it closes it as resolved (US-33), or the control room closes it, if it was handled from there (US-30).
 
-> ⚠️ **GAP:** the role model is confirmed (features §4, 15 November 2026), each event creates its own teams, and the status set is decided (decision 6 of the [record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md)); who closes a request in practice is still an assumption. Needed: the interview with the security volunteer (report §4) to confirm how requests are handled today and which teams the pilot set-up should have (features §4.4).
+> ⚠️ **GAP:** the role model is confirmed (features §4, 15 November 2026), each event creates its own teams, and the status set is decided (decision 6 of the [record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md)); who closes a request in practice is still an assumption. Needed: the answers to the security and nurses questionnaires (#207), which replace the interview with the security volunteer (report §4), to confirm how requests are handled today and which teams the pilot set-up should have (features §4.4).
 
 ## W4 · FarolAdmin creates an event, EventAdmin sets it up
 

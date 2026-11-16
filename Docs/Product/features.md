@@ -155,7 +155,7 @@ A suggested starting point for the pilot event. The EventAdmin creates it by han
 | **PCR** (risk-prevention committee) | `HelpRequests.Respond`, `Reports.Respond` | `LostPerson`, `Other` | — |
 | **Logistics** | `HelpRequests.Respond`, `Reports.Respond`, `Transport.Edit` | `Infrastructure` | — |
 
-The help categories still need to be checked against the interview with the security volunteer (DM-4).
+The help categories still need to be checked against the answers to the [security](../Research/inquerito-segurancas-google-forms.gs) and [nurses](../Research/inquerito-enfermeiros-google-forms.gs) questionnaires (DM-4, #207), which replace the planned interview with the security volunteer.
 
 ## 5. AI-assisted workflow: help-request triage
 

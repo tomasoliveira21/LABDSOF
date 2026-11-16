@@ -2,8 +2,9 @@ FROM node:22.23.5-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa5345499
 WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci
-COPY index.html vite.config.js ./
+COPY index.html tsconfig.json vite.config.js ./
 COPY src ./src
+COPY public ./public
 RUN npm run build
 
 # Runs as a non-root user and listens on 8080.
