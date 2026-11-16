@@ -88,17 +88,49 @@ services:
     image: rabbitmq:4.2.9-management-alpine@sha256:77ca2ba3621a95208918e6e331199a6c81129690bf7fc570dc61b6e64726840a
     hostname: rabbitmq # fixed node name, so the data in the volume is found again
     user: rabbitmq
+    environment:
+      # Created on the first start only (an empty volume); used by rabbitmq-setup and the operator, never by a service
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_ADMIN_USER:?set RABBITMQ_ADMIN_USER in infra/.env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_ADMIN_PASSWORD:?set RABBITMQ_ADMIN_PASSWORD in infra/.env}
     ports:
       - "127.0.0.1:${RABBITMQ_UI_PORT:-15672}:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     mem_limit: 512m
+    # ~45 processes at rest, and each CLI run (health check, rabbitmqctl) starts an Erlang VM with dozens of
+    # threads: two at once went over 128 and aborted ("Failed to create poll thread", #212)
+    pids_limit: 256
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 10s
       start_period: 30s
       retries: 12
+
+  # One-shot (#212): imports infra/rabbitmq/topology.json and declares one user per service, right after the
+  # broker is healthy and on every `up`. Services do not wait for it (ADR-011): they reconnect, and their outbox
+  # keeps the events until the exchange exists, so no event is published before its queues exist.
+  rabbitmq-setup:
+    <<: *hardening
+    image: rabbitmq:4.2.9-management-alpine@sha256:77ca2ba3621a95208918e6e331199a6c81129690bf7fc570dc61b6e64726840a
+    user: rabbitmq
+    entrypoint: ["/bin/sh", "/etc/farol/setup.sh"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      RABBITMQADMIN_USERNAME: ${RABBITMQ_ADMIN_USER:?set RABBITMQ_ADMIN_USER in infra/.env}
+      RABBITMQADMIN_PASSWORD: ${RABBITMQ_ADMIN_PASSWORD:?set RABBITMQ_ADMIN_PASSWORD in infra/.env}
+      RABBITMQ_AUTH_USERS_PASSWORD: ${RABBITMQ_AUTH_USERS_PASSWORD:?set RABBITMQ_AUTH_USERS_PASSWORD in infra/.env}
+      RABBITMQ_EVENTS_PASSWORD: ${RABBITMQ_EVENTS_PASSWORD:?set RABBITMQ_EVENTS_PASSWORD in infra/.env}
+      RABBITMQ_REPORTS_PASSWORD: ${RABBITMQ_REPORTS_PASSWORD:?set RABBITMQ_REPORTS_PASSWORD in infra/.env}
+      RABBITMQ_TRANSPORTS_PASSWORD: ${RABBITMQ_TRANSPORTS_PASSWORD:?set RABBITMQ_TRANSPORTS_PASSWORD in infra/.env}
+      RABBITMQ_BADGES_PASSWORD: ${RABBITMQ_BADGES_PASSWORD:?set RABBITMQ_BADGES_PASSWORD in infra/.env}
+    volumes:
+      - ./rabbitmq/setup.sh:/etc/farol/setup.sh:ro
+      - ./rabbitmq/topology.json:/etc/farol/topology.json:ro
+    mem_limit: 128m
 
   postgres:
     <<: *hardening

@@ -57,6 +57,31 @@ jobs:
             done
           done
           exit $fail
+      - name: Check the broker topology and the service users (#212)
+        shell: bash
+        run: |
+          compose="docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example"
+          ctl="$compose exec -T rabbitmq rabbitmqctl -q"
+          fail=0
+          code=$(docker inspect "$($compose ps -aq rabbitmq-setup)" --format '{{.State.ExitCode}}')
+          test "$code" = 0 || { echo "::error::rabbitmq-setup exited with $code"; $compose logs rabbitmq-setup; exit 1; }
+          queues=$($ctl list_queues name type durable | tail -n +2 | sort)
+          test "$(grep -vc '\.dlq' <<< "$queues")" = 10 || { echo "::error::expected 10 queues"; fail=1; }
+          test "$(grep -c '\.dlq' <<< "$queues")" = 10 || { echo "::error::expected 10 dead-letter queues"; fail=1; }
+          ! grep -vqE '\squorum\strue$' <<< "$queues" || { echo "::error::every queue must be a durable quorum queue"; fail=1; }
+          test "$($ctl list_bindings source_name | grep -c '^farol\.')" = 37 || { echo "::error::expected 37 bindings"; fail=1; }
+          expected=$(printf '%s\n' \
+            'auth-users	^$	^(farol\.auth-users|farol\.dead-letters)$	^auth-users\..*' \
+            'badges	^$	^farol\.dead-letters$	^badges\..*' \
+            'events	^$	^(farol\.events|farol\.dead-letters)$	^events\..*' \
+            'reports	^$	^(farol\.reports|farol\.dead-letters)$	^reports\..*' \
+            'transports	^$	^farol\.dead-letters$	^transports\..*')
+          actual=$($ctl list_permissions | tail -n +2 | grep -v "^$RABBITMQ_ADMIN_USER	" | sort)
+          test "$actual" = "$expected" || { echo "::error::service permissions differ"; diff <(echo "$expected") <(echo "$actual"); fail=1; }
+          test -z "$($ctl list_users | tail -n +2 | grep -v "^$RABBITMQ_ADMIN_USER	" | grep -v '\[\]$')" || { echo "::error::a service user has tags"; fail=1; }
+          exit $fail
+        env:
+          RABBITMQ_ADMIN_USER: farol-admin
       - name: Check the identity set-up through Keycloak (ADR-006)
         run: python3 -I infra/tests/identity_smoke.py infra/.env.example
       - name: Check that only 127.0.0.1 is published and the new containers are hardened

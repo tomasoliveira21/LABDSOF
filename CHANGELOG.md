@@ -2,6 +2,21 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-16 · RabbitMQ topology and per-service users (#212, Tiago Teixeira)
+
+**Why:** no issue covered the broker's queues and users, and without them no service can publish or consume in the stack (the image's `guest` works only inside its container). Needed by #191 to #194 and #201.
+
+### Added
+- `infra/rabbitmq/topology.json`: the exchanges `farol.auth-users`, `farol.events`, `farol.reports` and `farol.dead-letters`, the 10 queues of API outline §7.5 and their 10 dead-letter queues (durable quorum queues), 37 bindings.
+- `rabbitmq-setup`: a one-shot container (`infra/rabbitmq/setup.sh`) that imports the topology and declares one user per service from `infra/.env`, with the least privilege (write only its own exchange and dead letters, read only its own queues, declare nothing, no management access), right after the broker is healthy and on every `up` (keeps waiting messages, applies changed passwords).
+- The broker's admin from `infra/.env` (`RABBITMQ_ADMIN_USER`), for the setup container and the operator only; the variables in `infra/.env.example`; a CI check of the topology and the permissions on the running broker. Spec: [`Docs/specs/212-rabbitmq-topology-users.md`](Docs/specs/212-rabbitmq-topology-users.md).
+
+### Changed
+- RabbitMQ's `pids_limit` from 128 to 256: two CLI runs at once (health check and `rabbitmqctl`) aborted.
+
+### Proposed (for the team's review in the PR)
+- Decision C4 (#177): the definitions are imported **right after** broker start-up, before any service can publish, instead of loaded at start-up (a file loaded at boot on a blank broker creates no user). Recorded as proposed in the decisions guide, `architecture.md`, the API outline and ADR-004.
+
 ## [Unreleased] · 2026-11-16 · PostgreSQL and Keycloak in Compose (#189, Tiago Teixeira)
 
 **Why:** every service of Sprint B needs its own database and token validation against Keycloak (ADR-003, ADR-006); #191 to #195 start from here.
