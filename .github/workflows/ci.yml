@@ -84,11 +84,28 @@ jobs:
           RABBITMQ_ADMIN_USER: farol-admin
       - name: Check the identity set-up through Keycloak (ADR-006)
         run: python3 -I infra/tests/identity_smoke.py infra/.env.example
+      # What every service (#190 to #194) relies on: from inside the network, the issuer is still the public URL
+      # and the keys are on the internal address (spec #189, D4).
+      - name: Check the issuer and the keys a service sees
+        shell: bash
+        run: |
+          docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example exec -T reports \
+            wget -q -O - http://keycloak:8080/realms/farol/.well-known/openid-configuration |
+          python3 -I -c '
+          import json, sys
+          d = json.load(sys.stdin)
+          assert d["issuer"] == "http://localhost:8180/realms/farol", d["issuer"]
+          assert d["jwks_uri"] == "http://keycloak:8080/realms/farol/protocol/openid-connect/certs", d["jwks_uri"]
+          print("issuer", d["issuer"], "jwks", d["jwks_uri"])'
       - name: Check that only 127.0.0.1 is published and the new containers are hardened
         shell: bash
         run: |
           compose="docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example"
-          test "$($compose port keycloak 8080)" = "127.0.0.1:8180" || { echo "::error::Keycloak is not bound to 127.0.0.1:8180"; exit 1; }
+          for container in $($compose ps -q); do
+            outside=$(docker port "$container" | grep -v -- '-> 127\.0\.0\.1:' || true)
+            test -z "$outside" || { echo "::error::$(docker inspect -f '{{.Name}}' "$container") is published outside 127.0.0.1: $outside"; exit 1; }
+          done
+          test "$(docker port "$($compose ps -q keycloak)")" = "8080/tcp -> 127.0.0.1:8180" || { echo "::error::Keycloak must publish only 127.0.0.1:8180"; exit 1; }
           test -z "$(docker port "$($compose ps -q postgres)")" || { echo "::error::PostgreSQL is published"; exit 1; }
           for service in postgres keycloak; do
             settings=$(docker inspect "$($compose ps -q "$service")" --format '{{.HostConfig.ReadonlyRootfs}} {{.HostConfig.CapDrop}} {{.HostConfig.SecurityOpt}}')

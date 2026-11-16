@@ -26,13 +26,15 @@ import urllib.request
 REALM = "farol"
 WEB_CLIENT = "farol-web"
 AUDIENCE = "farol-api"
+# e-mail -> (e-mail verified, fixed id = the token's `sub`, the same after every `down -v`)
+BOOTSTRAP_ID = "00000000-0000-4000-8000-000000000001"
 SEEDED_USERS = {
-    "rita@farol.test": True,
-    "miguel@farol.test": True,
-    "sofia@farol.test": True,
-    "ines@farol.test": True,
-    "nuno@farol.test": True,
-    "vera@farol.test": False,  # e-mail not verified: never becomes FarolAdmin (#179)
+    "rita@farol.test": (True, "00000000-0000-4000-8000-000000000002"),
+    "miguel@farol.test": (True, "00000000-0000-4000-8000-000000000003"),
+    "sofia@farol.test": (True, "00000000-0000-4000-8000-000000000004"),
+    "ines@farol.test": (True, "00000000-0000-4000-8000-000000000005"),
+    "nuno@farol.test": (True, "00000000-0000-4000-8000-000000000006"),
+    "vera@farol.test": (False, "00000000-0000-4000-8000-000000000007"),  # not verified: never FarolAdmin (#179)
 }
 
 failures: list[str] = []
@@ -156,7 +158,8 @@ def main(env_path: str) -> int:
         check(AUDIENCE in audience, f"access token aud contains {AUDIENCE}")
         check(access.get("email") == "rita@farol.test" and access.get("email_verified") is True,
               "access token carries email and email_verified")
-        check(bool(access.get("sub")) and access.get("name") == "Rita Participante", "access token carries sub and name")
+        check(access.get("sub") == SEEDED_USERS["rita@farol.test"][1] and access.get("name") == "Rita Participante",
+              "access token carries the fixed sub and the name")
         check(access.get("exp", 0) - access.get("iat", 0) == 300, "access token lives 5 minutes")
         check("refresh_token" in tokens, "a refresh token is issued")
         # Refresh tokens are rotated: the first one cannot be used twice
@@ -212,13 +215,13 @@ def main(env_path: str) -> int:
     check(web.get("redirectUris") == [f"{web_origin}/*"], f"farol-web redirects only to {web_origin}")
 
     bootstrap = env["FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL"]
-    for email, verified in {**SEEDED_USERS, bootstrap: True}.items():
+    for email, (verified, user_id) in {**SEEDED_USERS, bootstrap: (True, BOOTSTRAP_ID)}.items():
         status, _, body = request(plain, f"{base}/admin/realms/{REALM}/users?exact=true&email="
                                   + urllib.parse.quote(email), headers=admin)
         found = json.loads(body) if status == 200 else []
         check(len(found) == 1 and found[0].get("emailVerified") is verified
-              and not found[0].get("requiredActions"),
-              f"seeded user {email} exists, e-mail verified={verified}, no pending action")
+              and found[0].get("id") == user_id and not found[0].get("requiredActions"),
+              f"seeded user {email} exists with id {user_id}, e-mail verified={verified}, no pending action")
 
     # 5. The Auth & Users service account manages users and nothing else (ADR-006, D7)
     status, _, body = request(plain, token_url, {"grant_type": "client_credentials", "client_id": "farol-auth-users",

@@ -17,7 +17,7 @@
 | # | Decision | Why |
 |---|---|---|
 | D1 | Images `postgres:18.7-alpine3.24` and `quay.io/keycloak/keycloak:26.8.2`, pinned by digest | Latest patch of each on 16 November 2026 (26.8.2 has security fixes); Keycloak 26.8 supports PostgreSQL 14 to 18; pinned like RabbitMQ (guide H7) |
-| D2 | **Keycloak runs `start --optimized` everywhere**, from a two-line `infra/keycloak/Dockerfile`; ADR-006 amendment proposed | `start-dev` cannot run read-only (measured: it writes to `/opt/keycloak/lib/quarkus`; a tmpfs there hides the image's files). Weighed by a five-view council on 16 November 2026: unanimous for this option over *start-dev without read-only* and *both modes behind a switch*. Conditions: the amendment is the team's to accept in the PR review; a scripted PKCE login proves the token claims; scope kept to two lines |
+| D2 | **Keycloak runs `start --optimized` everywhere**, from a two-line `infra/keycloak/Dockerfile`; ADR-006 addendum accepted in the review of #211 | `start-dev` cannot run read-only (measured: it writes to `/opt/keycloak/lib/quarkus`; a tmpfs there hides the image's files). Weighed by a five-view council on 16 November 2026: unanimous for this option over *start-dev without read-only* and *both modes behind a switch*. Conditions: the amendment is the team's to accept in the PR review; a scripted PKCE login proves the token claims; scope kept to two lines |
 | D3 | Keycloak published on `127.0.0.1:8180`, not `0.0.0.0` as `local-delivery.md` §1 said | Its admin console shares the port with the login pages; the demo runs only on the laptop (decision 10), so nothing needs the network (assessment §9) |
 | D4 | `KC_HOSTNAME=http://localhost:8180` with `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` | Tokens always carry the public issuer (checked from inside the network), while services fetch the keys at `http://keycloak:8080` (ADR-006, issuer and JWKS set separately) |
 | D5 | Each database owned by its own login role; `CONNECT` and `TEMPORARY` revoked from `PUBLIC` on the six databases, `postgres` and `template1` | PostgreSQL grants both to `PUBLIC` on every new database; without the revoke any role could connect anywhere (ADR-003) |
@@ -29,6 +29,8 @@
 | D11 | `farol-auth-users` gets the `kc-admin-api` client scope and only `manage-users` and `view-users` | Keycloak 26.8.2 Admin API accepts only tokens with that scope; account deletion (D7 of ADR-006) needs no more |
 | D12 | CI and local runs read `infra/.env.example` with `--env-file`; a missing value stops `up` with its name (`${VAR:?}`) | ADR-010 point 6; no secret in CI; fail fast instead of an empty password |
 | D13 | Identity checks in a stdlib-only Python file run by CI (`infra/tests/identity_smoke.py`) | A browser-like PKCE login is too long for inline YAML; ADR-011's "no script" is about delivering the demo, which still uses only `docker compose` commands |
+| D14 | Keycloak health check: `start_period: 180s` | A first start took about 145 s on a reviewer's laptop and failed `up --wait` once with 60 s; the container still turns healthy as soon as the check passes |
+| D15 | Seeded users have fixed ids, `00000000-0000-4000-8000-00000000000N` (1 = bootstrap FarolAdmin, 2 = Rita … 7 = Vera, in the order of `local-delivery.md` §0) | The token's `sub` stays the same after every `down -v`, so Reports, Events and Badges can write test fixtures and demo data for known subjects (review of #211) |
 
 ## 3. Features (build order)
 
@@ -36,7 +38,7 @@
 2. Keycloak image, realm export and Compose service (`infra/keycloak/`)
 3. `infra/.env.example` with every variable
 4. CI: isolation, identity, ports and hardening checks
-5. Docs: `local-delivery.md` §0 and §1, ADR-006 addendum (proposed), CHANGELOG
+5. Docs: `local-delivery.md` §0 and §1, ADR-006 addendum, CHANGELOG
 
 ## 4. Edge-case matrix
 
@@ -62,11 +64,17 @@
 | Keycloak restarted with an existing realm | Import skipped, realm kept | Checked by hand: *Realm 'farol' already exists. Import skipped* |
 | Realm or database values changed after the first start | Not applied until `down -v` | Documented in `local-delivery.md` §0 and in the files |
 | Keycloak or PostgreSQL published on the network | Only `127.0.0.1:8180`; PostgreSQL and port 9000 not published | CI ports step |
+| Any container published outside `127.0.0.1` | CI fails naming it | CI ports step (loop over every container) |
+| A service sees an internal issuer | Issuer stays `http://localhost:8180/realms/farol`, keys on `http://keycloak:8080` | CI step *Check the issuer and the keys a service sees* |
+| Slow first start (master realm and import) | Healthy within the 180 s grace | D14; measured 39 s here, about 145 s in review |
+| `sub` of a test account after `down -v` | Same fixed id | `identity_smoke.py`: *access token carries the fixed sub*, *seeded user … with id …* |
 | Hardening silently dropped | `read_only`, `cap_drop: ALL`, `no-new-privileges` on both | CI hardening step |
 | Keycloak down | Services still start (they fetch keys on the first token) | Out of scope here: #190 to #192 |
 
 ## 5. Handoff and changelog
 
-- **16 Nov 2026:** research (10 min), council on the start mode (D2), implementation, local runs of the whole stack (10 containers healthy in about 2 min on a cold build) and of every CI step. Measured: Keycloak ready about 12 s after PostgreSQL, about 610 MB and 70 processes; PostgreSQL about 80 MB.
+- **16 Nov 2026:** research (10 min), council on the start mode (D2), implementation, local runs of the whole stack (10 containers healthy in about 2 min on a cold build) and of every CI step. Measured: Keycloak about 610 MB and 70 processes; PostgreSQL about 80 MB.
+- **16 Nov 2026, review of #211 (Bruno Lopes):** first start with a clean volume (create `master`, import `farol`) measured again: healthy 39 s after `up` here, about 145 s on Bruno's machine, where one of two runs went `unhealthy` with the 60 s `start_period`; now 180 s (D14). A restart is healthy in 15 s. Also from the review: `local-delivery.md` §1 lists Keycloak on `127.0.0.1`; the ADR-006 addendum is accepted; CI fails on any published port outside `127.0.0.1` and checks, from the `reports` container, the issuer and keys a service sees (D4); the realm's password policy is `notEmail` without the console's `(undefined)`; seeded users have fixed ids (D15); the PostgreSQL init script says to `down -v` after a failure.
 - **For #190 (gateway) and #191/#192 (services):** issuer `http://localhost:8180/realms/farol` (`FAROL_ISSUER_URI`), keys `http://keycloak:8080/realms/farol/protocol/openid-connect/certs` (`FAROL_JWKS_URI`), audience `farol-api`. JDBC `jdbc:postgresql://postgres:5432/<database>` with user `<database>` and its password from `infra/.env`; keep the Hikari pool at 10 or below.
-- **Open for the team:** accept or reject the ADR-006 addendum in the review of this PR.
+- **Fixtures:** the `sub` of each test account is fixed (D15): Daniel `…0001`, Rita `…0002`, Miguel `…0003`, Sofia `…0004`, Inês `…0005`, Nuno `…0006`, Vera `…0007`.
+- **ADR-006 addendum:** accepted in the review of #211 (Bruno Lopes); a second teammate confirms it in that thread before the merge.

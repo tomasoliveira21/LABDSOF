@@ -19,7 +19,7 @@
   "maxDeltaTimeSeconds": 43200,
   "quickLoginCheckMilliSeconds": 1000,
   "minimumQuickLoginWaitSeconds": 60,
-  "passwordPolicy": "length(10) and notEmail(undefined)",
+  "passwordPolicy": "length(10) and notEmail",
   "accessTokenLifespan": 300,
   "revokeRefreshToken": true,
   "refreshTokenMaxReuse": 0,
@@ -82,6 +82,7 @@
       "clientRoles": { "realm-management": ["manage-users", "view-users"] }
     },
     {
+      "id": "00000000-0000-4000-8000-000000000001",
       "username": "${FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL}",
       "email": "${FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL}",
       "emailVerified": true,
@@ -91,6 +92,7 @@
       "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
     },
     {
+      "id": "00000000-0000-4000-8000-000000000002",
       "username": "rita@farol.test",
       "email": "rita@farol.test",
       "emailVerified": true,
@@ -100,6 +102,7 @@
       "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
     },
     {
+      "id": "00000000-0000-4000-8000-000000000003",
       "username": "miguel@farol.test",
       "email": "miguel@farol.test",
       "emailVerified": true,
@@ -109,6 +112,7 @@
       "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
     },
     {
+      "id": "00000000-0000-4000-8000-000000000004",
       "username": "sofia@farol.test",
       "email": "sofia@farol.test",
       "emailVerified": true,
@@ -118,6 +122,7 @@
       "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
     },
     {
+      "id": "00000000-0000-4000-8000-000000000005",
       "username": "ines@farol.test",
       "email": "ines@farol.test",
       "emailVerified": true,
@@ -127,6 +132,7 @@
       "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
     },
     {
+      "id": "00000000-0000-4000-8000-000000000006",
       "username": "nuno@farol.test",
       "email": "nuno@farol.test",
       "emailVerified": true,
@@ -136,6 +142,7 @@
       "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
     },
     {
+      "id": "00000000-0000-4000-8000-000000000007",
       "username": "vera@farol.test",
       "email": "vera@farol.test",
       "emailVerified": false,
