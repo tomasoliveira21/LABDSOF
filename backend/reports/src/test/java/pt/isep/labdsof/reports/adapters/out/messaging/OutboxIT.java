@@ -192,6 +192,39 @@ class OutboxIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("194 AC-2 while RabbitMQ is down the publisher pauses and keeps the order")
+  void pausesWhileBrokerDown() {
+    var first = submit();
+    var second = submit();
+    var unreachable = new CachingConnectionFactory("127.0.0.1", 1);
+    try {
+      var down = publisher(new RabbitTemplate(unreachable));
+      assertThat(down.publishDue()).isZero();
+      assertThat(down.publishDue()).isZero(); // paused: the second row is not tried
+      assertThat(row(first).get("attempts")).isEqualTo(1);
+      assertThat(row(second).get("attempts")).isEqualTo(0);
+    } finally {
+      unreachable.destroy();
+    }
+  }
+
+  @Test
+  @DisplayName("194 AC-2 an unroutable event does not hold back the next one")
+  void unroutableDoesNotBlock() {
+    var refused = UUID.randomUUID();
+    tx.executeWithoutResult(status -> outbox.add(new OutgoingEvent(refused, "farol.reports",
+        "nothing.bound", "Nothing", 1, Instant.now(), event, "", Map.of())));
+    try {
+      var next = submit();
+      assertThat(publisher(rabbit).publishDue()).isEqualTo(1);
+      assertThat(row(refused).get("published_at")).isNull();
+      assertThat(count(drain(), next)).isEqualTo(1);
+    } finally {
+      jdbc.sql("DELETE FROM outbox WHERE message_id = :id").param("id", refused).update();
+    }
+  }
+
+  @Test
   @DisplayName("194 AC-2 two publishers never claim the same row")
   void skipLocked() throws Exception {
     var first = submit();

@@ -66,8 +66,12 @@ class LocalCopyListener {
     Object copy;
     try {
       envelope = json.readValue(message.getBody(), Envelope.class);
-      if (envelope.messageId() == null || envelope.type() == null) {
-        throw new IllegalArgumentException("messageId and type are required");
+      if (envelope.messageId() == null || envelope.type() == null || envelope.occurredAt() == null
+          || envelope.producer() == null || envelope.actorUserId() == null) {
+        throw new IllegalArgumentException("messageId, type, occurredAt, producer and actorUserId are required");
+      }
+      if (!Integer.valueOf(1).equals(envelope.schemaVersion())) {
+        throw new IllegalArgumentException("schemaVersion " + envelope.schemaVersion() + " is not supported");
       }
       copy = switch (envelope.type()) {
         case "MembershipChanged" -> membership(envelope);

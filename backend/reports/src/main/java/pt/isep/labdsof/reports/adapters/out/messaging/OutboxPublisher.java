@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
@@ -15,17 +16,19 @@ import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.NestedExceptionUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
+import pt.isep.labdsof.reports.adapters.in.messaging.DeadLetters;
 import pt.isep.labdsof.reports.adapters.out.persistence.JdbcOutbox;
 import pt.isep.labdsof.reports.adapters.out.persistence.JdbcOutbox.Pending;
 
 /**
  * Publishes the outbox to RabbitMQ (ADR-004 decision 3, spec D5): due rows are claimed with
  * FOR UPDATE SKIP LOCKED, sent with publisher confirms and mandatory routing, and marked in the same
- * transaction. A failure backs off the row (2^attempts s, at most 60 s) and ends the batch.
+ * transaction. A row the broker refuses (unroutable, nack) backs off alone (2^attempts s, at most 60 s);
+ * any other failure (the broker is down) backs off the row, ends the batch and pauses the publisher until
+ * that row is due again, so rows go out in id order and a down broker is not tried at every poll.
  */
 @Component
 @ConditionalOnProperty(name = "farol.outbox.enabled", havingValue = "true")
@@ -40,6 +43,7 @@ public class OutboxPublisher {
   private final Clock clock;
   private final int batchSize;
   private final Duration confirmTimeout;
+  private Instant pausedUntil = Instant.MIN;
 
   OutboxPublisher(JdbcOutbox outbox, RabbitTemplate rabbit, TransactionTemplate tx, Clock clock,
       @Value("${farol.outbox.batch-size}") int batchSize,
@@ -55,6 +59,9 @@ public class OutboxPublisher {
   /** One run; returns how many rows were published. */
   @Scheduled(fixedDelayString = "${farol.outbox.poll-interval}")
   public int publishDue() {
+    if (clock.instant().isBefore(pausedUntil)) {
+      return 0;
+    }
     var sent = new AtomicInteger();
     tx.executeWithoutResult(status -> {
       for (Pending row : outbox.claimDue(batchSize)) {
@@ -62,13 +69,20 @@ public class OutboxPublisher {
           send(row);
           outbox.markPublished(row.id(), clock.instant());
           sent.incrementAndGet();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt(); // shutting down: not a failed attempt
+          break;
         } catch (Exception e) {
           int attempts = row.attempts() + 1;
-          var error = describe(e);
-          outbox.markFailed(row.id(), attempts, clock.instant().plus(backoff(attempts)), error);
+          var error = DeadLetters.describe(e);
+          var next = clock.instant().plus(backoff(attempts));
+          outbox.markFailed(row.id(), attempts, next, error);
           log.warn("Outbox message {} ({}) not published, attempt {}: {}", row.messageId(), row.type(),
               attempts, error);
-          break; // the broker is most likely down: the rest waits for the next run
+          if (!(e instanceof Refused)) {
+            pausedUntil = next; // the broker is most likely down: the rest waits, in order
+            break;
+          }
         }
       }
     });
@@ -92,16 +106,17 @@ public class OutboxPublisher {
         correlation);
     var confirm = correlation.getFuture().get(confirmTimeout.toMillis(), TimeUnit.MILLISECONDS);
     if (correlation.getReturned() != null) {
-      throw new IllegalStateException("unroutable: " + correlation.getReturned().getReplyText());
+      throw new Refused("unroutable: " + correlation.getReturned().getReplyText());
     }
     if (!confirm.ack()) {
-      throw new IllegalStateException("not confirmed: " + confirm.reason());
+      throw new Refused("not confirmed: " + confirm.reason());
     }
   }
 
-  static String describe(Throwable e) {
-    var cause = NestedExceptionUtils.getMostSpecificCause(e);
-    var text = cause.getClass().getSimpleName() + ": " + cause.getMessage();
-    return text.substring(0, Math.min(500, text.length()));
+  /** The broker is up but refused this one row. */
+  static class Refused extends IllegalStateException {
+    Refused(String reason) {
+      super(reason);
+    }
   }
 }

@@ -81,6 +81,13 @@ class HelpRequestTest {
   }
 
   @Test
+  @DisplayName("194 AC-4 a description with a NUL character is refused, PostgreSQL cannot store it")
+  void nulDescription() {
+    assertThatThrownBy(() -> submit("help\u0000me")).isInstanceOf(IllegalArgumentException.class);
+    assertThat(submit("help\u0001me").description()).isEqualTo("help\u0001me");
+  }
+
+  @Test
   @DisplayName("194 AC-4 a request without a requester is refused")
   void requesterRequired() {
     assertThatThrownBy(() -> HelpRequest.submit(UUID.randomUUID(), UUID.randomUUID(), " ",

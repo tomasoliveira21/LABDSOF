@@ -38,7 +38,6 @@ class EventAccessTest {
   @DisplayName("194 AC-4 an active member without teams is a member with no permission")
   void plainMember() {
     var access = EventAccess.of(member(Role.RegularUser, Status.Active), List.of()).orElseThrow();
-    assertThat(access.userId()).isEqualTo("user-1");
     assertThat(access.has(Permission.HELP_REQUESTS_TRIAGE)).isFalse();
   }
 

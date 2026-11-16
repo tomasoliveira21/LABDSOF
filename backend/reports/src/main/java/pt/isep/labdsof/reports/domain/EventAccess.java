@@ -30,10 +30,6 @@ public final class EventAccess {
     return Optional.of(new EventAccess(membership, ownTeams));
   }
 
-  public String userId() {
-    return membership.userId();
-  }
-
   /** An EventAdmin has every permission of the event; a RegularUser those of their teams. */
   public boolean has(Permission permission) {
     return membership.role() == Membership.Role.EventAdmin

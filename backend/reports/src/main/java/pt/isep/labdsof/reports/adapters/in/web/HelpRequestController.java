@@ -82,6 +82,13 @@ class HelpRequestController {
     return read.controlRoom() ? controlRoom(read.request()) : participant(read.request());
   }
 
+  /** A value the domain refuses that bean validation let through, such as a description of Unicode spaces. */
+  @ExceptionHandler(IllegalArgumentException.class)
+  ResponseEntity<ProblemDetail> invalid(IllegalArgumentException e) {
+    return ResponseEntity.badRequest()
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage()));
+  }
+
   @ExceptionHandler(NotFoundException.class)
   ResponseEntity<ProblemDetail> notFound() {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)

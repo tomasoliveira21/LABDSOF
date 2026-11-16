@@ -198,6 +198,8 @@ class SecurityIT extends IntegrationTest {
         "{\"clientRequestId\":\"" + client + "\",\"location\":{\"mapVersion\":3,\"x\":0.4,\"y\":0.7},\"description\":\"help\",\"requesterId\":\"someone-else\"}",
         "{\"clientRequestId\":\"" + client + "\",\"location\":{\"mapVersion\":3,\"x\":0.4,\"y\":0.7},\"description\":\"help\",\"status\":\"Closed\"}",
         "{\"clientRequestId\":\"not-a-uuid\",\"location\":{\"mapVersion\":3,\"x\":0.4,\"y\":0.7},\"description\":\"help\"}",
+        "{\"clientRequestId\":\"" + client + "\",\"location\":{\"mapVersion\":3,\"x\":0.4,\"y\":0.7},\"description\":\"\\u2003\"}",
+        "{\"clientRequestId\":\"" + client + "\",\"location\":{\"mapVersion\":3,\"x\":0.4,\"y\":0.7},\"description\":\"help\\u0000me\"}",
         "not json");
   }
 

@@ -159,6 +159,8 @@ class LocalCopiesIT extends IntegrationTest {
   @ParameterizedTest
   @ValueSource(strings = {
       "not json",
+      "{\"messageId\":\"%1$s\",\"type\":\"MembershipChanged\",\"schemaVersion\":2,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"auth-users\",\"eventId\":\"%2$s\",\"actorUserId\":\"\",\"payload\":{\"userId\":\"u\",\"role\":\"RegularUser\",\"status\":\"Active\",\"teamIds\":[],\"version\":1}}",
+      "{\"messageId\":\"%1$s\",\"type\":\"MembershipChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"eventId\":\"%2$s\",\"actorUserId\":\"\",\"payload\":{\"userId\":\"u\",\"role\":\"RegularUser\",\"status\":\"Active\",\"teamIds\":[],\"version\":1}}",
       "{\"messageId\":\"%1$s\",\"eventId\":\"%2$s\",\"payload\":{}}",
       "{\"type\":\"MembershipChanged\",\"eventId\":\"%2$s\",\"payload\":{}}",
       "{\"messageId\":\"%1$s\",\"type\":\"MembershipChanged\",\"payload\":{\"userId\":\"u\",\"role\":\"RegularUser\",\"status\":\"Active\",\"teamIds\":[],\"version\":1}}",
@@ -189,6 +191,8 @@ class LocalCopiesIT extends IntegrationTest {
     assertThat(new String(deadLetter.getBody(), UTF_8)).isEqualTo(body);
     assertThat((String) deadLetter.getMessageProperties().getHeader("x-farol-error"))
         .isNotBlank();
+    assertThat(deadLetter.getMessageProperties().getReceivedDeliveryMode())
+        .isEqualTo(org.springframework.amqp.core.MessageDeliveryMode.PERSISTENT);
     assertThat(processed(messageId)).isZero();
   }
 
