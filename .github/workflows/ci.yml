@@ -34,8 +34,41 @@ jobs:
           for module in auth-users events reports transports badges gateway; do
             mvn --batch-mode --no-transfer-progress -f "backend/$module/pom.xml" verify
           done
+      # The harmless example values of infra/.env.example (ADR-010 point 6); no secret is needed in CI.
       - name: Build and start the stack
-        run: docker compose -p farol-ci -f infra/compose.yaml up --build -d --wait --wait-timeout 300
+        run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example up --build -d --wait --wait-timeout 300
+      - name: Check that each database user reaches only its own database (ADR-003)
+        shell: bash
+        run: |
+          set -a; . infra/.env.example; set +a
+          compose="docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example"
+          declare -A password=([auth_users]=$AUTH_USERS_DB_PASSWORD [events]=$EVENTS_DB_PASSWORD [reports]=$REPORTS_DB_PASSWORD
+                               [transports]=$TRANSPORTS_DB_PASSWORD [badges]=$BADGES_DB_PASSWORD [keycloak]=$KEYCLOAK_DB_PASSWORD)
+          connect() { # user, database; over TCP with a password, as a service connects
+            $compose exec -T -e PGPASSWORD="${password[$1]}" postgres psql -h postgres -U "$1" -d "$2" -tAc 'select 1' >/dev/null 2>&1
+          }
+          fail=0
+          for user in "${!password[@]}"; do
+            connect "$user" "$user" || { echo "::error::$user cannot reach its own database"; fail=1; }
+            for database in "${!password[@]}" postgres template1; do
+              if [ "$database" != "$user" ] && connect "$user" "$database"; then
+                echo "::error::$user can reach the $database database"; fail=1
+              fi
+            done
+          done
+          exit $fail
+      - name: Check the identity set-up through Keycloak (ADR-006)
+        run: python3 -I infra/tests/identity_smoke.py infra/.env.example
+      - name: Check that only 127.0.0.1 is published and the new containers are hardened
+        shell: bash
+        run: |
+          compose="docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example"
+          test "$($compose port keycloak 8080)" = "127.0.0.1:8180" || { echo "::error::Keycloak is not bound to 127.0.0.1:8180"; exit 1; }
+          test -z "$(docker port "$($compose ps -q postgres)")" || { echo "::error::PostgreSQL is published"; exit 1; }
+          for service in postgres keycloak; do
+            settings=$(docker inspect "$($compose ps -q "$service")" --format '{{.HostConfig.ReadonlyRootfs}} {{.HostConfig.CapDrop}} {{.HostConfig.SecurityOpt}}')
+            test "$settings" = "true [ALL] [no-new-privileges:true]" || { echo "::error::$service hardening: $settings"; exit 1; }
+          done
       - name: Check each service status through the gateway
         shell: bash
         run: |
@@ -47,10 +80,10 @@ jobs:
         run: curl --fail --silent --show-error http://127.0.0.1:3000/ | grep -q "<title>Farol</title>"
       - name: Show container logs on failure
         if: failure()
-        run: docker compose -p farol-ci -f infra/compose.yaml logs --no-color --tail=100
+        run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example logs --no-color --tail=100
       - name: Stop the CI stack
         if: always()
-        run: docker compose -p farol-ci -f infra/compose.yaml down --volumes --remove-orphans
+        run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example down --volumes --remove-orphans
 
   sonar:
     name: SonarQube Cloud

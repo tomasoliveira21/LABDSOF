@@ -1,2 +1,5 @@
 # Keep the AI evaluation files byte-identical on every OS, so their SHA-256 matches baseline-report.json
 Docs/Research/architecture-investigation/evaluation/** text eol=lf
+
+# Shell scripts run inside Linux containers: keep LF even on a Windows checkout (core.autocrlf)
+*.sh text eol=lf

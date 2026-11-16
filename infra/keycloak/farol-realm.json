@@ -1,0 +1,148 @@
+{
+  "realm": "farol",
+  "displayName": "Farol",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "editUsernameAllowed": false,
+  "resetPasswordAllowed": false,
+  "verifyEmail": false,
+  "rememberMe": true,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
+  "passwordPolicy": "length(10) and notEmail(undefined)",
+  "accessTokenLifespan": 300,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "ssoSessionIdleTimeout": 43200,
+  "ssoSessionMaxLifespan": 86400,
+  "ssoSessionIdleTimeoutRememberMe": 2592000,
+  "ssoSessionMaxLifespanRememberMe": 2592000,
+  "clients": [
+    {
+      "clientId": "farol-web",
+      "name": "Farol web app",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "redirectUris": ["${FAROL_WEB_ORIGIN}/*"],
+      "webOrigins": ["${FAROL_WEB_ORIGIN}"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${FAROL_WEB_ORIGIN}/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "farol-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "farol-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "farol-auth-users",
+      "name": "Auth & Users service (account deletion through the Admin API)",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${FAROL_AUTH_USERS_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "defaultClientScopes": ["basic", "kc-admin-api"],
+      "optionalClientScopes": []
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-farol-auth-users",
+      "enabled": true,
+      "serviceAccountClientId": "farol-auth-users",
+      "clientRoles": { "realm-management": ["manage-users", "view-users"] }
+    },
+    {
+      "username": "${FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL}",
+      "email": "${FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL}",
+      "emailVerified": true,
+      "firstName": "Daniel",
+      "lastName": "Admin",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
+    },
+    {
+      "username": "rita@farol.test",
+      "email": "rita@farol.test",
+      "emailVerified": true,
+      "firstName": "Rita",
+      "lastName": "Participante",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
+    },
+    {
+      "username": "miguel@farol.test",
+      "email": "miguel@farol.test",
+      "emailVerified": true,
+      "firstName": "Miguel",
+      "lastName": "Operador",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
+    },
+    {
+      "username": "sofia@farol.test",
+      "email": "sofia@farol.test",
+      "emailVerified": true,
+      "firstName": "Sofia",
+      "lastName": "Organizadora",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
+    },
+    {
+      "username": "ines@farol.test",
+      "email": "ines@farol.test",
+      "emailVerified": true,
+      "firstName": "Inês",
+      "lastName": "Socorrista",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
+    },
+    {
+      "username": "nuno@farol.test",
+      "email": "nuno@farol.test",
+      "emailVerified": true,
+      "firstName": "Nuno",
+      "lastName": "Outro Evento",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
+    },
+    {
+      "username": "vera@farol.test",
+      "email": "vera@farol.test",
+      "emailVerified": false,
+      "firstName": "Vera",
+      "lastName": "Por Verificar",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${FAROL_DEMO_PASSWORD}", "temporary": false }]
+    }
+  ]
+}

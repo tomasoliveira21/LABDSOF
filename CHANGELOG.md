@@ -2,6 +2,23 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-16 · PostgreSQL and Keycloak in Compose (#189, Tiago Teixeira)
+
+**Why:** every service of Sprint B needs its own database and token validation against Keycloak (ADR-003, ADR-006); #191 to #195 start from here.
+
+### Added
+- `infra/compose.yaml`: **PostgreSQL 18.7** with six databases and six owners (five services and Keycloak), each owner able to connect only to its own database (`infra/postgres/10-create-databases.sh`), and **Keycloak 26.8.2** with the `farol` realm imported from `infra/keycloak/farol-realm.json`: the public `farol-web` client (Authorization Code + PKCE S256, audience `farol-api`), the confidential `farol-auth-users` client (users only, for account deletion), the settings of ADR-006 and seven synthetic test accounts. Both images pinned by digest, with the hardening of the other containers, health checks and a named volume for PostgreSQL. Keycloak's port is `127.0.0.1:8180`.
+- `infra/.env.example`: every variable, with harmless example values; the realm holds `${…}` placeholders, never secrets (assessment finding 8).
+- `infra/tests/identity_smoke.py` and `ci.yml` checks: database isolation for every pair of owners, a PKCE login with token claims and refused paths, realm settings, the service account's limits, and that only `127.0.0.1` is published and both containers are hardened.
+- [`Docs/specs/`](Docs/specs/README.md): the implementation specs of the Events and Auth & Users services, with their quality gates; first spec [#189](Docs/specs/189-postgres-keycloak-compose.md).
+
+### Changed
+- `local-delivery.md` §0 and §1: how to run the stack with `infra/.env`, the test accounts, the reset with `down -v`, Keycloak on `127.0.0.1`.
+- `.gitattributes`: shell scripts keep LF line endings on Windows checkouts.
+
+### Proposed (for the team's review in the PR)
+- ADR-006 addendum: Keycloak runs `start --optimized` from a two-line image in development, CI and the demo, because `start-dev` cannot run on a read-only file system (measured with 26.8.2).
+
 ## [Unreleased] · 2026-11-15 · Initial Docker base with every service skeleton (#202, Bruno Lopes)
 
 **Why:** every service owner starts Sprint B from the same base: one `docker compose up` starts the web app, RabbitMQ, the API gateway and the five services (Sprint B planning of 15 November 2026, decision 13).

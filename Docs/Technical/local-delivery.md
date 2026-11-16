@@ -6,17 +6,18 @@
 
 Delivery is local only, because cloud hosting costs were not justified ([clarification record](../Meetings/2026-10-22-local-deployment-clarification.md)). Everything runs on one laptop with Docker. The participant pages are shown in the laptop's browser at phone width.
 
-## 0. What runs today: the Sprint B base (#202)
+## 0. What runs today: the Sprint B base (#202, #189)
 
-`infra/compose.yaml` starts the base that every service is built on (#202; Sprint B planning of 15 November 2026, decision 13): the web app, RabbitMQ, the API gateway and the five services. Each service is an empty skeleton that answers only `GET /api/v1/status`. There is no database, Keycloak, authentication or use case yet (#189 to #195, #201). No secret file is required.
+`infra/compose.yaml` starts the base that every service is built on (#202; Sprint B planning of 15 November 2026, decision 13): the web app, RabbitMQ, the API gateway, the five services, **PostgreSQL** with one database per service and one for Keycloak, and **Keycloak** with the `farol` realm (#189). Each service is an empty skeleton that answers only `GET /api/v1/status`; no service uses its database or validates tokens yet (#190 to #195, #201).
 
 Requirements: Docker Desktop, or Docker Engine with Compose v2. Java 21 with Maven, and Node 22, only to build outside Docker. From the repository root:
 
 ```sh
-docker compose -f infra/compose.yaml up --build --wait   # builds 7 images; returns when all 8 containers are healthy
+cp infra/.env.example infra/.env                         # first time only; then replace every password with your own
+docker compose -f infra/compose.yaml up --build --wait   # builds 8 images; returns when all 10 containers are healthy
 docker compose -f infra/compose.yaml ps                  # every container "running (healthy)"
 curl http://localhost:8080/status/reports                # {"service":"reports","status":"ok"}, through the gateway
-docker compose -f infra/compose.yaml down                # stop; add -v to also delete the RabbitMQ volume
+docker compose -f infra/compose.yaml down                # stop; add -v to also delete the PostgreSQL and RabbitMQ volumes
 ```
 
 | What | Where |
@@ -25,16 +26,22 @@ docker compose -f infra/compose.yaml down                # stop; add -v to also 
 | API gateway | `http://localhost:8080` (`GATEWAY_PORT`). Routes `/api/v1/**` by the route table of [ADR-013](adr/0013-api-gateway.md); any other path is a 404 at the gateway |
 | Each service's status, through the gateway | `/status/auth-users`, `/status/events`, `/status/reports`, `/status/transports` and `/status/badges` forward to that service's `GET /api/v1/status`. Diagnostic only, outside the product API |
 | RabbitMQ management UI | `http://localhost:15672` (`RABBITMQ_UI_PORT`). No one can log in yet: the image's `guest` user works only inside the container, and no other user exists |
+| Keycloak: login pages and admin console | `http://localhost:8180` (`KEYCLOAK_PORT`). Realm `farol`, issuer `http://localhost:8180/realms/farol`. Admin console: the `KEYCLOAK_ADMIN_USER` of `infra/.env` |
+| Test accounts (synthetic, `.test` domain) | `rita@farol.test` (participant), `miguel@farol.test` (control room), `sofia@farol.test` (event admin), `ines@farol.test` (responder), `nuno@farol.test` (a participant of another event, for isolation tests), `vera@farol.test` (e-mail not verified) and the bootstrap FarolAdmin `FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL` (`daniel@farol.test` in the example). Password: `FAROL_DEMO_PASSWORD` |
+| PostgreSQL | Not published. Databases and owners `auth_users`, `events`, `reports`, `transports`, `badges` and `keycloak`; each owner can connect only to its own database |
 
-- Every port is published on `127.0.0.1` only, until the gateway validates tokens (#190). The services and RabbitMQ's AMQP port are not published.
+- Every port is published on `127.0.0.1` only: the demo runs only on the laptop (decision 10 of 15 November 2026). The services, PostgreSQL, RabbitMQ's AMQP port and Keycloak's management port (9000, health) are not published.
+- **Keycloak** is built from `infra/keycloak/Dockerfile`: the official image, pinned by digest, with its build step done in the image, started with `start --optimized --import-realm` in production mode over HTTP on `localhost`. This lets it run on a read-only file system like every other container; `start-dev` cannot (#189, amendment of ADR-006 proposed on 16 November 2026).
+- **Changing the realm or a database value** (`infra/keycloak/farol-realm.json`, `infra/postgres/10-create-databases.sh`, a password in `infra/.env`): the realm is imported and the databases are created only on the first start, so reset with `docker compose -f infra/compose.yaml down -v`, then `up` again. This deletes all local data.
+- A missing value in `infra/.env` stops `up` with the variable's name.
 - Build and test one module without Docker: `mvn -f backend/<module>/pom.xml verify`. Web app with live reload: `cd frontend`, `npm ci`, `npm run dev` (`http://localhost:5173`).
-- `ci.yml` runs `mvn verify` in every module, starts this stack, and checks each status through the gateway and the web page, on every pull request, push to `main`, tag and manual run.
+- `ci.yml` runs `mvn verify` in every module, starts this stack with `infra/.env.example`, checks that each database user reaches only its own database, runs [`infra/tests/identity_smoke.py`](../../infra/tests/identity_smoke.py) (PKCE login with a test account, token claims, refused paths, realm settings, the Auth & Users service account), checks that only `127.0.0.1` is published and that PostgreSQL and Keycloak are hardened, and checks each status through the gateway and the web page, on every pull request, push to `main`, tag and manual run. The identity check also runs locally: `python3 infra/tests/identity_smoke.py infra/.env`.
 - Each service keeps the layout of Reports: package `pt.isep.labdsof.<service>` (`authusers` for Auth & Users) with `adapters/in/web`, `application` and `domain`, its own `pom.xml` and multi-stage `Dockerfile`.
 - Differences from the target below: the web app's Compose service is `frontend` (§1 calls it `web`), and the health checks call `/api/v1/status` instead of `/actuator/health`.
 
 The Sprint A minimum (Reports alone, with the synthetic in-memory demo and Swagger on `127.0.0.1:8080`, #166) is the tag `v0.1.0`. Check it out to follow its [run instructions](plans/local-walking-skeleton.md#3-run-and-demonstrate-from-the-repository-root); [evidence](evidence/walking-skeleton-2026-10-31.md). Reports still has the `demo` profile, but Compose no longer turns it on and the gateway has no route to it.
 
-The procedures in §§1–8 are the **Sprint B target**. Follow each one only once what it needs exists: Keycloak and PostgreSQL (#189), authentication (#190), each service's database and events (#191 to #194, #201).
+The procedures in §§1–8 are the **Sprint B target**. Follow each one only once what it needs exists: authentication (#190), each service's database and events (#191 to #194, #201). Keycloak and PostgreSQL exist since #189.
 
 ## 1. What runs
 
@@ -44,7 +51,7 @@ One Compose file, `infra/compose.yaml`. Images are built from the repository: th
 |---|---|---|---|
 | `auth-users`, `events`, `reports`, `transports`, `badges` | The five Spring Boot services, one container each, image `farol-<service>:${VERSION}` | default | none |
 | `gateway` | The API gateway, image `farol-gateway:${VERSION}` ([ADR-013](adr/0013-api-gateway.md)): the only entry point of the API, with CORS, JWT validation and the rate limits | default | `0.0.0.0:8080` |
-| `keycloak` | The identity provider ([ADR-006](adr/0006-identity-and-access.md)), pinned version, realm imported from `infra/keycloak/farol-realm.json` | default | `0.0.0.0:8180` |
+| `keycloak` | The identity provider ([ADR-006](adr/0006-identity-and-access.md)), pinned version built with `infra/keycloak/Dockerfile`, realm imported from `infra/keycloak/farol-realm.json` | default | `127.0.0.1:8180` (the demo runs only on the laptop, 15 November 2026) |
 | `web` | Serves the React app, image `farol-web:${VERSION}`. The app calls the gateway and Keycloak directly | default | `0.0.0.0:${WEB_PORT}` (3000, guide F2) |
 | `postgres` | **One** PostgreSQL instance with **six databases and six users**: one per service and one for Keycloak. No user can read another's database (ADR-003) | default | none |
 | `rabbitmq` | The broker, with a fixed node name, a named volume and one user per service (ADR-006) | default | `127.0.0.1:15672` (management UI) |
