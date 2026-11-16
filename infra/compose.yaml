@@ -171,7 +171,9 @@ services:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'HEAD /health/ready HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q 'HTTP/1.0 200' <&3"]
       interval: 5s
       timeout: 3s
-      start_period: 60s
+      # A first start creates the master realm and imports farol: about 145 s on a busy laptop (review of #211).
+      # The container still turns healthy as soon as the check passes, so a long budget costs nothing.
+      start_period: 180s
       retries: 24
 
 volumes:

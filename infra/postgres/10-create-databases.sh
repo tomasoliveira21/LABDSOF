@@ -1,7 +1,8 @@
 #!/bin/sh
 # One database and one login role per owner: the five services and Keycloak (ADR-003, ADR-011, #189).
 # Run once by the image's entrypoint, on the first start with an empty volume (docker-entrypoint-initdb.d).
-# To apply a change here, reset the volume: docker compose -f infra/compose.yaml down -v
+# Not idempotent: if it fails half-way, the next start skips it and leaves a partial volume. After a failure,
+# and to apply a change here, reset the volume: docker compose -f infra/compose.yaml down -v
 set -eu
 
 # Nobody but the owner (and the superuser) may connect to a database: new databases grant CONNECT and

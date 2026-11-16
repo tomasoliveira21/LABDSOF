@@ -15,9 +15,8 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `local-delivery.md` §0 and §1: how to run the stack with `infra/.env`, the test accounts, the reset with `down -v`, Keycloak on `127.0.0.1`.
 - `.gitattributes`: shell scripts keep LF line endings on Windows checkouts.
-
-### Proposed (for the team's review in the PR)
-- ADR-006 addendum: Keycloak runs `start --optimized` from a two-line image in development, CI and the demo, because `start-dev` cannot run on a read-only file system (measured with 26.8.2).
+- After Bruno Lopes's review of #211: Keycloak's health check allows 180 s for a first start; the seeded users have fixed ids (stable `sub`); CI fails on any port published outside `127.0.0.1` and checks the issuer and keys seen from a service container; the realm's password policy reads `notEmail`; `local-delivery.md` §1 lists Keycloak on `127.0.0.1`.
+- ADR-006 addendum, accepted in the review of #211: Keycloak runs `start --optimized` from a two-line image in development, CI and the demo, because `start-dev` cannot run on a read-only file system (measured with 26.8.2).
 
 ## [Unreleased] · 2026-11-15 · Initial Docker base with every service skeleton (#202, Bruno Lopes)
 
