@@ -40,7 +40,7 @@
 | Token lifetimes | Access token 5 min; refresh tokens rotated. Session idle 12 h (a night shift on a control-room laptop); 30 days with *Remember me* (P1 on their own phone) |
 | Database | Its own `keycloak` database on the PostgreSQL server |
 | Address | `localhost:8180` locally, its own hostname on Azure. **Not** behind the API gateway: the browser talks to it during login. `KC_HOSTNAME` set to that public URL |
-| Start | `--import-realm`; `start-dev` while developing, `start` (production mode, HTTP on `localhost`) for the demo |
+| Start | `start --optimized --import-realm` (production mode, HTTP on `localhost`) while developing, in CI and for the demo, from `infra/keycloak/Dockerfile`: addendum of 16 November 2026 (#189) below. It replaced `start-dev` while developing |
 | First FarolAdmin | `FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL` grants the role at provisioning when the email matches **and the token has `email_verified: true`** (decided in the [meeting of 15 November 2026](../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), #179; [security assessment](../security-and-privacy-assessment.md) T4). The realm import creates the bootstrap account already verified; a self-registered account is never verified while there is no SMTP. No screen for it in the MVP |
 
 Each service sets the public issuer and the internal key address separately, so it starts even when Keycloak is down and fetches keys only when a token arrives (keys cached, refreshed on an unknown `kid`, #43):
@@ -97,6 +97,15 @@ The API outline (#123, merged on 26 October 2026 in #124) and guide D7 are updat
 ## Addendum · 31 October 2026 (#170)
 
 Documentary alignment only: no new decision and no new team vote. [`domain-model.svg`](../domain-model.svg) was redrawn to show this ADR's split: memberships, team assignments and the `FarolAdmin` grant (`GlobalRoleGrant`) in Auth & Users; teams and their permissions (`Team`, `TeamPermission`) in Events. The question of which team is the default when two teams handle the same category stays open (see [`domain-model.md`](../domain-model.md)).
+
+## Addendum · 16 November 2026 (#189) · accepted
+
+**Status: accepted** on 16 November 2026 in the review of the pull request of #189 ([#211](https://github.com/tomasoliveira21/LABDSOF/pull/211)).
+
+- **Change:** Keycloak runs `start --optimized --import-realm` (production mode, HTTP on `localhost`) while developing, in CI and in the demo, from a two-line image `infra/keycloak/Dockerfile` (the official image pinned by digest, plus `kc.sh build --db=postgres --health-enabled=true`). `start-dev` is no longer used.
+- **Why:** measured with Keycloak 26.8.2 on 16 November 2026, `start-dev` cannot start on a read-only file system: it rebuilds into `/opt/keycloak/lib/quarkus` at every start, and a tmpfs there hides the files of the image. Every other container runs read-only, with no capabilities and no new privileges (`infra/compose.yaml`), and the assignment (§11) does not allow a security control to be turned off for the demo. The optimized image runs with the same hardening and uses about 610 MB of memory. It is ready about 15 s after a restart. A first start creates the `master` realm and imports `farol`: 40 s on one laptop and about 145 s on a busier one, so the health check allows 180 s before it counts failures. Development, CI and the demo then run the same Keycloak, so the demo configuration is exercised every day.
+- **Cost:** one more image to build (the base layer is cached); the development conveniences of `start-dev` (theme and template caching off) are lost, and no theme work is planned. Going back is two lines in `infra/compose.yaml` (image and command).
+- **Weighed:** `start-dev` without `read_only` (a documented deviation on the identity provider), and both modes behind a switch (the demo mode would run only on demo day). Options and reasons in [`Docs/specs/189-postgres-keycloak-compose.md`](../../specs/189-postgres-keycloak-compose.md).
 
 ## Alternatives considered
 
