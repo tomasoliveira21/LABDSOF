@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "membership.changed.schema.json",
+  "title": "MembershipChanged, as Reports reads it",
+  "description": "Published by Auth & Users (farol.auth-users, routing key membership.changed), consumed from reports.auth-users-events. This is what Reports relies on; the producer's own contract (#191) wins where they differ. Full state with a version: Reports upserts its copy and ignores a version not newer than the one it has (API outline §7.3). Unknown fields are ignored.",
+  "allOf": [{ "$ref": "../envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "MembershipChanged" },
+    "eventId": { "type": "string", "format": "uuid" },
+    "payload": {
+      "type": "object",
+      "required": ["userId", "role", "status", "teamIds", "version"],
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "description": "The user's sub" },
+        "role": { "enum": ["EventAdmin", "RegularUser"] },
+        "status": { "enum": ["Active", "Removed"] },
+        "teamIds": { "type": "array", "items": { "type": "string", "format": "uuid" }, "uniqueItems": true },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
