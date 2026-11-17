@@ -1,5 +1,7 @@
 package pt.isep.labdsof.reports.application;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import pt.isep.labdsof.reports.domain.HelpRequest;
@@ -13,4 +15,10 @@ public interface HelpRequests {
   Optional<HelpRequest> find(UUID eventId, UUID requestId);
 
   Optional<HelpRequest> findByClientRequestId(UUID eventId, String requesterId, UUID clientRequestId);
+
+  /** The event's requests that are not Closed, in order of arrival (submittedAt, then id). */
+  List<HelpRequest> open(UUID eventId);
+
+  /** The event's requests for which {@link HelpRequest#changedAfter} holds, in order of arrival. */
+  List<HelpRequest> changedSince(UUID eventId, Instant since, Instant now);
 }

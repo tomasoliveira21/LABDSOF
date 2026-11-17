@@ -1,7 +1,9 @@
 package pt.isep.labdsof.reports.application;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,7 +11,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.HelpRequestStatus;
 import pt.isep.labdsof.reports.domain.Membership;
 import pt.isep.labdsof.reports.domain.Team;
 
@@ -41,6 +45,21 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   public Optional<HelpRequest> findByClientRequestId(UUID eventId, String requesterId, UUID clientId) {
     return requests.values().stream().filter(r -> r.eventId().equals(eventId)
         && r.requesterId().equals(requesterId) && r.clientRequestId().equals(clientId)).findFirst();
+  }
+
+  @Override
+  public List<HelpRequest> open(UUID eventId) {
+    return inArrivalOrder(eventId, r -> r.status() != HelpRequestStatus.Closed);
+  }
+
+  @Override
+  public List<HelpRequest> changedSince(UUID eventId, Instant since, Instant now) {
+    return inArrivalOrder(eventId, r -> r.changedAfter(since, now));
+  }
+
+  private List<HelpRequest> inArrivalOrder(UUID eventId, Predicate<HelpRequest> filter) {
+    return requests.values().stream().filter(r -> r.eventId().equals(eventId)).filter(filter)
+        .sorted(Comparator.comparing(HelpRequest::submittedAt)).toList();
   }
 
   @Override

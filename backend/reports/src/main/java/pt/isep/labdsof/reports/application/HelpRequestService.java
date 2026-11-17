@@ -1,6 +1,8 @@
 package pt.isep.labdsof.reports.application;
 
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -10,7 +12,7 @@ import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.Permission;
 
-/** Use cases on help requests that #194 needs: submit (persistence and outbox) and read one. */
+/** Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26). */
 @Service
 public class HelpRequestService {
 
@@ -31,6 +33,15 @@ public class HelpRequestService {
 
   /** The request as the caller sees it, and whether they get the control-room view. */
   public record Read(HelpRequest request, boolean controlRoom) {}
+
+  /** The requests of one poll, and the serverTime to send as updatedSince next time. */
+  public record Changes(List<HelpRequest> items, Instant serverTime) {}
+
+  /**
+   * Consecutive polls overlap by this much: updated_at is set before the commit, so a request committed just
+   * after a poll read the table is still listed by the next one (spec US-26 D3).
+   */
+  static final Duration POLL_OVERLAP = Duration.ofSeconds(5);
 
   /** Saves the request and its HelpRequestSubmitted in one transaction (ADR-004 outbox). */
   @Transactional
@@ -65,6 +76,22 @@ public class HelpRequestService {
       return new Read(request, false);
     }
     throw new NotFoundException();
+  }
+
+  /**
+   * The live list of the control room (US-26): every open request on the first load ({@code since} null),
+   * then what changed after {@code since}. Only HelpRequests.Triage (403); a non-member gets 404.
+   */
+  @Transactional(readOnly = true)
+  public Changes list(UUID eventId, String userId, Instant since) {
+    if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
+      throw new ForbiddenException();
+    }
+    var now = clock.instant();
+    var items = since == null ? helpRequests.open(eventId) : helpRequests.changedSince(eventId, since, now);
+    // ponytail: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
+    // cursor (snapshot xmin) if one ever is
+    return new Changes(items.stream().map(r -> r.asSeenAt(now)).toList(), now.minus(POLL_OVERLAP));
   }
 
   private EventAccess access(UUID eventId, String userId) {

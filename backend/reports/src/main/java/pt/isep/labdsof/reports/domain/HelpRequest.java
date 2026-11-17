@@ -56,6 +56,20 @@ public record HelpRequest(
         HelpRequestStatus.Submitted, null, null, TriageSuggestion.pending(), at, at, 1);
   }
 
+  /**
+   * Whether a live list polled at {@code now} with {@code since} must list this request again (US-26):
+   * it was changed after {@code since}, or it is still Pending and its triage deadline passed in
+   * (since, now], so it now reads NotTriaged without any write (decision 6). The JDBC adapter holds the
+   * same rule in SQL.
+   */
+  public boolean changedAfter(Instant since, Instant now) {
+    if (updatedAt.isAfter(since)) {
+      return true;
+    }
+    var deadline = submittedAt.plus(TriageSuggestion.TRIAGE_DEADLINE);
+    return triage.state() == TriageState.Pending && deadline.isAfter(since) && !deadline.isAfter(now);
+  }
+
   /** This request as a reader sees it at {@code now} (NotTriaged derived from Pending). */
   public HelpRequest asSeenAt(Instant now) {
     return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,

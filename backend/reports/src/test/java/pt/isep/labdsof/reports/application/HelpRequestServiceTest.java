@@ -15,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.HelpRequestStatus;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.Membership;
 import pt.isep.labdsof.reports.domain.Membership.Role;
@@ -125,6 +126,16 @@ class HelpRequestServiceTest {
       public Optional<HelpRequest> findByClientRequestId(UUID e, String r, UUID c) {
         return Optional.empty();
       }
+
+      @Override
+      public List<HelpRequest> open(UUID eventId) {
+        return List.of();
+      }
+
+      @Override
+      public List<HelpRequest> changedSince(UUID eventId, Instant since, Instant now) {
+        return List.of();
+      }
     };
     var service = new HelpRequestService(refusing, ports, ports, clock);
     var clientRequestId = UUID.randomUUID();
@@ -181,6 +192,85 @@ class HelpRequestServiceTest {
 
     assertThatThrownBy(() -> service.get(EVENT, "rui", requestId))
         .isInstanceOf(NotFoundException.class);
+  }
+
+  HelpRequest submitAt(Instant at, String description) {
+    clock = Clock.fixed(at, ZoneOffset.UTC);
+    return service().submit(EVENT, "ana", UUID.randomUUID(), description, POINT).request();
+  }
+
+  void close(HelpRequest request, Instant at) {
+    ports.requests.put(request.id(), new HelpRequest(request.id(), request.eventId(),
+        request.requesterId(), request.clientRequestId(), request.description(), request.location(),
+        request.category(), request.priority(), HelpRequestStatus.Closed, null, null, request.triage(),
+        request.submittedAt(), at, request.version() + 1));
+  }
+
+  @Test
+  @DisplayName("US-26 AC-1 the first load lists the open requests and later polls list what changed")
+  void list() {
+    member("ana", Role.RegularUser);
+    member("rui", Role.RegularUser, CONTROL_ROOM);
+    controlRoomTeam();
+    submitAt(NOW.plusSeconds(2), "second");
+    var first = submitAt(NOW, "first");
+    var closed = submitAt(NOW.plusSeconds(1), "closed");
+    close(closed, NOW.plusSeconds(3));
+
+    clock = Clock.fixed(NOW.plusSeconds(10), ZoneOffset.UTC);
+    var load = service().list(EVENT, "rui", null);
+    assertThat(load.items()).extracting(HelpRequest::description).containsExactly("first", "second");
+    // Consecutive polls overlap by 5 s, so a request committed just after a poll is not lost (D3)
+    assertThat(load.serverTime()).isEqualTo(NOW.plusSeconds(5));
+
+    var changes = service().list(EVENT, "rui", NOW.plusSeconds(1));
+    assertThat(changes.items()).extracting(HelpRequest::description).containsExactly("closed", "second");
+    assertThat(changes.items().get(0).status()).isEqualTo(HelpRequestStatus.Closed);
+
+    // At the 30 s deadline, the Pending requests come back as NotTriaged (D4)
+    clock = Clock.fixed(NOW.plusSeconds(31), ZoneOffset.UTC);
+    var late = service().list(EVENT, "rui", NOW.plusSeconds(26));
+    // The closed one too: harmless, the page drops closed requests
+    assertThat(late.items()).extracting(HelpRequest::id).containsExactly(first.id(), closed.id());
+    assertThat(late.items().get(0).triage().state()).isEqualTo(TriageState.NotTriaged);
+  }
+
+  @Test
+  @DisplayName("US-26 AC-1 an EventAdmin and a triage team member get the list")
+  void whoGetsTheList() {
+    member("ana", Role.RegularUser);
+    member("rui", Role.RegularUser, CONTROL_ROOM);
+    member("sofia", Role.EventAdmin);
+    controlRoomTeam();
+    var request = submitAt(NOW, "help");
+
+    assertThat(service().list(EVENT, "rui", null).items()).containsExactly(request);
+    assertThat(service().list(EVENT, "sofia", null).items()).containsExactly(request);
+  }
+
+  @Test
+  @DisplayName("US-26 AC-2 a member without HelpRequests.Triage is refused")
+  void refused() {
+    member("ana", Role.RegularUser);
+    submitAt(NOW, "help");
+    var service = service();
+    assertThatThrownBy(() -> service.list(EVENT, "ana", null)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.list(EVENT, "nobody", null))
+        .isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("US-26 AC-2 a team of another event or a deleted team does not grant the list")
+  void teamsThatGrantNothing() {
+    var elsewhere = UUID.randomUUID();
+    var deleted = UUID.randomUUID();
+    var triage = List.of(new TeamPermission(Permission.HELP_REQUESTS_TRIAGE, Set.of()));
+    ports.upsertIfNewer(new Team(elsewhere, UUID.randomUUID(), "Other control room", triage, Set.of(),
+        false, 1));
+    ports.upsertIfNewer(new Team(deleted, EVENT, "Old control room", triage, Set.of(), true, 2));
+    member("rui", Role.RegularUser, elsewhere, deleted);
+    var service = service();
+    assertThatThrownBy(() -> service.list(EVENT, "rui", null)).isInstanceOf(ForbiddenException.class);
   }
 
   @Test
