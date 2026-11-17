@@ -1,0 +1,185 @@
+package pt.isep.labdsof.authusers;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import tools.jackson.databind.json.JsonMapper;
+
+/** Correlation id (spec D8) and what reaches the logs (M-10), read from the structured console output. */
+@ExtendWith(OutputCaptureExtension.class)
+class LoggingIT extends IntegrationTest {
+
+  private static final JsonMapper JSON = JsonMapper.builder().build();
+  private static final String HEADER = "X-Correlation-Id";
+
+  private ApiClient api() {
+    return new ApiClient(port);
+  }
+
+  private HttpResponse<String> get(String path, String token, String correlationId) {
+    return api().send("GET", path, token == null ? null : "Bearer " + token, null,
+        correlationId == null ? new String[0] : new String[] {HEADER, correlationId});
+  }
+
+  /** The JSON log lines written so far (other lines, such as the banner, are skipped). */
+  @SuppressWarnings("unchecked")
+  private static List<Map<String, Object>> logLines(CapturedOutput output) {
+    var lines = new ArrayList<Map<String, Object>>();
+    for (var line : output.getOut().split("\\R")) {
+      if (line.startsWith("{")) {
+        try {
+          lines.add(JSON.readValue(line, Map.class));
+        } catch (RuntimeException e) {
+          // not a complete JSON line
+        }
+      }
+    }
+    return lines;
+  }
+
+  private static boolean accessLine(Map<String, Object> line, String correlationId, int status) {
+    return correlationId.equals(line.get("correlationId")) && line.get("message") instanceof String message
+        && message.contains(" -> " + status + " in ");
+  }
+
+  /** The access line is written after the response may have reached the client, so wait for it. */
+  private static void awaitAccessLine(CapturedOutput output, String correlationId, int status) {
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+        assertThat(logLines(output)).anyMatch(line -> accessLine(line, correlationId, status)));
+  }
+
+  private static Stream<Arguments> correlationIds() {
+    return Stream.of(Arguments.of("abcdefgh-1234-5678", true), Arguments.of(null, false),
+        Arguments.of("abcd efgh", false), Arguments.of("abcdefg", false), Arguments.of("a".repeat(65), false));
+  }
+
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("correlationIds")
+  @DisplayName("191 AC-8 a valid X-Correlation-Id is returned as sent, any other gets a new UUID")
+  void correlationIdIsKeptOrReplaced(String sent, boolean kept) {
+    var response = get("/api/v1/status", null, sent);
+
+    var returned = response.headers().firstValue(HEADER).orElseThrow();
+    if (kept) {
+      assertThat(returned).isEqualTo(sent);
+    } else {
+      assertThat(returned).isNotEqualTo(sent);
+      assertThat(UUID.fromString(returned)).hasToString(returned);
+    }
+  }
+
+  @Test
+  @DisplayName("191 AC-8 a 401 of the security layer carries the correlation id")
+  void securityRefusalCarriesTheCorrelationId() {
+    var response = get("/api/v1/me", null, "from-the-client-401");
+
+    assertThat(response.statusCode()).isEqualTo(401);
+    assertThat(response.headers().allValues(HEADER)).containsExactly("from-the-client-401");
+    var generated = get("/api/v1/me", null, null);
+    assertThat(generated.statusCode()).isEqualTo(401);
+    assertThat(generated.headers().firstValue(HEADER)).isPresent();
+  }
+
+  @Test
+  @DisplayName("191 AC-8 the outbox row of a first GET /api/v1/me keeps the request's correlation id")
+  void outboxRowKeepsTheCorrelationId() {
+    var user = UUID.randomUUID();
+    var correlationId = "outbox-" + UUID.randomUUID();
+
+    var response = get("/api/v1/me", JWKS.valid(user.toString()), correlationId);
+
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(jdbc.sql("SELECT correlation_id FROM outbox WHERE body->'payload'->>'userId' = :id")
+        .param("id", user.toString()).query(String.class).list()).containsExactly(correlationId);
+  }
+
+  @Test
+  @DisplayName("191 AC-8 every request is logged as logstash JSON carrying its correlation id")
+  void requestsAreLoggedAsJsonWithTheCorrelationId(CapturedOutput output) {
+    var user = UUID.randomUUID();
+    var correlationId = "logged-" + UUID.randomUUID();
+
+    get("/api/v1/me", JWKS.valid(user.toString()), correlationId);
+
+    awaitAccessLine(output, correlationId, 200);
+    var mine = logLines(output).stream().filter(line -> correlationId.equals(line.get("correlationId"))).toList();
+    assertThat(mine).allSatisfy(line -> assertThat(line).containsKeys("@timestamp", "level", "logger_name",
+        "message"));
+    assertThat(mine).anyMatch(line -> line.get("message") instanceof String message
+        && message.startsWith("GET /api/v1/me -> 200 in "));
+    assertThat(mine).anyMatch(line -> ("GET /me by userId=" + user).equals(line.get("message")));
+  }
+
+  private String awaitedRequest(CapturedOutput output, String method, String path, String token, String body,
+      int status) {
+    var correlationId = "leak-" + UUID.randomUUID();
+    api().send(method, path, token == null ? null : "Bearer " + token, body, HEADER, correlationId);
+    awaitAccessLine(output, correlationId, status);
+    return correlationId;
+  }
+
+  @Test
+  @DisplayName("191 AC-8 no e-mail, name or token reaches the logs")
+  void noPersonalDataReachesTheLogs(CapturedOutput output) {
+    var id = UUID.randomUUID();
+    var email = "leak-" + id + "@farol.test";
+    var name = "Leaky Name " + id;
+    var user = UUID.randomUUID();
+    var valid = JWKS.sign(JWKS.claims(user.toString()).claim("email", email).claim("name", name).build());
+    var expired = JWKS.expired(UUID.randomUUID().toString(), Duration.ofSeconds(120));
+    var tampered = Jwks.tampered(JWKS.valid(UUID.randomUUID().toString()));
+    var disabled = UUID.randomUUID();
+    jdbc.sql("""
+        INSERT INTO user_account (user_id, email, display_name, status, version, created_at, updated_at)
+        VALUES (:id, :email, :name, 'Disabled', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+        """).param("id", disabled).param("email", email.replace("leak-", "disabled-")).param("name", name).update();
+    var disabledToken = JWKS.sign(JWKS.claims(disabled.toString()).claim("email", email).claim("name", name).build());
+    var badEmail = URLEncoder.encode("not-" + email.replace("@", "-at-"), StandardCharsets.UTF_8);
+    var goodEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
+    var unknownField = "{\"userId\":\"" + user + "\",\"role\":\"EventAdmin\",\"note\":\"" + email + "\"}";
+    var members = "/api/v1/events/" + UUID.randomUUID() + "/members";
+
+    awaitedRequest(output, "GET", "/api/v1/me", valid, null, 200);
+    awaitedRequest(output, "GET", "/api/v1/me", expired, null, 401);
+    awaitedRequest(output, "GET", "/api/v1/me", tampered, null, 401);
+    awaitedRequest(output, "GET", "/api/v1/me", disabledToken, null, 403);
+    awaitedRequest(output, "GET", "/api/v1/accounts?email=" + badEmail, valid, null, 400);
+    awaitedRequest(output, "POST", members, valid, unknownField, 400);
+    awaitedRequest(output, "GET", "/api/v1/accounts?email=" + goodEmail, valid, null, 501);
+
+    var logged = output.getAll();
+    for (var secret : List.of(email, name, valid, expired, tampered, disabledToken, "Leaky Name",
+        email.replace("leak-", "disabled-"), valid.split("\\.")[1])) {
+      assertThat(logged).doesNotContain(secret);
+    }
+  }
+
+  @Test
+  @DisplayName("191 AC-8 a rejected correlation id is not logged")
+  void rejectedCorrelationIdIsNotLogged(CapturedOutput output) {
+    var rejected = "reject me " + UUID.randomUUID();
+
+    var response = get("/api/v1/status", null, rejected);
+
+    var replaced = response.headers().firstValue(HEADER).orElseThrow();
+    awaitAccessLine(output, replaced, 200);
+    assertThat(output.getAll()).doesNotContain(rejected).doesNotContain(rejected.substring(10));
+  }
+}

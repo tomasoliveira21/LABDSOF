@@ -7,6 +7,10 @@ spring:
     deserialization:
       # Reject fields outside the documented bodies (mass assignment, spec D9)
       fail-on-unknown-properties: true
+  mvc:
+    # Problem Details for every MVC error (API outline 1.7); ProblemDetailsAdvice backs it
+    problemdetails:
+      enabled: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:}
     username: ${SPRING_DATASOURCE_USERNAME:}

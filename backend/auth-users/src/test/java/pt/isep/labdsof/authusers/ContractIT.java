@@ -3,9 +3,15 @@ package pt.isep.labdsof.authusers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -13,8 +19,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.yaml.snakeyaml.Yaml;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.model.AccountSummary;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.model.EventRole;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.model.EventStatus;
@@ -37,7 +48,10 @@ class ContractIT extends IntegrationTest {
   private static final UUID ID = UUID.fromString("11111111-2222-3333-4444-555555555555");
   private static final UUID OTHER = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa");
 
+  private static final Path CONTRACT = Path.of("contracts", "openapi.yaml");
+
   @Autowired JsonMapper json;
+  @Autowired @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping mappings;
 
   private record EnumCase(Enum<?> constant, String value, Function<String, Object> fromValue) {}
 
@@ -162,5 +176,112 @@ class ContractIT extends IntegrationTest {
     assertThat(json.readValue(c.valid() + "}", type)).isEqualTo(c.instance());
     assertThatThrownBy(() -> json.readValue(c.valid() + ",\"isAdmin\":true}", type))
         .isInstanceOf(JacksonException.class);
+  }
+
+  /** "METHOD path" of every operation of contracts/openapi.yaml (path items also hold a {@code parameters} list). */
+  @SuppressWarnings("unchecked")
+  static Set<String> contractOperations() {
+    try (var in = Files.newBufferedReader(CONTRACT, StandardCharsets.UTF_8)) {
+      var contract = (Map<String, Object>) new Yaml().load(in);
+      var operations = new TreeSet<String>();
+      ((Map<String, Object>) contract.get("paths")).forEach((path, item) ->
+          ((Map<String, Object>) item).forEach((key, value) -> {
+            if (value instanceof Map) {
+              operations.add(key.toUpperCase() + " " + path);
+            }
+          }));
+      return operations;
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static String eventPath(String suffix) {
+    return "/api/v1/events/" + UUID.randomUUID() + suffix;
+  }
+
+  private static final String NAME_ADMIN_BODY = "{\"userId\":\"" + ID + "\",\"role\":\"EventAdmin\"}";
+
+  private record LaterStory(String method, String path, String body, String story) {}
+
+  private static Stream<Arguments> laterStories() {
+    var member = "/members/" + UUID.randomUUID() + "/teams/" + UUID.randomUUID();
+    return Stream.of(
+        new LaterStory("GET", "/api/v1/me/memberships", null, "US-01"),
+        new LaterStory("GET", "/api/v1/accounts?email=ana@farol.test", null, "US-06"),
+        new LaterStory("GET", eventPath("/members"), null, "US-18"),
+        new LaterStory("POST", eventPath("/members"), NAME_ADMIN_BODY, "US-06"),
+        new LaterStory("POST", eventPath("/members/me"), null, "US-12"),
+        new LaterStory("PUT", eventPath(member), null, "US-18"),
+        new LaterStory("DELETE", eventPath(member), null, "US-18")).map(Arguments::of);
+  }
+
+  @Test
+  @DisplayName("191 AC-4 the service serves exactly the operations of openapi.yaml")
+  void servesExactlyTheContractOperations() {
+    var served = new TreeSet<String>();
+    mappings.getHandlerMethods().forEach((info, handler) -> {
+      if (handler.getBeanType().getPackageName().startsWith("pt.isep.labdsof.authusers")) {
+        info.getMethodsCondition().getMethods().forEach(method ->
+            info.getPathPatternsCondition().getPatternValues().forEach(path -> served.add(method + " " + path)));
+      }
+    });
+
+    assertThat(served).isEqualTo(contractOperations());
+  }
+
+  @Test
+  @DisplayName("191 AC-4 openapi.yaml holds the Sprint B endpoints of API outline §2")
+  void contractHoldsTheSprintBEndpoints() {
+    assertThat(contractOperations()).containsExactlyInAnyOrder(
+        "GET /api/v1/status",
+        "GET /api/v1/me",
+        "GET /api/v1/me/memberships",
+        "GET /api/v1/accounts",
+        "GET /api/v1/events/{eventId}/members",
+        "POST /api/v1/events/{eventId}/members",
+        "POST /api/v1/events/{eventId}/members/me",
+        "PUT /api/v1/events/{eventId}/members/{userId}/teams/{teamId}",
+        "DELETE /api/v1/events/{eventId}/members/{userId}/teams/{teamId}");
+  }
+
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("laterStories")
+  @DisplayName("191 AC-4 every operation of a later story answers 501 Problem Details naming its story")
+  void laterStoriesAnswer501(LaterStory operation) {
+    var response = new ApiClient(port).send(operation.method(), operation.path(),
+        "Bearer " + JWKS.valid(UUID.randomUUID().toString()), operation.body());
+
+    ApiClient.assertProblem(response, 501);
+    assertThat(ApiClient.json(response).get("detail")).asString().contains(operation.story());
+  }
+
+  @ParameterizedTest(name = "[{index}] role={0}")
+  @ValueSource(strings = {"EventAdmin", "RegularUser"})
+  @DisplayName("191 AC-4 the member list takes the contract's role values and a team id")
+  void memberListTakesTheContractRoles(String role) {
+    var path = eventPath("/members") + "?role=" + role + "&teamId=" + UUID.randomUUID();
+
+    var response = new ApiClient(port).get(path, JWKS.valid(UUID.randomUUID().toString()));
+
+    ApiClient.assertProblem(response, 501);
+  }
+
+  @ParameterizedTest(name = "[{index}] {0} {1}")
+  @CsvSource({"GET,/api/v1/nothing-here,404", "PATCH,/api/v1/me,405", "DELETE,/api/v1/status,405"})
+  @DisplayName("191 AC-4 a path or method outside the contract answers 404 or 405 Problem Details")
+  void pathsOutsideTheContractAreRefused(String method, String path, int status) {
+    var response = new ApiClient(port).send(method, path, "Bearer " + JWKS.valid(UUID.randomUUID().toString()));
+
+    ApiClient.assertProblem(response, status);
+  }
+
+  @Test
+  @DisplayName("191 AC-4 the contract is served at /openapi.yaml without a token")
+  void contractIsServedWithoutAToken() throws IOException {
+    var response = new ApiClient(port).get("/openapi.yaml", null);
+
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(response.body()).isEqualTo(Files.readString(CONTRACT, StandardCharsets.UTF_8));
   }
 }
