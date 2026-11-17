@@ -117,7 +117,8 @@ class OutboxIT extends IntegrationTest {
     try (var restarted = Infrastructure.startReports(
         Map.of("farol.outbox.enabled", "true", "farol.outbox.poll-interval", "100ms"))) {
       await().atMost(Duration.ofSeconds(20)).until(() -> row(messageId).get("published_at") != null);
-      Thread.sleep(1000); // several more publisher runs: none may send it again
+      // Several more publisher runs (every 100 ms) before the queue is drained: none may send it again.
+      await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(2)).until(() -> true);
     }
     var messages = drain();
     assertThat(count(messages, messageId)).isEqualTo(1);
@@ -149,7 +150,7 @@ class OutboxIT extends IntegrationTest {
 
   @Test
   @DisplayName("194 AC-2 the outbox keeps and retries events while RabbitMQ is down")
-  void brokerDown() throws Exception {
+  void brokerDown() {
     var messageId = submit();
     var unreachable = new CachingConnectionFactory("127.0.0.1", 1); // nothing listens on port 1
     try {
@@ -157,7 +158,7 @@ class OutboxIT extends IntegrationTest {
       assertThat(publisher(new RabbitTemplate(unreachable)).publishDue()).isZero();
       var failed = row(messageId);
       assertThat(failed.get("published_at")).isNull();
-      assertThat(failed.get("attempts")).isEqualTo(1);
+      assertThat(failed).containsEntry("attempts", 1);
       assertThat((String) failed.get("last_error")).isNotBlank();
       assertThat(((java.sql.Timestamp) failed.get("next_attempt_at")).toInstant())
           .isAfter(before.plusSeconds(1));
@@ -201,8 +202,8 @@ class OutboxIT extends IntegrationTest {
       var down = publisher(new RabbitTemplate(unreachable));
       assertThat(down.publishDue()).isZero();
       assertThat(down.publishDue()).isZero(); // paused: the second row is not tried
-      assertThat(row(first).get("attempts")).isEqualTo(1);
-      assertThat(row(second).get("attempts")).isEqualTo(0);
+      assertThat(row(first)).containsEntry("attempts", 1);
+      assertThat(row(second)).containsEntry("attempts", 0);
     } finally {
       unreachable.destroy();
     }

@@ -16,7 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 class SecurityConfiguration {
 
   @Bean
-  SecurityFilterChain api(HttpSecurity http) throws Exception {
+  SecurityFilterChain api(HttpSecurity http) {
     return http
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.GET, "/api/v1/status", "/openapi.yaml", "/swagger-ui.html",

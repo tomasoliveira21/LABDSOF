@@ -28,6 +28,9 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
   /** How a team's permissions are stored: the TeamChanged shape, `[{ permission, reportTypes }]`. */
   record StoredPermission(String permission, List<String> reportTypes) {}
 
+  private static final String EVENT_ID = "eventId";
+  private static final String VERSION = "version";
+
   private final JdbcClient jdbc;
   private final JsonMapper json;
 
@@ -46,7 +49,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
   @Override
   public Optional<Membership> membership(UUID eventId, String userId) {
     return jdbc.sql("SELECT * FROM membership_copy WHERE event_id = :eventId AND user_id = :userId")
-        .param("eventId", eventId)
+        .param(EVENT_ID, eventId)
         .param("userId", userId)
         .query(JdbcLocalCopies::membership)
         .optional();
@@ -58,7 +61,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
       return List.of();
     }
     return jdbc.sql("SELECT * FROM team_copy WHERE event_id = :eventId AND team_id IN (:teamIds)")
-        .param("eventId", eventId)
+        .param(EVENT_ID, eventId)
         .param("teamIds", teamIds)
         .query(this::team)
         .list();
@@ -74,12 +77,12 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
               version = excluded.version
           WHERE membership_copy.version < excluded.version
         """)
-        .param("eventId", m.eventId())
+        .param(EVENT_ID, m.eventId())
         .param("userId", m.userId())
         .param("role", m.role().name())
         .param("status", m.status().name())
         .param("teamIds", m.teamIds().toArray(UUID[]::new))
-        .param("version", m.version())
+        .param(VERSION, m.version())
         .update() == 1;
   }
 
@@ -99,12 +102,12 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
           WHERE team_copy.version < excluded.version AND team_copy.event_id = excluded.event_id
         """)
         .param("teamId", t.teamId())
-        .param("eventId", t.eventId())
+        .param(EVENT_ID, t.eventId())
         .param("name", t.name())
         .param("permissions", json.writeValueAsString(permissions))
         .param("categories", t.handledCategories().stream().map(Enum::name).sorted().toArray(String[]::new))
         .param("deleted", t.deleted())
-        .param("version", t.version())
+        .param(VERSION, t.version())
         .update() == 1;
   }
 
@@ -115,7 +118,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
         Membership.Role.valueOf(rs.getString("role")),
         Membership.Status.valueOf(rs.getString("status")),
         Set.of((UUID[]) rs.getArray("team_ids").getArray()),
-        rs.getLong("version"));
+        rs.getLong(VERSION));
   }
 
   private Team team(ResultSet rs, int row) throws SQLException {
@@ -129,6 +132,6 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
         Arrays.stream((String[]) rs.getArray("handled_categories").getArray()).map(Category::valueOf)
             .collect(Collectors.toSet()),
         rs.getBoolean("deleted"),
-        rs.getLong("version"));
+        rs.getLong(VERSION));
   }
 }

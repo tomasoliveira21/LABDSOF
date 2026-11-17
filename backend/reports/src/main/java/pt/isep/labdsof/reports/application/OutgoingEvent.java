@@ -18,7 +18,7 @@ public record OutgoingEvent(
     String actorUserId,
     Map<String, Object> payload) {
 
-  public static final String EXCHANGE = "farol.reports";
+  public static final String REPORTS_EXCHANGE = "farol.reports";
   public static final String PRODUCER = "reports";
 
   /** Every Reports event belongs to a Farol event; the actor is empty when the system caused it (§7.1). */
@@ -31,8 +31,8 @@ public record OutgoingEvent(
 
   /** Carries only the requestId: no help-request text in the broker (API outline §7.3, M-5, T11). */
   public static OutgoingEvent helpRequestSubmitted(UUID messageId, HelpRequest request) {
-    return new OutgoingEvent(messageId, EXCHANGE, "help-request.submitted", "HelpRequestSubmitted", 1,
-        request.submittedAt(), request.eventId(), request.requesterId(),
+    return new OutgoingEvent(messageId, REPORTS_EXCHANGE, "help-request.submitted", "HelpRequestSubmitted",
+        1, request.submittedAt(), request.eventId(), request.requesterId(),
         Map.of("requestId", request.id().toString()));
   }
 }

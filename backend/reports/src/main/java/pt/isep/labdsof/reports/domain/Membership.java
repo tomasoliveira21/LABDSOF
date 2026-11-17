@@ -8,8 +8,11 @@ import java.util.UUID;
 public record Membership(UUID eventId, String userId, Role role, Status status, Set<UUID> teamIds,
     long version) {
 
+  // The constants are the contract values (API, events, database, JSON Schemas), so they keep its PascalCase.
+  @SuppressWarnings("java:S115")
   public enum Role { EventAdmin, RegularUser }
 
+  @SuppressWarnings("java:S115") // as Role
   public enum Status { Active, Removed }
 
   public Membership {

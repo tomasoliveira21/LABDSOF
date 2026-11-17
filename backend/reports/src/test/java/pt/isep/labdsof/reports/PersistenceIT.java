@@ -98,7 +98,8 @@ class PersistenceIT extends IntegrationTest {
         "UPDATE help_request SET priority = 'Urgent' WHERE id = :id", "priority",
         "UPDATE triage_suggestion SET state = 'NotTriaged' WHERE request_id = :id", "stored NotTriaged",
         "UPDATE help_request SET description = '   ' WHERE id = :id", "blank description").entrySet()) {
-      assertThatThrownBy(() -> jdbc.sql(update.getKey()).param("id", id).update())
+      var statement = jdbc.sql(update.getKey()).param("id", id);
+      assertThatThrownBy(statement::update)
           .as(update.getValue()).isInstanceOf(DataIntegrityViolationException.class);
     }
     for (var category : new String[] {"Health", "Safety", "LostPerson", "Infrastructure", "Other"}) {

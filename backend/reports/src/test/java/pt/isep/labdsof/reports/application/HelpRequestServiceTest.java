@@ -110,7 +110,8 @@ class HelpRequestServiceTest {
       }
     };
     var service = new HelpRequestService(refusing, ports, ports, clock);
-    assertThatThrownBy(() -> service.submit(EVENT, "ana", UUID.randomUUID(), "help", POINT))
+    var clientRequestId = UUID.randomUUID();
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", clientRequestId, "help", POINT))
         .isInstanceOf(IllegalStateException.class);
     assertThat(ports.outbox).isEmpty();
   }
@@ -120,7 +121,9 @@ class HelpRequestServiceTest {
   void nonMemberSubmit() {
     ports.upsertIfNewer(new Membership(UUID.randomUUID(), "ana", Role.EventAdmin, Status.Active,
         Set.of(), 1));
-    assertThatThrownBy(() -> service().submit(EVENT, "ana", UUID.randomUUID(), "help", POINT))
+    var service = service();
+    var clientRequestId = UUID.randomUUID();
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", clientRequestId, "help", POINT))
         .isInstanceOf(NotFoundException.class);
     assertThat(ports.requests).isEmpty();
     assertThat(ports.outbox).isEmpty();
@@ -156,9 +159,10 @@ class HelpRequestServiceTest {
   void otherMemberReads() {
     member("ana", Role.RegularUser);
     member("rui", Role.RegularUser);
-    var saved = service().submit(EVENT, "ana", UUID.randomUUID(), "help", POINT).request();
+    var service = service();
+    var requestId = service.submit(EVENT, "ana", UUID.randomUUID(), "help", POINT).request().id();
 
-    assertThatThrownBy(() -> service().get(EVENT, "rui", saved.id()))
+    assertThatThrownBy(() -> service.get(EVENT, "rui", requestId))
         .isInstanceOf(NotFoundException.class);
   }
 
@@ -166,9 +170,11 @@ class HelpRequestServiceTest {
   @DisplayName("194 AC-4 an unknown request or a non-member gets 404")
   void unknownOrNonMember() {
     member("ana", Role.EventAdmin);
-    assertThatThrownBy(() -> service().get(EVENT, "ana", UUID.randomUUID()))
+    var service = service();
+    var unknown = UUID.randomUUID();
+    assertThatThrownBy(() -> service.get(EVENT, "ana", unknown))
         .isInstanceOf(NotFoundException.class);
-    assertThatThrownBy(() -> service().get(EVENT, "nobody", UUID.randomUUID()))
+    assertThatThrownBy(() -> service.get(EVENT, "nobody", unknown))
         .isInstanceOf(NotFoundException.class);
   }
 }

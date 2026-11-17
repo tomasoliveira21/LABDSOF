@@ -5,7 +5,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,35 +67,44 @@ public class OutboxPublisher {
     var sent = new AtomicInteger();
     tx.executeWithoutResult(status -> {
       for (Pending row : outbox.claimDue(batchSize)) {
-        try {
-          send(row);
-          outbox.markPublished(row.id(), clock.instant());
-          sent.incrementAndGet();
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt(); // shutting down: not a failed attempt
+        if (!publish(row, sent)) {
           break;
-        } catch (Exception e) {
-          int attempts = row.attempts() + 1;
-          var error = DeadLetters.describe(e);
-          var next = clock.instant().plus(backoff(attempts));
-          outbox.markFailed(row.id(), attempts, next, error);
-          log.warn("Outbox message {} ({}) not published, attempt {}: {}", row.messageId(), row.type(),
-              attempts, error);
-          if (!(e instanceof Refused)) {
-            pausedUntil = next; // the broker is most likely down: the rest waits, in order
-            break;
-          }
         }
       }
     });
     return sent.get();
   }
 
+  /** Sends one row; false when the batch must stop (shutting down, or the broker is most likely down). */
+  private boolean publish(Pending row, AtomicInteger sent) {
+    try {
+      send(row);
+      outbox.markPublished(row.id(), clock.instant());
+      sent.incrementAndGet();
+      return true;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt(); // shutting down: not a failed attempt
+      return false;
+    } catch (Exception e) {
+      int attempts = row.attempts() + 1;
+      var error = DeadLetters.describe(e);
+      var next = clock.instant().plus(backoff(attempts));
+      outbox.markFailed(row.id(), attempts, next, error);
+      log.warn("Outbox message {} ({}) not published, attempt {}: {}", row.messageId(), row.type(),
+          attempts, error);
+      if (e instanceof Refused) {
+        return true;
+      }
+      pausedUntil = next; // the broker is most likely down: the rest waits, in order
+      return false;
+    }
+  }
+
   static Duration backoff(int attempts) {
     return attempts >= 6 ? MAX_BACKOFF : Duration.ofSeconds(1L << attempts);
   }
 
-  private void send(Pending row) throws Exception {
+  private void send(Pending row) throws InterruptedException, ExecutionException, TimeoutException {
     var properties = new MessageProperties();
     properties.setMessageId(row.messageId().toString());
     properties.setType(row.type());

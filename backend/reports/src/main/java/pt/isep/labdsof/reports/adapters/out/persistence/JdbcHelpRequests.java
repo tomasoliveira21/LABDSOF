@@ -26,6 +26,10 @@ class JdbcHelpRequests implements HelpRequests {
       FROM help_request r JOIN triage_suggestion t ON t.request_id = r.id
       """;
 
+  private static final String EVENT_ID = "eventId";
+  private static final String CATEGORY = "category";
+  private static final String PRIORITY = "priority";
+
   private final JdbcClient jdbc;
 
   JdbcHelpRequests(JdbcClient jdbc) {
@@ -43,15 +47,15 @@ class JdbcHelpRequests implements HelpRequests {
         ON CONFLICT ON CONSTRAINT help_request_client_request DO NOTHING
         """)
         .param("id", r.id())
-        .param("eventId", r.eventId())
+        .param(EVENT_ID, r.eventId())
         .param("requesterId", r.requesterId())
         .param("clientRequestId", r.clientRequestId())
         .param("description", r.description())
         .param("mapVersion", r.location().mapVersion())
         .param("x", r.location().x())
         .param("y", r.location().y())
-        .param("category", name(r.category()))
-        .param("priority", name(r.priority()))
+        .param(CATEGORY, name(r.category()))
+        .param(PRIORITY, name(r.priority()))
         .param("status", r.status().name())
         .param("defaultTeamId", r.defaultTeamId())
         .param("routedTeamId", r.routedTeamId())
@@ -69,10 +73,10 @@ class JdbcHelpRequests implements HelpRequests {
         VALUES (:id, :eventId, :state, :category, :priority, :reason, :notTriagedReason, :updatedAt)
         """)
         .param("id", r.id())
-        .param("eventId", r.eventId())
+        .param(EVENT_ID, r.eventId())
         .param("state", t.state().name())
-        .param("category", name(t.suggestedCategory()))
-        .param("priority", name(t.suggestedPriority()))
+        .param(CATEGORY, name(t.suggestedCategory()))
+        .param(PRIORITY, name(t.suggestedPriority()))
         .param("reason", t.suggestedReason())
         .param("notTriagedReason", name(t.notTriagedReason()))
         .param("updatedAt", Timestamp.from(r.updatedAt()))
@@ -83,7 +87,7 @@ class JdbcHelpRequests implements HelpRequests {
   @Override
   public Optional<HelpRequest> find(UUID eventId, UUID requestId) {
     return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.id = :id")
-        .param("eventId", eventId)
+        .param(EVENT_ID, eventId)
         .param("id", requestId)
         .query(JdbcHelpRequests::map)
         .optional();
@@ -96,7 +100,7 @@ class JdbcHelpRequests implements HelpRequests {
          WHERE r.event_id = :eventId AND r.requester_id = :requesterId
            AND r.client_request_id = :clientRequestId
         """)
-        .param("eventId", eventId)
+        .param(EVENT_ID, eventId)
         .param("requesterId", requesterId)
         .param("clientRequestId", clientRequestId)
         .query(JdbcHelpRequests::map)
@@ -117,8 +121,8 @@ class JdbcHelpRequests implements HelpRequests {
         rs.getObject("client_request_id", UUID.class),
         rs.getString("description"),
         new Location(rs.getInt("map_version"), rs.getDouble("x"), rs.getDouble("y")),
-        value(Category.class, rs.getString("category")),
-        value(Priority.class, rs.getString("priority")),
+        value(Category.class, rs.getString(CATEGORY)),
+        value(Priority.class, rs.getString(PRIORITY)),
         HelpRequestStatus.valueOf(rs.getString("status")),
         rs.getObject("default_team_id", UUID.class),
         rs.getObject("routed_team_id", UUID.class),

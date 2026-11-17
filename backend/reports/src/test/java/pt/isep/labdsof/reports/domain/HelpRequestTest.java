@@ -76,7 +76,8 @@ class HelpRequestTest {
   @Test
   @DisplayName("194 AC-4 a missing or 501-character description is refused")
   void longOrMissingDescription() {
-    assertThatThrownBy(() -> submit("x".repeat(501))).isInstanceOf(IllegalArgumentException.class);
+    var tooLong = "x".repeat(501);
+    assertThatThrownBy(() -> submit(tooLong)).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> submit(null)).isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -90,10 +91,13 @@ class HelpRequestTest {
   @Test
   @DisplayName("194 AC-4 a request without a requester is refused")
   void requesterRequired() {
-    assertThatThrownBy(() -> HelpRequest.submit(UUID.randomUUID(), UUID.randomUUID(), " ",
-        UUID.randomUUID(), "help", POINT, NOW)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> HelpRequest.submit(UUID.randomUUID(), UUID.randomUUID(), null,
-        UUID.randomUUID(), "help", POINT, NOW)).isInstanceOf(IllegalArgumentException.class);
+    var id = UUID.randomUUID();
+    var eventId = UUID.randomUUID();
+    var clientRequestId = UUID.randomUUID();
+    assertThatThrownBy(() -> HelpRequest.submit(id, eventId, " ", clientRequestId, "help", POINT, NOW))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> HelpRequest.submit(id, eventId, null, clientRequestId, "help", POINT, NOW))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
