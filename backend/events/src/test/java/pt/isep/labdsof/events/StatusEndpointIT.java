@@ -2,32 +2,19 @@ package pt.isep.labdsof.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** F03 removes the token once /api/v1/status is public. */
 class StatusEndpointIT extends IntegrationTest {
 
   @Test
   @DisplayName("192 AC-1 the service starts on its migrated database and answers its status")
-  void contextStartsAndStatusAnswers() throws Exception {
-    var request = HttpRequest.newBuilder()
-        .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/status"))
-        .header("Authorization", "Bearer " + JWKS.valid(UUID.randomUUID().toString()))
-        .timeout(Duration.ofSeconds(10))
-        .GET()
-        .build();
+  void contextStartsAndStatusAnswers() {
+    var response = new ApiClient(port).get("/api/v1/status", null);
 
-    try (var client = HttpClient.newHttpClient()) {
-      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-      assertThat(response.statusCode()).isEqualTo(200);
-      assertThat(response.body()).isEqualTo("{\"service\":\"events\",\"status\":\"ok\"}");
-    }
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
+        type -> assertThat(type).startsWith("application/json"));
+    assertThat(response.body()).isEqualTo("{\"service\":\"events\",\"status\":\"ok\"}");
   }
 }

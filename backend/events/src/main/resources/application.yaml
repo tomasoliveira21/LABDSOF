@@ -3,6 +3,10 @@
 spring:
   application:
     name: events
+  mvc:
+    problemdetails:
+      # Problem Details for every MVC error (API outline 1.7); ProblemDetailsAdvice extends ResponseEntityExceptionHandler
+      enabled: true
   jackson:
     deserialization:
       # Reject fields outside the documented bodies (mass assignment). The consumer of
