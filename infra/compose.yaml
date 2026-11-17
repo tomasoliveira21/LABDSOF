@@ -50,6 +50,22 @@ services:
     image: farol-events:${VERSION:-dev}
     build:
       context: ../backend/events
+    # #192: its own database (Flyway at start-up, so it waits for PostgreSQL), RabbitMQ as the `events` user (it
+    # waits for neither the broker nor its queue: the listener keeps retrying until rabbitmq-setup has run, and the
+    # outbox keeps events until the broker accepts them, ADR-011) and Keycloak (keys fetched at the first token).
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0" # repeated: `environment` replaces the anchor's
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/events
+      SPRING_DATASOURCE_USERNAME: events
+      SPRING_DATASOURCE_PASSWORD: ${EVENTS_DB_PASSWORD:?set EVENTS_DB_PASSWORD in infra/.env}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: events
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_EVENTS_PASSWORD:?set RABBITMQ_EVENTS_PASSWORD in infra/.env}
+      FAROL_ISSUER_URI: http://${PUBLIC_HOST:-localhost}:${KEYCLOAK_PORT:-8180}/realms/farol
+      FAROL_JWKS_URI: http://keycloak:8080/realms/farol/protocol/openid-connect/certs
 
   reports:
     <<: *spring

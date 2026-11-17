@@ -7,7 +7,7 @@
 
 | # | Given / when / then | Covered by |
 |---|---|---|
-| AC-1 | Given the Compose stack, when it starts, then the Events container is healthy, uses only its own database, and its schema (Event, Team, TeamPermission, VenueMapVersion, PointOfInterest, the membership copy, processed messages, outbox) comes from Flyway | `192 AC-1 …` in `MigrationIT`; CI *Build and start the stack* and the database isolation step |
+| AC-1 | Given the Compose stack, when it starts, then the Events container is healthy, uses only its own database, and its schema (Event, Team, TeamPermission, VenueMapVersion, PointOfInterest, the membership copy, processed messages, outbox) comes from Flyway | `192 AC-1 …` in `MigrationIT`; CI *Build and start the stack* and the database isolation step; `infra/tests/events_smoke.py` (Flyway `V1`, consuming as `events`) |
 | AC-2 | Given a request with a valid token, then the token is validated against Keycloak; a missing, expired, tampered, wrong-issuer or wrong-audience token gets `401` | `192 AC-2 …` in `SecurityIT`; CI step *Check that Events validates Keycloak tokens* (`infra/tests/events_smoke.py`, a real token through the gateway) |
 | AC-3 | Given the CI pipeline, then the service is built, tested (gates of the README) and started in the Compose smoke test | CI *Build and test every module*, smoke steps |
 | AC-4 | Given `contracts/openapi.yaml`, then it holds the Sprint B endpoints of API outline §3, and the service serves exactly those paths | `192 AC-4 …` in `ContractIT` |
@@ -34,7 +34,7 @@
 1. Module, schema, domain (event visibility), membership copy and its consumer
 2. Outbox and publisher (same as #191 F02)
 3. Web: security, Problem Details, correlation id, controllers (`GET /events/{eventId}`)
-4. Event schemas, Compose, CI smoke, docs
+4. Event schemas (D7) · `EventContractIT`; Compose wiring; CI smoke `infra/tests/events_smoke.py`; documents
 
 ## 4. Edge-case matrix
 
@@ -59,3 +59,27 @@
 
 - **17 Nov 2026:** research (10 min) while #191 was being implemented; findings in this spec.
 - **Open points:** (1) the join link: `join_code` is stored, but `POST /events/{eventId}/members/me` of Auth & Users (#191) does not check a code, so anyone with a published event's id can join; decide with US-11 and US-12 whether the link carries only the id or a code. (2) `POST /events` needs a copy of the FarolAdmin grants (`GlobalRoleChanged`), which comes with US-06. (3) Report and point types of D6 are proposals until US-17 and US-20.
+- **17 Nov 2026 · implementation.** Built in four steps, each with `mvn clean verify` green:
+  - (1) module, Flyway `V1`, domain (visibility), `GET /events/{eventId}` use case, membership copy and its consumer, `ContractIT`: 41 unit and 138 integration tests, JaCoCo 99.4 % lines and 100 % branches, PIT 23/23;
+  - (2) outbox publisher: 65 and 152, 99.6 % and 100 %, PIT 30/30;
+  - (3) security, Problem Details, correlation id, controllers, logging: 106 and 439, lines 545/547 (the missed ones are `EventsApplication.main`) and branches 128/128, PIT 30/30;
+  - (4) event schemas (`EventContractIT`), Compose wiring, `infra/tests/events_smoke.py` and its CI step, documents.
+
+  Final `mvn clean verify` (JDK 21): 106 unit and 472 integration tests, JaCoCo 99.6 % lines (545/547) and 100 % branches (128/128), generated code included, PIT 30/30 (100 %) killed. Local run of every check step of `ci.yml` on a fresh `farol-ci` stack: all green, then `down --volumes`. The known `--wait` flake happened: `up --wait` aborted when `rabbitmq-setup` exited while Keycloak was still starting, and a second `up -d --wait keycloak` waited for it; every container was then healthy.
+
+  Deviations from this spec:
+  - a `MembershipChanged` without `status` is stored as `Active` (§4; the "no status" case is not an invalid message);
+  - `WWW-Authenticate` starts with `Bearer` but carries Spring Security 7's `resource_metadata`;
+  - the 400 for invalid parameters (`ConstraintViolationException`) is kept and covered, and a test guards that exactly 14 operations of the contract belong to later stories;
+  - the query-enum `@InitBinder` of #191 is not ported (no query enum in this contract yet).
+- **For Auth & Users, Reports, Transports and Badges:** `EventChanged` and `TeamChanged` follow `contracts/events/` here; nothing publishes them before US-06 and US-16, whose `OutgoingEvent` factories must keep `EventContractIT` green.
+- **Open points after implementation:**
+  - (1) the join link `/join/{eventId}?code={code}` is provisional (one constant, `EventResponse.JOIN_LINK`), and #191's join does not check a code: decide with US-11 and US-12;
+  - (2) `POST /events` needs a copy of the FarolAdmin grants (`GlobalRoleChanged`, a `V2` migration) with US-06;
+  - (3) the event states, report type codes and point types are proposals until #198, US-17 and US-20;
+  - (4) the multipart limit is Spring's default 1 MB, while the contract allows 20 MB and promises `413` above it (ADR-013 L-4): US-19;
+  - (5) `/actuator/health` (and `/error`) need a token, so Compose keeps `/api/v1/status` (ADR-012 target unchanged);
+  - (6) the generated `TeamChange`, `Team`, `TeamPermission` and `MapVersion` turn a missing list into `[]`, so a missing `handledCategories` is not a `400`: US-16 and US-17;
+  - (7) the published body is the `jsonb` text, so its key order is PostgreSQL's; consumers must not rely on it;
+  - (8) one access log line per request, health checks included (noise for #148);
+  - (9) `local-delivery.md` §0's heading and intro are left for the merge with #191 and #214, which rewrite the same lines: whoever merges last adds #192 there.

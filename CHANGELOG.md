@@ -2,6 +2,31 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-17 · Events service (#192, Tiago Teixeira)
+
+**Why:** the Sprint B stories about events, teams and venue maps (US-06, US-09, US-11, US-14, US-16 to US-21) need a service that owns them and knows who may see each event; Events was an empty skeleton. Spec, decisions and edge-case matrix: [`Docs/specs/192-events-service.md`](Docs/specs/192-events-service.md).
+
+### Added
+- `backend/events`: events, teams, team permissions, venue map versions and points of interest in PostgreSQL (Flyway `V1`: `event`, `team`, `team_permission`, `venue_map_version`, `point_of_interest`, `membership_copy`, `processed_message`, `outbox`) with Spring JDBC, as Auth & Users (#191) and Reports (#214).
+- `GET /api/v1/events/{eventId}`: an EventAdmin sees the event in any status, a RegularUser only while it is `Published` or `Closed` (the join link only while it is published); anyone else, an unknown event and a FarolAdmin who is not a member get the same `404`, and the refused attempt is logged at `WARN` with user, event and time (US-14). A malformed id gets `400`. The other operations of the contract answer `501` with the story that brings them.
+- The consumer of `events.auth-users-events`: `MembershipChanged` upserted by version into the membership copy (removed rows kept, a missing `status` read as `Active`), duplicates ignored by `messageId`, invalid messages dead-lettered with the reason, other failures tried 4 times in all; the other Auth & Users types acknowledged and logged until their stories.
+- The outbox and its publisher to `farol.events` as the `events` user, as in #191 (`FOR UPDATE SKIP LOCKED`, publisher confirms, mandatory routing, backoff up to 60 s, paused while the broker is down); nothing writes to it before US-06.
+- JWT validation against Keycloak (issuer, keys, audience `farol-api`, `sub` a UUID); Problem Details for every error, `WWW-Authenticate: Bearer` on `401`; `X-Correlation-Id` kept or created, logged, stored with the outbox row and sent as the AMQP `correlationId`; no name, e-mail or token in the logs (M-10).
+- Contracts: `contracts/openapi.yaml` with the Sprint B endpoints of API outline §3, interfaces and records generated at build time; JSON Schemas in `contracts/events/`: the envelope (the same file as Auth & Users' and Reports'), `EventChanged`, `TeamChanged` (compatible with what Reports reads) and, in `consumed/`, `MembershipChanged` as Events reads it, checked by `EventContractIT`.
+- Quality gates of [`Docs/specs/README.md`](Docs/specs/README.md): JaCoCo 99.6 % of lines and 100 % of branches with the generated code included, PIT 100 % killed, integration tests with Testcontainers on the Compose images and the production `infra/rabbitmq/setup.sh`.
+- `infra/tests/events_smoke.py` and its CI step: through the gateway, a missing or tampered token gets `401`, a real Keycloak token of a user who is not a member gets `404` (and so does the FarolAdmin), a malformed id `400`; the schema comes from Flyway and Events consumes its queue.
+
+### Changed
+- `infra/compose.yaml`: Events connects to its database (and waits for it), to RabbitMQ as the `events` user and to Keycloak; no new variable in `infra/.env.example`.
+- The Events image runs `mvn package` (unit tests); the integration tests need Docker and run in `mvn verify` in CI.
+- `local-delivery.md` §0: what Events does in the stack, its settings and its checks.
+
+### Proposed (for the team's review in the PR)
+- The event states of §4 of the meeting of 15 November 2026 (`Draft`, `Published`, `Suspended`, `Closed`), while #198 is open.
+- Report type codes and point types (spec D6), until US-17 and US-20.
+- The join link `/join/{eventId}?code={code}` (relative), until US-11 and US-12.
+- `EventChanged` without the description or the join code, and `TeamChanged` with `reportTypes` on every permission (spec D7).
+
 ## [Unreleased] · 2026-11-16 · RabbitMQ topology and per-service users (#212, Tiago Teixeira)
 
 **Why:** no issue covered the broker's queues and users, and without them no service can publish or consume in the stack (the image's `guest` works only inside its container). Needed by #191 to #194 and #201.

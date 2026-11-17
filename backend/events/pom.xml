@@ -80,6 +80,13 @@
       <artifactId>testcontainers-rabbitmq</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Spec D7: event messages checked against contracts/events (same library and version as Reports #214 and Auth & Users #191) -->
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>1.5.9</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <finalName>events</finalName>

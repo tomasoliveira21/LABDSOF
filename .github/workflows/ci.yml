@@ -97,6 +97,8 @@ jobs:
           assert d["issuer"] == "http://localhost:8180/realms/farol", d["issuer"]
           assert d["jwks_uri"] == "http://keycloak:8080/realms/farol/protocol/openid-connect/certs", d["jwks_uri"]
           print("issuer", d["issuer"], "jwks", d["jwks_uri"])'
+      - name: Check that Events validates Keycloak tokens and hides events from non-members (#192)
+        run: python3 -I infra/tests/events_smoke.py infra/.env.example farol-ci
       - name: Check that only 127.0.0.1 is published and the new containers are hardened
         shell: bash
         run: |

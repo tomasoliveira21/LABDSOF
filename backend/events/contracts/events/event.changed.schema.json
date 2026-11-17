@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event.changed.schema.json",
+  "title": "EventChanged",
+  "description": "Published by Events to farol.events with routing key event.changed, through the outbox (ADR-004), whenever an event is created (US-06), edited (US-10), published (US-11), suspended or reactivated (US-09) or closed (US-13); nothing publishes it before US-06. Consumed from auth-users.events-events, reports.events-events, transports.events-events and badges.events-events (API outline §7.4, §7.5). Full state with a version: consumers upsert their copy and ignore a version not newer than the one they have (§7.3). Carries neither the description nor the join code: no consumer needs them, and the join code is shown only to the event's EventAdmins (spec D7). The statuses are the proposal of 15 November 2026 §4 while #198 is open. eventId is the event; actorUserId is the sub of the admin who caused it. AMQP properties: message_id = messageId, type = EventChanged, app_id = events, correlation_id = the request's X-Correlation-Id, content_type application/json, persistent.",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "EventChanged" },
+    "schemaVersion": { "const": 1 },
+    "producer": { "const": "events" },
+    "eventId": { "type": "string", "format": "uuid", "description": "Every Events event belongs to a Farol event (ADR-003)" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "organiserName", "dates", "status", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "\\S" },
+        "organiserName": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "\\S" },
+        "dates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "description": "Local dates in Europe/Lisbon; end is never before start (spec D4)",
+          "properties": {
+            "start": { "type": "string", "format": "date" },
+            "end": { "type": "string", "format": "date" }
+          }
+        },
+        "status": { "enum": ["Draft", "Published", "Suspended", "Closed"] },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
