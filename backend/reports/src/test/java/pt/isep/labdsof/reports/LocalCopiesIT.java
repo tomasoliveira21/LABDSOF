@@ -219,4 +219,30 @@ class LocalCopiesIT extends IntegrationTest {
     assertThat(processed(messageId)).isZero();
     assertThat(receive("reports.auth-users-events.dlq", messageId)).isEmpty();
   }
+
+  /** Compose starts Reports and rabbitmq-setup together, so the broker may refuse its user at first (D9). */
+  @Test
+  @DisplayName("194 AC-3 Reports starts before its broker user exists and consumes once it is created")
+  void startsBeforeBrokerUser() throws Exception {
+    var late = "reports-" + UUID.randomUUID();
+    try (var reports = Infrastructure.startReports(
+        java.util.Map.of("spring.rabbitmq.username", late, "spring.rabbitmq.password", "test-only-late"))) {
+      assertThat(reports.isRunning()).isTrue();
+      rabbitmqctl("add_user", late, "test-only-late");
+      rabbitmqctl("set_permissions", late, "^$", "^(farol\\.reports|farol\\.dead-letters)$", "^reports\\..*");
+      await().atMost(Duration.ofSeconds(30)).until(() -> rabbitmqctl("list_channels", "user", "consumer_count")
+          .lines().filter(line -> line.startsWith(late + "\t")).anyMatch(line -> !line.endsWith("\t0")));
+    }
+    // Only after the context has closed its connections: deleting a connected user makes the broker cut them,
+    // and the late channel closes would fail on another test's await.
+    rabbitmqctl("delete_user", late);
+  }
+
+  static String rabbitmqctl(String... args) throws Exception {
+    var command = java.util.stream.Stream.concat(java.util.stream.Stream.of("rabbitmqctl", "-q"),
+        java.util.Arrays.stream(args)).toArray(String[]::new);
+    var result = Infrastructure.RABBIT.execInContainer(command);
+    assertThat(result.getExitCode()).as(result.getStderr()).isZero();
+    return result.getStdout();
+  }
 }
