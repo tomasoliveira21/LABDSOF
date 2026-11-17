@@ -2,6 +2,29 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-19 · Auth & Users service (#191, Tiago Teixeira)
+
+**Why:** every Sprint B service needs to know who calls it: the Farol account of a Keycloak user, the first FarolAdmin (#179) and, from US-06, the members of each event. Auth & Users was an empty skeleton. Spec, decisions and edge-case matrix: [`Docs/specs/191-auth-users-service.md`](Docs/specs/191-auth-users-service.md).
+
+### Added
+- `backend/auth-users`: accounts in PostgreSQL (Flyway `V1`: `user_account`, `user_tombstone`, `global_role_grant`, `event_membership`, `team_assignment`, `outbox`) with Spring JDBC, as Reports (#214).
+- `GET /api/v1/me`: the first call creates the account from the token (just in time, ADR-006) and returns `userId`, `email`, `displayName` and `globalRoles`; the bootstrap e-mail gets `FarolAdmin` only with `email_verified: true` (#179). A deleted or deletion-pending account gets `401`, a disabled one `403`. The other operations of the contract answer `501` with the story that brings them, after input validation.
+- The outbox: `UserProfileChanged`, and `GlobalRoleChanged` for the bootstrap, saved in the same transaction and published to `farol.auth-users` as the `auth-users` user: `FOR UPDATE SKIP LOCKED`, publisher confirms, mandatory routing, backoff up to 60 s, paused while the broker is down.
+- JWT validation against Keycloak (issuer, keys, audience `farol-api`, `sub` a UUID); Problem Details for every error, `WWW-Authenticate: Bearer` on `401`; `X-Correlation-Id` kept or created, logged, stored with the outbox row and sent as the AMQP `correlationId`; no e-mail, name or token in the logs (M-10).
+- Contracts: `contracts/openapi.yaml` with the Sprint B endpoints of API outline §2, interfaces and records generated at build time (ADR-004 decision 4); JSON Schemas of the envelope (the same file as Reports'), `UserProfileChanged` and `GlobalRoleChanged` in `contracts/events/`, checked against the messages the outbox stores and sends.
+- Quality gates of [`Docs/specs/README.md`](Docs/specs/README.md): JaCoCo at least 90 % of lines and branches with the generated code included, PIT at least 80 %, integration tests with Testcontainers on the Compose images and the production `infra/rabbitmq/setup.sh`.
+- `infra/tests/auth_users_smoke.py` and its CI step: through the gateway, a missing or tampered token gets `401`, a real Keycloak token creates the account, the bootstrap account is FarolAdmin, and the outbox rows of those first calls are published.
+- `.github/workflows/dependency-review.yml`: `actions/dependency-review-action` on every pull request, failing on high severity (gate of `Docs/specs/README.md`).
+
+### Changed
+- `infra/compose.yaml`: Auth & Users connects to its database (and waits for it), to RabbitMQ as the `auth-users` user and to Keycloak, and gets the bootstrap e-mail (optional, D6); no new variable in `infra/.env.example`.
+- The Auth & Users image runs `mvn package` (unit tests); the integration tests need Docker and run in `mvn verify` in CI.
+- `local-delivery.md` §0: what Auth & Users does in the stack, its settings and its smoke check.
+
+### Proposed (for the team's review in the PR)
+- Spec D2: `openapi-generator` with `skipDefaultInterface=true` and no coverage exclusion (a contract test covers the generated records and enums), as an answer to the open point of #214 D14.
+- The account states of §4 of the meeting of 15 November 2026 (`Active`, `Disabled`, `DeletionPending`; no `MembershipStatus`), while #198 is open.
+
 ## [Unreleased] · 2026-11-18 · Review of PR #217: over-prioritisation and scale-example cases (#197, Bruno de Abreu Lopes)
 
 **Why:** the review of PR #217 found that a model answering `Critical` for everything passed the priority gates, and that most `Infrastructure` test cases restate the scale examples the prompt quotes.

@@ -11,7 +11,7 @@
 | AC-2 | Given a request with a valid token, when it reaches the service, then the token is validated against Keycloak; a missing, expired, tampered, wrong-issuer or wrong-audience token gets `401` | `191 AC-2 …` in `SecurityIT`; CI step *Check that Auth & Users validates Keycloak tokens* (`infra/tests/auth_users_smoke.py`, a real token through the gateway) |
 | AC-3 | Given the CI pipeline, when it runs, then the service is built, tested (gates of the README) and started in the Compose smoke test | CI *Build and test every module*, smoke steps |
 | AC-4 | Given `contracts/openapi.yaml`, then it holds the Sprint B endpoints of API outline §2, and the service serves exactly those paths | `191 AC-4 …` in `ContractIT` |
-| AC-5 | Given a first `GET /api/v1/me`, then the account is created from the token, `UserProfileChanged` is written to the outbox in the same transaction and published to `farol.auth-users`; later calls return the same account | `191 AC-5 …` in `MeServiceTest`, `MeIT`, `OutboxIT`; CI smoke (message in `events.auth-users-events`) |
+| AC-5 | Given a first `GET /api/v1/me`, then the account is created from the token, `UserProfileChanged` is written to the outbox in the same transaction and published to `farol.auth-users`; later calls return the same account | `191 AC-5 …` in `MeServiceTest`, `MeIT`, `OutboxIT`; CI smoke `infra/tests/auth_users_smoke.py` (the outbox row of the first `GET /me` gets `published_at`; counting the queue would race with Events, #192) |
 | AC-6 | Given the bootstrap e-mail (`FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL`), when an account with that e-mail **and** `email_verified: true` is created, then it gets `FarolAdmin` and `GlobalRoleChanged` is published; an unverified one does not (#179, T4) | `191 AC-6 …` in `MeServiceTest`, `MeIT` |
 | AC-7 | Given a deleted (tombstone) or deletion-pending account, `GET /me` gets `401` and creates nothing; a disabled account gets `403` | `191 AC-7 …` in `MeServiceTest`, `MeIT` |
 | AC-8 | Every request and published message carries a correlation id in the structured logs; no e-mail, name or token is logged (M-10) | `191 AC-8 …` in `CorrelationIdFilterTest`, `LoggingIT`, `OutboxIT` |
@@ -39,7 +39,7 @@
 3. Domain and `GET /me` use case (D4–D7) · `UserAccountTest`, `MeServiceTest`
 4. Outbox and publisher (D1, D8) · `OutboxIT`, `OutboxPublisherTest`
 5. Web: security, Problem Details, correlation id, controllers (D2, D8, D9) · `SecurityIT`, `MeIT`, `ContractIT`, `CorrelationIdFilterTest`, `LoggingIT`
-6. Event schemas (D10), CI: smoke script and dependency review (D11)
+6. Event schemas (D10) · `EventContractIT`; CI: smoke script and dependency review (D11)
 7. Docs: `local-delivery.md`, CHANGELOG
 
 ## 4. Edge-case matrix
@@ -75,3 +75,27 @@
 - **17 Nov 2026:** research (10 min): issue, API outline §1, §2 and §7, architecture §6, ADR-003/004/006/012, domain model and the proposed states, #189 and #212 handoffs, Reports #214. Checked on this machine: PIT 1.30.2 with `pitest-junit5-plugin` 1.2.3 runs JUnit 6.0.3 (Boot 4.0.9) and fails the build below the threshold; Testcontainers 2.0.5 (`org.testcontainers.postgresql`, `org.testcontainers.rabbitmq`) with `@ServiceConnection` works with Docker 29.7; Boot 4.0.9 adds the issuer and audience validators when `jwk-set-uri` is set (read in its bytecode); `openapi-generator` 7.27 needs `ApiUtil` for default interfaces, hence D2.
 - **For the web app (Tomás):** `GET /api/v1/me` once after login creates the account; `globalRoles` contains `FarolAdmin` for Daniel.
 - **For Events (#192), Reports and Transports:** `UserProfileChanged` and `GlobalRoleChanged` follow `contracts/events/` here.
+- **17 Nov 2026 · implementation.** Built in four steps, each with `mvn clean verify` green:
+  - (1) module, Flyway `V1`, domain, `GET /me` use case, JDBC adapters, `ContractIT` for the generated models;
+  - (2) outbox publisher;
+  - (3) security, Problem Details, correlation id, controllers, logging;
+  - (4) event schemas (`EventContractIT`), Compose wiring, `infra/tests/auth_users_smoke.py` and its CI step, `dependency-review.yml`, documents.
+
+  Final `mvn clean verify` (JDK 21): 100 unit and 241 integration tests, JaCoCo 99.5 % lines (442/444; the missed lines are `AuthUsersApplication.main`) and 100 % branches, generated code included, PIT 41/41 killed. Local run of every check step of `ci.yml` on a fresh `farol-ci` stack: all green, then `down --volumes`.
+
+  Deviations from this spec:
+  - the `last_error` of a publish the `auth-users` user may not write is `not confirmed: Channel closed by application`, not `ACCESS_REFUSED`;
+  - the `?role=` query enum is converted by an `@InitBinder` editor (a failed converter falls back to `Enum.valueOf`);
+  - `WWW-Authenticate` starts with `Bearer` but carries Spring Security 7's `resource_metadata`.
+- **Spec change, 17 Nov 2026:** AC-5's CI evidence is the outbox row's `published_at` (set after the broker's confirm), not a message counted in `events.auth-users-events`: once Events (#192) consumes that queue, counting would race.
+- **Open points for the team:**
+  - (1) #198 is still open: the proposed states are used and the PR says so.
+  - (2) D2 answers #214 D14: with `skipDefaultInterface=true` the generator needs no `ApiUtil` and leaves only records and enums, which a contract test covers without any JaCoCo exclusion; the team decides whether Reports adopts it.
+  - (3) Contract note for US-06: `GET /api/v1/accounts?email=` with an empty value reaches the `501`, because `@Email` accepts an empty string; add `minLength: 1` or refuse it in the use case.
+  - (4) `/actuator/health` needs a token, so Compose keeps `/api/v1/status` (ADR-012 target unchanged).
+  - (5) The `resource_metadata` URL of `WWW-Authenticate` is not served.
+  - (6) The published body is the `jsonb` text, so its key order is PostgreSQL's; consumers must not rely on it.
+  - (7) One access log line per request, health checks included (noise for #148).
+  - (8) `dependency-review.yml` needs the repository's dependency graph switched on by the owner.
+
+  Event schemas of `MembershipChanged`, `UserStatusChanged` and `UserDeleted` come with the stories that publish them (D10).

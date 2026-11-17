@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "global-role.changed.schema.json",
+  "title": "GlobalRoleChanged",
+  "description": "Published by Auth & Users to farol.auth-users with routing key global-role.changed, through the outbox (ADR-004), right after the account's UserProfileChanged when the bootstrap account is created with a verified e-mail (spec D6, #179). Consumed from events.auth-users-events: only the FarolAdmin creates and manages events (API outline §7.4). Full state with a version (§7.3). actorUserId is empty when the system granted it (the bootstrap). AMQP properties as UserProfileChanged, with type = GlobalRoleChanged.",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "GlobalRoleChanged" },
+    "schemaVersion": { "const": 1 },
+    "producer": { "const": "auth-users" },
+    "eventId": { "type": "null" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["userId", "role", "granted", "version"],
+      "properties": {
+        "userId": { "type": "string", "format": "uuid" },
+        "role": { "enum": ["FarolAdmin"] },
+        "granted": { "type": "boolean" },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
