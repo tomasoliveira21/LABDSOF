@@ -1,0 +1,545 @@
+{
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "farol.auth-users",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "farol.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "farol.reports",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "farol.dead-letters",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "auth-users.events-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "auth-users.events-events.dlq"
+      }
+    },
+    {
+      "name": "auth-users.events-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "events.auth-users-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "events.auth-users-events.dlq"
+      }
+    },
+    {
+      "name": "events.auth-users-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "reports.auth-users-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "reports.auth-users-events.dlq"
+      }
+    },
+    {
+      "name": "reports.auth-users-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "reports.events-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "reports.events-events.dlq"
+      }
+    },
+    {
+      "name": "reports.events-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "reports.reports-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "reports.reports-events.dlq"
+      }
+    },
+    {
+      "name": "reports.reports-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "transports.auth-users-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "transports.auth-users-events.dlq"
+      }
+    },
+    {
+      "name": "transports.auth-users-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "transports.events-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "transports.events-events.dlq"
+      }
+    },
+    {
+      "name": "transports.events-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "badges.auth-users-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "badges.auth-users-events.dlq"
+      }
+    },
+    {
+      "name": "badges.auth-users-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "badges.events-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "badges.events-events.dlq"
+      }
+    },
+    {
+      "name": "badges.events-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    },
+    {
+      "name": "badges.reports-events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "farol.dead-letters",
+        "x-dead-letter-routing-key": "badges.reports-events.dlq"
+      }
+    },
+    {
+      "name": "badges.reports-events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "auth-users.events-events",
+      "destination_type": "queue",
+      "routing_key": "event.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "auth-users.events-events",
+      "destination_type": "queue",
+      "routing_key": "team.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "auth-users.events-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "auth-users.events-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "events.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "membership.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "events.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "global-role.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "events.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user-profile.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "events.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user-status.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "events.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user.deleted",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "events.auth-users-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "events.auth-users-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "reports.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "membership.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "reports.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user-profile.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "reports.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user-status.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "reports.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user.deleted",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "reports.auth-users-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "reports.auth-users-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "reports.events-events",
+      "destination_type": "queue",
+      "routing_key": "event.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "reports.events-events",
+      "destination_type": "queue",
+      "routing_key": "team.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "reports.events-events",
+      "destination_type": "queue",
+      "routing_key": "venue-map-version.published",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "reports.events-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "reports.events-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.reports",
+      "vhost": "/",
+      "destination": "reports.reports-events",
+      "destination_type": "queue",
+      "routing_key": "help-request.submitted",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "reports.reports-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "reports.reports-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "transports.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "membership.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "transports.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user-status.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "transports.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user.deleted",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "transports.auth-users-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "transports.auth-users-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "transports.events-events",
+      "destination_type": "queue",
+      "routing_key": "event.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "transports.events-events",
+      "destination_type": "queue",
+      "routing_key": "team.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "transports.events-events",
+      "destination_type": "queue",
+      "routing_key": "point-of-interest.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "transports.events-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "transports.events-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "badges.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user-status.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.auth-users",
+      "vhost": "/",
+      "destination": "badges.auth-users-events",
+      "destination_type": "queue",
+      "routing_key": "user.deleted",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "badges.auth-users-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "badges.auth-users-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "badges.events-events",
+      "destination_type": "queue",
+      "routing_key": "event.changed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.events",
+      "vhost": "/",
+      "destination": "badges.events-events",
+      "destination_type": "queue",
+      "routing_key": "check-in.recorded",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "badges.events-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "badges.events-events.dlq",
+      "arguments": {}
+    },
+    {
+      "source": "farol.reports",
+      "vhost": "/",
+      "destination": "badges.reports-events",
+      "destination_type": "queue",
+      "routing_key": "report.confirmed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.reports",
+      "vhost": "/",
+      "destination": "badges.reports-events",
+      "destination_type": "queue",
+      "routing_key": "report.unconfirmed",
+      "arguments": {}
+    },
+    {
+      "source": "farol.dead-letters",
+      "vhost": "/",
+      "destination": "badges.reports-events.dlq",
+      "destination_type": "queue",
+      "routing_key": "badges.reports-events.dlq",
+      "arguments": {}
+    }
+  ]
+}
