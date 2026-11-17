@@ -29,6 +29,18 @@ class DocumentationIT {
   @Test
   @DisplayName("194 AC-8 every test the spec names exists, and every AC has a test")
   void specNamesRealTests() throws Exception {
+    specNamesRealTests(SPEC, "194", 20, 8);
+  }
+
+  @Test
+  @DisplayName("US-26 the changelog has the story, every test its spec names exists, and every AC has a test")
+  void us26SpecNamesRealTests() throws Exception {
+    assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
+        .contains("Live list of help requests (US-26, #73, Bruno Lopes)");
+    specNamesRealTests(ROOT.resolve("Docs/specs/US-26-live-help-request-list.md"), "US-26", 15, 2);
+  }
+
+  static void specNamesRealTests(Path spec, String prefix, int atLeast, int criteria) throws Exception {
     String tests;
     try (var files = Files.walk(Path.of("src/test/java"))) {
       tests = files.filter(f -> f.toString().endsWith(".java")).map(f -> {
@@ -39,15 +51,15 @@ class DocumentationIT {
         }
       }).collect(Collectors.joining("\n"));
     }
-    var named = Pattern.compile("`(194 AC-\\d [^`]+)`").matcher(Files.readString(SPEC));
+    var named = Pattern.compile("`(" + prefix + " AC-\\d [^`]+)`").matcher(Files.readString(spec));
     int count = 0;
     while (named.find()) {
       assertThat(tests).as(named.group(1)).contains("\"" + named.group(1) + "\"");
       count++;
     }
-    assertThat(count).isGreaterThan(20);
-    for (int ac = 1; ac <= 8; ac++) {
-      assertThat(tests).as("AC-" + ac).contains("@DisplayName(\"194 AC-" + ac + " ");
+    assertThat(count).isGreaterThan(atLeast);
+    for (int ac = 1; ac <= criteria; ac++) {
+      assertThat(tests).as("AC-" + ac).contains("@DisplayName(\"" + prefix + " AC-" + ac + " ");
     }
   }
 }
