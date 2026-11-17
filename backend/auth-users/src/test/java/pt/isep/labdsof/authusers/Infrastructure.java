@@ -6,6 +6,12 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory.ConfirmType;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -60,10 +66,64 @@ public final class Infrastructure {
     properties.put("spring.security.oauth2.resourceserver.jwt.issuer-uri", Jwks.ISSUER);
     properties.put("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", JWKS.uri());
     properties.put("farol.bootstrap-farol-admin-email", BOOTSTRAP_EMAIL);
+    // The shared context has no publisher; tests build their own or start a fresh process
+    properties.put("farol.outbox.enabled", "false");
     return properties;
   }
 
-  private static void setUpBroker() {
+  /**
+   * A fresh Auth &amp; Users process on the same database and broker (what a container restart does), with
+   * {@code overrides} on top. Passed as arguments so they win over application.yaml.
+   */
+  public static ConfigurableApplicationContext startAuthUsers(Map<String, Object> overrides) {
+    var all = properties();
+    all.put("server.port", "0");
+    all.putAll(overrides);
+    var args = all.entrySet().stream().map(e -> "--" + e.getKey() + "=" + e.getValue())
+        .toArray(String[]::new);
+    return new SpringApplicationBuilder(AuthUsersApplication.class).run(args);
+  }
+
+  /** A template with the broker's admin, standing in for the consumers and for the operator. */
+  public static RabbitTemplate adminTemplate() {
+    var factory = new CachingConnectionFactory(RABBIT.getHost(), RABBIT.getAmqpPort());
+    factory.setUsername(RABBIT.getAdminUsername());
+    factory.setPassword(RABBIT.getAdminPassword());
+    return new RabbitTemplate(factory);
+  }
+
+  /** A template on a fresh connection as {@code auth-users}, with confirms and mandatory like the service's. */
+  public static RabbitTemplate authUsersTemplate() {
+    var factory = new CachingConnectionFactory(RABBIT.getHost(), RABBIT.getAmqpPort());
+    factory.setUsername("auth-users");
+    factory.setPassword(AUTH_USERS_AMQP_PASSWORD);
+    factory.setPublisherConfirmType(ConfirmType.CORRELATED);
+    factory.setPublisherReturns(true);
+    var template = new RabbitTemplate(factory);
+    template.setMandatory(true);
+    return template;
+  }
+
+  /** Runs {@code rabbitmqctl -q args...} in the broker container and returns its output. */
+  public static String rabbitmqctl(String... args) {
+    var command = Stream.concat(Stream.of("rabbitmqctl", "-q"), Stream.of(args)).toArray(String[]::new);
+    try {
+      var result = RABBIT.execInContainer(command);
+      if (result.getExitCode() != 0) {
+        throw new IllegalStateException("rabbitmqctl " + String.join(" ", args) + " failed: "
+            + result.getStderr());
+      }
+      return result.getStdout();
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException(e);
+    }
+  }
+
+  /** Re-run to restore or recreate the users exactly as setup.sh declares them; idempotent. */
+  public static void setUpBroker() {
     try {
       var result = RABBIT.execInContainer("env",
           "RABBITMQADMIN_TARGET_HOST=localhost",

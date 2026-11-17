@@ -22,6 +22,12 @@ spring:
     port: ${SPRING_RABBITMQ_PORT:5672}
     username: ${SPRING_RABBITMQ_USERNAME:}
     password: ${SPRING_RABBITMQ_PASSWORD:}
+    # Confirms and mandatory routing: an outbox row is marked published only once the broker stored the
+    # message (spec D1, #214 D5)
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
   security:
     oauth2:
       resourceserver:
@@ -32,6 +38,15 @@ spring:
           audiences: farol-api
 
 farol:
+  outbox:
+    # Same values as Reports (#214 D5), so the services the team reviews behave alike (spec D1). They stay
+    # inside architecture section 6 (poll up to 1 s, batch up to 100): 500 ms keeps the delay to consumers
+    # under 1 s including the confirm, and 50 is far above the event rate of Auth & Users (first logins and
+    # role grants).
+    enabled: true
+    poll-interval: 500ms
+    batch-size: 50
+    confirm-timeout: 5s
   # Spec D6 (#179): empty grants nobody
   bootstrap-farol-admin-email: ${FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL:}
 
