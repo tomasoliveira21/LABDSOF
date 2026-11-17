@@ -2,6 +2,19 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-17 · `up --wait` waits for the one-shot `rabbitmq-setup` (#220, Tiago Teixeira)
+
+**Why:** `docker compose … up --build -d --wait` failed with `container farol-ci-rabbitmq-setup-1 exited (0)` whenever `rabbitmq-setup` (#212) finished before Keycloak started: 3 of 3 clean runs on a Windows laptop on 17 November 2026. `--wait` treats any exited container as a failure, unless another service depends on it with `service_completed_successfully`. CI had passed only because of its timing.
+
+### Fixed
+- `infra/compose.yaml`: the web app depends on `rabbitmq-setup` with `condition: service_completed_successfully`, so `--wait` waits for it to finish with exit 0, and fails with its exit code otherwise. The web app never talks to the broker; no backend service waits for it (ADR-011). After the change: 5 of 5 clean runs passed. The start command stays the same.
+
+### Added
+- `ci.yml` step *Check the start-up order*: fails if the web app stops waiting for `rabbitmq-setup`, or if a backend service waits for `rabbitmq` or `rabbitmq-setup`.
+
+### Changed
+- `local-delivery.md` §0 and §1 and spec [#212](Docs/specs/212-rabbitmq-topology-users.md) (decision D9, edge cases, handoff): how `--wait` treats one-shot containers.
+
 ## [Unreleased] · 2026-11-16 · RabbitMQ topology and per-service users (#212, Tiago Teixeira)
 
 **Why:** no issue covered the broker's queues and users, and without them no service can publish or consume in the stack (the image's `guest` works only inside its container). Needed by #191 to #194 and #201.
