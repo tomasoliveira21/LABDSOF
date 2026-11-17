@@ -7,19 +7,22 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class StatusEndpointTest {
-
-  @LocalServerPort private int port;
+/**
+ * Sends a token because Boot's default resource-server chain secures every path until the web feature (F03)
+ * makes /api/v1/status public; F03 removes the header.
+ */
+class StatusEndpointIT extends IntegrationTest {
 
   @Test
+  @DisplayName("191 AC-1 the service starts on its migrated database and answers its status")
   void contextStartsAndStatusAnswers() throws Exception {
     var request = HttpRequest.newBuilder()
         .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/status"))
+        .header("Authorization", "Bearer " + JWKS.valid(UUID.randomUUID().toString()))
         .timeout(Duration.ofSeconds(10))
         .GET()
         .build();

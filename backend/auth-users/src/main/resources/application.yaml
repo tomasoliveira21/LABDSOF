@@ -1,0 +1,41 @@
+# Auth & Users (spec Docs/specs/191-auth-users-service.md). Every secret comes from the environment
+# (infra/compose.yaml, infra/.env); no default secret.
+spring:
+  application:
+    name: auth-users
+  jackson:
+    deserialization:
+      # Reject fields outside the documented bodies (mass assignment, spec D9)
+      fail-on-unknown-properties: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      # At most 10 connections per service on the shared server (#189 handoff)
+      maximum-pool-size: 5
+  flyway:
+    locations: classpath:db/migration
+  rabbitmq:
+    # The auth-users user declares nothing; the topology comes from infra/rabbitmq/topology.json (#212, spec D1)
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:}
+    password: ${SPRING_RABBITMQ_PASSWORD:}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # ADR-006: public issuer checked against iss, keys from Keycloak's internal address, audience farol-api
+          issuer-uri: ${FAROL_ISSUER_URI}
+          jwk-set-uri: ${FAROL_JWKS_URI}
+          audiences: farol-api
+
+farol:
+  # Spec D6 (#179): empty grants nobody
+  bootstrap-farol-admin-email: ${FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL:}
+
+logging:
+  structured:
+    format:
+      console: logstash
