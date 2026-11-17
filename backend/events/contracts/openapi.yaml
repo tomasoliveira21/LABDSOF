@@ -1,0 +1,708 @@
+openapi: 3.0.3
+info:
+  title: Farol Events
+  version: 0.1.0
+  description: >-
+    Events, teams with their permissions and help categories, venue map versions and points of
+    interest (API outline §3). Contract-first (C7): the server interfaces and DTOs are generated
+    from this file. Sprint B endpoints only; #192 implements GET /events/{eventId}, the other
+    operations answer 501 until their stories (US-06, US-11, US-16, US-17, US-19, US-20, US-21,
+    US-27). The members of an event are served by Auth & Users (ADR-013). Every /api/v1 call needs
+    a valid access token issued by Keycloak to the web app (audience farol-api); /api/v1/status is
+    the only diagnostic exception. The report type and point type codes are proposed until US-17
+    and US-20 (spec D6).
+servers:
+  - url: /
+tags:
+  - name: Status
+  - name: Events
+  - name: Teams
+  - name: Map
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/status:
+    get:
+      tags: [Status]
+      operationId: getServiceStatus
+      summary: Confirm that the Events HTTP service is running
+      security: []
+      responses:
+        '200':
+          description: The service is responding; this does not check its dependencies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceStatus'
+  /api/v1/events:
+    post:
+      tags: [Events]
+      operationId: createEvent
+      summary: Create an event as a draft (US-06); FarolAdmin only
+      description: >-
+        The FarolAdmin then names its first EventAdmin in Auth & Users
+        (POST /api/v1/events/{eventId}/members, API outline D3).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewEvent'
+      responses:
+        '201':
+          description: The event, as a draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/events/{eventId}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      tags: [Events]
+      operationId: getEvent
+      summary: The event's details, status and, while it is published, its join link (US-10, US-11, US-12)
+      description: >-
+        An EventAdmin of the event sees it in every status; a RegularUser only when it is Published
+        or Closed; anyone else, a FarolAdmin who is not a member included, gets 404 as if it did
+        not exist (spec D5, API outline §1.7). A refused attempt is logged with the user, the event
+        and the time (US-14).
+      responses:
+        '200':
+          description: The event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    post:
+      tags: [Events]
+      operationId: publishEvent
+      summary: Publish a draft and generate its join link (US-11); EventAdmin only
+      responses:
+        '200':
+          description: The published event, with its join link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/events/{eventId}/teams:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      tags: [Teams]
+      operationId: listTeams
+      summary: The event's teams with their permissions and help categories (US-16)
+      description: EventAdmin, or a member with HelpRequests.Triage or Reports.Review.
+      responses:
+        '200':
+          description: The teams that are not deleted
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Teams]
+      operationId: createTeam
+      summary: Create a team with no members and no permissions (US-16); EventAdmin only
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTeam'
+      responses:
+        '201':
+          description: The team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/events/{eventId}/teams/{teamId}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/TeamId'
+    patch:
+      tags: [Teams]
+      operationId: updateTeam
+      summary: Rename a team and set the help categories it handles (US-16, US-17); EventAdmin only
+      description: Both fields are sent; the web app's team form always has both.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamChange'
+      responses:
+        '200':
+          description: The team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [Teams]
+      operationId: deleteTeam
+      summary: Delete a team (US-16); EventAdmin only
+      description: Reports returns its routed requests to the control-room queue when it consumes TeamChanged.
+      responses:
+        '204':
+          description: The team is deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/teams/{teamId}/permissions:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/TeamId'
+    put:
+      tags: [Teams]
+      operationId: replaceTeamPermissions
+      summary: Replace the team's permissions, from the fixed list of features §4.2 (US-17); EventAdmin only
+      description: Recorded with who and when. reportTypes is given only with Reports.Review.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 8
+              items:
+                $ref: '#/components/schemas/TeamPermission'
+      responses:
+        '200':
+          description: The team with its new permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/map-versions:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    post:
+      tags: [Map]
+      operationId: uploadMapVersion
+      summary: Upload a map as an image or a single-page PDF; it becomes the current version (US-19); Map.Edit
+      description: >-
+        The type is read from the content (PNG, JPEG or PDF; never SVG) and every upload is
+        re-encoded to PNG (ADR-007). Any other file gets 400 and a file above 20 MB gets 413
+        (ADR-013 L-4); the current map stays.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: The new current map version, with the previous version's points copied (API outline D5)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+  /api/v1/events/{eventId}/map-versions/current:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      tags: [Map]
+      operationId: getCurrentMapVersion
+      summary: The current map version with every point of interest (US-21, US-22); Member
+      responses:
+        '200':
+          description: The current map version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapVersion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/map-versions/{version}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/MapVersionNumber'
+    get:
+      tags: [Map]
+      operationId: getMapVersion
+      summary: An older map version, for the requests and reports that refer to it (US-27); Member
+      responses:
+        '200':
+          description: The map version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapVersion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/map-versions/{version}/image:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/MapVersionNumber'
+    get:
+      tags: [Map]
+      operationId: getMapImage
+      summary: The map version's PNG (US-21); Member
+      description: Always image/png with X-Content-Type-Options nosniff (ADR-007).
+      responses:
+        '200':
+          description: The PNG
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/map-versions/{version}/points-of-interest:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/MapVersionNumber'
+    post:
+      tags: [Map]
+      operationId: createPointOfInterest
+      summary: Place a point of interest (US-20); Map.Edit, or Transport.Edit for a TransportStop (API outline D8)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPointOfInterest'
+      responses:
+        '201':
+          description: The point
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointOfInterest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/map-versions/{version}/points-of-interest/{poiId}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/MapVersionNumber'
+      - name: poiId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [Map]
+      operationId: updatePointOfInterest
+      summary: Move or rename a point of interest (US-20); Map.Edit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PointOfInterestChange'
+      responses:
+        '200':
+          description: The point
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointOfInterest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Map]
+      operationId: deletePointOfInterest
+      summary: Remove a point of interest (US-20); Map.Edit
+      responses:
+        '204':
+          description: The point is removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    EventId:
+      name: eventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MapVersionNumber:
+      name: version
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: No valid access token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: No permission in this event
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Not found, or not a member of the event (API outline §1.7)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: State conflict (a team name already taken, an event that is not a draft)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    PayloadTooLarge:
+      description: File larger than 20 MB (ADR-013 L-4)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    ServiceStatus:
+      type: object
+      additionalProperties: false
+      required: [service, status]
+      properties:
+        service:
+          type: string
+          enum: [events]
+        status:
+          type: string
+          enum: [ok]
+    EventStatus:
+      type: string
+      enum: [Draft, Published, Suspended, Closed]
+    HelpCategory:
+      type: string
+      description: Decision 8 of 15 November 2026
+      enum: [Health, Safety, LostPerson, Infrastructure, Other]
+    Permission:
+      type: string
+      description: The fixed list of features §4.2
+      enum: [HelpRequests.Triage, HelpRequests.Respond, Reports.Review, Reports.Respond, Announcements.Publish, Map.Edit, Transport.Edit, Entrances.Update]
+    ReportType:
+      type: string
+      description: Proposed in spec D6 until US-17 (features §6.1 gives labels only)
+      enum: [QueueAtEntrance, CrowdedArea, WcProblem, NoWater, Hazard, TransportProblem, WrongInformation]
+    PoiType:
+      type: string
+      description: Proposed in spec D6 until US-20
+      enum: [Entrance, Stage, Wc, FirstAid, Information, TransportStop, Other]
+    DateRange:
+      type: object
+      additionalProperties: false
+      description: Local dates of the event (Europe/Lisbon); end is on or after start
+      required: [start, end]
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+    NewEvent:
+      type: object
+      additionalProperties: false
+      required: [name, organiserName, dates]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        organiserName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        dates:
+          $ref: '#/components/schemas/DateRange'
+        description:
+          type: string
+          maxLength: 2000
+    Event:
+      type: object
+      additionalProperties: false
+      required: [eventId, name, organiserName, dates, description, status]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        organiserName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        dates:
+          $ref: '#/components/schemas/DateRange'
+        description:
+          type: string
+          maxLength: 2000
+          description: Empty when none was given
+        status:
+          $ref: '#/components/schemas/EventStatus'
+        joinLink:
+          type: string
+          description: >-
+            The link the QR code encodes (US-11, US-12); present only while the event is Published
+    TeamPermission:
+      type: object
+      additionalProperties: false
+      required: [permission]
+      properties:
+        permission:
+          $ref: '#/components/schemas/Permission'
+        reportTypes:
+          type: array
+          description: Only with Reports.Review; the report types the team reviews
+          items:
+            $ref: '#/components/schemas/ReportType'
+    Team:
+      type: object
+      additionalProperties: false
+      required: [teamId, name, permissions, handledCategories]
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamPermission'
+        handledCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/HelpCategory'
+    NewTeam:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+    TeamChange:
+      type: object
+      additionalProperties: false
+      required: [name, handledCategories]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        handledCategories:
+          type: array
+          items:
+            $ref: '#/components/schemas/HelpCategory'
+    MapPosition:
+      type: object
+      additionalProperties: false
+      description: Normalised coordinates on the map version's image (ADR-007)
+      required: [x, y]
+      properties:
+        x:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        y:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+    PointOfInterest:
+      type: object
+      additionalProperties: false
+      required: [poiId, type, name, position]
+      properties:
+        poiId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/PoiType'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        position:
+          $ref: '#/components/schemas/MapPosition'
+    NewPointOfInterest:
+      type: object
+      additionalProperties: false
+      required: [type, name, position]
+      properties:
+        type:
+          $ref: '#/components/schemas/PoiType'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        position:
+          $ref: '#/components/schemas/MapPosition'
+    PointOfInterestChange:
+      type: object
+      additionalProperties: false
+      description: The fields to change; at least one
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        position:
+          $ref: '#/components/schemas/MapPosition'
+    MapVersion:
+      type: object
+      additionalProperties: false
+      required: [version, uploadedAt, pointsOfInterest]
+      properties:
+        version:
+          type: integer
+          format: int32
+          minimum: 1
+        uploadedAt:
+          type: string
+          format: date-time
+        pointsOfInterest:
+          type: array
+          items:
+            $ref: '#/components/schemas/PointOfInterest'
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
