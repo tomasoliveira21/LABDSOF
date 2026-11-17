@@ -41,12 +41,12 @@ The dataset run and a one-hour operational cohort have different populations and
 
 - Cloud Ollama as default: greater infrastructure/memory cost and unknown CPU latency; retain as a candidate if measurements justify it.
 - Hosted model selected solely by headline accuracy/price: insufficient evidence for Portuguese triage or sensitive-data handling.
-- Only deterministic routing: remains the fallback; cannot provide the required AI-assisted workflow by itself. The old offline baseline kept the participant's category, which no longer exists; the comparison baseline is redefined in #197 (proposal: keyword rules on the description).
+- Only deterministic routing: remains the fallback; cannot provide the required AI-assisted workflow by itself. The old offline baseline kept the participant's category, which no longer exists; since 17 November 2026 (#197) the comparison baseline is keyword rules on the description, with no-keyword descriptions left untriaged.
 - Autonomous classification/dispatch: rejected by the existing operator-control decision and NFR-22.
 
 ## Amendment of 15 November 2026
 
-Professor feedback on the Sprint A presentation: use the AI where it is really useful, which for triage is the priority more than the category ([meeting of 15 November 2026](../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decisions 1, 2 and 8). Changes: the participant no longer chooses a category and writes a required short description; the AI reads only that description and suggests category and priority; the team is no longer an AI output; `Theft` is replaced by `Infrastructure`; the "default priority of each category" is dropped, so NFR-22 now means only that a suggestion never overwrites a member's decision. The evaluation dataset, schema, scorer, prompt and baseline report in the [evaluation package](../../Research/architecture-investigation/evaluation/README.md) still follow the 22 October design and are updated in #197.
+Professor feedback on the Sprint A presentation: use the AI where it is really useful, which for triage is the priority more than the category ([meeting of 15 November 2026](../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decisions 1, 2 and 8). Changes: the participant no longer chooses a category and writes a required short description; the AI reads only that description and suggests category and priority; the team is no longer an AI output; `Theft` is replaced by `Infrastructure`; the "default priority of each category" is dropped, so NFR-22 now means only that a suggestion never overwrites a member's decision. The evaluation dataset, schema, scorer, prompt and baseline report in the [evaluation package](../../Research/architecture-investigation/evaluation/README.md) were updated to this design on 17 November 2026 (#197).
 
 ## Acceptance evidence pending
 

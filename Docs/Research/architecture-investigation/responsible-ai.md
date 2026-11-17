@@ -1,6 +1,6 @@
 # Responsible AI Opportunity Assessment and provider investigation
 
-> **Design changed on 15 November 2026** ([meeting record](../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decisions 1, 2 and 8): the participant no longer chooses a category and writes a required short description; the AI suggests only the **category and the priority** from that description; the team is no longer an AI output but follows from the suggested category by rule; `Theft` is replaced by `Infrastructure`. This research snapshot of 22 October 2026 is kept as it was; the dataset, schema, prompt, scorer and baseline are updated in #197. Where they differ, [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md) and the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md) win.
+> **Design changed on 15 November 2026** ([meeting record](../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md), decisions 1, 2 and 8): the participant no longer chooses a category and writes a required short description; the AI suggests only the **category and the priority** from that description; the team is no longer an AI output but follows from the suggested category by rule; `Theft` is replaced by `Infrastructure`. This research snapshot of 22 October 2026 is kept as it was; the dataset, schema, prompt, scorer and baseline were updated to the new design on 17 November 2026 (#197), with the numbers in *Baseline, known limitations and how users are informed* below. Where they differ, [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md) and the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md) win.
 
 > **Research snapshot of 22 October 2026 (#53)**, kept as evidence and as the record of the alternatives; it is not rewritten. **Decisions in force:** [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md), the [local AI decisions](../../Technical/plans/ai-provider-evaluation.md), [NFR-11 and NFR-20](../../Product/non-functional-requirements.md#2-requirements). Where this document differs, they win: for example, local Ollama with `qwen3:4b`, one 20 s attempt and no hosted fallback.
 
@@ -46,7 +46,7 @@ Send only participant `category` and optional sanitised text (max 500 characters
 | Medium | Assistance needed without an explicit immediate danger; health complaint requiring staff review, theft already occurred |
 | Low | Unclear/non-urgent support or administrative request; missing context causes abstention/manual review |
 
-Proposed deterministic baseline floors: Health=Medium, Safety=High, LostPerson=Medium, Theft=Medium, Other=Low. Effective stored priority is `max(existing priority, baseline floor, accepted suggestion)`; compare the **raw suggestion before clamping** in the evaluator so guards cannot hide model under-prioritisation. These operational labels require review by the team and a suitably experienced responder; no dataset label is medical advice.
+Proposed deterministic baseline floors: Health=Medium, Safety=High, LostPerson=Medium, Theft=Medium, Other=Low. Effective stored priority is `max(existing priority, baseline floor, accepted suggestion)`; compare the **raw suggestion before clamping** in the evaluator so guards cannot hide model under-prioritisation. These operational labels require review by the team and a suitably experienced responder; no dataset label is medical advice. *Dropped on 15 November 2026 (no participant category, so no per-category floor); since 17 November 2026 (#197) the baseline is keyword rules on the description and each case has its own minimum priority.*
 
 Save the request and its outbox event before inference; show it to the operator immediately. The 30 s deadline includes queue time, inference, validation and storage. For the selected local profile use connect 2 s, response 20 s, one attempt, no retry and the remaining overall deadline; the full admission/circuit policy is specified for review in the local decision. Ignore late suggestions if an operator acted; concurrent updates must enforce that atomically. Never wait for AI before acknowledging a durable request.
 
@@ -70,9 +70,9 @@ Mistral documents [default EU hosting with possible feature-dependent transfers]
 
 ## Evaluation plan and current evidence
 
-The [evaluation package](evaluation/README.md) contains 100 explicitly synthetic authored cases, 20 development / 80 test, including empty text, ambiguous requests, slang/typos, English/mixed text, multiple problems and prompt injection. The labels are draft operational judgements created for this investigation, **not independently validated expert ground truth**. For the minimum demo, a second teammate reviews/adjudicates the proposed labels and records that review. Independent blinded labels/fresh holdout are optional future improvements; the existing test split remains visible and cannot be presented as blinded.
+The [evaluation package](evaluation/README.md) contains 100 explicitly synthetic authored cases, 20 development / 80 test, including empty text, ambiguous requests, slang/typos, English/mixed text, multiple problems and prompt injection. The labels are draft operational judgements created for this investigation, **not independently validated expert ground truth**. For the minimum demo, a second teammate reviews/adjudicates the proposed labels and records that review. Independent blinded labels/fresh holdout are optional future improvements; the existing test split remains visible and cannot be presented as blinded. *17 November 2026 (#197): 115 cases, 23 development / 92 test; the empty texts became content-free descriptions, since a description is now required.*
 
-Compare the participant-category/default-team baseline with raw model outputs. Proposed gates: zero urgent under-prioritisation or urgent abstention/timeout; category/team accuracy ≥80% on non-abstention reference cases; valid on-time suggestions for ≥95% of those cases; correct abstention on every reference abstention case; end-to-end SC3 ≤30 s for accepted suggestions; SC5 100% visibility with AI disabled. Report all cases and slice counts, errors, coverage, latency and cost; do not score missing/invalid predictions as successful fallback.
+Compare the participant-category/default-team baseline with raw model outputs. Proposed gates: zero urgent under-prioritisation or urgent abstention/timeout; category/team accuracy ≥80% on non-abstention reference cases; valid on-time suggestions for ≥95% of those cases; correct abstention on every reference abstention case; end-to-end SC3 ≤30 s for accepted suggestions; SC5 100% visibility with AI disabled. Report all cases and slice counts, errors, coverage, latency and cost; do not score missing/invalid predictions as successful fallback. *17 November 2026 (#197): the baseline is keyword rules on the description, and the gates are those of ADR-005 decision 4, priority first, with no team gate.*
 
 **Coverage alignment (26 October 2026, #145):** [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145) defines the common ≥95% within 30 s proposal and its denominators. Offline expected abstentions are evaluated separately; runtime failures/abstentions remain in the one-hour operational denominator. This changes the specification, not measured model results.
 
@@ -86,16 +86,17 @@ The original features AI-1–AI-11 questions are answered as **proposals** by th
 
 This section is added to the snapshot so that deliverable 6 states its numbers and its limits in one place (assignment §5.6.1, §5.6.2, §5.6.3). It adds no new decision.
 
-**Non-AI baseline, reproduced.** The [baseline report](evaluation/baseline-report.json) applies the no-AI policy (participant category, default team, category priority floor) to the 80 test cases (72 non-abstention references):
+**Non-AI baseline, reproduced (updated 17 November 2026, #197).** The [baseline report](evaluation/baseline-report.json) applies keyword rules on the description (category and priority from ordered keyword lists; no keyword, no triage) to the 92 test cases (84 non-abstention references). The old baseline (participant category, default team, category floor: 24 of 31 urgent cases missed) no longer applies, since the participant chooses no category.
 
-| Measure | Baseline | Gate (ADR-005 decision 4; evaluation README) |
+| Gate, in order (ADR-005 decision 4; evaluation README) | Baseline | Gate |
 |---|---|---|
-| Category accuracy | 0.708 (51 of 72) | ≥ 0.80 |
-| Team accuracy | 0.806 (58 of 72) | ≥ 0.80 |
-| Urgent cases missed (under-prioritised, abstained or missing) | 24 of 31 | 0 |
-| Correct expected abstentions | 0 of 8 | all |
+| 1. Urgent cases missed (under-prioritised, abstained or missing) | 18 of 37 | 0 |
+| 2. Cases suggested below their minimum priority | 4 | 0 |
+| 3. Category accuracy | 0.631 (53 of 84) | ≥ 0.80 |
+| 4. Suggestion coverage | 0.643 (54 of 84) | ≥ 0.95 |
+| 5. Correct expected abstentions | 8 of 8 | all |
 
-Of the gates in this table, the baseline passes only team accuracy; it meets suggestion coverage, the priority floor and consistency trivially, because it always suggests. **Where the AI must beat it** is the existing gate on urgent cases: zero misses against the baseline's 24 of 31, plus category accuracy ≥ 0.80 and every expected abstention. No new gate is added here. The value the AI is expected to bring is therefore earlier attention to urgent requests whose participant category understates them; it is not measured until the model runs (guide K2).
+The baseline passes only the abstention check, because a description without a keyword is left untriaged; it has no semantic inconsistency. Its priority is at or above the minimum in 50 of 84 cases (0.595). **Where the AI must beat it** is priority first: zero urgent misses against the baseline's 18 of 37 (most of them descriptions its keywords do not recognise, such as *deixou de responder* or a fire), then the other gates. The value the AI is expected to bring is earlier attention to urgent requests written in words no fixed list anticipates; it is not measured until the model runs (guide K2).
 
 **Known limitations:**
 
@@ -104,7 +105,7 @@ Of the gates in this table, the baseline passes only team accuracy; it meets sug
 - **No calibrated confidence.** The model gives no score that has been checked against outcomes, so none is shown.
 - **One issue per suggestion.** The prompt asks for the most urgent described issue only ([system prompt](evaluation/system-prompt.txt)); a request describing several problems gets one suggestion.
 - **Latency not measured.** Time on the demo laptop's CPU is unknown until the model runs (ADR-005).
-- **Fixed team names.** The evaluation uses one frozen event's teams; other events' teams are an integration check.
+- **No routing in the evaluation.** The output has no team since 15 November 2026; the default team per event is an integration check.
 - **Provenance of retrieved information:** not applicable. The model has no tools and no retrieval; it sees only the minimised fields listed above.
 
 **How users are informed.** The operator always sees the original request next to the result, which is labelled **AI suggestion** with a short reason, never as a verified fact, and can change it; no confidence number is shown (§ *Opportunity, boundaries and human control* above). When the AI is unavailable, requests show *"Not triaged"* and a banner says so ([`features.md` §5](../../Product/features.md#5-ai-assisted-workflow-help-request-triage)). Participants are told in the sign-up terms that an AI may suggest a priority and that a person decides ([security and privacy assessment §8](../../Technical/security-and-privacy-assessment.md#8-consent-transparency-and-the-sign-up-terms)).

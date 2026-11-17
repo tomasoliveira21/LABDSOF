@@ -9,7 +9,7 @@ The issue's criteria on `features.md`, ADR-005, the API outline and US-34/US-35 
 
 | # | Given / when / then | Covered by |
 |---|---|---|
-| AC-1 | Given the dataset, when it is validated, then each input is only the description (1 to 500 characters), the reference categories are exactly `Health`, `Safety`, `LostPerson`, `Infrastructure`, `Other` (no `Theft`), there is no team, and an expected abstention has no category and no minimum priority | `197 AC-1 input is only the description`, `197 AC-1 description has 1 to 500 characters`, `197 AC-1 reference categories are the five of decision 8`, `197 AC-1 abstention has no category and no priority` |
+| AC-1 | Given the dataset, when it is validated, then each input is only the description (1 to 500 characters), the reference categories are exactly `Health`, `Safety`, `LostPerson`, `Infrastructure`, `Other` (no `Theft`), there is no team, and an expected abstention has no category and no minimum priority | `197 AC-1 input is only the description`, `197 AC-1 description has 1 to 500 characters`, `197 AC-1 expected labels have no team`, `197 AC-1 reference categories are the five of decision 8`, `197 AC-1 abstention has no category and no priority` |
 | AC-2 | Given the output schema and the prompt, then the output is `category`, `priority`, `reason`, `abstain` with no team, and an abstention has null category and priority | `197 AC-2 team is not an output`, `197 AC-2 abstention with a category is inconsistent`, `197 AC-2 suggestion without a priority is inconsistent`, `197 AC-2 removed category Theft is invalid` |
 | AC-3 | Given a scored run, then the gate fails first on any urgent case under-prioritised, abstained or missing, then on any case below its minimum priority, category accuracy below 0.80, coverage below 0.95 or a wrong expected abstention; there is no team gate and no participant floor | `197 AC-3 every reference passes`, `197 AC-3 urgent case under-prioritised fails`, `197 AC-3 urgent case abstained fails`, `197 AC-3 non-urgent case below its minimum fails`, `197 AC-3 category accuracy below 0.80 fails`, `197 AC-3 coverage boundary 19 of 20 passes and 18 of 20 fails`, `197 AC-3 wrong expected abstention fails` |
 | AC-4 | Given the non-AI baseline, when it runs, then it suggests category and priority from keyword rules on the description only, abstains when no rule matches, and the committed report is what it produces | `197 AC-4 baseline uses keyword rules`, `197 AC-4 baseline abstains without a keyword`, `197 AC-4 committed baseline report is reproducible` |
@@ -39,6 +39,7 @@ No Maven module, endpoint, contract or Compose file changes, so G1 to G4 have no
 | D6 | Gates in this order: zero urgent cases under-prioritised, abstained, invalid or missing; no non-abstention case below its minimum priority; category accuracy ≥ 0.80; suggestion coverage ≥ 0.95; every expected abstention; no semantic failure. Removed: team accuracy, the participant priority floor (`current_priority`) and the `wrong-category` tag. Timing gate unchanged | ADR-005 decision 4 and coverage definition; plan step 6 (*no case below its minimum priority*); decisions 1 and 2 of 15 November (no participant category, no default priority per category) |
 | D7 | The scorer stays out of CI and keeps only the standard library | Research tooling (README); no change agreed |
 | D8 | Reports are written with LF line endings | `.gitattributes` keeps the package byte-identical so the hashes in the report match on every OS; the old report was written with the platform's line ending |
+| D9 | The prompt states the scale with its examples, asks for the priority first and, when unsure between two levels, the higher one | Priority is the main output (decision 1) and the gates fail on under-prioritisation only; a level above the minimum is accepted |
 
 ## 4. Features, in build order
 
@@ -72,4 +73,10 @@ No Maven module, endpoint, contract or Compose file changes, so G1 to G4 have no
 
 ## 6. Handoff
 
-Appended as the work goes.
+**17 November 2026.** Done: spec; scorer, schema, dataset, prompt and baseline report; documents of AC-5; CHANGELOG.
+
+- Baseline on `origin/main` (6a018bb): `--validate` (100 cases) and `--self-test` passed; old baseline 0.708 category accuracy, 24 of 31 urgent cases missed.
+- Red before green: the new scorer on the old dataset failed with `duplicate inputs` (the three empty texts); the self-test on the new dataset failed only with `197 AC-4 committed baseline report is reproducible` until the report was regenerated.
+- After: `--validate` 115 cases (23 dev, 92 test); `--self-test` passes; keyword baseline on the test split: 18 of 37 urgent cases missed, 4 below their minimum, category accuracy 0.631 (53 of 84), coverage 0.643 (54 of 84), 8 of 8 abstentions, gate failed (as a baseline should).
+- AC-5 grep (`updated in #197`, `redefined in #197`, `proposal: keyword`) returns nothing outside this spec and the meeting records.
+- Left: the team's review of the labels (#149), a model run (#81, US-34) and the issue's first criterion still mentioning the *default priority of each category* (dropped by decision 2).
