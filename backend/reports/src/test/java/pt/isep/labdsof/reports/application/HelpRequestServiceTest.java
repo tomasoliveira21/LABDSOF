@@ -133,7 +133,7 @@ class HelpRequestServiceTest {
       }
 
       @Override
-      public List<HelpRequest> changedSince(UUID eventId, Instant since, Instant now) {
+      public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
         return List.of();
       }
     };
@@ -233,6 +233,15 @@ class HelpRequestServiceTest {
     // The closed one too: harmless, the page drops closed requests
     assertThat(late.items()).extracting(HelpRequest::id).containsExactly(first.id(), closed.id());
     assertThat(late.items().get(0).triage().state()).isEqualTo(TriageState.NotTriaged);
+  }
+
+  @Test
+  @DisplayName("US-26 AC-1 serverTime is kept to the microsecond, as the database stores times")
+  void serverTimeInMicros() {
+    member("sofia", Role.EventAdmin);
+    clock = Clock.fixed(NOW.plusNanos(1_700), ZoneOffset.UTC);
+    assertThat(service().list(EVENT, "sofia", null).serverTime())
+        .isEqualTo(NOW.plusNanos(1_000).minusSeconds(5));
   }
 
   @Test

@@ -59,8 +59,8 @@ public record HelpRequest(
   /**
    * Whether a live list polled at {@code now} with {@code since} must list this request again (US-26):
    * it was changed after {@code since}, or it is still Pending and its triage deadline passed in
-   * (since, now], so it now reads NotTriaged without any write (decision 6). The JDBC adapter holds the
-   * same rule in SQL.
+   * (since, now], so it now reads NotTriaged without any write (decision 6). The database only narrows the
+   * candidates (HelpRequests.candidatesSince); this rule decides.
    */
   public boolean changedAfter(Instant since, Instant now) {
     if (updatedAt.isAfter(since)) {

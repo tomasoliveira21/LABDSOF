@@ -7,6 +7,7 @@ import com.jayway.jsonpath.JsonPath;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,6 +94,7 @@ class LiveListIT extends IntegrationTest {
     var cursor = new AtomicReference<String>(JsonPath.read(poll(null), "$.serverTime"));
     var seen = new AtomicReference<Instant>();
     var wanted = new AtomicReference<String>();
+    var failure = new AtomicReference<Throwable>();
     var poller = Executors.newSingleThreadScheduledExecutor();
     try {
       // The page polls on its own rhythm, unrelated to when the participant submits (spec D7)
@@ -103,8 +105,8 @@ class LiveListIT extends IntegrationTest {
             seen.compareAndSet(null, Instant.now());
           }
           cursor.set(JsonPath.read(body, "$.serverTime"));
-        } catch (Exception e) {
-          throw new IllegalStateException(e);
+        } catch (Exception | AssertionError e) {
+          failure.compareAndSet(null, e); // a failed poll ends the schedule: report it, not a timeout
         }
       }, 0, 2, TimeUnit.SECONDS);
       // Submit between two polls, not right after one
@@ -112,7 +114,8 @@ class LiveListIT extends IntegrationTest {
       var submitted = Instant.now();
       wanted.set(submit("Someone is unconscious"));
 
-      await().atMost(Duration.ofSeconds(5)).until(() -> seen.get() != null);
+      await().atMost(Duration.ofSeconds(5)).until(() -> seen.get() != null || failure.get() != null);
+      assertThat(failure.get()).isNull();
       assertThat(Duration.between(submitted, seen.get())).isLessThanOrEqualTo(Duration.ofSeconds(5));
     } finally {
       poller.shutdownNow();
@@ -164,7 +167,8 @@ class LiveListIT extends IntegrationTest {
   @DisplayName("US-26 AC-1 a request that turns NotTriaged comes back in the changes")
   void turnsNotTriaged() throws Exception {
     var id = submit("help");
-    var submitted = Instant.now().minusSeconds(31);
+    // To the microsecond, as the database stores it (it rounds), so the deadline below is exact
+    var submitted = Instant.now().truncatedTo(ChronoUnit.MICROS).minusSeconds(31);
     setTimes(id, "submitted_at", submitted);
     setTimes(id, "updated_at", submitted);
 

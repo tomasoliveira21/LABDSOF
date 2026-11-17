@@ -515,7 +515,9 @@ components:
     UpdatedSince:
       name: updatedSince
       in: query
-      description: Only what changed after this time (API outline §1.6); everything when absent.
+      description: >-
+        Only what changed after this time (API outline §1.6). When absent, the first load the operation
+        describes (for help requests, every request that is not Closed).
       schema:
         type: string
         format: date-time

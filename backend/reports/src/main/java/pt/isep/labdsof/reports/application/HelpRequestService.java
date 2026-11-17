@@ -3,6 +3,7 @@ package pt.isep.labdsof.reports.application;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -87,8 +88,10 @@ public class HelpRequestService {
     if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
       throw new ForbiddenException();
     }
-    var now = clock.instant();
-    var items = since == null ? helpRequests.open(eventId) : helpRequests.changedSince(eventId, since, now);
+    // To the microsecond, as the database keeps times, so the next updatedSince compares exactly
+    var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+    var items = since == null ? helpRequests.open(eventId)
+        : helpRequests.candidatesSince(eventId, since).stream().filter(r -> r.changedAfter(since, now)).toList();
     // ponytail: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
     // cursor (snapshot xmin) if one ever is
     return new Changes(items.stream().map(r -> r.asSeenAt(now)).toList(), now.minus(POLL_OVERLAP));

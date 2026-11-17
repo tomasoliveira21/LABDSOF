@@ -19,6 +19,10 @@ public interface HelpRequests {
   /** The event's requests that are not Closed, in order of arrival (submittedAt, then id). */
   List<HelpRequest> open(UUID eventId);
 
-  /** The event's requests for which {@link HelpRequest#changedAfter} holds, in order of arrival. */
-  List<HelpRequest> changedSince(UUID eventId, Instant since, Instant now);
+  /**
+   * The event's requests that may have changed after {@code since}, in order of arrival: updated after it, or
+   * submitted after {@code since} minus the triage deadline. A superset: the caller keeps those for which
+   * {@link HelpRequest#changedAfter} holds, so the rule lives in the domain only.
+   */
+  List<HelpRequest> candidatesSince(UUID eventId, Instant since);
 }

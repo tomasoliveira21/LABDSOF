@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -118,18 +119,16 @@ class JdbcHelpRequests implements HelpRequests {
         .list();
   }
 
-  /** HelpRequest.changedAfter in SQL: deadline = submitted_at + 30 s falls in (since, now]. */
   @Override
-  public List<HelpRequest> changedSince(UUID eventId, Instant since, Instant now) {
+  public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
+    // Truncated down to the database's microsecond, so rounding can only widen the superset
+    var from = since.truncatedTo(ChronoUnit.MICROS);
     return jdbc.sql(SELECT + """
-         WHERE r.event_id = :eventId
-           AND (r.updated_at > :since
-                OR (t.state = 'Pending' AND r.submitted_at > :pendingFrom AND r.submitted_at <= :pendingTo))
+         WHERE r.event_id = :eventId AND (r.updated_at > :since OR r.submitted_at > :submittedAfter)
         """ + ARRIVAL_ORDER)
         .param(EVENT_ID, eventId)
-        .param("since", Timestamp.from(since))
-        .param("pendingFrom", Timestamp.from(since.minus(TriageSuggestion.TRIAGE_DEADLINE)))
-        .param("pendingTo", Timestamp.from(now.minus(TriageSuggestion.TRIAGE_DEADLINE)))
+        .param("since", Timestamp.from(from))
+        .param("submittedAfter", Timestamp.from(from.minus(TriageSuggestion.TRIAGE_DEADLINE)))
         .query(JdbcHelpRequests::map)
         .list();
   }
