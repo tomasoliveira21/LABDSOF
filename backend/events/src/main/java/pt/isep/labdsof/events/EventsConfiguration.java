@@ -5,7 +5,10 @@ import org.springframework.amqp.rabbit.config.ContainerCustomizer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+// Only the outbox publisher is scheduled, and it exists only when farol.outbox.enabled=true
+@EnableScheduling
 @Configuration
 class EventsConfiguration {
 

@@ -49,6 +49,16 @@ spring:
           jwk-set-uri: ${FAROL_JWKS_URI}
           audiences: farol-api
 
+farol:
+  # Same values as Auth & Users (#191) and Reports (#214 D5), so the services the team reviews behave alike
+  # (spec D1). Inside architecture section 6 (poll up to 1 s, batch up to 100): 500 ms keeps the delay to
+  # consumers under 1 s including the confirm, and 50 is far above the rate of event and team changes.
+  outbox:
+    enabled: true
+    poll-interval: 500ms
+    batch-size: 50
+    confirm-timeout: 5s
+
 logging:
   structured:
     format:

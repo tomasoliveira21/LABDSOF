@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory.ConfirmType;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -66,6 +67,9 @@ public final class Infrastructure {
     // Short backoff keeps the retry tests fast; production values are in application.yaml
     properties.put("spring.rabbitmq.listener.simple.retry.initial-interval", "50ms");
     properties.put("spring.rabbitmq.listener.simple.retry.max-interval", "200ms");
+    // The shared context and every startEvents context have no publisher unless a test turns it on;
+    // OutboxIT builds its own
+    properties.put("farol.outbox.enabled", "false");
     return properties;
   }
 
@@ -88,6 +92,21 @@ public final class Infrastructure {
     factory.setUsername(RABBIT.getAdminUsername());
     factory.setPassword(RABBIT.getAdminPassword());
     return new RabbitTemplate(factory);
+  }
+
+  /**
+   * A template like the one the application configures (confirms, returns, mandatory) that connects as the
+   * given broker user; the caller destroys its connection factory.
+   */
+  public static RabbitTemplate publisherTemplate(String username, String password) {
+    var factory = new CachingConnectionFactory(RABBIT.getHost(), RABBIT.getAmqpPort());
+    factory.setUsername(username);
+    factory.setPassword(password);
+    factory.setPublisherConfirmType(ConfirmType.CORRELATED);
+    factory.setPublisherReturns(true);
+    var template = new RabbitTemplate(factory);
+    template.setMandatory(true);
+    return template;
   }
 
   /** Runs {@code rabbitmqctl -q args...} in the broker container and returns its output. */
