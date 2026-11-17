@@ -90,13 +90,13 @@ This section is added to the snapshot so that deliverable 6 states its numbers a
 
 | Gate, in order (ADR-005 decision 4; evaluation README) | Baseline | Gate |
 |---|---|---|
-| 1. Urgent cases missed (under-prioritised, abstained or missing) | 18 of 37 | 0 |
-| 2. Cases suggested below their minimum priority | 4 | 0 |
-| 3. Category accuracy | 0.631 (53 of 84) | ≥ 0.80 |
-| 4. Suggestion coverage | 0.643 (54 of 84) | ≥ 0.95 |
+| 1. Urgent cases missed (under-prioritised, abstained or missing) | 20 of 37 | 0 |
+| 2. Cases suggested below their minimum priority | 6 | 0 |
+| 3. Category accuracy | 0.607 (51 of 84) | ≥ 0.80 |
+| 4. Suggestion coverage | 0.631 (53 of 84) | ≥ 0.95 |
 | 5. Correct expected abstentions | 8 of 8 | all |
 
-The baseline passes only the abstention check, because a description without a keyword is left untriaged; it has no semantic inconsistency. Its priority is at or above the minimum in 50 of 84 cases (0.595). **Where the AI must beat it** is priority first: zero urgent misses against the baseline's 18 of 37 (most of them descriptions its keywords do not recognise, such as *deixou de responder* or a fire), then the other gates. The value the AI is expected to bring is earlier attention to urgent requests written in words no fixed list anticipates; it is not measured until the model runs (guide K2).
+The baseline passes only the abstention check, because a description without a keyword is left untriaged; it has no semantic inconsistency. Its priority is at or above the minimum in 47 of 84 cases (0.560). **Where the AI must beat it** is priority first: zero urgent misses against the baseline's 20 of 37 (most of them descriptions its keywords do not recognise, such as *deixou de responder* or a fire), then the other gates. The value the AI is expected to bring is earlier attention to urgent requests written in words no fixed list anticipates; it is not measured until the model runs (guide K2).
 
 **Known limitations:**
 

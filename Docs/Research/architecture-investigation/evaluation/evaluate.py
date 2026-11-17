@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import math
+import re
 import unicodedata
 from pathlib import Path
 
@@ -19,15 +20,16 @@ MIN_SUGGESTION_COVERAGE = 0.95
 MIN_ON_TIME_COVERAGE = 0.95
 DEADLINE_MS = 30000
 
-# Non-AI baseline (#197, spec D1): keyword rules on the description, matched on lower-case text without accents.
-# Keywords come only from the priority scale (features.md §5.3), the category definitions (§4.2) and the
-# development split, never from test cases. The first category that matches wins, in this order; none means abstain.
+# Non-AI baseline (#197, spec D1): keyword rules on the description, matched at the start of a word on lower-case
+# text without accents. Keywords come only from the words of the priority scale (features.md §5.3) and the category
+# definitions (§4.2), in English and their direct Portuguese forms, and from the development split; never from test
+# cases. The first category that matches wins, in this order; none means abstain.
 CATEGORY_KEYWORDS = {
-    "Health": ("inconsciente", "unconscious", "nao responde", "not respond", "acordar", "desmai", "collaps", "medic",
+    "Health": ("inconsciente", "unconscious", "nao responde", "not respond", "acordar", "medic",
                "emergencia", "emergency", "sangr", "bleed", "ferid", "wound", "injur", "queda", "bebad", "drunk", "beber",
                "mal disposto", "unwell"),
     "Safety": ("agress", "assault", "fight", "luta", "bater", "violent", "ameac", "threat", "assedi", "harass", "persegu",
-               "empurr", "pression", "esmag", "crush", "furt", "roub", "stole", "theft", "thief", "tirar"),
+               "empurr", "pression", "furt", "roub", "stole", "theft", "thief", "tirar"),
     "LostPerson": ("perdi", "lost", "encontr", "find", "procur", "crianca", "child"),
     "Infrastructure": ("cabo", "cable", "barreira", "barrier", "vedac", "grade", "estrutura", "structure", "partid",
                        "broken", "avaria", "danific", "damag", "luz", "light", "porta", "door", "casa de banho", "toilet", "wc"),
@@ -36,12 +38,20 @@ CATEGORY_KEYWORDS = {
 # First level that matches; Medium when none does.
 PRIORITY_KEYWORDS = (
     ("Critical", ("inconsciente", "unconscious", "nao responde", "not respond", "acordar", "emergencia", "emergency",
-                  "sangrar muito", "bleeding heavily", "violent", "bater", "esmag", "crush", "empurr", "pression", "cabo",
+                  "sangrar muito", "bleeding heavily", "violent", "bater", "empurr", "pression", "cabo",
                   "cable", "prestes a cair", "about to fall", "pode cair")),
-    ("High", ("crianca", "child", "filh", "bebad", "drunk", "sangr", "bleed", "assedi", "harass", "ameac", "threat",
+    ("High", ("crianca", "child", "bebad", "drunk", "sangr", "bleed", "assedi", "harass", "ameac", "threat",
               "persegu", "barreira", "barrier", "supervis")),
     ("Low", ("entorn", "spill", "luz", "light", "duvida", "question", "pergunt")),
 )
+
+
+def word_starts(words):
+    return re.compile(r"\b(?:" + "|".join(map(re.escape, words)) + ")")
+
+
+CATEGORY_PATTERNS = {category: word_starts(words) for category, words in CATEGORY_KEYWORDS.items()}
+PRIORITY_PATTERNS = tuple((level, word_starts(words)) for level, words in PRIORITY_KEYWORDS)
 
 
 def check(condition, name):
@@ -116,11 +126,11 @@ def normalise(text):
 
 def baseline(case):
     text = normalise(case["input"]["text"])
-    category = next((c for c, words in CATEGORY_KEYWORDS.items() if any(w in text for w in words)), None)
+    category = next((c for c, pattern in CATEGORY_PATTERNS.items() if pattern.search(text)), None)
     if category is None:
         output = {"category": None, "priority": None, "reason": "No keyword matched; not triaged.", "abstain": True}
     else:
-        priority = next((p for p, words in PRIORITY_KEYWORDS if any(w in text for w in words)), "Medium")
+        priority = next((p for p, pattern in PRIORITY_PATTERNS if pattern.search(text)), "Medium")
         output = {"category": category, "priority": priority, "reason": "Keyword rules on the description; no model.", "abstain": False}
     return {"id": case["id"], "output": output}
 
@@ -297,6 +307,10 @@ def self_test(cases):
     two_invalid = copy.deepcopy(one_invalid); two_invalid[1]["output"] = None
     check(score(boundary_cases, one_invalid)["offline_quality_gate"] and not score(boundary_cases, two_invalid)["offline_quality_gate"],
           "197 AC-3 coverage boundary 19 of 20 passes and 18 of 20 fails")
+    check(score(boundary_cases, one_invalid)["reported_timing_gate"] and not score(boundary_cases, two_invalid)["reported_timing_gate"],
+          "invalid outputs are not on time")
+    incoherent = copy.deepcopy(boundary); incoherent[0]["output"]["category"] = None
+    check(score(boundary_cases, incoherent)["overall"]["valid_on_time_coverage"] == .95, "an incoherent output is not valid on time")
     below = copy.deepcopy(boundary); below[0]["output"]["priority"] = "Low"
     check(score(boundary_cases, below)["overall"]["valid_on_time_coverage"] == .95, "a case below its minimum is not valid on time")
     untimed = copy.deepcopy(boundary)
@@ -312,10 +326,13 @@ def self_test(cases):
           and suggest("Roubaram-me o telemóvel.") == ("Safety", "Medium")
           and suggest("A light is out.") == ("Infrastructure", "Low"),
           "197 AC-4 baseline uses keyword rules")
+    check(suggest("I feel slightly unwell.") == ("Health", "Medium") and suggest("O meu amigo acabou de ser roubado.") == ("Safety", "Medium")
+          and suggest("É importante, agradeço.") == (None, None),
+          "197 AC-4 baseline keywords match only at the start of a word")
     check(baseline({"id": "X", "input": {"text": "Olá."}})["output"]
           == {"category": None, "priority": None, "reason": "No keyword matched; not triaged.", "abstain": True},
           "197 AC-4 baseline abstains without a keyword")
-    check(render(run_baseline(cases, "test")) == (HERE / "baseline-report.json").read_text(encoding="utf-8"),
+    check(render(run_baseline(cases, "test")).encode("utf-8") == (HERE / "baseline-report.json").read_bytes(),
           "197 AC-4 committed baseline report is reproducible")
     print("Dataset and scorer checks passed; fixtures are NOT model results.")
 

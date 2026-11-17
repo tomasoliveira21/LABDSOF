@@ -8,7 +8,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - [Evaluation package](Docs/Research/architecture-investigation/evaluation/README.md): the input is only the description; the output is `category`, `priority`, `reason`, `abstain`, no team, and an abstention has null category and priority. The 21 cases expected `Theft` are `Safety`; the three empty texts are short content-free descriptions; 15 `Infrastructure` cases added (115 cases, 23 development / 92 test). The scorer checks the gates priority first (zero urgent misses, no case below its minimum priority, then category accuracy ≥ 0.80, coverage ≥ 0.95, every expected abstention) and no longer has a team gate or participant floor. The prompt follows the priority scale.
-- **Non-AI baseline: keyword rules on the description** (approved by the AI triage owner on 17 November 2026): 18 of 37 urgent cases missed, category accuracy 0.631, coverage 0.643, 8 of 8 abstentions; `--self-test` checks that the committed report is reproduced.
+- **Non-AI baseline: keyword rules on the description** (approved by the AI triage owner on 17 November 2026): 20 of 37 urgent cases missed, category accuracy 0.607, coverage 0.631, 8 of 8 abstentions; `--self-test` checks that the committed report is reproduced.
 - ADR-005, the local AI decisions, `responsible-ai.md` (baseline table), `features.md`, NFR-22, SC4, observability, the decisions guide and the assumptions list no longer say the package is still to be updated. Spec: [`Docs/specs/197-ai-evaluation-priority.md`](Docs/specs/197-ai-evaluation-priority.md).
 
 ## [Unreleased] · 2026-11-16 · RabbitMQ topology and per-service users (#212, Tiago Teixeira)
