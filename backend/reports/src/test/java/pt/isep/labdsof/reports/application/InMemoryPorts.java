@@ -1,0 +1,87 @@
+package pt.isep.labdsof.reports.application;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.Membership;
+import pt.isep.labdsof.reports.domain.Team;
+
+/** Test doubles of the ports, with the same rules as the JDBC adapters (checked by the *IT tests). */
+class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessages {
+
+  final Map<UUID, HelpRequest> requests = new HashMap<>();
+  final Map<String, Membership> memberships = new HashMap<>();
+  final Map<UUID, Team> teams = new HashMap<>();
+  final List<OutgoingEvent> outbox = new ArrayList<>();
+  final Set<UUID> processed = new HashSet<>();
+
+  @Override
+  public boolean insertIfNew(HelpRequest request) {
+    if (findByClientRequestId(request.eventId(), request.requesterId(), request.clientRequestId())
+        .isPresent()) {
+      return false;
+    }
+    requests.put(request.id(), request);
+    return true;
+  }
+
+  @Override
+  public Optional<HelpRequest> find(UUID eventId, UUID requestId) {
+    return Optional.ofNullable(requests.get(requestId)).filter(r -> r.eventId().equals(eventId));
+  }
+
+  @Override
+  public Optional<HelpRequest> findByClientRequestId(UUID eventId, String requesterId, UUID clientId) {
+    return requests.values().stream().filter(r -> r.eventId().equals(eventId)
+        && r.requesterId().equals(requesterId) && r.clientRequestId().equals(clientId)).findFirst();
+  }
+
+  @Override
+  public Optional<Membership> membership(UUID eventId, String userId) {
+    return Optional.ofNullable(memberships.get(eventId + "/" + userId));
+  }
+
+  @Override
+  public List<Team> teams(UUID eventId, Collection<UUID> teamIds) {
+    return teams.values().stream()
+        .filter(t -> t.eventId().equals(eventId) && teamIds.contains(t.teamId())).toList();
+  }
+
+  @Override
+  public boolean upsertIfNewer(Membership membership) {
+    var key = membership.eventId() + "/" + membership.userId();
+    var current = memberships.get(key);
+    if (current != null && current.version() >= membership.version()) {
+      return false;
+    }
+    memberships.put(key, membership);
+    return true;
+  }
+
+  @Override
+  public boolean upsertIfNewer(Team team) {
+    var current = teams.get(team.teamId());
+    if (current != null && current.version() >= team.version()) {
+      return false;
+    }
+    teams.put(team.teamId(), team);
+    return true;
+  }
+
+  @Override
+  public void add(OutgoingEvent event) {
+    outbox.add(event);
+  }
+
+  @Override
+  public boolean markProcessed(UUID messageId) {
+    return processed.add(messageId);
+  }
+}

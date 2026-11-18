@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "help-request.submitted.schema.json",
+  "title": "HelpRequestSubmitted",
+  "description": "Published by Reports to farol.reports with routing key help-request.submitted, through the outbox (ADR-004), for its own triage consumer (queue reports.reports-events). Carries only the requestId: no help-request text or location in the broker (API outline §7.3, assessment M-5, T11). AMQP properties: message_id = messageId, type = HelpRequestSubmitted, persistent.",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "HelpRequestSubmitted" },
+    "schemaVersion": { "const": 1 },
+    "producer": { "const": "reports" },
+    "eventId": { "type": "string", "format": "uuid" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestId"],
+      "properties": {
+        "requestId": { "type": "string", "format": "uuid" }
+      }
+    }
+  }
+}

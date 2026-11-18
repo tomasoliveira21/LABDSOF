@@ -111,6 +111,8 @@ jobs:
           assert d["issuer"] == "http://localhost:8180/realms/farol", d["issuer"]
           assert d["jwks_uri"] == "http://keycloak:8080/realms/farol/protocol/openid-connect/certs", d["jwks_uri"]
           print("issuer", d["issuer"], "jwks", d["jwks_uri"])'
+      - name: Check that Reports validates Keycloak tokens and reaches its database (#194)
+        run: python3 -I infra/tests/reports_smoke.py infra/.env.example
       - name: Check that only 127.0.0.1 is published and the new containers are hardened
         shell: bash
         run: |

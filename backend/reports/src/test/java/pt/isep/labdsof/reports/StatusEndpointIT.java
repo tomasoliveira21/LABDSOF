@@ -12,13 +12,10 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class StatusEndpointTest {
 
-  @LocalServerPort private int port;
+class StatusEndpointIT extends IntegrationTest {
+
 
   @Test
   void statusEndpointReturnsTheDocumentedJsonOverHttp() throws Exception {
@@ -57,8 +54,8 @@ class StatusEndpointTest {
       assertThat(contract.statusCode()).isEqualTo(200);
       assertThat(contract.body()).isEqualTo(Files.readString(Path.of("contracts/openapi.yaml")));
 
-      var generated = client.send(get("/v3/api-docs"), HttpResponse.BodyHandlers.ofString());
-      assertThat(generated.statusCode()).isEqualTo(404);
+      // Not generated: with a valid token the generated document does not exist
+      assertThat(get("/v3/api-docs", JWKS.valid("anyone")).statusCode()).isEqualTo(404);
     }
   }
 

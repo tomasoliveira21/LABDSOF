@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "team.changed.schema.json",
+  "title": "TeamChanged, as Reports reads it",
+  "description": "Published by Events (farol.events, routing key team.changed), consumed from reports.events-events. This is what Reports relies on; the producer's own contract (#192) wins where they differ. Full state with a version: Reports upserts its copy and ignores a version not newer than the one it has; a team never moves to another event (API outline §7.3). Unknown fields are ignored.",
+  "allOf": [{ "$ref": "../envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "TeamChanged" },
+    "eventId": { "type": "string", "format": "uuid" },
+    "payload": {
+      "type": "object",
+      "required": ["teamId", "name", "permissions", "handledCategories", "deleted", "version"],
+      "properties": {
+        "teamId": { "type": "string", "format": "uuid" },
+        "name": { "type": "string", "minLength": 1 },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["permission"],
+            "properties": {
+              "permission": {
+                "enum": ["HelpRequests.Triage", "HelpRequests.Respond", "Reports.Review", "Reports.Respond",
+                  "Announcements.Publish", "Map.Edit", "Transport.Edit", "Entrances.Update"]
+              },
+              "reportTypes": { "type": "array", "items": { "type": "string" }, "description": "Only for Reports.Review" }
+            }
+          }
+        },
+        "handledCategories": {
+          "type": "array",
+          "items": { "enum": ["Health", "Safety", "LostPerson", "Infrastructure", "Other"] },
+          "uniqueItems": true
+        },
+        "deleted": { "type": "boolean" },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

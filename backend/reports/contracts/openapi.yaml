@@ -1,20 +1,31 @@
 openapi: 3.0.3
 info:
-  title: Farol Reports skeleton
-  version: 0.1.0
+  title: Farol Reports
+  version: 0.2.0
   description: >-
-    Synthetic Sprint A help-request demonstration, plus a diagnostic endpoint.
-    Demo routes require the demo Spring profile, use the fixed demo-participant
-    identity and demo-event, and store data only in memory until restart.
-    No real incidents, authentication, dispatch, database, broker or AI.
+    Help requests, their AI triage and the field tasks of the Sprint B stories (API outline §4, US-23 to
+    US-36). Written by hand (contract-first, SDD rule R3). Every operation except the diagnostic status
+    needs a Keycloak access token with audience farol-api (ADR-006); the caller is the token's sub.
+    Authorisation is per event, from Reports' local copies of memberships and teams: a non-member, or a
+    member who may not see a resource, gets 404 without learning whether it exists; a member without the
+    permission for an action gets 403. Operations marked `x-farol-status: planned` are the target of their
+    story and are not served yet (Docs/specs/194-reports-postgres-outbox.md, D11).
+servers:
+  - url: /
 tags:
-  - name: Demo help requests
-    description: Synthetic data only; not the authenticated product API.
+  - name: Help requests
+  - name: Field tasks
+  - name: Diagnostics
+security:
+  - bearer: []
 paths:
   /api/v1/status:
     get:
+      tags: [Diagnostics]
       operationId: getServiceStatus
       summary: Confirm that the Reports HTTP service is running
+      security: []
+      x-farol-status: implemented
       responses:
         '200':
           description: Reports is responding; this does not check external dependencies.
@@ -31,115 +42,711 @@ paths:
                   status:
                     type: string
                     enum: [ok]
-  /api/v1/demo/help-requests:
+
+  /api/v1/events/{eventId}/help-requests:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
     post:
-      tags: [Demo help requests]
-      operationId: createDemoHelpRequest
-      summary: Create a synthetic help request (demo identity, in-memory)
+      tags: [Help requests]
+      operationId: submitHelpRequest
+      summary: Ask for help with a short description and a point on the map (US-23, US-25)
       description: >-
-        The server fixes the identity to demo-participant and event to demo-event.
-        The response is Submitted with triage.state NotTriaged (AI is not running).
-        No real assistance is requested. Data is lost on restart. Requires demo profile.
+        Requires an active membership of the event. Saved with status Submitted and triage Pending, and
+        HelpRequestSubmitted is written to the outbox in the same transaction. Sending the same
+        clientRequestId again returns the request already saved (200) and publishes nothing new; sending it
+        with another description or location is refused (409), so a reused id never drops a request.
+        Planned with US-23: 422 when the event is closed or suspended or the map version does not exist.
+        The gateway answers 429 after 5 requests in 10 minutes (ADR-013 L-2).
+      x-farol-status: implemented
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateDemoHelpRequest'
-            example:
-              category: Health
-              description: Synthetic exercise - a participant needs help near the entrance.
+              $ref: '#/components/schemas/SubmitHelpRequest'
       responses:
         '201':
-          description: Synthetic request saved in memory; no notification or dispatch occurs.
+          description: Saved.
           headers:
             Location:
-              description: Local GET path for the synthetic request.
               schema:
                 type: string
-            X-Demo-Mode:
-              schema:
-                type: string
-                enum: ['true']
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DemoHelpRequest'
+                $ref: '#/components/schemas/HelpRequestForParticipant'
+        '200':
+          description: A retry with the same clientRequestId; the request already saved.
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelpRequestForParticipant'
         '400':
-          description: Invalid category, blank/oversized description, malformed body or unknown field.
-  /api/v1/demo/help-requests/{requestId}:
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
     get:
-      tags: [Demo help requests]
-      operationId: getDemoHelpRequest
-      summary: Read a synthetic request from memory
-      description: Same fixed demo identity; not a production authorisation mechanism.
+      tags: [Help requests]
+      operationId: listHelpRequests
+      summary: Live list of the requests the caller may see (US-24, US-26, US-27, US-31)
+      description: >-
+        Own requests with mine=true; every request of the event with HelpRequests.Triage; the requests
+        routed to the caller's teams with HelpRequests.Respond. Returns what changed since updatedSince.
+      x-farol-status: planned
       parameters:
-        - name: requestId
-          in: path
-          required: true
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: mine
+          in: query
+          schema:
+            type: boolean
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/HelpRequestStatus'
+        - name: teamId
+          in: query
           schema:
             type: string
             format: uuid
       responses:
         '200':
-          description: Synthetic request found; no personal data.
+          description: The requests changed since updatedSince, and the serverTime to send next time.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DemoHelpRequest'
+                type: object
+                additionalProperties: false
+                required: [items, serverTime]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HelpRequestForControlRoom'
+                  serverTime:
+                    type: string
+                    format: date-time
         '400':
-          description: Malformed UUID.
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
         '404':
-          description: Unknown request, data cleared by restart, or demo profile inactive.
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/events/{eventId}/help-requests/{requestId}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Help requests]
+      operationId: getHelpRequest
+      summary: One request (US-24, US-29, US-34)
+      description: >-
+        The owner gets the participant view. A member with HelpRequests.Triage gets the control-room view,
+        where triage.state reads NotTriaged when the request is still Pending 30 s after submission
+        (decision 6 of 15 November 2026). Planned: members of the team the request is routed to (US-31).
+      x-farol-status: implemented
+      responses:
+        '200':
+          description: The request as the caller may see it.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/HelpRequestForParticipant'
+                  - $ref: '#/components/schemas/HelpRequestForControlRoom'
+        '400':
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Help requests]
+      operationId: setHelpRequestCategoryAndPriority
+      summary: Set the category and the priority, either or both (US-28)
+      description: Recorded with who, when, the old and the new value. Requires HelpRequests.Triage.
+      x-farol-status: planned
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                category:
+                  $ref: '#/components/schemas/Category'
+                priority:
+                  $ref: '#/components/schemas/Priority'
+      responses:
+        '200':
+          $ref: '#/components/responses/ControlRoomView'
+        '400':
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/events/{eventId}/help-requests/{requestId}/acknowledge:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Help requests]
+      operationId: acknowledgeHelpRequest
+      summary: Mark the request Seen (US-28)
+      description: Requires HelpRequests.Triage. 409 when the request is no longer Submitted.
+      x-farol-status: planned
+      responses:
+        '200':
+          $ref: '#/components/responses/ControlRoomView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/events/{eventId}/help-requests/{requestId}/route:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Help requests]
+      operationId: routeHelpRequest
+      summary: Route the request to a team; creates a field task and keeps the status (US-29)
+      description: Requires HelpRequests.Triage. 422 when the team has no HelpRequests.Respond.
+      x-farol-status: planned
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [teamId]
+              properties:
+                teamId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/ControlRoomView'
+        '400':
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+
+  /api/v1/events/{eventId}/help-requests/{requestId}/accept-suggestion:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Help requests]
+      operationId: acceptTriageSuggestion
+      summary: Take the AI's category and priority as the request's values (US-35)
+      description: >-
+        Requires HelpRequests.Triage. The default team follows from the category; recorded as the member's
+        decision. 409 when there is no suggestion or a member already set the values (NFR-22).
+      x-farol-status: planned
+      responses:
+        '200':
+          $ref: '#/components/responses/ControlRoomView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/events/{eventId}/help-requests/{requestId}/close:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Help requests]
+      operationId: closeHelpRequest
+      summary: Close the request; it leaves the active list (US-30)
+      description: Requires HelpRequests.Triage. 409 when it is already Closed.
+      x-farol-status: planned
+      responses:
+        '200':
+          $ref: '#/components/responses/ControlRoomView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/events/{eventId}/help-requests/{requestId}/history:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Help requests]
+      operationId: getHelpRequestHistory
+      summary: Full change history of the request (US-28)
+      description: Requires HelpRequests.Triage.
+      x-farol-status: planned
+      responses:
+        '200':
+          description: Every change, oldest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [field, oldValue, newValue, actorUserId, changedAt]
+                      properties:
+                        field:
+                          type: string
+                          enum: [category, priority, status, routedTeamId, triage]
+                        oldValue:
+                          type: string
+                          nullable: true
+                        newValue:
+                          type: string
+                          nullable: true
+                        actorUserId:
+                          type: string
+                          description: The sub of who changed it; empty for a system change.
+                        changedAt:
+                          type: string
+                          format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/events/{eventId}/triage-status:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      tags: [Help requests]
+      operationId: getTriageStatus
+      summary: Whether the AI triage is available, for the banner of scenario D1 (US-36)
+      description: Requires HelpRequests.Triage.
+      x-farol-status: planned
+      responses:
+        '200':
+          description: The triage availability.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [available, checkedAt]
+                properties:
+                  available:
+                    type: boolean
+                  reason:
+                    $ref: '#/components/schemas/NotTriagedReason'
+                  checkedAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/events/{eventId}/field-tasks:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      tags: [Field tasks]
+      operationId: listFieldTasks
+      summary: Live list of the tasks of my teams (US-31)
+      description: Requires HelpRequests.Respond in at least one team of the event.
+      x-farol-status: planned
+      parameters:
+        - $ref: '#/components/parameters/UpdatedSince'
+      responses:
+        '200':
+          description: The tasks changed since updatedSince, and the serverTime to send next time.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [items, serverTime]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FieldTask'
+                  serverTime:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/Invalid'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/events/{eventId}/field-tasks/{taskId}/accept:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/TaskId'
+    post:
+      tags: [Field tasks]
+      operationId: acceptFieldTask
+      summary: Accept a task; the help request becomes OnTheWay (US-32)
+      description: Member of the task's team. 409 when another member already accepted it.
+      x-farol-status: planned
+      responses:
+        '200':
+          $ref: '#/components/responses/FieldTaskView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/events/{eventId}/field-tasks/{taskId}/resolve:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/TaskId'
+    post:
+      tags: [Field tasks]
+      operationId: resolveFieldTask
+      summary: Mark the help request resolved (US-33)
+      description: Only the member who accepted the task. 409 when the task is not Accepted.
+      x-farol-status: planned
+      responses:
+        '200':
+          $ref: '#/components/responses/FieldTaskView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
 components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak access token of the farol realm, audience farol-api (ADR-006).
+
+  parameters:
+    EventId:
+      name: eventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    UpdatedSince:
+      name: updatedSince
+      in: query
+      description: Only what changed after this time (API outline §1.6); everything when absent.
+      schema:
+        type: string
+        format: date-time
+
+  responses:
+    ControlRoomView:
+      description: The request after the change.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HelpRequestForControlRoom'
+    FieldTaskView:
+      description: The task after the change.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FieldTask'
+    Invalid:
+      description: Malformed body, unknown field, value out of bounds or malformed id.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthenticated:
+      description: No token, or a token that is expired, badly signed, or for another issuer or audience.
+    Forbidden:
+      description: A member of the event without the permission this action needs.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Not a member of the event, or no such resource visible to the caller.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: The resource is not in a state that allows this action.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unprocessable:
+      description: The event is closed or suspended, or the referenced team or map version cannot be used.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: Answered by the gateway (ADR-013 L-2).
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+
   schemas:
-    CreateDemoHelpRequest:
+    Category:
+      type: string
+      description: Decision 8 of the meeting of 15 November 2026.
+      enum: [Health, Safety, LostPerson, Infrastructure, Other]
+    Priority:
+      type: string
+      description: Decision 2 of the meeting of 15 November 2026.
+      enum: [Low, Medium, High, Critical]
+    HelpRequestStatus:
+      type: string
+      description: 'Decision 6 of the meeting of 15 November 2026 (#177): Submitted, Seen, OnTheWay, Resolved, Closed.'
+      enum: [Submitted, Seen, OnTheWay, Resolved, Closed]
+    TriageState:
+      type: string
+      enum: [Pending, Suggested, NotTriaged, Accepted, Changed]
+    NotTriagedReason:
+      type: string
+      enum: [Timeout, ProviderError, InvalidOutput, Abstained, Unavailable]
+    Location:
       type: object
       additionalProperties: false
-      required: [category, description]
+      required: [mapVersion, x, y]
+      description: A normalised point on one version of the event's venue map.
       properties:
-        category:
+        mapVersion:
+          type: integer
+          minimum: 1
+        x:
+          type: number
+          minimum: 0
+          maximum: 1
+        y:
+          type: number
+          minimum: 0
+          maximum: 1
+    SubmitHelpRequest:
+      type: object
+      additionalProperties: false
+      required: [clientRequestId, location, description]
+      properties:
+        clientRequestId:
           type: string
-          enum: [Health, Safety, LostPerson, Infrastructure, Other]
+          format: uuid
+          description: Generated by the app; makes a retry safe (US-25). Reusing it for another request gets 409.
+        location:
+          $ref: '#/components/schemas/Location'
         description:
           type: string
           minLength: 1
           maxLength: 500
-          description: Non-blank synthetic exercise text only; never enter a real incident.
-    DemoHelpRequest:
+          description: Required, not blank (assessment M-2); 500 characters at most, counted as Unicode code points.
+      example:
+        clientRequestId: 6f1c2b9e-3c1d-4e0a-9d6f-3a1b2c3d4e5f
+        location: {mapVersion: 3, x: 0.42, y: 0.77}
+        description: Friend fainted near the bar
+    HelpRequestForParticipant:
       type: object
       additionalProperties: false
-      required: [id, eventId, requesterId, category, description, status, triage, submittedAt, demo]
+      required: [id, description, status, updatedAt]
+      description: What the participant sees; never a category or a priority (US-24).
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/HelpRequestStatus'
+        updatedAt:
+          type: string
+          format: date-time
+    HelpRequestForControlRoom:
+      type: object
+      additionalProperties: false
+      required: [id, eventId, category, location, description, priority, status, submittedAt, updatedAt,
+        defaultTeamId, routedTeamId, triage]
       properties:
         id:
           type: string
           format: uuid
         eventId:
           type: string
-          enum: [demo-event]
-        requesterId:
-          type: string
-          enum: [demo-participant]
+          format: uuid
         category:
-          type: string
-          enum: [Health, Safety, LostPerson, Infrastructure, Other]
+          allOf: [{$ref: '#/components/schemas/Category'}]
+          nullable: true
+          description: Null until the AI suggestion is accepted or a member sets it.
+        location:
+          $ref: '#/components/schemas/Location'
         description:
           type: string
-          maxLength: 500
+        priority:
+          allOf: [{$ref: '#/components/schemas/Priority'}]
+          nullable: true
         status:
-          type: string
-          enum: [Submitted]
-        triage:
-          type: object
-          additionalProperties: false
-          required: [state]
-          properties:
-            state:
-              type: string
-              enum: [NotTriaged]
+          $ref: '#/components/schemas/HelpRequestStatus'
         submittedAt:
           type: string
           format: date-time
-        demo:
-          type: boolean
-          enum: [true]
+        updatedAt:
+          type: string
+          format: date-time
+        defaultTeamId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The event's team that handles the category; null without a category or such a team.
+        routedTeamId:
+          type: string
+          format: uuid
+          nullable: true
+        triage:
+          type: object
+          additionalProperties: false
+          required: [state, suggestedCategory, suggestedPriority, suggestedReason, notTriagedReason]
+          properties:
+            state:
+              $ref: '#/components/schemas/TriageState'
+            suggestedCategory:
+              allOf: [{$ref: '#/components/schemas/Category'}]
+              nullable: true
+            suggestedPriority:
+              allOf: [{$ref: '#/components/schemas/Priority'}]
+              nullable: true
+            suggestedReason:
+              type: string
+              nullable: true
+              maxLength: 200
+              description: Short plain text from the AI; escape it when shown (ADR-005, assessment T10).
+            notTriagedReason:
+              allOf: [{$ref: '#/components/schemas/NotTriagedReason'}]
+              nullable: true
+    FieldTask:
+      type: object
+      additionalProperties: false
+      required: [id, purpose, status, teamId, target, acceptedBy, dispatchedAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        purpose:
+          type: string
+          enum: [Assist]
+          description: Verify and Fix (community reports) arrive in Sprint C.
+        status:
+          type: string
+          enum: [Open, Accepted, Resolved, Cancelled]
+        teamId:
+          type: string
+          format: uuid
+        target:
+          type: object
+          additionalProperties: false
+          required: [kind, id, category, location]
+          properties:
+            kind:
+              type: string
+              enum: [HelpRequest]
+            id:
+              type: string
+              format: uuid
+            category:
+              allOf: [{$ref: '#/components/schemas/Category'}]
+              nullable: true
+            location:
+              $ref: '#/components/schemas/Location'
+        acceptedBy:
+          type: string
+          nullable: true
+        dispatchedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      description: RFC 9457 problem details.
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
