@@ -91,6 +91,12 @@ services:
       context: ../frontend
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:8080"
+    # The web app never talks to the broker: this is only for `up --wait` (#220). `--wait` fails on any container
+    # that has exited, unless another service depends on it with service_completed_successfully; then it waits
+    # for it to finish with exit 0 instead. Without it, `--wait` failed whenever rabbitmq-setup finished first.
+    depends_on:
+      rabbitmq-setup:
+        condition: service_completed_successfully
     mem_limit: 64m
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
@@ -125,6 +131,7 @@ services:
   # One-shot (#212): imports infra/rabbitmq/topology.json and declares one user per service, right after the
   # broker is healthy and on every `up`. Services do not wait for it (ADR-011): they reconnect, and their outbox
   # keeps the events until the exchange exists, so no event is published before its queues exist.
+  # Only `frontend` waits for it, so that `up --wait` waits for it to finish (#220).
   rabbitmq-setup:
     <<: *hardening
     image: rabbitmq:4.2.9-management-alpine@sha256:77ca2ba3621a95208918e6e331199a6c81129690bf7fc570dc61b6e64726840a
