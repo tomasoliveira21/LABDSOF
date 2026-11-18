@@ -8,13 +8,15 @@
 
 ## Dataset and rubric
 
-[cases.jsonl](cases.jsonl) contains 115 distinct descriptions with stable IDs: 23 development and 92 test. Development examples may inform the prompt and the baseline keywords; test cases may not. The split is deterministic (every fifth ID is development), not a random or blinded real-world sample. Labels remain visible in the repository, so do not train/tune on the test file or present it as an independent benchmark. A teammate reviews/adjudicates labels before accepted quality claims; a fresh blinded holdout is a future improvement, not a required new dataset.
+[cases.jsonl](cases.jsonl) contains 121 distinct descriptions with stable IDs: 24 development and 97 test. Development examples may inform the prompt and the baseline keywords; test cases may not. The split is deterministic (every fifth ID is development), not a random or blinded real-world sample. Labels remain visible in the repository, so do not train/tune on the test file or present it as an independent benchmark. A teammate reviews/adjudicates labels before accepted quality claims; a fresh blinded holdout is a future improvement, not a required new dataset.
 
 Each row records the input description (1 to 500 characters, the only field the model receives), the expected category, the **minimum** acceptable priority, whether the case should abstain, the split and slice tags. An expected abstention has no category and no minimum priority. Priorities follow the [scale of 15 November 2026](../../../Product/features.md#53-priority-scale-ai-3); a higher priority than the minimum is accepted, a lower one is a failure. The `urgent` tag is descriptive; scoring derives urgent status from a non-abstention reference with minimum High or Critical. Never claim a lower raw prediction passed merely because a later guard clamped it.
 
 Changes of 17 November 2026 (#197): T001 to T100 are the cases of 22 October 2026 without the participant category and current priority; the 21 cases expected `Theft` are now `Safety` with the same minimum priority (a theft is a `Safety` case); T087 to T089, whose text was empty and is now impossible, have short content-free descriptions and still abstain; T101 to T115 are new `Infrastructure` cases written from the scale's examples (exposed live cable, structure about to fall, fallen barrier, broken toilet door, light out), 4 Critical, 3 High, 4 Medium and 4 Low.
 
-Slices include plain language, informal Portuguese/typos, English, mixed language, ambiguous text, content-free text, multiple concerns and prompt injection. Some slices are small and overlap. They test examples rather than estimate prevalence, fairness or clinical safety. They contain no real identities. Every reference category is represented, but the set is not a population-balanced sample.
+Changes of 18 November 2026 (review of PR #217): the cases that restate a scale example the prompt quotes (T101 to T107 and T109 to T114) are tagged `scale-example`, so the report shows that slice apart: it measures recall of the prompt's rubric, not generalisation; T116 to T121 are `Infrastructure` cases not derived from those examples (a loose spotlight over the audience, an open manhole, a broken card machine, a wobbly table, a dry drinking fountain, a stopped generator; T120 is development); T082, which asked which category to choose, is now a question for the staff (`Other`, `Low`).
+
+Slices include plain language, informal Portuguese/typos, English, mixed language, ambiguous text, content-free text, multiple concerns, prompt injection and scale examples. Some slices are small and overlap. They test examples rather than estimate prevalence, fairness or clinical safety. They contain no real identities. Every reference category is represented, but the set is not a population-balanced sample.
 
 ## Reproduce the offline checks
 
@@ -45,12 +47,13 @@ The offline quality gate passes only when every check passes; the report lists t
 
 1. Zero urgent cases under-prioritised, including missing, invalid or abstained urgent outputs.
 2. No non-abstention case below its minimum priority.
-3. Category accuracy ≥ 80% on non-abstention reference cases.
-4. Suggestion coverage ≥ 95% on non-abstention reference cases.
-5. Correct abstention on every abstention-reference case.
-6. No semantic inconsistency (abstention with a category or priority, or a suggestion without one).
+3. No `Low` or `Medium` reference rated `Critical` (added on 18 November 2026, review of PR #217: without it a model answering `Critical` for everything passes checks 1 and 2).
+4. Category accuracy ≥ 80% on non-abstention reference cases.
+5. Suggestion coverage ≥ 95% on non-abstention reference cases.
+6. Correct abstention on every abstention-reference case.
+7. No semantic inconsistency (abstention with a category or priority, or a suggestion without one).
 
-There is no team gate and no participant priority floor (both dropped on 15 November 2026). Ratios count missing/invalid predictions in the denominator; empty slices return null, never perfect scores. `priority_at_or_above_minimum` is reported for comparison, not gated separately (check 2 already requires all).
+There is no team gate and no participant priority floor (both dropped on 15 November 2026). Ratios count missing/invalid predictions in the denominator; empty slices return null, never perfect scores. `priority_at_or_above_minimum` is reported for comparison, not gated separately (check 2 already requires all). Over-prioritisation is reported too: `priority_exact` (share of references answered exactly at their minimum) and `over_prioritised` (count above it). They are not gated, because labels are minimums and one level above is accepted; check 3 is the ceiling.
 
 Reported timing additionally requires every case timed, no urgent case past 30 s and ≥ 95% valid on-time coverage (a suggestion at or above its minimum priority, stored within 30,000 ms inclusive). A direct model-call run omits `elapsed_ms` (step 4), so it decides only the quality gate; on-time coverage comes from the instrumented one-hour cohort of the [local decision](../../../Technical/plans/ai-provider-evaluation.md). The ≥ 95% target is shared with [ADR-005](../../../Technical/adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145) and observability (#145): offline denominators are the non-abstention reference cases; the operational denominator is all AI-eligible submissions in a one-hour cohort. The self-test covers 19/20 (95%, pass) versus 18/20 (90%, fail) and the inclusive 30,000 ms boundary. The baseline has no inference or latency samples and is not evidence that the target has been met.
 

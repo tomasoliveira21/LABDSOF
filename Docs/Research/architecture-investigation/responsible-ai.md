@@ -70,9 +70,11 @@ Mistral documents [default EU hosting with possible feature-dependent transfers]
 
 ## Evaluation plan and current evidence
 
-The [evaluation package](evaluation/README.md) contains 100 explicitly synthetic authored cases, 20 development / 80 test, including empty text, ambiguous requests, slang/typos, English/mixed text, multiple problems and prompt injection. The labels are draft operational judgements created for this investigation, **not independently validated expert ground truth**. For the minimum demo, a second teammate reviews/adjudicates the proposed labels and records that review. Independent blinded labels/fresh holdout are optional future improvements; the existing test split remains visible and cannot be presented as blinded. *17 November 2026 (#197): 115 cases, 23 development / 92 test; the empty texts became content-free descriptions, since a description is now required.*
+*Superseded in part on 17 November 2026 (#197): the counts, the baseline and the gates in the next two paragraphs are those of 22 October 2026; the current ones are in the dated notes and in the baseline table below.*
 
-Compare the participant-category/default-team baseline with raw model outputs. Proposed gates: zero urgent under-prioritisation or urgent abstention/timeout; category/team accuracy ≥80% on non-abstention reference cases; valid on-time suggestions for ≥95% of those cases; correct abstention on every reference abstention case; end-to-end SC3 ≤30 s for accepted suggestions; SC5 100% visibility with AI disabled. Report all cases and slice counts, errors, coverage, latency and cost; do not score missing/invalid predictions as successful fallback. *17 November 2026 (#197): the baseline is keyword rules on the description, and the gates are those of ADR-005 decision 4, priority first, with no team gate.*
+The [evaluation package](evaluation/README.md) contains 100 explicitly synthetic authored cases, 20 development / 80 test, including empty text, ambiguous requests, slang/typos, English/mixed text, multiple problems and prompt injection. The labels are draft operational judgements created for this investigation, **not independently validated expert ground truth**. For the minimum demo, a second teammate reviews/adjudicates the proposed labels and records that review. Independent blinded labels/fresh holdout are optional future improvements; the existing test split remains visible and cannot be presented as blinded. *17 November 2026 (#197): 115 cases, 23 development / 92 test; the empty texts became content-free descriptions, since a description is now required. 18 November 2026 (review of PR #217): 121 cases, 24 development / 97 test, with the scale-example slice reported apart.*
+
+Compare the participant-category/default-team baseline with raw model outputs. Proposed gates: zero urgent under-prioritisation or urgent abstention/timeout; category/team accuracy ≥80% on non-abstention reference cases; valid on-time suggestions for ≥95% of those cases; correct abstention on every reference abstention case; end-to-end SC3 ≤30 s for accepted suggestions; SC5 100% visibility with AI disabled. Report all cases and slice counts, errors, coverage, latency and cost; do not score missing/invalid predictions as successful fallback. *17 November 2026 (#197): the baseline is keyword rules on the description, and the gates are those of ADR-005 decision 4, priority first, with no team gate. 18 November 2026 (review of PR #217): a ceiling gate, no `Low` or `Medium` reference rated `Critical`, and exact-priority and over-prioritisation counts.*
 
 **Coverage alignment (26 October 2026, #145):** [ADR-005](../../Technical/adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145) defines the common ≥95% within 30 s proposal and its denominators. Offline expected abstentions are evaluated separately; runtime failures/abstentions remain in the one-hour operational denominator. This changes the specification, not measured model results.
 
@@ -86,21 +88,22 @@ The original features AI-1–AI-11 questions are answered as **proposals** by th
 
 This section is added to the snapshot so that deliverable 6 states its numbers and its limits in one place (assignment §5.6.1, §5.6.2, §5.6.3). It adds no new decision.
 
-**Non-AI baseline, reproduced (updated 17 November 2026, #197).** The [baseline report](evaluation/baseline-report.json) applies keyword rules on the description (category and priority from ordered keyword lists; no keyword, no triage) to the 92 test cases (84 non-abstention references). The old baseline (participant category, default team, category floor: 24 of 31 urgent cases missed) no longer applies, since the participant chooses no category.
+**Non-AI baseline, reproduced (updated 17 November 2026, #197).** The [baseline report](evaluation/baseline-report.json) applies keyword rules on the description (category and priority from ordered keyword lists; no keyword, no triage) to the 97 test cases (89 non-abstention references). The old baseline (participant category, default team, category floor: 24 of 31 urgent cases missed) no longer applies, since the participant chooses no category.
 
 | Gate, in order (ADR-005 decision 4; evaluation README) | Baseline | Gate |
 |---|---|---|
-| 1. Urgent cases missed (under-prioritised, abstained or missing) | 20 of 37 | 0 |
+| 1. Urgent cases missed (under-prioritised, abstained or missing) | 22 of 39 | 0 |
 | 2. Cases suggested below their minimum priority | 6 | 0 |
-| 3. Category accuracy | 0.607 (51 of 84) | ≥ 0.80 |
-| 4. Suggestion coverage | 0.631 (53 of 84) | ≥ 0.95 |
-| 5. Correct expected abstentions | 8 of 8 | all |
+| 3. `Low` or `Medium` cases rated `Critical` | 0 | 0 |
+| 4. Category accuracy | 0.573 (51 of 89) | ≥ 0.80 |
+| 5. Suggestion coverage | 0.596 (53 of 89) | ≥ 0.95 |
+| 6. Correct expected abstentions | 8 of 8 | all |
 
-The baseline passes only the abstention check, because a description without a keyword is left untriaged; it has no semantic inconsistency. Its priority is at or above the minimum in 47 of 84 cases (0.560). **Where the AI must beat it** is priority first: zero urgent misses against the baseline's 20 of 37 (most of them descriptions its keywords do not recognise, such as *deixou de responder* or a fire), then the other gates. The value the AI is expected to bring is earlier attention to urgent requests written in words no fixed list anticipates; it is not measured until the model runs (guide K2).
+The baseline passes only the ceiling and abstention checks, because a description without a keyword is left untriaged; it has no semantic inconsistency. Its priority is at or above the minimum in 47 of 89 cases (0.528), exactly at the minimum in 44 (0.494) and above it in 3. **Where the AI must beat it** is priority first: zero urgent misses against the baseline's 22 of 39 (most of them descriptions its keywords do not recognise, such as *deixou de responder* or a fire), then the other gates. The value the AI is expected to bring is earlier attention to urgent requests written in words no fixed list anticipates; it is not measured until the model runs (guide K2).
 
 **Known limitations:**
 
-- **Synthetic, team-authored labels.** The 100 cases and their labels were written by the team; they are not independent expert ground truth, and the test split is visible in the repository, so it is not a blinded benchmark.
+- **Synthetic, team-authored labels.** The 121 cases and their labels were written by the team; they are not independent expert ground truth, and the test split is visible in the repository, so it is not a blinded benchmark.
 - **Small slices.** The English, mixed-language, slang, injection, abstention and ambiguous slices have 3 to 8 test cases each, and multiple problems only one, too few to establish fairness or robustness.
 - **No calibrated confidence.** The model gives no score that has been checked against outcomes, so none is shown.
 - **One issue per suggestion.** The prompt asks for the most urgent described issue only ([system prompt](evaluation/system-prompt.txt)); a request describing several problems gets one suggestion.

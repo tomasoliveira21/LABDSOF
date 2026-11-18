@@ -2,6 +2,15 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-18 · Review of PR #217: over-prioritisation and scale-example cases (#197, Bruno de Abreu Lopes)
+
+**Why:** the review of PR #217 found that a model answering `Critical` for everything passed the priority gates, and that most `Infrastructure` test cases restate the scale examples the prompt quotes.
+
+### Changed
+- [Evaluation package](Docs/Research/architecture-investigation/evaluation/README.md): new gate 3, no `Low` or `Medium` reference rated `Critical`; the report adds exact-priority agreement and an over-prioritisation count. The prompt says to choose `Critical` only when its meaning applies. Cases that restate a scale example are tagged `scale-example` and reported as a slice; 6 `Infrastructure` cases not derived from the examples added (121 cases, 24 development / 97 test); T082 is now a question for the staff; `vedac` removed from the baseline keywords (it came from a test case).
+- Keyword baseline on the test split: 22 of 39 urgent cases missed, 0 `Low`/`Medium` rated `Critical`, category accuracy 0.573, coverage 0.596, 8 of 8 abstentions.
+- ADR-005, the local AI decisions, `responsible-ai.md` (superseded note, baseline table), the K2 and A7 case counts and the [spec](Docs/specs/197-ai-evaluation-priority.md) (D3, D9 to D11, handoff).
+
 ## [Unreleased] · 2026-11-17 · AI triage evaluation focused on priority (#197, Bruno de Abreu Lopes)
 
 **Why:** the evaluation package still followed the design of 22 October 2026 (participant category, team output, `Theft`), while the meeting of 15 November 2026 (decisions 1, 2 and 8) focused the AI on priority.

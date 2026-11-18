@@ -26,7 +26,7 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 | D2 topology | One PostgreSQL server per environment, five distinct databases and restricted service users | Integration proof of privilege separation and capacity |
 | I1–I3 | [Observability](observability.md): local Actuator/Micrometer + Prometheus/Grafana and correlated Docker logs; Azure Monitor retained as a cloud alternative | Local instrumentation/dashboard and load evidence |
 | K1 | [AI assessment](responsible-ai.md): local Ollama + qwen3:4b selected for review in the [complete decision](../../Technical/plans/ai-provider-evaluation.md); hosted comparison retained | Quality/latency benchmark, privacy and any optional API cost |
-| K2 | Responsible AI assessment, prompt/schema and [115 synthetic cases + offline evaluator](evaluation/README.md) (updated 17 November 2026, #197) | Documented team label review and one local model evaluation; fresh blinded holdout optional |
+| K2 | Responsible AI assessment, prompt/schema and [121 synthetic cases + offline evaluator](evaluation/README.md) (updated 17 November 2026, #197) | Documented team label review and one local model evaluation; fresh blinded holdout optional |
 
 ## Review package
 
@@ -41,7 +41,7 @@ The professor authorised **local-only execution because of cloud costs**, as [re
 |---|---|---|
 | Target discrepancy | ADR-005, ADR-012, observability, assessment, evaluation instructions and scorer now agree on the **proposed ≥95% within 30 s**; operational window is 1 h, with explicit cohort accounting and separate offline denominator | Team-confirmed target; actual measurements still pending |
 | K1: provider/model | Selected local Ollama/Qwen3 profile, cost and deadline/circuit contract; hosted assessment retained | One local evaluation and observed capacity and release-evidence review; local deadline/retry settings are specified; privacy clearance before real data |
-| K2: evaluation | Responsible AI assessment, draft prompt/schema, 115 synthetic cases and a keyword-rule no-AI baseline (#197); scorer boundary checks | Team-reviewed labels, actual model outputs, reason review, execution of the documented event-specific routing acceptance cases and SC3/SC5 integration evidence |
+| K2: evaluation | Responsible AI assessment, draft prompt/schema, 121 synthetic cases and a keyword-rule no-AI baseline (#197); scorer boundary checks | Team-reviewed labels, actual model outputs, reason review, execution of the documented event-specific routing acceptance cases and SC3/SC5 integration evidence |
 | I1: instrumentation | Two-container Prometheus/Grafana proposal, Actuator/Micrometer and correlated Docker logs | Application health/metrics configuration and correlated HTTP → queue → stored-result log entries |
 | I2: measurements | SLI/SLO definitions and aligned coverage target | Actual end-to-end measurements on the local target, counters/denominators and no-data/degraded-window reporting |
 | I3: dashboard/alerts | Panel and trigger/runbook specification | Provisioned local dashboard/alerts and trigger/resolve drills |

@@ -12,7 +12,7 @@ HERE = Path(__file__).resolve().parent
 LEVEL = {"Low": 0, "Medium": 1, "High": 2, "Critical": 3}
 # Help categories of decision 8 of the meeting of 15 November 2026: Theft removed, Infrastructure added.
 CATEGORIES = ("Health", "Safety", "LostPerson", "Infrastructure", "Other")
-TAGS = {"plain", "urgent", "slang", "ambiguous", "english", "mixed", "multiple", "abstain", "no-content", "injection"}
+TAGS = {"plain", "urgent", "slang", "ambiguous", "english", "mixed", "multiple", "abstain", "no-content", "injection", "scale-example"}
 SCHEMA = json.loads((HERE / "output.schema.json").read_text(encoding="utf-8"))
 # ADR-005 decision 4 and coverage definition (aligned with observability in #145).
 MIN_CATEGORY_ACCURACY = 0.80
@@ -31,7 +31,7 @@ CATEGORY_KEYWORDS = {
     "Safety": ("agress", "assault", "fight", "luta", "bater", "violent", "ameac", "threat", "assedi", "harass", "persegu",
                "empurr", "pression", "furt", "roub", "stole", "theft", "thief", "tirar"),
     "LostPerson": ("perdi", "lost", "encontr", "find", "procur", "crianca", "child"),
-    "Infrastructure": ("cabo", "cable", "barreira", "barrier", "vedac", "grade", "estrutura", "structure", "partid",
+    "Infrastructure": ("cabo", "cable", "barreira", "barrier", "grade", "estrutura", "structure", "partid",
                        "broken", "avaria", "danific", "damag", "luz", "light", "porta", "door", "casa de banho", "toilet", "wc"),
     "Other": ("duvida", "question", "pergunt", "organizac"),
 }
@@ -52,6 +52,10 @@ def word_starts(words):
 
 CATEGORY_PATTERNS = {category: word_starts(words) for category, words in CATEGORY_KEYWORDS.items()}
 PRIORITY_PATTERNS = tuple((level, word_starts(words)) for level, words in PRIORITY_KEYWORDS)
+
+
+def ratio(n, d):
+    return round(n / d, 6) if d else None
 
 
 def check(condition, name):
@@ -155,16 +159,18 @@ def score(cases, predictions, mode="predictions"):
         e = case["expected"]
         usable = coherent and not output["abstain"]
         urgent = not e["abstain"] and LEVEL[e["minimum_priority"]] >= LEVEL["High"]
-        priority_ok = usable and not e["abstain"] and LEVEL[output["priority"]] >= LEVEL[e["minimum_priority"]]
+        scored = usable and not e["abstain"]
+        priority_ok = scored and LEVEL[output["priority"]] >= LEVEL[e["minimum_priority"]]
         rows.append({"id": case["id"], "tags": case["tags"], "valid": valid, "missing": not bool(row), "timing_valid": timing_valid,
                      "on_time": timing_valid and ms <= DEADLINE_MS, "elapsed_ms": ms if timing_valid else None,
                      "expected_abstain": e["abstain"], "urgent": urgent, "coverage": usable, "priority_ok": priority_ok,
                      "category_correct": usable and output["category"] == e["category"],
-                     "urgent_failure": urgent and not priority_ok, "under_prioritised": usable and not e["abstain"] and not priority_ok,
+                     "urgent_failure": urgent and not priority_ok, "under_prioritised": scored and not priority_ok,
+                     "priority_exact": scored and output["priority"] == e["minimum_priority"],
+                     "over_prioritised": scored and LEVEL[output["priority"]] > LEVEL[e["minimum_priority"]],
+                     # Review of PR #217: the ceiling, a Low or Medium reference rated Critical.
+                     "low_or_medium_rated_critical": scored and e["minimum_priority"] in ("Low", "Medium") and output["priority"] == "Critical",
                      "abstain_correct": coherent and output["abstain"] == e["abstain"], "semantic_violation": valid and not coherent})
-
-    def ratio(n, d):
-        return round(n / d, 6) if d else None
 
     def aggregate(group):
         semantic = [x for x in group if not x["expected_abstain"]]
@@ -176,6 +182,9 @@ def score(cases, predictions, mode="predictions"):
                 "urgent_failures_including_abstention_or_missing": sum(x["urgent_failure"] for x in group),
                 "under_prioritised": sum(x["under_prioritised"] for x in group),
                 "priority_at_or_above_minimum": ratio(sum(x["priority_ok"] for x in semantic), len(semantic)),
+                "priority_exact": ratio(sum(x["priority_exact"] for x in semantic), len(semantic)),
+                "over_prioritised": sum(x["over_prioritised"] for x in group),
+                "low_or_medium_rated_critical": sum(x["low_or_medium_rated_critical"] for x in group),
                 "category_accuracy": ratio(sum(x["category_correct"] for x in semantic), len(semantic)),
                 "suggestion_coverage": ratio(sum(x["coverage"] for x in semantic), len(semantic)),
                 "reference_abstention_cases": len(abstain), "correct_reference_abstentions": sum(x["abstain_correct"] for x in abstain),
@@ -188,10 +197,11 @@ def score(cases, predictions, mode="predictions"):
     gate_checks = {
         "1_zero_urgent_failures": overall["urgent_failures_including_abstention_or_missing"] == 0,
         "2_no_case_below_its_minimum_priority": overall["under_prioritised"] == 0,
-        "3_category_accuracy_at_least_0_80": overall["category_accuracy"] is not None and overall["category_accuracy"] >= MIN_CATEGORY_ACCURACY,
-        "4_suggestion_coverage_at_least_0_95": overall["suggestion_coverage"] is not None and overall["suggestion_coverage"] >= MIN_SUGGESTION_COVERAGE,
-        "5_every_expected_abstention": overall["correct_reference_abstentions"] == overall["reference_abstention_cases"],
-        "6_no_semantic_inconsistency": overall["semantic_inconsistencies"] == 0,
+        "3_no_low_or_medium_case_rated_critical": overall["low_or_medium_rated_critical"] == 0,
+        "4_category_accuracy_at_least_0_80": overall["category_accuracy"] is not None and overall["category_accuracy"] >= MIN_CATEGORY_ACCURACY,
+        "5_suggestion_coverage_at_least_0_95": overall["suggestion_coverage"] is not None and overall["suggestion_coverage"] >= MIN_SUGGESTION_COVERAGE,
+        "6_every_expected_abstention": overall["correct_reference_abstentions"] == overall["reference_abstention_cases"],
+        "7_no_semantic_inconsistency": overall["semantic_inconsistencies"] == 0,
     }
     timing = (overall["latency_samples"] == len(cases) and overall["urgent_late_or_missing_timing"] == 0
               and overall["valid_on_time_coverage"] is not None and overall["valid_on_time_coverage"] >= MIN_ON_TIME_COVERAGE)
@@ -201,6 +211,7 @@ def score(cases, predictions, mode="predictions"):
             "offline_quality_gate_checks": gate_checks, "offline_quality_gate": all(gate_checks.values()), "reported_timing_gate": timing,
             "production_readiness": "NOT ESTABLISHED: independent labels, provider/privacy review, reason review and deployed SC3/SC5 tests still required",
             "failing_case_ids": [x["id"] for x in rows if not x["valid"] or x["semantic_violation"] or x["urgent_failure"] or x["under_prioritised"]
+                                 or x["low_or_medium_rated_critical"]
                                  or not x["abstain_correct"] or (not x["expected_abstain"] and not x["category_correct"])]}
 
 
@@ -214,19 +225,31 @@ def render(report):
 
 
 def self_test(cases):
-    def oracle(group, priority=None):
+    def oracle(group, raise_by=0):
+        # raise_by levels above each minimum, capped at Critical; 3 is the "always Critical" model.
+        names = list(LEVEL)
         return [{"id": c["id"], "elapsed_ms": 1000, "output": {
             "category": c["expected"]["category"],
-            "priority": None if c["expected"]["abstain"] else priority or c["expected"]["minimum_priority"],
+            "priority": None if c["expected"]["abstain"] else names[min(LEVEL[c["expected"]["minimum_priority"]] + raise_by, 3)],
             "reason": "Synthetic scorer fixture only", "abstain": c["expected"]["abstain"]}} for c in group]
 
     def first(predicate):
         return next(i for i, c in enumerate(cases) if predicate(c["expected"]))
 
     reference = oracle(cases)
-    for fixture in (reference, oracle(cases, "Critical")):
+    for fixture in (reference, oracle(cases, 1)):
         result = score(cases, fixture)
         check(result["offline_quality_gate"] and result["reported_timing_gate"], "197 AC-3 every reference passes")
+    references = [i for i, c in enumerate(cases) if not c["expected"]["abstain"]]
+    exact, one_up = score(cases, reference)["overall"], score(cases, oracle(cases, 1))["overall"]
+    check(exact["priority_exact"] == 1.0 and exact["over_prioritised"] == 0
+          and one_up["over_prioritised"] == sum(cases[i]["expected"]["minimum_priority"] != "Critical" for i in references)
+          and one_up["priority_exact"] == ratio(sum(cases[i]["expected"]["minimum_priority"] == "Critical" for i in references), len(references)),
+          "197 review exact priority and over-prioritisation are reported")
+    result = score(cases, oracle(cases, 3))
+    check(result["overall"]["low_or_medium_rated_critical"] == sum(cases[i]["expected"]["minimum_priority"] in ("Low", "Medium") for i in references)
+          and not result["offline_quality_gate_checks"]["3_no_low_or_medium_case_rated_critical"] and not result["offline_quality_gate"],
+          "197 review always-Critical model fails the ceiling")
     urgent = first(lambda e: not e["abstain"] and LEVEL[e["minimum_priority"]] >= LEVEL["High"])
     medium = first(lambda e: not e["abstain"] and e["minimum_priority"] == "Medium")
     expected_abstention = first(lambda e: e["abstain"])
@@ -248,7 +271,6 @@ def self_test(cases):
     check(result["overall"]["under_prioritised"] == 1 and result["overall"]["urgent_failures_including_abstention_or_missing"] == 0
           and not result["offline_quality_gate"], "197 AC-3 non-urgent case below its minimum fails")
     bad = copy.deepcopy(reference)
-    references = [i for i, c in enumerate(cases) if not c["expected"]["abstain"]]
     for i in references[:math.ceil(.21 * len(references))]:
         bad[i]["output"]["category"] = next(c for c in CATEGORIES if c != cases[i]["expected"]["category"])
     result = score(cases, bad)
