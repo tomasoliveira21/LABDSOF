@@ -17,20 +17,22 @@
 | # | Decision | Why |
 |---|---|---|
 | D1 | **Post-boot setup**: a one-shot `rabbitmq-setup` container (the broker's own image, read-only, no capabilities) imports `infra/rabbitmq/topology.json` and declares the users, right after the broker is healthy and on every `up` | Measured on 16 Nov: a definitions file loaded at boot on a blank broker creates no user and no vhost, so the users would have to be in the file as password hashes, which cannot come from `infra/.env` without a rendering step. Council of 16 Nov, unanimous over *boot-time file rendered by an init container*, *services declare their own queues* (breaks C4: a late consumer loses events) and *committed hashes of example passwords* (breaks per-machine passwords). Wording change of C4 proposed for the team in the PR |
-| D2 | Services **do not wait** for `rabbitmq-setup` | ADR-011: services do not wait for the broker. A producer cannot publish before its exchange exists, and the exchange and its consumers' queues arrive in the same import, so no event is published before its queues exist; the outbox keeps events until then |
+| D2 | Services **do not wait** for `rabbitmq-setup` | ADR-011: services do not wait for the broker. A producer cannot publish before its exchange exists, and the exchange and its consumers' queues arrive in the same import, so no event is published before its queues exist; the outbox keeps events until then. Only the web app waits for it (D9) |
 | D3 | The broker's admin (`RABBITMQ_ADMIN_USER`) is created from `infra/.env` on the first start; only the setup container (through `RABBITMQADMIN_USERNAME`/`PASSWORD`, not in its arguments) and the operator use it | Least privilege: no service holds it. The management UI stays on `127.0.0.1` |
 | D4 | Service users: configure `^$`, write `^(farol\.<service>|farol\.dead-letters)$` (Transports and Badges: dead letters only), read `^<service>\..*`, no tags | ADR-006 "one user per service"; a service cannot declare, delete or purge anything, nor read another service's queue |
 | D5 | Durable **quorum** queues; each with `x-dead-letter-exchange: farol.dead-letters` and routing key `<queue>.dlq`; dead-letter queues bound to that direct exchange | Data safety on restart; a message rejected without requeue, or republished by Spring's `RepublishMessageRecoverer` (architecture §6), lands in its own DLQ |
 | D6 | `topology.json` generated once from §7.5 and kept as the single source; a change goes through a PR | Reviewable; CI checks the counts against the broker |
 | D7 | `pids_limit: 256` on the broker (was 128) | Measured: about 45 processes at rest; each CLI run (health check, `rabbitmqctl`) starts an Erlang VM with dozens of threads; two at once aborted with *Failed to create poll thread*. After the change: 0 failures in 16 concurrent runs |
 | D8 | The setup waits up to 60 s for the management API | The broker's health check (`ping`) passes before the management API listens (first run failed with a connection error) |
+| D9 | *Added on 17 Nov (#220).* The web app (`frontend`) depends on `rabbitmq-setup` with `condition: service_completed_successfully` | `up --wait` fails on any container that has exited, even with exit 0, unless another service depends on it that way; then it waits for it to finish with exit 0 (Compose source, same in 2.38.2 on the GitHub runners, 5.3.1 and 5.8.0). The web app never talks to the broker, so ADR-011 still holds for every service. Rejected: changing the start command in CI and in the docs (`up -d`, then `--wait` on the long-running services only), because every reader of `local-delivery.md` would need the longer command; keeping the setup container running after it finishes, because then it would no longer run on every `up`. Compose has no attribute that leaves a service out of `--wait` |
 
 ## 3. Edge-case matrix
 
 | Case | Expected | Evidence |
 |---|---|---|
 | Setup starts before the management API listens | Waits, then imports | First run failed; fixed by D8; second run passed |
-| Setup fails | CI fails with its log | CI step checks the exit code of `rabbitmq-setup` |
+| Setup fails | CI fails with its log | CI step checks the exit code of `rabbitmq-setup`; since D9, `up --wait` also fails (`service "rabbitmq-setup" didn't complete successfully: exit 1`, shown with a small Compose file on 17 Nov) |
+| Setup finishes before `up --wait` checks it (Keycloak still starting) | `--wait` waits for it to finish with exit 0, then for the rest | 17 Nov, before D9: 3 of 3 clean runs failed with `container farol-ci-rabbitmq-setup-1 exited (0)` (Compose 5.3.1, Windows). After D9: 5 of 5 clean runs passed; CI step *Check the start-up order* keeps D9 and D2 |
 | Second `up` with a message waiting | Message kept | 16 Nov: `events.auth-users-events` held 1 message before and after |
 | Password changed in `infra/.env` | New one accepted, old refused | 16 Nov: `authenticate_user events` with the new password *Success*, with the old one *invalid credentials* |
 | Permissions changed by hand | CI fails; the next `up` restores them | 16 Nov: CI step failed with the diff; passed again after re-running setup |
@@ -43,4 +45,5 @@
 ## 4. Handoff
 
 - **For every service (#191 to #194, #201):** connect as `<service>` with `RABBITMQ_<SERVICE>_PASSWORD`; publish to `farol.<service>` with the routing keys of §7.4; consume `<service>.<producer>-events`; dead letters through `farol.dead-letters` with routing key `<queue>.dlq`. **Do not declare** exchanges, queues or bindings (no `Queue`/`Exchange` beans; the user cannot declare anyway). Use publisher confirms for the outbox.
+- **For whoever edits `infra/compose.yaml`:** keep the web app's `depends_on: rabbitmq-setup` (D9), and add no `depends_on` on `rabbitmq` or `rabbitmq-setup` to a backend service (D2); CI fails on either. A new one-shot container needs a service that depends on it with `service_completed_successfully`, or `up --wait` fails whenever it finishes first.
 - **Open for the team:** accept the C4 wording change in the review (Bruno, António and Tomás use it).

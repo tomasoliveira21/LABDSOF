@@ -34,6 +34,20 @@ jobs:
           for module in auth-users events reports transports badges gateway; do
             mvn --batch-mode --no-transfer-progress -f "backend/$module/pom.xml" verify
           done
+      # `up --wait` fails on an exited one-shot container unless a service depends on it with
+      # service_completed_successfully (#220); no backend service may wait for the broker (ADR-011).
+      - name: Check the start-up order
+        run: |
+          docker compose -f infra/compose.yaml --env-file infra/.env.example config --format json | python3 -I -c '
+          import json, sys
+          services = json.load(sys.stdin)["services"]
+          anchors = sorted(name for name, s in services.items()
+                           if s.get("depends_on", {}).get("rabbitmq-setup", {}).get("condition") == "service_completed_successfully")
+          assert anchors == ["frontend"], f"only frontend may wait for rabbitmq-setup to complete, found {anchors}"
+          waiting = sorted(name for name in ("gateway", "auth-users", "events", "reports", "transports", "badges")
+                           if {"rabbitmq", "rabbitmq-setup"} & set(services[name].get("depends_on", {})))
+          assert not waiting, f"these services wait for the broker: {waiting}"
+          print("frontend waits for rabbitmq-setup; no backend service waits for the broker")'
       # The harmless example values of infra/.env.example (ADR-010 point 6); no secret is needed in CI.
       - name: Build and start the stack
         run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example up --build -d --wait --wait-timeout 300
