@@ -6,7 +6,6 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
@@ -22,11 +21,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import pt.isep.labdsof.reports.application.ClientRequestConflictException;
 import pt.isep.labdsof.reports.application.HelpRequestService;
 import pt.isep.labdsof.reports.application.NotFoundException;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
+import pt.isep.labdsof.reports.domain.InvalidHelpRequestException;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
 import pt.isep.labdsof.reports.domain.Priority;
@@ -46,7 +47,7 @@ class HelpRequestController {
   record SubmitBody(
       @NotNull UUID clientRequestId,
       @NotNull @Valid LocationBody location,
-      @NotBlank @Size(max = HelpRequest.MAX_DESCRIPTION) String description) {}
+      @NotBlank String description) {} // length in code points: checked by HelpRequest
 
   record LocationBody(
       @NotNull @Min(1) Integer mapVersion,
@@ -82,11 +83,17 @@ class HelpRequestController {
     return read.controlRoom() ? controlRoom(read.request()) : participant(read.request());
   }
 
-  /** A value the domain refuses that bean validation let through, such as a description of Unicode spaces. */
-  @ExceptionHandler(IllegalArgumentException.class)
-  ResponseEntity<ProblemDetail> invalid(IllegalArgumentException e) {
+  /** Input the domain refuses that bean validation let through, such as a description of Unicode spaces. */
+  @ExceptionHandler(InvalidHelpRequestException.class)
+  ResponseEntity<ProblemDetail> invalid(InvalidHelpRequestException e) {
     return ResponseEntity.badRequest()
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage()));
+  }
+
+  @ExceptionHandler(ClientRequestConflictException.class)
+  ResponseEntity<ProblemDetail> conflict(ClientRequestConflictException e) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
   }
 
   @ExceptionHandler(NotFoundException.class)

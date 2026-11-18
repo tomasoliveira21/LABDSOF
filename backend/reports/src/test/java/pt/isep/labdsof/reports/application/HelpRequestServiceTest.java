@@ -90,6 +90,23 @@ class HelpRequestServiceTest {
   }
 
   @Test
+  @DisplayName("194 AC-2 a clientRequestId reused with another description or location is refused, not dropped")
+  void reusedClientRequestId() {
+    member("ana", Role.RegularUser);
+    var client = UUID.randomUUID();
+    var first = service().submit(EVENT, "ana", client, "Friend fainted", POINT);
+    var service = service();
+    var elsewhere = new Location(3, 0.42, 0.78);
+
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", client, "Lost my phone", POINT))
+        .isInstanceOf(ClientRequestConflictException.class);
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", client, "Friend fainted", elsewhere))
+        .isInstanceOf(ClientRequestConflictException.class);
+    assertThat(ports.requests).containsOnlyKeys(first.request().id());
+    assertThat(ports.outbox).hasSize(1);
+  }
+
+  @Test
   @DisplayName("194 AC-2 a conflicting submit that is not visible fails instead of inventing a request")
   void invisibleConflict() {
     member("ana", Role.RegularUser);

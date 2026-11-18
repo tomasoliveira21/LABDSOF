@@ -37,9 +37,11 @@ public record HelpRequest(
     if (requesterId == null || requesterId.isBlank()) {
       throw new IllegalArgumentException("requesterId is required");
     }
-    if (description == null || description.isBlank() || description.length() > MAX_DESCRIPTION
-        || description.indexOf('\u0000') >= 0) { // PostgreSQL text cannot hold NUL
-      throw new IllegalArgumentException("description must have 1 to 500 characters");
+    // Characters are code points, as varchar(500) and JSON Schema maxLength count them; PostgreSQL cannot hold NUL.
+    if (description == null || description.isBlank()
+        || description.codePointCount(0, description.length()) > MAX_DESCRIPTION
+        || description.indexOf('\u0000') >= 0) {
+      throw new InvalidHelpRequestException("description must have 1 to 500 characters");
     }
   }
 

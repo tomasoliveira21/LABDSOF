@@ -1,6 +1,7 @@
 package pt.isep.labdsof.reports.adapters.in.messaging;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -66,7 +67,8 @@ class LocalCopyListener {
     Object copy;
     try {
       envelope = json.readValue(message.getBody(), Envelope.class);
-      if (envelope.messageId() == null || envelope.type() == null || envelope.occurredAt() == null
+      if (envelope == null || envelope.messageId() == null || envelope.type() == null
+          || envelope.occurredAt() == null
           || envelope.producer() == null || envelope.actorUserId() == null) {
         throw new IllegalArgumentException("messageId, type, occurredAt, producer and actorUserId are required");
       }
@@ -78,8 +80,8 @@ class LocalCopyListener {
         case "TeamChanged" -> team(envelope);
         default -> null;
       };
-    } catch (JacksonException | IllegalArgumentException | NullPointerException e) {
-      deadLetters.recover(message, e); // invalid: retrying cannot help
+    } catch (JacksonException | IllegalArgumentException e) {
+      deadLetters.recover(message, e); // invalid: retrying cannot help; a bug in our code (NPE…) is retried
       return;
     }
     if (copy == null) {
@@ -94,26 +96,39 @@ class LocalCopyListener {
   }
 
   private Membership membership(Envelope envelope) {
-    var p = json.treeToValue(required(envelope.payload(), "payload"), MembershipPayload.class);
-    return new Membership(required(envelope.eventId(), "eventId"), p.userId(), p.role(), p.status(),
-        required(p.teamIds(), "teamIds"), required(p.version(), "version"));
+    var p = payload(envelope, MembershipPayload.class);
+    return new Membership(required(envelope.eventId(), "eventId"), p.userId(), required(p.role(), "role"),
+        required(p.status(), "status"), items(p.teamIds(), "teamIds"),
+        required(p.version(), "version"));
   }
 
   private Team team(Envelope envelope) {
-    var p = json.treeToValue(required(envelope.payload(), "payload"), TeamPayload.class);
-    var permissions = required(p.permissions(), "permissions").stream()
+    var p = payload(envelope, TeamPayload.class);
+    var permissions = items(p.permissions(), "permissions").stream()
         .map(permission -> new Team.TeamPermission(
             Permission.fromWireName(required(permission.permission(), "permission")),
-            permission.reportTypes() == null ? Set.of() : permission.reportTypes()))
+            permission.reportTypes() == null ? Set.of() : items(permission.reportTypes(), "reportTypes")))
         .toList();
-    return new Team(p.teamId(), required(envelope.eventId(), "eventId"), p.name(), permissions,
-        required(p.handledCategories(), "handledCategories"), required(p.deleted(), "deleted"),
-        required(p.version(), "version"));
+    return new Team(required(p.teamId(), "teamId"), required(envelope.eventId(), "eventId"), p.name(),
+        permissions, items(p.handledCategories(), "handledCategories"),
+        required(p.deleted(), "deleted"), required(p.version(), "version"));
   }
 
   private static <T> T required(T value, String name) {
     if (value == null) {
       throw new IllegalArgumentException(name + " is required");
+    }
+    return value;
+  }
+
+  private <T> T payload(Envelope envelope, Class<T> type) {
+    return required(json.treeToValue(required(envelope.payload(), "payload"), type), "payload");
+  }
+
+  /** A required JSON array without null items (Jackson builds mutable collections). */
+  private static <C extends Collection<?>> C items(C value, String name) {
+    if (required(value, name).contains(null)) {
+      throw new IllegalArgumentException(name + " must not contain null");
     }
     return value;
   }

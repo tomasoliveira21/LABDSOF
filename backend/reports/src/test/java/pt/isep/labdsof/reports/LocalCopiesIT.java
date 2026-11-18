@@ -10,11 +10,14 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.Membership;
 import pt.isep.labdsof.reports.domain.Permission;
@@ -139,8 +142,9 @@ class LocalCopiesIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("194 AC-3 a team copy never moves to another event")
-  void teamOfAnotherEvent() {
+  @DisplayName("194 AC-3 a team copy never moves to another event, and the attempt is logged as a warning")
+  @ExtendWith(OutputCaptureExtension.class)
+  void teamOfAnotherEvent(CapturedOutput output) {
     var teamId = UUID.randomUUID();
     var first = UUID.randomUUID();
     publish("farol.events", "team.changed", first, envelope(first, "TeamChanged", event,
@@ -154,11 +158,21 @@ class LocalCopiesIT extends IntegrationTest {
     assertThat(copies.teams(event, Set.of(teamId))).singleElement()
         .satisfies(t -> assertThat(t.name()).isEqualTo("Control room"));
     assertThat(copies.teams(otherEvent, Set.of(teamId))).isEmpty();
+    assertThat(output).contains("WARN").contains("TeamChanged for team " + teamId + " of event " + otherEvent
+        + " ignored: the team belongs to event " + event);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {
       "not json",
+      "null",
+      "{\"messageId\":\"%1$s\",\"type\":\"MembershipChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"p\",\"eventId\":\"%2$s\",\"actorUserId\":\"a\",\"payload\":null}",
+      "{\"messageId\":\"%1$s\",\"type\":\"MembershipChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"p\",\"eventId\":\"%2$s\",\"actorUserId\":\"a\",\"payload\":{\"userId\":\"u\",\"role\":null,\"status\":\"Active\",\"teamIds\":[],\"version\":1}}",
+      "{\"messageId\":\"%1$s\",\"type\":\"MembershipChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"p\",\"eventId\":\"%2$s\",\"actorUserId\":\"a\",\"payload\":{\"userId\":\"u\",\"role\":\"RegularUser\",\"status\":\"Active\",\"teamIds\":[null],\"version\":1}}",
+      "{\"messageId\":\"%1$s\",\"type\":\"TeamChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"p\",\"eventId\":\"%2$s\",\"actorUserId\":\"a\",\"payload\":{\"teamId\":\"%2$s\",\"name\":\"T\",\"permissions\":[null],\"handledCategories\":[],\"deleted\":false,\"version\":1}}",
+      "{\"messageId\":\"%1$s\",\"type\":\"TeamChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"p\",\"eventId\":\"%2$s\",\"actorUserId\":\"a\",\"payload\":{\"teamId\":\"%2$s\",\"name\":\"T\",\"permissions\":[{\"permission\":\"Map.Edit\",\"reportTypes\":[null]}],\"handledCategories\":[],\"deleted\":false,\"version\":1}}",
+      "{\"messageId\":\"%1$s\",\"type\":\"TeamChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"p\",\"eventId\":\"%2$s\",\"actorUserId\":\"a\",\"payload\":{\"teamId\":\"%2$s\",\"name\":\"T\",\"permissions\":[],\"handledCategories\":[null],\"deleted\":false,\"version\":1}}",
+      "{\"messageId\":\"%1$s\",\"type\":\"TeamChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"p\",\"eventId\":\"%2$s\",\"actorUserId\":\"a\",\"payload\":{\"name\":\"T\",\"permissions\":[],\"handledCategories\":[],\"deleted\":false,\"version\":1}}",
       "{\"messageId\":\"%1$s\",\"type\":\"MembershipChanged\",\"schemaVersion\":2,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"producer\":\"auth-users\",\"eventId\":\"%2$s\",\"actorUserId\":\"\",\"payload\":{\"userId\":\"u\",\"role\":\"RegularUser\",\"status\":\"Active\",\"teamIds\":[],\"version\":1}}",
       "{\"messageId\":\"%1$s\",\"type\":\"MembershipChanged\",\"schemaVersion\":1,\"occurredAt\":\"2027-05-08T23:14:05Z\",\"eventId\":\"%2$s\",\"actorUserId\":\"\",\"payload\":{\"userId\":\"u\",\"role\":\"RegularUser\",\"status\":\"Active\",\"teamIds\":[],\"version\":1}}",
       "{\"messageId\":\"%1$s\",\"eventId\":\"%2$s\",\"payload\":{}}",

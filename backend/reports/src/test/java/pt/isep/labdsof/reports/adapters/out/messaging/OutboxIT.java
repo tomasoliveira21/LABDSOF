@@ -154,14 +154,16 @@ class OutboxIT extends IntegrationTest {
     var messageId = submit();
     var unreachable = new CachingConnectionFactory("127.0.0.1", 1); // nothing listens on port 1
     try {
-      var before = Instant.now();
-      assertThat(publisher(new RabbitTemplate(unreachable)).publishDue()).isZero();
+      // The application clock is an hour behind: the backoff must still follow the database clock (one source)
+      var behind = Clock.offset(Clock.systemUTC(), Duration.ofHours(-1));
+      assertThat(new OutboxPublisher(outbox, new RabbitTemplate(unreachable), tx, behind, 50, Duration.ofSeconds(2))
+          .publishDue()).isZero();
       var failed = row(messageId);
       assertThat(failed.get("published_at")).isNull();
       assertThat(failed).containsEntry("attempts", 1);
       assertThat((String) failed.get("last_error")).isNotBlank();
-      assertThat(((java.sql.Timestamp) failed.get("next_attempt_at")).toInstant())
-          .isAfter(before.plusSeconds(1));
+      assertThat(jdbc.sql("SELECT next_attempt_at > now() + interval '1 second' FROM outbox WHERE message_id = :id")
+          .param("id", messageId).query(Boolean.class).single()).isTrue();
 
       // Not due yet: the next run leaves it alone
       assertThat(publisher(rabbit).publishDue()).isZero();

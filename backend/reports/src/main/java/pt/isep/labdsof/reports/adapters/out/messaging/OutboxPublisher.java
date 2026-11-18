@@ -88,14 +88,14 @@ public class OutboxPublisher {
     } catch (Exception e) {
       int attempts = row.attempts() + 1;
       var error = DeadLetters.describe(e);
-      var next = clock.instant().plus(backoff(attempts));
-      outbox.markFailed(row.id(), attempts, next, error);
+      var backoff = backoff(attempts);
+      outbox.markFailed(row.id(), attempts, backoff, error);
       log.warn("Outbox message {} ({}) not published, attempt {}: {}", row.messageId(), row.type(),
           attempts, error);
       if (e instanceof Refused) {
         return true;
       }
-      pausedUntil = next; // the broker is most likely down: the rest waits, in order
+      pausedUntil = clock.instant().plus(backoff); // the broker is most likely down: the rest waits, in order
       return false;
     }
   }

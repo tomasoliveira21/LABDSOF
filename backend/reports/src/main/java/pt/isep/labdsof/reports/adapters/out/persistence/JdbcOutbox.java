@@ -1,6 +1,7 @@
 package pt.isep.labdsof.reports.adapters.out.persistence;
 
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,12 +76,15 @@ public class JdbcOutbox implements Outbox {
         .update();
   }
 
-  public void markFailed(long id, int attempts, Instant nextAttemptAt, String error) {
+  /** The next attempt is due {@code backoff} from the database's clock, the one {@link #claimDue} compares. */
+  public void markFailed(long id, int attempts, Duration backoff, String error) {
     jdbc.sql("""
-        UPDATE outbox SET attempts = :attempts, next_attempt_at = :next, last_error = :error WHERE id = :id
+        UPDATE outbox SET attempts = :attempts, last_error = :error,
+               next_attempt_at = clock_timestamp() + make_interval(secs => :seconds)
+        WHERE id = :id
         """)
         .param("attempts", attempts)
-        .param("next", Timestamp.from(nextAttemptAt))
+        .param("seconds", backoff.toSeconds())
         .param("error", error)
         .param("id", id)
         .update();

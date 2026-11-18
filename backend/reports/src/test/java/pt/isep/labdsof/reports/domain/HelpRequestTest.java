@@ -77,8 +77,17 @@ class HelpRequestTest {
   @DisplayName("194 AC-4 a missing or 501-character description is refused")
   void longOrMissingDescription() {
     var tooLong = "x".repeat(501);
-    assertThatThrownBy(() -> submit(tooLong)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> submit(null)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> submit(tooLong)).isInstanceOf(InvalidHelpRequestException.class);
+    assertThatThrownBy(() -> submit(null)).isInstanceOf(InvalidHelpRequestException.class);
+  }
+
+  @Test
+  @DisplayName("194 AC-4 the 500-character limit counts characters, not UTF-16 units, as varchar(500) does")
+  void descriptionCountsCodePoints() {
+    var ambulance = "🚑"; // one character, two UTF-16 units
+    assertThat(submit(ambulance.repeat(500)).description()).hasSize(1000);
+    var tooLong = ambulance.repeat(501);
+    assertThatThrownBy(() -> submit(tooLong)).isInstanceOf(InvalidHelpRequestException.class);
   }
 
   @Test
@@ -105,15 +114,15 @@ class HelpRequestTest {
   void locationBounds() {
     assertThat(new Location(1, 0, 0)).isNotNull();
     assertThat(new Location(1, 1, 1)).isNotNull();
-    assertThatThrownBy(() -> new Location(0, 0.5, 0.5)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> new Location(1, -0.01, 0.5)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> new Location(1, 1.01, 0.5)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> new Location(1, 0.5, -0.01)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> new Location(1, 0.5, 1.01)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> new Location(0, 0.5, 0.5)).isInstanceOf(InvalidHelpRequestException.class);
+    assertThatThrownBy(() -> new Location(1, -0.01, 0.5)).isInstanceOf(InvalidHelpRequestException.class);
+    assertThatThrownBy(() -> new Location(1, 1.01, 0.5)).isInstanceOf(InvalidHelpRequestException.class);
+    assertThatThrownBy(() -> new Location(1, 0.5, -0.01)).isInstanceOf(InvalidHelpRequestException.class);
+    assertThatThrownBy(() -> new Location(1, 0.5, 1.01)).isInstanceOf(InvalidHelpRequestException.class);
     assertThatThrownBy(() -> new Location(1, Double.NaN, 0.5))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(InvalidHelpRequestException.class);
     assertThatThrownBy(() -> new Location(1, 0.5, Double.NaN))
-        .isInstanceOf(IllegalArgumentException.class);
+        .isInstanceOf(InvalidHelpRequestException.class);
   }
 
   @Test

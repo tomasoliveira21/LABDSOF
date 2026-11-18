@@ -101,6 +101,27 @@ class SecurityIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("194 AC-2 a clientRequestId reused for another request gets 409 and keeps the first one")
+  void reusedClientRequestId() throws Exception {
+    member(event, user, Role.RegularUser);
+    var client = UUID.randomUUID();
+    var first = post(path(), JWKS.valid(user), submitBody(client, "Friend fainted"));
+    var other = post(path(), JWKS.valid(user), submitBody(client, "Lost my phone"));
+    assertThat(first.statusCode()).isEqualTo(201);
+    assertThat(other.statusCode()).isEqualTo(409);
+    assertThat(get(first.headers().firstValue("Location").orElseThrow(), JWKS.valid(user)).body())
+        .contains("Friend fainted");
+  }
+
+  @Test
+  @DisplayName("194 AC-4 a description of 500 emoji is accepted: the limit counts characters")
+  void emojiDescription() throws Exception {
+    member(event, user, Role.RegularUser);
+    assertThat(post(path(), JWKS.valid(user), submitBody(UUID.randomUUID(), "🚑".repeat(500)))
+        .statusCode()).isEqualTo(201);
+  }
+
+  @Test
   @DisplayName("194 AC-4 a member of another event gets 404")
   void otherEvent() throws Exception {
     member(UUID.randomUUID(), user, Role.EventAdmin);

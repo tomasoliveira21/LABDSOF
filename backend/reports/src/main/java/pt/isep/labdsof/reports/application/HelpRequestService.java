@@ -42,6 +42,10 @@ public class HelpRequestService {
     if (!helpRequests.insertIfNew(request)) {
       var saved = helpRequests.findByClientRequestId(eventId, userId, clientRequestId)
           .orElseThrow(() -> new IllegalStateException("conflicting submit not visible"));
+      // A reused id with other content is a client bug: refuse it rather than drop the new request.
+      if (!saved.description().equals(description) || !saved.location().equals(location)) {
+        throw new ClientRequestConflictException();
+      }
       return new Submitted(saved, false);
     }
     outbox.add(OutgoingEvent.helpRequestSubmitted(UUID.randomUUID(), request));

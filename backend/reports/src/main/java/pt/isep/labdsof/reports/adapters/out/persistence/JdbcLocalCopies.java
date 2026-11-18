@@ -9,6 +9,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import pt.isep.labdsof.reports.application.LocalCopies;
@@ -28,6 +30,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
   /** How a team's permissions are stored: the TeamChanged shape, `[{ permission, reportTypes }]`. */
   record StoredPermission(String permission, List<String> reportTypes) {}
 
+  private static final Logger log = LoggerFactory.getLogger(JdbcLocalCopies.class);
   private static final String EVENT_ID = "eventId";
   private static final String VERSION = "version";
 
@@ -92,7 +95,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
         .map(p -> new StoredPermission(p.permission().wireName(), p.reportTypes().stream().sorted().toList()))
         .toList();
     // A team never moves to another event: an update for another event_id changes nothing.
-    return jdbc.sql("""
+    var applied = jdbc.sql("""
         INSERT INTO team_copy (team_id, event_id, name, permissions, handled_categories, deleted, version)
         VALUES (:teamId, :eventId, :name, CAST(:permissions AS jsonb), :categories, :deleted, :version)
         ON CONFLICT (team_id) DO UPDATE
@@ -109,6 +112,15 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
         .param("deleted", t.deleted())
         .param(VERSION, t.version())
         .update() == 1;
+    if (!applied) {
+      var savedEvent = jdbc.sql("SELECT event_id FROM team_copy WHERE team_id = :teamId")
+          .param("teamId", t.teamId()).query(UUID.class).single();
+      if (!savedEvent.equals(t.eventId())) { // not stale: Events broke an invariant
+        log.warn("TeamChanged for team {} of event {} ignored: the team belongs to event {}", t.teamId(),
+            t.eventId(), savedEvent);
+      }
+    }
+    return applied;
   }
 
   private static Membership membership(ResultSet rs, int row) throws SQLException {
