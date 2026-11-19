@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "envelope.schema.json",
+  "title": "Farol event envelope",
+  "description": "Every message between Farol services (API outline §7.1). The payload is defined by each event's schema.",
+  "type": "object",
+  "required": ["messageId", "type", "schemaVersion", "occurredAt", "producer", "eventId", "actorUserId", "payload"],
+  "properties": {
+    "messageId": { "type": "string", "format": "uuid", "description": "Unique; consumers keep the processed ids to ignore duplicates" },
+    "type": { "type": "string", "pattern": "^[A-Z][A-Za-z]+$", "description": "Event name, PascalCase, past tense" },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "producer": { "type": "string", "enum": ["auth-users", "events", "reports", "transports", "badges"] },
+    "eventId": { "type": ["string", "null"], "format": "uuid", "description": "The Farol event it belongs to, when there is one" },
+    "actorUserId": { "type": "string", "description": "The sub of the user whose action caused it; empty for the system" },
+    "payload": { "type": "object" }
+  }
+}

@@ -1,0 +1,28 @@
+# Dependency gate of Docs/specs/README.md (#191, spec D11): a pull request that adds or updates a dependency with a
+# known vulnerability of high or critical severity fails. Its own workflow keeps it out of the busy ci.yml.
+# Needs the repository's dependency graph (Settings > Code security), on by default for public repositories.
+name: Dependency review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
