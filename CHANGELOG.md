@@ -14,6 +14,11 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - [System prompt](Docs/Research/architecture-investigation/evaluation/system-prompt.txt), on the development split only and frozen before the test run: category definitions as `features.md` §4.2, *not responding* in Critical, a lost person who cannot look after themselves in High, past incidents and questions are usable, European Portuguese, two development examples. Baseline report regenerated for the new prompt hash (same numbers).
 - Evaluation README (*Runs*), ADR-005, the local AI decisions, `responsible-ai.md` (model column, slices, reasons, latency), the decisions guide K2 and `Docs/README.md` record the run with dated notes. Still open: label review and reason review (#149), routing (US-34, #81), SC3/SC5.
 
+### Fixed (review of PR #225, 19 November 2026)
+- Spec 224 §6 said *six* `--verify` checks: there are eight.
+- `--resume` never retries a case already written, even as `output: null` (a failure stays a failure): now said in the flag's help, the runner's docstring and the evaluation README.
+- The manifest and `--verify` show integrity, not bit-for-bit reproducibility: seed 42 and temperature 0 do not fix the output across batch size, threads or backend (spec 224 §1, evaluation README). A prompt change for the five ceiling failures must be tuned on the development split or new cases, never on the test split (spec 224 §6).
+
 ## [Unreleased] · 2026-11-19 · Auth & Users service (#191, Tiago Teixeira)
 
 **Why:** every Sprint B service needs to know who calls it: the Farol account of a Keycloak user, the first FarolAdmin (#179) and, from US-06, the members of each event. Auth & Users was an empty skeleton. Spec, decisions and edge-case matrix: [`Docs/specs/191-auth-users-service.md`](Docs/specs/191-auth-users-service.md).

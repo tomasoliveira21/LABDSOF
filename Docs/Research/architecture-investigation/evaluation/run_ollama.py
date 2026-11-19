@@ -9,6 +9,11 @@ error or a reply that is not JSON is output null, which the scorer counts as a f
 --verify RUN_DIR checks a committed run (spec 224 §1) against the package files on disk. Run it at a commit where
 the package is the one the run was frozen with: after a change to the dataset, prompt or schema it fails by design,
 because the run no longer measures the current package and must be redone (local AI decisions, K2 "Changes").
+It checks integrity, not reproducibility: seed 42 and temperature 0 do not make a rerun give the same outputs bit for
+bit, as llama.cpp output also depends on batch size, threads and backend.
+
+--resume runs only the IDs missing from --out: a case already written, even as output null, is never run again, so a
+failure stays a failure.
 """
 import argparse
 import hashlib
@@ -161,7 +166,7 @@ def main():
     parser.add_argument("--out", type=Path)
     parser.add_argument("--raw", type=Path)
     parser.add_argument("--warm-up", action="store_true", help="one synthetic call first, recorded in the raw file only")
-    parser.add_argument("--resume", action="store_true", help="append, running only the IDs missing from --out (warms up first)")
+    parser.add_argument("--resume", action="store_true", help="append, running only the IDs missing from --out; a case already written, even as output null, is not retried (warms up first)")
     args = parser.parse_args()
     if args.self_test:
         self_test()
