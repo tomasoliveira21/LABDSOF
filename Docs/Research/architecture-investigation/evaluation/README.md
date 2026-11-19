@@ -2,7 +2,7 @@
 
 > **Updated on 17 November 2026 (#197)** to the design of the [meeting of 15 November 2026](../../../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md) (decisions 1, 2 and 8), as [ADR-005](../../../Technical/adr/0005-ai-triage-provider-and-evaluation.md) and the [local AI decisions](../../../Technical/plans/ai-provider-evaluation.md) record it: the AI reads only the participant's description and suggests a **priority** and a category, with a short reason; the team is not an AI output; `Theft` is replaced by `Infrastructure`; the gates measure priority first. The research snapshot of 22 October 2026 (#53) is in the Git history. Where this package and those documents differ, they win. Spec: [`Docs/specs/197-ai-evaluation-priority.md`](../../../specs/197-ai-evaluation-priority.md).
 
-**Research tooling only.** Every case is synthetic, authored for this evaluation; none came from a real incident, user account or clinical dataset. Labels are unreviewed operational proposals. No model was called.
+**Research tooling only.** Every case is synthetic, authored for this evaluation; none came from a real incident, user account or clinical dataset. Labels are unreviewed operational proposals. No model was called. *19 November 2026 (#224): one local model run is recorded below ([Runs](#runs)); the labels are still unreviewed.*
 
 **Routing is not evaluated here.** The output has no team: Reports derives the default team from the event's team that handles the suggested category (`features.md` §4.2). Two events with different teams, no team for a category and several teams without a default are integration cases of the [local AI decisions](../../../Technical/plans/ai-provider-evaluation.md#event-specific-production-contract), not of this scorer.
 
@@ -40,6 +40,21 @@ The scorer checks the precise simple object schema shipped here (required keys, 
 4. `elapsed_ms` must represent submission-to-stored-valid-suggestion time including queue and persistence for SC3. A direct model-call benchmark can score quality but must omit `elapsed_ms` here and record `provider_ms` separately in its manifest; it does not establish deployed SC3. Scoring an asserted elapsed value cannot verify the measurement instrument.
 5. Run `python3 Docs/Research/architecture-investigation/evaluation/evaluate.py --predictions /path/to/test-predictions.jsonl --split test --out /path/to/run-report.json`.
 6. Compare with the baseline. Review reasons, all urgent misses, language/injection slices, observed latency/memory and any actual usage. A provider benchmark, labels, privacy review and an AI-off end-to-end test remain pending.
+
+## Runs
+
+[`run_ollama.py`](run_ollama.py) (standard library only, #224) does steps 2 to 4 against a local Ollama: one request at a time, input only, the settings of the [local AI decisions](../../../Technical/plans/ai-provider-evaluation.md#runtime-and-resilience-contract) and a 20 s single-attempt timeout; a timeout or a non-JSON reply is `output: null`. `--warm-up` sends one unscored synthetic call first, `--resume` runs only the IDs missing after an interruption, and `--verify <run dir>` checks a committed run against its manifest and the scorer ([spec 224](../../../specs/224-ollama-evaluation-run.md) §1):
+
+```sh
+python -I Docs/Research/architecture-investigation/evaluation/run_ollama.py --split test --warm-up --out <run dir>/predictions-run-1.jsonl --raw <run dir>/raw-run-1.jsonl
+python -I Docs/Research/architecture-investigation/evaluation/run_ollama.py --verify <run dir>
+```
+
+| Run | Model and runtime | Offline quality gate | Evidence |
+|---|---|---|---|
+| 19 November 2026, test split, once (#224) | `qwen3:4b` Q4_K_M on `ollama/ollama:0.40.16` in Docker, CPU only | **Failed** on check 3: 5 `Low`/`Medium` cases rated `Critical` (T006, T007, T013, T017, T119). Checks 1, 2 and 4 to 7 passed: 0 of 39 urgent cases missed, none below its minimum, category accuracy 0.966 (86 of 89), coverage 0.978 (87 of 89), 8 of 8 abstentions | [manifest](runs/2026-11-19-local-qwen3/manifest.json) · [report](runs/2026-11-19-local-qwen3/report-run-1.json) · [predictions](runs/2026-11-19-local-qwen3/predictions-run-1.jsonl) · [raw replies](runs/2026-11-19-local-qwen3/raw-run-1.jsonl) |
+
+That run used the prompt as changed on the development split on 19 November 2026 (category definitions, two more development examples; spec 224 D3) and has no `elapsed_ms`, so it decides only the quality gate: `provider_ms` was 5.9 to 13.8 s per call (median 10.0 s, p95 12.8 s, no timeout), after a cold start of 58.5 s. One run only; repeated runs were not done. The reasons were not reviewed by a person (README step 6, still pending).
 
 ## Gates
 
