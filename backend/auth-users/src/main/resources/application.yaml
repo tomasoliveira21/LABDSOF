@@ -1,0 +1,60 @@
+# Auth & Users (spec Docs/specs/191-auth-users-service.md). Every secret comes from the environment
+# (infra/compose.yaml, infra/.env); no default secret.
+spring:
+  application:
+    name: auth-users
+  jackson:
+    deserialization:
+      # Reject fields outside the documented bodies (mass assignment, spec D9)
+      fail-on-unknown-properties: true
+  mvc:
+    # Problem Details for every MVC error (API outline 1.7); ProblemDetailsAdvice backs it
+    problemdetails:
+      enabled: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      # At most 10 connections per service on the shared server (#189 handoff)
+      maximum-pool-size: 5
+  flyway:
+    locations: classpath:db/migration
+  rabbitmq:
+    # The auth-users user declares nothing; the topology comes from infra/rabbitmq/topology.json (#212, spec D1)
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:}
+    password: ${SPRING_RABBITMQ_PASSWORD:}
+    # Confirms and mandatory routing: an outbox row is marked published only once the broker stored the
+    # message (spec D1, #214 D5)
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # ADR-006: public issuer checked against iss, keys from Keycloak's internal address, audience farol-api
+          issuer-uri: ${FAROL_ISSUER_URI}
+          jwk-set-uri: ${FAROL_JWKS_URI}
+          audiences: farol-api
+
+farol:
+  outbox:
+    # Same values as Reports (#214 D5), so the services the team reviews behave alike (spec D1). They stay
+    # inside architecture section 6 (poll up to 1 s, batch up to 100): 500 ms keeps the delay to consumers
+    # under 1 s including the confirm, and 50 is far above the event rate of Auth & Users (first logins and
+    # role grants).
+    enabled: true
+    poll-interval: 500ms
+    batch-size: 50
+    confirm-timeout: 5s
+  # Spec D6 (#179): empty grants nobody
+  bootstrap-farol-admin-email: ${FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL:}
+
+logging:
+  structured:
+    format:
+      console: logstash

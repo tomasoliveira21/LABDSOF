@@ -276,6 +276,8 @@ The delivery runs on one machine ([ADR-011](adr/0011-deployment-and-infrastructu
 
 ### 9.1 Sprint A skeleton (R0)
 
+> **Superseded on 16 November 2026 (#194):** the demo was removed; Reports now validates Keycloak tokens (signature, issuer, audience, expiry) and checks the membership of the event on every request ([spec](../specs/194-reports-postgres-outbox.md)). This section records Sprint A.
+
 The Sprint A walking skeleton ([plan](plans/local-walking-skeleton.md), #166) is one Reports service that creates and reads synthetic help requests in memory. It is the only running code, and it does not follow the controls above yet:
 
 - **Limits:** synthetic data only; the routes exist only with the `demo` profile; the port is published on `127.0.0.1:8080` only; there is no authentication, and every request uses a fixed identity. The assignment allows mocked authentication for the MVP (§6.6, footnote). AC-1 and AC-3 apply from the Sprint B slice, when Keycloak and the gateway arrive ([skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)).

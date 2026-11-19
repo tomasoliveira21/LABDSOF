@@ -2,6 +2,48 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-19 · Auth & Users service (#191, Tiago Teixeira)
+
+**Why:** every Sprint B service needs to know who calls it: the Farol account of a Keycloak user, the first FarolAdmin (#179) and, from US-06, the members of each event. Auth & Users was an empty skeleton. Spec, decisions and edge-case matrix: [`Docs/specs/191-auth-users-service.md`](Docs/specs/191-auth-users-service.md).
+
+### Added
+- `backend/auth-users`: accounts in PostgreSQL (Flyway `V1`: `user_account` with `email_verified` and a partial unique index on `lower(email)` where verified, `user_tombstone`, `global_role_grant`, `event_membership`, `team_assignment`, `outbox`) with Spring JDBC, as Reports (#214).
+- `GET /api/v1/me`: the first call creates the account from the token (just in time, ADR-006) and returns `userId`, `email`, `displayName` and `globalRoles`; the bootstrap e-mail gets `FarolAdmin` once its token says `email_verified: true`, on that first call or on a later one (#179). Only a verified e-mail is stored, so an unverified token cannot take over another account's address. A deleted or deletion-pending account gets `401`, a disabled one `403`; a token without a usable e-mail gets `401`. The other operations of the contract answer `501` with the story that brings them, after input validation.
+- The outbox: `UserProfileChanged`, and `GlobalRoleChanged` for the bootstrap, saved in the same transaction and published to `farol.auth-users` as the `auth-users` user: `FOR UPDATE SKIP LOCKED`, publisher confirms, mandatory routing, backoff up to 60 s, paused while the broker is down.
+- JWT validation against Keycloak (issuer, keys, audience `farol-api`, `sub` a UUID); Problem Details for every error, `WWW-Authenticate: Bearer` on `401`; `X-Correlation-Id` kept or created, logged, stored with the outbox row and sent as the AMQP `correlationId`; no e-mail, name or token in the logs (M-10).
+- Contracts: `contracts/openapi.yaml` with the Sprint B endpoints of API outline §2, interfaces and records generated at build time (ADR-004 decision 4); JSON Schemas of the envelope (the same file as Reports'), `UserProfileChanged` and `GlobalRoleChanged` in `contracts/events/`, checked against the messages the outbox stores and sends.
+- Quality gates of [`Docs/specs/README.md`](Docs/specs/README.md): JaCoCo at least 90 % of lines and branches with the generated code included, PIT at least 80 %, integration tests with Testcontainers on the Compose images and the production `infra/rabbitmq/setup.sh`.
+- `infra/tests/auth_users_smoke.py` and its CI step: through the gateway, a missing or tampered token gets `401`, a real Keycloak token creates the account, the bootstrap account is FarolAdmin, and the outbox rows of those first calls are published.
+- `.github/workflows/dependency-review.yml`: `actions/dependency-review-action` on every pull request, failing on high severity (gate of `Docs/specs/README.md`).
+
+### Changed
+- `infra/compose.yaml`: Auth & Users connects to its database (and waits for it), to RabbitMQ as the `auth-users` user and to Keycloak, and gets the bootstrap e-mail (optional, D6); no new variable in `infra/.env.example`.
+- The Auth & Users image runs `mvn package` (unit tests); the integration tests need Docker and run in `mvn verify` in CI.
+- `local-delivery.md` §0: what Auth & Users does in the stack, its settings and its smoke check.
+
+### Fixed (review of PR #215 by Bruno de Abreu Lopes, 19 November 2026)
+- **Only a verified e-mail is written.** `user_account.email_verified` records whether Keycloak had verified the stored address, a partial unique index keeps one verified holder per address, and a verified caller takes it over from a stale row. An unverified token no longer replaces what is stored, which would have let it take over another account's address and made US-06's `GET /accounts?email=` answer the wrong account. Spec D3 and D5.
+- **The bootstrap `FarolAdmin` is also granted on a later `GET /me`**, once the e-mail is verified, and never twice. Granting only at provisioning left a deployment with no `FarolAdmin` at all when that account's first call happened before it verified its e-mail. Spec D6 and AC-6.
+- `infra/compose.yaml` passes `${FAROL_BOOTSTRAP_FAROL_ADMIN_EMAIL:-}`: `:?` also fails interpolation for an empty value, which D6 declares valid (nobody is granted).
+- NUL is dropped from the display name and an e-mail carrying one gets `401` (no PostgreSQL text column accepts it); the fallback display name is stripped and never blank.
+- The catch-all Problem Details advice rethrows `AccessDeniedException` and `AuthenticationException`, so a denial still answers `401`/`403` instead of a `500`, and a client that closed the connection is no longer logged as an error; a looping cause chain answers `500` instead of hanging.
+- The access log records the status an exception escaping the filter chain produces (`500`), not the `200` still on the response; the `/api/v1/status` health check is logged at DEBUG instead of pushing real requests out of the log every 5 s.
+- `enumPropertyNaming=original` in the generator, so Spring's own query binding is the contract (`?role=EVENT_ADMIN` is still a `400`) and the hand-written `PropertyEditor` is gone.
+- `backend/reports`: the NUL-safe and bounded `last_error` of this service's outbox ported to Reports' `JdbcOutbox`, so a broker error carrying a NUL no longer rolls its publishing batch back and leaves the row without backoff. The duplication of the outbox itself is [#226](https://github.com/tomasoliveira21/LABDSOF/issues/226), which extracts it into a module the services share once #191, #192 and #194 are merged.
+
+### Proposed (for the team's review in the PR)
+- Spec D2: `openapi-generator` with `skipDefaultInterface=true` and no coverage exclusion (a contract test covers the generated records and enums), as an answer to the open point of #214 D14.
+- The account states of §4 of the meeting of 15 November 2026 (`Active`, `Disabled`, `DeletionPending`; no `MembershipStatus`), while #198 is open.
+
+## [Unreleased] · 2026-11-18 · Review of PR #217: over-prioritisation and scale-example cases (#197, Bruno de Abreu Lopes)
+
+**Why:** the review of PR #217 found that a model answering `Critical` for everything passed the priority gates, and that most `Infrastructure` test cases restate the scale examples the prompt quotes.
+
+### Changed
+- [Evaluation package](Docs/Research/architecture-investigation/evaluation/README.md): new gate 3, no `Low` or `Medium` reference rated `Critical`; the report adds exact-priority agreement and an over-prioritisation count. The prompt says to choose `Critical` only when its meaning applies. Cases that restate a scale example are tagged `scale-example` and reported as a slice; 6 `Infrastructure` cases not derived from the examples added (121 cases, 24 development / 97 test); T082 is now a question for the staff; `vedac` removed from the baseline keywords (it came from a test case).
+- Keyword baseline on the test split: 22 of 39 urgent cases missed, 0 `Low`/`Medium` rated `Critical`, category accuracy 0.573, coverage 0.596, 8 of 8 abstentions.
+- ADR-005, the local AI decisions, `responsible-ai.md` (superseded note, baseline table), the K2 and A7 case counts and the [spec](Docs/specs/197-ai-evaluation-priority.md) (D3, D9 to D11, handoff).
+
 ## [Unreleased] · 2026-11-17 · Events service (#192, Tiago Teixeira)
 
 **Why:** the Sprint B stories about events, teams and venue maps (US-06, US-09, US-11, US-14, US-16 to US-21) need a service that owns them and knows who may see each event; Events was an empty skeleton. Spec, decisions and edge-case matrix: [`Docs/specs/192-events-service.md`](Docs/specs/192-events-service.md).
@@ -26,6 +68,58 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Report type codes and point types (spec D6), until US-17 and US-20.
 - The join link `/join/{eventId}?code={code}` (relative), until US-11 and US-12.
 - `EventChanged` without the description or the join code, and `TeamChanged` with `reportTypes` on every permission (spec D7).
+
+## [Unreleased] · 2026-11-17 · AI triage evaluation focused on priority (#197, Bruno de Abreu Lopes)
+
+**Why:** the evaluation package still followed the design of 22 October 2026 (participant category, team output, `Theft`), while the meeting of 15 November 2026 (decisions 1, 2 and 8) focused the AI on priority.
+
+### Changed
+- [Evaluation package](Docs/Research/architecture-investigation/evaluation/README.md): the input is only the description; the output is `category`, `priority`, `reason`, `abstain`, no team, and an abstention has null category and priority. The 21 cases expected `Theft` are `Safety`; the three empty texts are short content-free descriptions; 15 `Infrastructure` cases added (115 cases, 23 development / 92 test). The scorer checks the gates priority first (zero urgent misses, no case below its minimum priority, then category accuracy ≥ 0.80, coverage ≥ 0.95, every expected abstention) and no longer has a team gate or participant floor. The prompt follows the priority scale.
+- **Non-AI baseline: keyword rules on the description** (approved by the AI triage owner on 17 November 2026): 20 of 37 urgent cases missed, category accuracy 0.607, coverage 0.631, 8 of 8 abstentions; `--self-test` checks that the committed report is reproduced.
+- ADR-005, the local AI decisions, `responsible-ai.md` (baseline table), `features.md`, NFR-22, SC4, observability, the decisions guide and the assumptions list no longer say the package is still to be updated. Spec: [`Docs/specs/197-ai-evaluation-priority.md`](Docs/specs/197-ai-evaluation-priority.md).
+
+## [Unreleased] · 2026-11-17 · Live list of help requests (US-26, #73, Bruno Lopes)
+
+**Why:** the control room must see new help requests as they arrive, within 5 s and without reloading (SC2). Spec, decisions and edge-case matrix: [`Docs/specs/US-26-live-help-request-list.md`](Docs/specs/US-26-live-help-request-list.md). Built on #194 (PR #214).
+
+### Added
+- `backend/reports`: `GET /api/v1/events/{eventId}/help-requests?updatedSince=` for `HelpRequests.Triage` (a member without it gets 403, a non-member 404). The first load lists every request that is not `Closed`; later polls list what changed, closed ones and requests that turned `NotTriaged` included, in order of arrival. `serverTime` is 5 s behind the server, so a request committed just after a poll is not lost.
+- `openapi.yaml`: the list is implemented; `mine`, `status` and `teamId` stay planned (US-24, US-27, US-31).
+
+## [Unreleased] · 2026-11-17 · `up --wait` waits for the one-shot `rabbitmq-setup` (#220, Tiago Teixeira)
+
+**Why:** `docker compose … up --build -d --wait` failed with `container farol-ci-rabbitmq-setup-1 exited (0)` whenever `rabbitmq-setup` (#212) finished before Keycloak started: 3 of 3 clean runs on a Windows laptop on 17 November 2026. `--wait` treats any exited container as a failure, unless another service depends on it with `service_completed_successfully`. CI had passed only because of its timing.
+
+### Fixed
+- `infra/compose.yaml`: the web app depends on `rabbitmq-setup` with `condition: service_completed_successfully`, so `--wait` waits for it to finish with exit 0, and fails with its exit code otherwise. The web app never talks to the broker; no backend service waits for it (ADR-011). After the change: 5 of 5 clean runs passed. The start command stays the same.
+
+### Added
+- `ci.yml` step *Check the start-up order*: fails if the web app stops waiting for `rabbitmq-setup`, or if a backend service waits for `rabbitmq` or `rabbitmq-setup`.
+
+### Changed
+- `local-delivery.md` §0 and §1 and spec [#212](Docs/specs/212-rabbitmq-topology-users.md) (decision D9, edge cases, handoff): how `--wait` treats one-shot containers.
+
+## [Unreleased] · 2026-11-16 · Reports on PostgreSQL with an outbox (#194, Bruno Lopes)
+
+**Why:** Reports kept its synthetic help requests in memory, with no token check and no broker. Its Sprint B stories (US-23, US-24, US-26 to US-36) need the requests in its own database (ADR-003), events that are never lost (ADR-004) and validated tokens (ADR-006). Spec, decisions and edge-case matrix: [`Docs/specs/194-reports-postgres-outbox.md`](Docs/specs/194-reports-postgres-outbox.md).
+
+### Added
+- `backend/reports`: help requests and their triage in PostgreSQL (Flyway `V1`), with the statuses, triage states and categories of decisions 6 and 8 of 15 November 2026 enforced by check constraints; `NotTriaged` derived on read. `POST /api/v1/events/{eventId}/help-requests` (a retry with the same `clientRequestId` returns the saved request; the same id with another description or location gets 409; the 500-character limit counts Unicode characters) and `GET …/{requestId}` (owner or `HelpRequests.Triage`; anyone else gets 404).
+- The outbox: `HelpRequestSubmitted` (only the `requestId`) is saved in the request's transaction and published by one job with `FOR UPDATE SKIP LOCKED`, publisher confirms, mandatory routing, batches of 10 and backoff up to 60 s on the database clock.
+- Consumers of `MembershipChanged` and `TeamChanged`: idempotent by `messageId`, upsert by version; an invalid message goes to its dead-letter queue with the reason, other failures (a bug in Reports included) after 4 attempts (1 s, 2 s, 4 s); a `TeamChanged` that would move a team to another event is ignored with a warning.
+- JWT validation against Keycloak (issuer, keys, audience `farol-api`, expiry); authorisation from the local copies.
+- Contracts: `contracts/openapi.yaml` with the Sprint B endpoints of API outline §4, and JSON Schemas of the envelope, `HelpRequestSubmitted`, and `MembershipChanged` and `TeamChanged` as Reports reads them.
+- Quality gates of [`Docs/specs/README.md`](Docs/specs/README.md) adopted for Reports: JaCoCo at least 90% of lines and branches, PIT at least 80% on `domain` and `application`, integration tests with Testcontainers on the Compose images and the production `infra/rabbitmq/setup.sh`.
+- `infra/tests/reports_smoke.py` and its CI step: Reports refuses a missing or tampered token and accepts a real Keycloak token through the gateway.
+
+### Changed
+- `infra/compose.yaml`: Reports connects to its database (and waits for it) and to RabbitMQ as the `reports` user, and gets the issuer and key addresses of Keycloak; no new variable in `infra/.env.example`.
+- The Reports image runs `mvn package` (unit tests); the integration tests need Docker and run in `mvn verify` in CI.
+- `local-delivery.md` §0, API outline §1.1, the walking-skeleton plan and assessment §9.1: the demo is gone.
+
+### Removed
+- The synthetic in-memory demo of Sprint A (`/api/v1/demo/help-requests` and its `demo` profile); the tag `v0.1.0` keeps it.
+
 
 ## [Unreleased] · 2026-11-16 · RabbitMQ topology and per-service users (#212, Tiago Teixeira)
 

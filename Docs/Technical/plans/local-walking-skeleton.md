@@ -2,6 +2,8 @@
 
 **Issue:** [#58](https://github.com/tomasoliveira21/LABDSOF/issues/58) · **Correction/implementation:** [#166](https://github.com/tomasoliveira21/LABDSOF/issues/166) · **Updated:** 31 October 2026
 
+> **Historical (16 November 2026, #194):** the synthetic demo described here was removed when Reports moved to PostgreSQL with an outbox and token validation ([spec](../../specs/194-reports-postgres-outbox.md)). To run it, check out the tag `v0.1.0`.
+
 ## 1. Sprint A boundary: one service, not the full application
 
 A review on 31 October identified deliverable 10 as a blocker and asked for the smallest executable cut before Sprint B. This supersedes the earlier multi-service/authenticated request slice as an **R0 requirement**. That complete design remains the Sprint B target, not missing work to hide behind a documentation-only closure.

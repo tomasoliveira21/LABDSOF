@@ -34,6 +34,20 @@ jobs:
           for module in auth-users events reports transports badges gateway; do
             mvn --batch-mode --no-transfer-progress -f "backend/$module/pom.xml" verify
           done
+      # `up --wait` fails on an exited one-shot container unless a service depends on it with
+      # service_completed_successfully (#220); no backend service may wait for the broker (ADR-011).
+      - name: Check the start-up order
+        run: |
+          docker compose -f infra/compose.yaml --env-file infra/.env.example config --format json | python3 -I -c '
+          import json, sys
+          services = json.load(sys.stdin)["services"]
+          anchors = sorted(name for name, s in services.items()
+                           if s.get("depends_on", {}).get("rabbitmq-setup", {}).get("condition") == "service_completed_successfully")
+          assert anchors == ["frontend"], f"only frontend may wait for rabbitmq-setup to complete, found {anchors}"
+          waiting = sorted(name for name in ("gateway", "auth-users", "events", "reports", "transports", "badges")
+                           if {"rabbitmq", "rabbitmq-setup"} & set(services[name].get("depends_on", {})))
+          assert not waiting, f"these services wait for the broker: {waiting}"
+          print("frontend waits for rabbitmq-setup; no backend service waits for the broker")'
       # The harmless example values of infra/.env.example (ADR-010 point 6); no secret is needed in CI.
       - name: Build and start the stack
         run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example up --build -d --wait --wait-timeout 300
@@ -97,6 +111,10 @@ jobs:
           assert d["issuer"] == "http://localhost:8180/realms/farol", d["issuer"]
           assert d["jwks_uri"] == "http://keycloak:8080/realms/farol/protocol/openid-connect/certs", d["jwks_uri"]
           print("issuer", d["issuer"], "jwks", d["jwks_uri"])'
+      - name: Check that Reports validates Keycloak tokens and reaches its database (#194)
+        run: python3 -I infra/tests/reports_smoke.py infra/.env.example
+      - name: Check that Auth & Users validates Keycloak tokens and publishes its first event (#191)
+        run: python3 -I infra/tests/auth_users_smoke.py infra/.env.example farol-ci
       - name: Check that Events validates Keycloak tokens and hides events from non-members (#192)
         run: python3 -I infra/tests/events_smoke.py infra/.env.example farol-ci
       - name: Check that only 127.0.0.1 is published and the new containers are hardened

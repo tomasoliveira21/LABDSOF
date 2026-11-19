@@ -3,7 +3,8 @@ WORKDIR /build
 COPY pom.xml ./
 COPY src ./src
 COPY contracts ./contracts
-RUN mvn --batch-mode --no-transfer-progress verify
+# Unit tests only: the *IT tests need Docker (Testcontainers) and run in `mvn verify` in CI (spec D17).
+RUN mvn --batch-mode --no-transfer-progress package
 
 FROM eclipse-temurin:21-jre-alpine@sha256:82cf3d9ccbe1ed46252008d51b2f2329e6b9e8a2f4394c4bebefc3ea7f4b1372
 WORKDIR /app

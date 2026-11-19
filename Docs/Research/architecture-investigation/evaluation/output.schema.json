@@ -6,36 +6,35 @@
   "required": [
     "category",
     "priority",
-    "team",
     "reason",
     "abstain"
   ],
   "properties": {
     "category": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "enum": [
         "Health",
         "Safety",
         "LostPerson",
-        "Theft",
-        "Other"
+        "Infrastructure",
+        "Other",
+        null
       ]
     },
     "priority": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "enum": [
         "Low",
         "Medium",
         "High",
-        "Critical"
-      ]
-    },
-    "team": {
-      "type": "string",
-      "enum": [
-        "Medical",
-        "Security",
-        "PCR"
+        "Critical",
+        null
       ]
     },
     "reason": {
