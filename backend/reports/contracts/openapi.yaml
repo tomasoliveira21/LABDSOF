@@ -102,21 +102,31 @@ paths:
       operationId: listHelpRequests
       summary: Live list of the requests the caller may see (US-24, US-26, US-27, US-31)
       description: >-
-        Own requests with mine=true; every request of the event with HelpRequests.Triage; the requests
-        routed to the caller's teams with HelpRequests.Respond. Returns what changed since updatedSince.
-      x-farol-status: planned
+        Implemented (US-26): a member with HelpRequests.Triage gets every request of the event in the
+        control-room view; a member without it gets 403. Without updatedSince, every request that is not
+        Closed; with it, every request changed after it, Closed ones included so the page drops them, and a
+        request whose triage turned NotTriaged after it. Both in order of arrival. serverTime is 5 s before
+        the server's time, so consecutive polls overlap and a request can come twice: keep one row per id.
+        Poll every 2 s while the page is visible (SC2, spec US-26 D7).
+        Planned: own requests with mine=true (US-24); the requests routed to the caller's teams with
+        HelpRequests.Respond (US-31); the filters status and teamId (US-27, US-31). Until then those
+        parameters are ignored.
+      x-farol-status: implemented
       parameters:
         - $ref: '#/components/parameters/UpdatedSince'
         - name: mine
           in: query
+          description: Planned (US-24); ignored for now.
           schema:
             type: boolean
         - name: status
           in: query
+          description: Planned (US-27, US-31); ignored for now.
           schema:
             $ref: '#/components/schemas/HelpRequestStatus'
         - name: teamId
           in: query
+          description: Planned (US-31); ignored for now.
           schema:
             type: string
             format: uuid
@@ -141,6 +151,8 @@ paths:
           $ref: '#/components/responses/Invalid'
         '401':
           $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -503,7 +515,9 @@ components:
     UpdatedSince:
       name: updatedSince
       in: query
-      description: Only what changed after this time (API outline §1.6); everything when absent.
+      description: >-
+        Only what changed after this time (API outline §1.6). When absent, the first load the operation
+        describes (for help requests, every request that is not Closed).
       schema:
         type: string
         format: date-time

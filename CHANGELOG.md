@@ -53,6 +53,14 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - **Non-AI baseline: keyword rules on the description** (approved by the AI triage owner on 17 November 2026): 20 of 37 urgent cases missed, category accuracy 0.607, coverage 0.631, 8 of 8 abstentions; `--self-test` checks that the committed report is reproduced.
 - ADR-005, the local AI decisions, `responsible-ai.md` (baseline table), `features.md`, NFR-22, SC4, observability, the decisions guide and the assumptions list no longer say the package is still to be updated. Spec: [`Docs/specs/197-ai-evaluation-priority.md`](Docs/specs/197-ai-evaluation-priority.md).
 
+## [Unreleased] · 2026-11-17 · Live list of help requests (US-26, #73, Bruno Lopes)
+
+**Why:** the control room must see new help requests as they arrive, within 5 s and without reloading (SC2). Spec, decisions and edge-case matrix: [`Docs/specs/US-26-live-help-request-list.md`](Docs/specs/US-26-live-help-request-list.md). Built on #194 (PR #214).
+
+### Added
+- `backend/reports`: `GET /api/v1/events/{eventId}/help-requests?updatedSince=` for `HelpRequests.Triage` (a member without it gets 403, a non-member 404). The first load lists every request that is not `Closed`; later polls list what changed, closed ones and requests that turned `NotTriaged` included, in order of arrival. `serverTime` is 5 s behind the server, so a request committed just after a poll is not lost.
+- `openapi.yaml`: the list is implemented; `mine`, `status` and `teamId` stay planned (US-24, US-27, US-31).
+
 ## [Unreleased] · 2026-11-17 · `up --wait` waits for the one-shot `rabbitmq-setup` (#220, Tiago Teixeira)
 
 **Why:** `docker compose … up --build -d --wait` failed with `container farol-ci-rabbitmq-setup-1 exited (0)` whenever `rabbitmq-setup` (#212) finished before Keycloak started: 3 of 3 clean runs on a Windows laptop on 17 November 2026. `--wait` treats any exited container as a failure, unless another service depends on it with `service_completed_successfully`. CI had passed only because of its timing.
