@@ -48,6 +48,29 @@ jobs:
                            if {"rabbitmq", "rabbitmq-setup"} & set(services[name].get("depends_on", {})))
           assert not waiting, f"these services wait for the broker: {waiting}"
           print("frontend waits for rabbitmq-setup; no backend service waits for the broker")'
+      # Each service image reads its dependencies from its own Maven cache, `farol-maven-<service>` (#219). Fill them
+      # with the repository the step above has just filled, so the images download nothing from Maven Central: all
+      # at once, they were refused with 429 Too Many Requests (16 and 17 Nov 2026). The cache ids are read from the
+      # Dockerfiles themselves, so no service can be left out of this step by mistake: a backend Dockerfile without
+      # a Maven cache fails here instead of quietly downloading from Maven Central. Without `_remote.repositories`
+      # the image's Maven takes each file as it is, instead of checking it again on Maven Central (the runner's Maven
+      # records another repository id), and the not-found markers go too, or a dependency that failed to resolve on
+      # the runner would not be tried again for 24 h. No --no-cache here or in the next step: it empties the caches.
+      - name: Give the image builds the Maven dependencies
+        shell: bash
+        run: |
+          mounts=""
+          for dockerfile in backend/*/Dockerfile; do
+            id=$(grep -om1 'id=farol-maven-[a-z-]*' "$dockerfile") || {
+              echo "::error::$dockerfile has no Maven cache; its image would download from Maven Central (#219)"
+              exit 1
+            }
+            mounts+=" --mount=type=cache,$id,target=/cache/${id#id=farol-maven-},sharing=locked"
+          done
+          printf '%s\n' 'FROM maven:3.9.9-eclipse-temurin-21-alpine@sha256:5a8b906c4faa11d33f6c74758f67db8eac25441e14b0729f6d50ff78992be58a' \
+            "RUN --mount=type=bind,target=/seed$mounts for cache in /cache/*; do cp -R /seed/. \$cache/; done \
+              && find /cache -name _remote.repositories -delete -o -name '*.lastUpdated' -delete && du -sh /cache/*" |
+          docker build --progress=plain -f - ~/.m2/repository
       # The harmless example values of infra/.env.example (ADR-010 point 6); no secret is needed in CI.
       - name: Build and start the stack
         run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example up --build -d --wait --wait-timeout 300
@@ -113,6 +136,8 @@ jobs:
           print("issuer", d["issuer"], "jwks", d["jwks_uri"])'
       - name: Check that Reports validates Keycloak tokens and reaches its database (#194)
         run: python3 -I infra/tests/reports_smoke.py infra/.env.example
+      - name: Check that Auth & Users validates Keycloak tokens and publishes its first event (#191)
+        run: python3 -I infra/tests/auth_users_smoke.py infra/.env.example farol-ci
       - name: Check that only 127.0.0.1 is published and the new containers are hardened
         shell: bash
         run: |

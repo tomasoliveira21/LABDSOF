@@ -133,4 +133,36 @@ class HelpRequestTest {
     assertThat(seen.triage().state()).isEqualTo(TriageState.NotTriaged);
     assertThat(seen).usingRecursiveComparison().ignoringFields("triage").isEqualTo(request);
   }
+
+  @Test
+  @DisplayName("US-26 AC-1 only what changed after updatedSince is listed")
+  void changedAfter() {
+    var request = submit("help");
+    var oneMicro = java.time.Duration.ofNanos(1_000);
+    var later = NOW.plusSeconds(5);
+    assertThat(request.changedAfter(NOW, later)).isFalse();
+    assertThat(request.changedAfter(NOW.minus(oneMicro), later)).isTrue();
+    assertThat(request.changedAfter(NOW.plusSeconds(1), later)).isFalse();
+  }
+
+  @Test
+  @DisplayName("US-26 AC-1 a Pending request changes when its triage deadline passes")
+  void deadlineIsAChange() {
+    var request = submit("help");
+    var deadline = NOW.plus(TriageSuggestion.TRIAGE_DEADLINE);
+    var micro = java.time.Duration.ofNanos(1_000);
+    // The deadline falls in (since, now]
+    assertThat(request.changedAfter(deadline.minus(micro), deadline)).isTrue();
+    assertThat(request.changedAfter(deadline.minus(micro), deadline.plusSeconds(9))).isTrue();
+    // Not yet passed, or already reported by an earlier poll
+    assertThat(request.changedAfter(deadline.minusSeconds(5), deadline.minus(micro))).isFalse();
+    assertThat(request.changedAfter(deadline, deadline.plusSeconds(9))).isFalse();
+    // A triaged request has no deadline to report
+    var suggested = new HelpRequest(request.id(), request.eventId(), request.requesterId(),
+        request.clientRequestId(), request.description(), request.location(), null, null,
+        request.status(), null, null,
+        new TriageSuggestion(TriageState.Suggested, Category.Health, Priority.High, "fainted", null),
+        request.submittedAt(), request.updatedAt(), 2);
+    assertThat(suggested.changedAfter(deadline.minus(micro), deadline)).isFalse();
+  }
 }

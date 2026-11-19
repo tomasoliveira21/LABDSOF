@@ -1,0 +1,372 @@
+openapi: 3.0.3
+info:
+  title: Farol Auth & Users
+  version: 0.1.0
+  description: >-
+    Accounts, the FarolAdmin grant, memberships of events and team assignments
+    (ADR-006, API outline §2). Contract-first (C7): the server interfaces and DTOs are
+    generated from this file. Sprint B endpoints only; #191 implements GET /me, the
+    other operations answer 501 until their stories (US-01, US-06, US-12, US-18).
+    Every /api/v1 call needs a valid access token issued by Keycloak to the web app
+    (audience farol-api); /api/v1/status is the only diagnostic exception.
+servers:
+  - url: /
+tags:
+  - name: Status
+  - name: Me
+  - name: Accounts
+  - name: Members
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/status:
+    get:
+      tags: [Status]
+      operationId: getServiceStatus
+      summary: Confirm that the Auth & Users HTTP service is running
+      security: []
+      responses:
+        '200':
+          description: The service is responding; this does not check its dependencies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceStatus'
+  /api/v1/me:
+    get:
+      tags: [Me]
+      operationId: getMe
+      summary: My account; the first call creates it (just in time, API outline §1.4)
+      description: >-
+        Creates the account from the token at the first call and publishes UserProfileChanged.
+        Grants FarolAdmin when the token's e-mail equals the configured bootstrap e-mail and
+        email_verified is true (#179). A deleted account (tombstone) gets 401; an account being
+        deleted gets 401; a disabled account gets 403.
+      responses:
+        '200':
+          description: The account of the token's user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/me/memberships:
+    get:
+      tags: [Me]
+      operationId: getMyMemberships
+      summary: The events I am a member of, with my role, my teams and each event's name and status (US-01)
+      responses:
+        '200':
+          description: My memberships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Membership'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/accounts:
+    get:
+      tags: [Accounts]
+      operationId: findAccountByEmail
+      summary: Find the account to name as EventAdmin; exact e-mail match only, audited (US-06, AC-9)
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+            maxLength: 254
+      responses:
+        '200':
+          description: The matching account, with its id and display name only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/members:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      tags: [Members]
+      operationId: listMembers
+      summary: List the event's members with role and teams (US-18)
+      parameters:
+        - name: role
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EventRole'
+        - name: teamId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The event's members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Members]
+      operationId: nameEventAdmin
+      summary: Name a user EventAdmin of an event, the first one or a new one (US-06); FarolAdmin only
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NameEventAdmin'
+      responses:
+        '201':
+          description: The membership created or changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/members/me:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    post:
+      tags: [Members]
+      operationId: joinEvent
+      summary: Join the event as RegularUser by its QR code or link (US-12); 404 if the event is not published
+      responses:
+        '201':
+          description: I am now a member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '200':
+          description: I was already a member; nothing changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/events/{eventId}/members/{userId}/teams/{teamId}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: teamId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [Members]
+      operationId: addMemberToTeam
+      summary: Add a member to a team of the event (US-18); EventAdmin only
+      responses:
+        '204':
+          description: The member is in the team (idempotent)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Members]
+      operationId: removeMemberFromTeam
+      summary: Remove a member from a team of the event (US-18); EventAdmin only
+      responses:
+        '204':
+          description: The member is not in the team (idempotent)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    EventId:
+      name: eventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: No valid access token, or the account was deleted
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: No permission, or the account is disabled
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Not found, or not a member of the event (API outline §1.7)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    ServiceStatus:
+      type: object
+      additionalProperties: false
+      required: [service, status]
+      properties:
+        service:
+          type: string
+          enum: [auth-users]
+        status:
+          type: string
+          enum: [ok]
+    GlobalRole:
+      type: string
+      enum: [FarolAdmin]
+    EventRole:
+      type: string
+      enum: [EventAdmin, RegularUser]
+    EventStatus:
+      type: string
+      enum: [Draft, Published, Suspended, Closed]
+    Me:
+      type: object
+      additionalProperties: false
+      required: [userId, email, displayName, globalRoles]
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: The token's sub
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        globalRoles:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalRole'
+    Membership:
+      type: object
+      additionalProperties: false
+      required: [eventId, eventName, eventStatus, role, teamIds]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventName:
+          type: string
+        eventStatus:
+          $ref: '#/components/schemas/EventStatus'
+        role:
+          $ref: '#/components/schemas/EventRole'
+        teamIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    AccountSummary:
+      type: object
+      additionalProperties: false
+      required: [userId, displayName]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+    Member:
+      type: object
+      additionalProperties: false
+      required: [userId, displayName, role, teamIds]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        role:
+          $ref: '#/components/schemas/EventRole'
+        teamIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    NameEventAdmin:
+      type: object
+      additionalProperties: false
+      required: [userId, role]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [EventAdmin]
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string

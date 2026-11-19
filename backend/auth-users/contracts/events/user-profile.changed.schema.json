@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "user-profile.changed.schema.json",
+  "title": "UserProfileChanged",
+  "description": "Published by Auth & Users to farol.auth-users with routing key user-profile.changed, through the outbox (ADR-004): when an account is created at its first GET /api/v1/me (API outline §1.4) and, from US-04, when its display name changes. Consumed from events.auth-users-events and reports.auth-users-events (API outline §7.4, §7.5). Full state with a version: consumers upsert their copy and ignore a version not newer than the one they have (§7.3). Carries no e-mail (assessment M-10): an e-mail change publishes nothing (spec D5). actorUserId is the sub of the user who caused it. AMQP properties: message_id = messageId, type = UserProfileChanged, app_id = auth-users, correlation_id = the request's X-Correlation-Id, content_type application/json, persistent.",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "UserProfileChanged" },
+    "schemaVersion": { "const": 1 },
+    "producer": { "const": "auth-users" },
+    "eventId": { "type": "null", "description": "An account belongs to no Farol event" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["userId", "displayName", "version"],
+      "properties": {
+        "userId": { "type": "string", "format": "uuid", "description": "The user's sub (spec D4)" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 100, "description": "The name claim trimmed and cut to 100 characters, or the e-mail's local part (spec D5)" },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
