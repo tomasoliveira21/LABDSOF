@@ -1,0 +1,80 @@
+# #224 · Local Ollama triage evaluation run
+
+> **Issue:** [#224](https://github.com/tomasoliveira21/LABDSOF/issues/224), part of [#149](https://github.com/tomasoliveira21/LABDSOF/issues/149) (its AC-1 and AC-4 for the local run) · **Type:** docs · **Owner area:** AI triage (decision 13 of the [meeting of 15 November 2026](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md)) · **Spec rules:** [README](README.md)
+> **Sources:** [ADR-005](../Technical/adr/0005-ai-triage-provider-and-evaluation.md) decisions 2 to 4; [local AI decisions](../Technical/plans/ai-provider-evaluation.md) (K1, runtime and resilience contract, release gate steps 1 to 6); [evaluation package](../Research/architecture-investigation/evaluation/README.md) and its spec [#197](197-ai-evaluation-priority.md); local-only inference, [ADR-011](../Technical/adr/0011-deployment-and-infrastructure.md).
+
+## 1. Acceptance criteria
+
+The checks run with `python -I Docs/Research/architecture-investigation/evaluation/run_ollama.py --verify <run dir>` (each name below is printed by `verify()`) and with the scorer's `--validate` and `--self-test`.
+
+| # | Given / when / then | Covered by |
+|---|---|---|
+| AC-1 | Given the committed run directory, then its manifest names the Ollama image, version and digest, the model, its digest and quantisation, the settings of the local AI decisions, the SHA-256 of `cases.jsonl`, `system-prompt.txt` and `output.schema.json`, the runner commit, the hardware and the date, and they match the package and the runner | `224 AC-1 manifest hashes match the package`, `224 AC-1 manifest settings match the runner`, `224 AC-1 manifest names runtime, model, runner commit, hardware and date` |
+| AC-2 | Given the test run, then the predictions hold every test case once, input only and without `elapsed_ms`, and the committed scorer report is exactly what `evaluate.py --predictions … --split test` produces from them; the documents state its gate results apart from the keyword baseline and the scorer self-tests | `224 AC-2 predictions cover every case once, without elapsed_ms`, `224 AC-2 committed report is what the scorer produces`; `evaluate.py --validate` and `--self-test` |
+| AC-3 | Given a timeout, a transport error or invalid output, then the prediction is `output: null`, the raw file keeps the error, and the scorer counts it as a failure; if the runtime or hardware cannot complete the run, the failure is a gate with its evidence, not a pass | `224 AC-3 every timeout or invalid output is null, has its error and counts as a failure` |
+
+## 2. Gates
+
+No Maven module, endpoint, contract or Compose file changes, so G1 to G5 have nothing to run on; CI checks the stack on the PR.
+
+| Gate | Rule |
+|---|---|
+| Scorer checks | `--validate` and `--self-test` exit 0 with `python -I`; `--baseline` reproduces the committed report byte for byte |
+| Run checks | `run_ollama.py --verify` exits 0 on the committed run directory |
+| G6 | `guard.sh` exits 0 |
+| G7 | CHANGELOG entry; the documents named by the issue state the real evidence; every check named in §1 exists in `run_ollama.py` |
+| G8 | Independent `code-review` at `high` on the whole diff |
+| G9 | CI and SonarQube Cloud green on the PR |
+
+The offline quality gate of the package (seven checks, priority first) is **reported, never lowered**: a failing gate is a result, not a reason to change the gate.
+
+## 3. Decisions
+
+| # | Decision | Why |
+|---|---|---|
+| D1 | **Runtime: Ollama in Docker**, `ollama/ollama:0.40.16` pinned by digest, container with `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_MAX_QUEUE=1`, `OLLAMA_NO_CLOUD=1`, a named model volume and the port bound to `127.0.0.1` only | Options weighed, in this order: Docker (same image everywhere, as the Compose `ai` profile of K1); native Ollama from the release zip (only if Docker failed for a recorded reason); a recorded hardware gate (if both failed). Docker worked, so the others were not needed |
+| D2 | **Runner kept and extended**: `run_ollama.py`, standard library only, one request at a time, input only, settings of the runtime contract (temperature 0, seed 42, `num_ctx` 4096, `num_predict` 256, `think: false`, `keep_alive` 10 m, schema through `format`), 20 s single-attempt response timeout. Added: an unscored warm-up with its own 300 s timeout, `--resume` for the missing IDs after an interruption, and `--verify` for §1 | Options: write a new runner, or keep the reviewed one. It already followed the contract; the dev experiments showed that a warm-up cut at 20 s left the server busy and timed out the first scored case, so the warm-up (cold start, reported apart, plan step 5) gets a longer timeout. The scored calls keep 20 s |
+| D3 | **Prompt changed on the development split only**, then frozen before the test run (four versions, §6): clearer category definitions as `features.md` §4.2 gives them (a theft is `Safety`; `Infrastructure` includes something loose or falling that puts people at risk), *not responding* added to Critical, *a lost person who cannot look after themselves* added to High, a past incident and a question for the staff are usable descriptions, the reason in the Portuguese of Portugal, and two development cases (T065, T105) added as examples | Allowed by the README (*development examples may inform the prompt*) and the plan (*prompt tuning uses the development cases only*). Options: run the #197 prompt as it was (dev gate failed: 2 urgent misses, category 17 of 22), or tune on dev. Every wording restates the scale or decision 8; no test text enters the prompt (the scorer checks it). T065 and T105 now pass on dev by construction, so the dev numbers are optimistic. The baseline report is regenerated for the new prompt hash |
+| D4 | **One gated run on the test split, no repeated runs** | Decision of the AI triage owner of 18 November 2026; release gate step 5 makes repeated runs optional. #149 AC-4's repeated runs are not done and are not claimed |
+| D5 | **Timing is `provider_ms` in the manifest, never `elapsed_ms`** | README step 4: a direct model call is not submission-to-storage time, so it decides only the quality gate; SC3 needs the instrumented one-hour cohort (release gate step 7) |
+| D6 | Run directory `evaluation/runs/2026-11-19-local-qwen3/` with `manifest.json` (committed before the test run), `predictions-run-1.jsonl`, `raw-run-1.jsonl`, `report-run-1.json` | Plan, run artefacts list |
+
+## 4. Features, in build order
+
+1. Runner checks (§1) and the runner changes of D2.
+2. Dev experiments and frozen prompt (D3); regenerated baseline report.
+3. Manifest, committed before the test run.
+4. Gated test run, scoring, `provider_ms`, cold start and peak memory added to the manifest.
+5. Documents: evaluation README, ADR-005, local AI decisions, `responsible-ai.md`, CHANGELOG.
+
+## 5. Edge-case matrix
+
+| Case | Expected | Check |
+|---|---|---|
+| Call longer than 20 s | `output: null`, error kept, counts as a failure | `224 AC-3 every timeout or invalid output is null, has its error and counts as a failure` |
+| Reply that is not JSON, or cut at 256 tokens | `output: null` (JSON error) | same |
+| Valid JSON that breaks the schema (e.g. reason over 240 characters) | Kept as returned; the scorer marks it schema-invalid | `224 AC-2 committed report is what the scorer produces` |
+| Run interrupted | `--resume` runs only the missing IDs with the same settings; the interruption is recorded in the manifest | `224 AC-2 predictions cover every case once, without elapsed_ms` |
+| Prediction with `elapsed_ms`, a missing or a duplicate ID | Rejected | `224 AC-2 predictions cover every case once, without elapsed_ms` |
+| Prompt, dataset or schema changed after the manifest | Hash mismatch | `224 AC-1 manifest hashes match the package` |
+| Runner settings changed after the manifest | Mismatch | `224 AC-1 manifest settings match the runner` |
+| Report edited by hand | Byte mismatch | `224 AC-2 committed report is what the scorer produces` |
+| Cold model on the first call | Unscored warm-up with its own timeout; cold start reported apart | warm-up row in `raw-run-1.jsonl` |
+| Prompt injection in a description | Sent as data in `{"text": …}`; scored like any case; reasons reviewed for copied injection | `injection` slice of the report |
+
+## 6. Handoff
+
+**19 November 2026.**
+
+- Baseline on `origin/main` (94c5631): `python -I evaluate.py --validate` (121 cases, 24 dev, 97 test) and `--self-test` passed.
+- Runtime (D1): Docker Desktop 28.4.0 engine, VM with 8 GiB and 12 CPUs; `ollama/ollama:0.40.16` (`sha256:910d0d8107b538fb0894e63163eb195de0cc7aefcbc666dc62d3b18f71124592`); `qwen3:4b`, digest `359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7`, Q4_K_M confirmed by `/api/show`. No native fallback was needed.
+- Dev experiments (D3), development split only, 22 non-abstention and 2 abstention cases, about 9 to 15 s per call:
+
+| Prompt | Urgent misses | Below minimum | Category | Coverage | Abstentions | Dev gate |
+|---|---|---|---|---|---|---|
+| v1, as in #197 | 2 (T005, T060) | 3 | 17 of 22 | 20 of 22 | 2 of 2 | failed |
+| v2, category and abstention wording | 2 (T005 timed out behind the 20 s warm-up, T060) | 4 | 16 of 22 | 20 of 22 | 2 of 2 | failed |
+| v3, category definitions and examples T065, T105 | 1 (T060) | 1 | 21 of 22 | 21 of 22 | 2 of 2 | failed |
+| v4, v3 plus a lost person who cannot look after themselves in High | 0 | 0 | 21 of 22 | 21 of 22 | 2 of 2 | passed (only T085, a question for the staff, abstained) |
+
+  v4 is frozen. Red before green: after the prompt change `--self-test` failed only with `197 AC-4 committed baseline report is reproducible`, then passed with the regenerated report (only the prompt hash changed; the baseline numbers are the same).
