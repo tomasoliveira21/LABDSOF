@@ -16,6 +16,9 @@ import tools.jackson.databind.json.JsonMapper;
 @Repository
 public class JdbcOutbox implements Outbox {
 
+  /** How much of a broker error is kept in {@code last_error} (#191: the same bound as Auth & Users'). */
+  public static final int MAX_ERROR_LENGTH = 500;
+
   /** One row claimed for publishing. */
   public record Pending(long id, UUID messageId, String exchange, String routingKey, String type,
       String body, int attempts) {}
@@ -85,8 +88,21 @@ public class JdbcOutbox implements Outbox {
         """)
         .param("attempts", attempts)
         .param("seconds", backoff.toSeconds())
-        .param("error", error)
+        .param("error", bounded(error))
         .param("id", id)
         .update();
+  }
+
+  /**
+   * PostgreSQL text cannot hold NUL, and a failing {@code markFailed} would roll back the batch and leave the row
+   * without backoff: NUL becomes U+FFFD, and the text is cut to {@link #MAX_ERROR_LENGTH} code points, never inside a
+   * surrogate pair. Ported from Auth & Users (#191, Bruno's review of PR 215); the duplication itself is #226.
+   */
+  static String bounded(String error) {
+    var clean = error.replace('\u0000', '�');
+    if (clean.codePointCount(0, clean.length()) <= MAX_ERROR_LENGTH) {
+      return clean;
+    }
+    return clean.substring(0, clean.offsetByCodePoints(0, MAX_ERROR_LENGTH));
   }
 }

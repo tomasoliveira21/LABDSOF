@@ -1,8 +1,10 @@
 FROM maven:3.9.9-eclipse-temurin-21-alpine@sha256:5a8b906c4faa11d33f6c74758f67db8eac25441e14b0729f6d50ff78992be58a AS build
 WORKDIR /build
 COPY pom.xml ./
+COPY contracts ./contracts
 COPY src ./src
-RUN mvn --batch-mode --no-transfer-progress verify
+# Unit tests only: the *IT tests need Docker (Testcontainers) and run in `mvn verify` locally and in CI (spec D1, #214 D17).
+RUN mvn --batch-mode --no-transfer-progress package
 
 FROM eclipse-temurin:21-jre-alpine@sha256:82cf3d9ccbe1ed46252008d51b2f2329e6b9e8a2f4394c4bebefc3ea7f4b1372
 WORKDIR /app

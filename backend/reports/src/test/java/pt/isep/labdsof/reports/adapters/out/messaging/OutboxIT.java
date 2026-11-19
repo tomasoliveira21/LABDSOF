@@ -89,6 +89,25 @@ class OutboxIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("191 review a failure reason is stored without NUL characters and cut to 500 characters")
+  void boundsTheReason() {
+    var messageId = submit();
+    long id = jdbc.sql("SELECT id FROM outbox WHERE message_id = :id").param("id", messageId)
+        .query(Long.class).single();
+    var emoji = new String(Character.toChars(0x1F600));
+    var reason = "\u0000" + "x".repeat(498) + emoji + "y".repeat(100);
+
+    outbox.markFailed(id, 1, Duration.ofSeconds(2), reason);
+
+    var stored = (String) row(messageId).get("last_error");
+    assertThat(stored.codePointCount(0, stored.length())).isEqualTo(JdbcOutbox.MAX_ERROR_LENGTH);
+    assertThat(stored).isEqualTo("�" + "x".repeat(498) + emoji);
+
+    outbox.markFailed(id, 2, Duration.ofSeconds(2), "short reason");
+    assertThat(row(messageId)).containsEntry("last_error", "short reason");
+  }
+
+  @Test
   @DisplayName("194 AC-2 the request and its outbox row commit or roll back together")
   void sameTransaction() {
     var client = UUID.randomUUID();
