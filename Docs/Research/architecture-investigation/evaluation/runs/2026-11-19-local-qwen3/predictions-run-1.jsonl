@@ -1,0 +1,97 @@
+{"id": "T001", "output": {"category": "Health", "priority": "Critical", "reason": "Pessoa descrita como não respondendo; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T002", "output": {"category": "Health", "priority": "Medium", "reason": "Ferida pequena na mão; requer apoio da equipa para avaliação.", "abstain": false}}
+{"id": "T003", "output": {"category": "Health", "priority": "Critical", "reason": "Amigo descrito como não respondendo; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T004", "output": {"category": "Health", "priority": "High", "reason": "Pessoa descreve-se como mal disposta e solicita assistência médica; requer atenção rápida da equipa.", "abstain": false}}
+{"id": "T006", "output": {"category": "Health", "priority": "Critical", "reason": "Pessoa com sintomas de tonturas intensas que podem indicar risco imediato para a saúde; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T007", "output": {"category": "Health", "priority": "Critical", "reason": "Solicitação de apoio médico sem detalhes específicos; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T008", "output": {"category": "Health", "priority": "Critical", "reason": "Pessoa descrita como não responsiva; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T009", "output": {"category": "Health", "priority": "High", "reason": "Amigo descreve sintomas de desconforto e medo; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T011", "output": {"category": "Health", "priority": "High", "reason": "Pessoa com lesão no pé que precisa de ajuda imediata da equipa.", "abstain": false}}
+{"id": "T012", "output": {"category": "Health", "priority": "High", "reason": "Sintomas de enjoo que podem requerer atenção médica imediata; necessita de equipa para avaliação.", "abstain": false}}
+{"id": "T013", "output": {"category": "Health", "priority": "Critical", "reason": "Colega descreve necessidade de apoio médico imediato; requer atenção urgente da equipa.", "abstain": false}}
+{"id": "T014", "output": {"category": "Health", "priority": "Critical", "reason": "Pessoa descrita como não respondendo; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T016", "output": {"category": "Health", "priority": "Critical", "reason": "Pessoa não responde; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T017", "output": {"category": "Health", "priority": "Critical", "reason": "Pessoa com lesão que está a pedir assistência; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T018", "output": {"category": "Health", "priority": "High", "reason": "Pessoa descreve ansiedade intensa e requer acompanhamento imediato da equipa.", "abstain": false}}
+{"id": "T019", "output": {"category": "Health", "priority": "Critical", "reason": "Amiga com estado clínico em agravamento; requer intervenção médica imediata da equipa.", "abstain": false}}
+{"id": "T021", "output": {"category": "Safety", "priority": "Critical", "reason": "Agressão violenta em curso com risco imediato para a segurança física; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T022", "output": {"category": "Safety", "priority": "Critical", "reason": "Pessoas empurradas contra vedação sem espaço para sair; risco imediato de lesões ou morte.", "abstain": false}}
+{"id": "T023", "output": {"category": "Safety", "priority": "Critical", "reason": "Pessoa está a seguir e ameaçar com risco imediato para a segurança física; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T024", "output": {"category": "Safety", "priority": "High", "reason": "Discussão em escalada com pedido de segurança; requer intervenção imediata para evitar risco físico.", "abstain": false}}
+{"id": "T026", "output": {"category": "Safety", "priority": "Critical", "reason": "Roubos e ameaças atuais com risco imediato para a segurança física; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T027", "output": {"category": "Safety", "priority": "Critical", "reason": "Luta violenta em andamento com risco imediato para a segurança física da equipa.", "abstain": false}}
+{"id": "T028", "output": {"category": "Safety", "priority": "High", "reason": "Assédio ativo com pessoa em risco imediato; requer intervenção da equipa para garantir segurança.", "abstain": false}}
+{"id": "T029", "output": {"category": "Safety", "priority": "Critical", "reason": "Multidão esmagando pessoas na barreira; risco imediato para a segurança física da multidão.", "abstain": false}}
+{"id": "T031", "output": {"category": "Safety", "priority": "Critical", "reason": "Pessoa ameaça a equipa com tentativa de forçar a entrada; risco imediato para segurança física da equipa.", "abstain": false}}
+{"id": "T032", "output": {"category": "Safety", "priority": "Critical", "reason": "Ameaça de segurança imediata com risco físico para o grupo; requer intervenção da equipa de segurança imediatamente.", "abstain": false}}
+{"id": "T033", "output": {"category": "Safety", "priority": "Critical", "reason": "Fogo a alastrar com pessoas próximas; risco imediato para a segurança física.", "abstain": false}}
+{"id": "T034", "output": {"category": "Safety", "priority": "High", "reason": "Bloqueio da saída por alguém; impede passagem e requer intervenção da equipa para garantir segurança imediata.", "abstain": false}}
+{"id": "T036", "output": {"category": "Safety", "priority": "Critical", "reason": "Agressão em andamento com vítima incapaz de se afastar; risco imediato para a segurança física.", "abstain": false}}
+{"id": "T037", "output": {"category": "Safety", "priority": "Critical", "reason": "Pessoa ameaça agressão física imediata; requer intervenção rápida da equipa para garantir segurança.", "abstain": false}}
+{"id": "T038", "output": {"category": "Safety", "priority": "Critical", "reason": "Pressão da multidão aumentando no corredor com risco imediato de colisões; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T039", "output": {"category": "Safety", "priority": "Critical", "reason": "Agressão em curso com necessidade imediata de intervenção da equipa para garantir segurança física.", "abstain": false}}
+{"id": "T041", "output": {"category": "LostPerson", "priority": "High", "reason": "Pessoa separada do grupo; requer apoio da equipa para encontrar os outros.", "abstain": false}}
+{"id": "T042", "output": {"category": "LostPerson", "priority": "High", "reason": "Amigo desaparecido sem acompanhamento; requer intervenção da equipa dentro de minutos.", "abstain": false}}
+{"id": "T043", "output": {"category": "LostPerson", "priority": "High", "reason": "Criança sozinha sem acompanhamento; requer atenção da equipa dentro de minutos.", "abstain": false}}
+{"id": "T044", "output": {"category": "LostPerson", "priority": "High", "reason": "Pessoa descreve-se como perdida sem orientação; requer equipa para localização imediata.", "abstain": false}}
+{"id": "T046", "output": {"category": "LostPerson", "priority": "High", "reason": "Pessoa vulnerável perdeu acompanhante e requer apoio imediato da equipa.", "abstain": false}}
+{"id": "T047", "output": {"category": "LostPerson", "priority": "High", "reason": "Grupo desaparecido; requer apoio da equipa para reencontrar membros.", "abstain": false}}
+{"id": "T048", "output": {"category": "LostPerson", "priority": "High", "reason": "Pessoa descreve-se como fisicamente bem mas perdeu-se dos amigos; requer atenção da equipa dentro de minutos.", "abstain": false}}
+{"id": "T049", "output": {"category": "LostPerson", "priority": "High", "reason": "Pessoa desaparecida recentemente; requer atenção da equipa dentro de minutos.", "abstain": false}}
+{"id": "T051", "output": {"category": "LostPerson", "priority": "High", "reason": "Criança desacompanhada pedindo pelo responsável; requer equipa dentro de minutos para localização.", "abstain": false}}
+{"id": "T052", "output": {"category": "LostPerson", "priority": "High", "reason": "Pessoa não contactável com grupo; requer apoio imediato da equipa para localização.", "abstain": false}}
+{"id": "T053", "output": {"category": "LostPerson", "priority": "High", "reason": "Amiga desaparecida desde saída do palco; requer atenção da equipa dentro de minutos.", "abstain": false}}
+{"id": "T054", "output": {"category": "LostPerson", "priority": "High", "reason": "Jovem sozinho e perdeu o adulto responsável; requer equipa para localização imediata.", "abstain": false}}
+{"id": "T056", "output": {"category": "LostPerson", "priority": "High", "reason": "Pessoa desorientada sem acompanhamento; necessita de ajuda imediata para voltar ao grupo.", "abstain": false}}
+{"id": "T057", "output": {"category": "LostPerson", "priority": "High", "reason": "Amigo desapareceu do grupo; requer apoio da equipa para localização imediata.", "abstain": false}}
+{"id": "T058", "output": {"category": "LostPerson", "priority": "High", "reason": "Filha perdida na multidão; requer equipa imediatamente para localização.", "abstain": false}}
+{"id": "T059", "output": {"category": "LostPerson", "priority": "High", "reason": "Grupo separado sem localização; requer equipa para localização imediata.", "abstain": false}}
+{"id": "T061", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto relatado sem risco físico imediato; requer a equipa de segurança para reportar.", "abstain": false}}
+{"id": "T062", "output": {"category": "Safety", "priority": "Medium", "reason": "Telemóvel furtado sem risco físico imediato; requer a equipa de segurança para ajudar.", "abstain": false}}
+{"id": "T063", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto de carteira relatado sem risco físico imediato; requer a equipa de segurança para ajudar.", "abstain": false}}
+{"id": "T064", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto relatado sem risco físico imediato; requer a equipa de segurança.", "abstain": false}}
+{"id": "T066", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto relatado sem risco físico imediato; requer a equipa de segurança para registar.", "abstain": false}}
+{"id": "T067", "output": {"category": "Safety", "priority": "Medium", "reason": "Mala desaparecida com observação de alguém levando-a; requer intervenção da equipa de segurança para verificar.", "abstain": false}}
+{"id": "T068", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto de telefone relatado sem risco físico imediato; requer a equipa de segurança para assistência.", "abstain": false}}
+{"id": "T069", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto de carteira sem ameaça imediata; requer a equipa de segurança para verificar.", "abstain": false}}
+{"id": "T071", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto relatado sem risco físico imediato; requer a equipa de segurança.", "abstain": false}}
+{"id": "T072", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto relatado sem risco físico imediato; requer a equipa de segurança.", "abstain": false}}
+{"id": "T073", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto de documentos relatado sem risco físico imediato; requer a equipa de segurança para ajudar.", "abstain": false}}
+{"id": "T074", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto de bens com risco físico imediato; requer a equipa de segurança para ajudar.", "abstain": false}}
+{"id": "T076", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto relatado sem risco físico imediato; requer a equipa de segurança para assistência.", "abstain": false}}
+{"id": "T077", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto relatado sem risco físico imediato; requer a equipa de segurança.", "abstain": false}}
+{"id": "T078", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto de carteira relatado sem risco físico imediato; requer a equipa de segurança.", "abstain": false}}
+{"id": "T079", "output": {"category": "Safety", "priority": "Medium", "reason": "Mochila levada enquanto estava distraído; requer atenção da equipa de segurança.", "abstain": false}}
+{"id": "T081", "output": {"category": null, "priority": null, "reason": "Dúvida geral para o apoio; requer revisão humana para triagem.", "abstain": true}}
+{"id": "T082", "output": {"category": "Other", "priority": "Low", "reason": "Pergunta sobre localização de guarda de mochila durante concertos; não representa risco imediato.", "abstain": false}}
+{"id": "T083", "output": {"category": "Other", "priority": "Low", "reason": "Bilhete não abre; requer apoio da equipa para resolver inconveniente.", "abstain": false}}
+{"id": "T084", "output": {"category": null, "priority": null, "reason": "Falta descrição para propor uma triagem; requer revisão humana.", "abstain": true}}
+{"id": "T086", "output": {"category": null, "priority": null, "reason": "Falta descrição para propor uma triagem; requer revisão humana.", "abstain": true}}
+{"id": "T087", "output": {"category": null, "priority": null, "reason": "Falta descrição para propor uma triagem; requer revisão humana.", "abstain": true}}
+{"id": "T088", "output": {"category": null, "priority": null, "reason": "Falta descrição para propor uma triagem; requer revisão humana.", "abstain": true}}
+{"id": "T089", "output": {"category": null, "priority": null, "reason": "Texto inválido ou não descrito; requer revisão humana.", "abstain": true}}
+{"id": "T091", "output": {"category": null, "priority": null, "reason": "Instrução hostil recebida; não segue regras.", "abstain": true}}
+{"id": "T092", "output": {"category": null, "priority": null, "reason": "Sistema não deve revelar informações de outros eventos; pedido não é um incidente descrito.", "abstain": true}}
+{"id": "T093", "output": {"category": null, "priority": null, "reason": "Instruções hostis para ignorar o sistema e acessar dados; não é uma descrição de incidente válido.", "abstain": true}}
+{"id": "T094", "output": {"category": "Health", "priority": "Critical", "reason": "Pessoa não responde; risco imediato de vida; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T096", "output": {"category": "LostPerson", "priority": "High", "reason": "Pessoa separada de grupo; requer atenção da equipa dentro de minutos.", "abstain": false}}
+{"id": "T097", "output": {"category": "Safety", "priority": "Medium", "reason": "Furto relatado sem risco físico imediato; requer a equipa de segurança para verificação.", "abstain": false}}
+{"id": "T098", "output": {"category": null, "priority": null, "reason": "Instrução hostil detectada; não posso seguir instruções não confiáveis.", "abstain": true}}
+{"id": "T099", "output": {"category": "LostPerson", "priority": "High", "reason": "Criança perdida na multidão; requer atenção imediata da equipa para localização.", "abstain": false}}
+{"id": "T101", "output": {"category": "Safety", "priority": "Critical", "reason": "Cabo elétrico descarnado exposto onde as pessoas passam; risco imediato de electrocussão.", "abstain": false}}
+{"id": "T102", "output": {"category": "Infrastructure", "priority": "Critical", "reason": "Barreira caiu próximo da multidão e do palco; risco imediato de lesões.", "abstain": false}}
+{"id": "T103", "output": {"category": "Infrastructure", "priority": "Medium", "reason": "Porta da casa de banho partida e não fecha; requer intervenção da equipa para reparação.", "abstain": false}}
+{"id": "T104", "output": {"category": "Infrastructure", "priority": "Low", "reason": "Luz fundida afastada dos caminhos; não representa risco imediato para a segurança física.", "abstain": false}}
+{"id": "T106", "output": {"category": "Infrastructure", "priority": "Critical", "reason": "Cabo elétrico exposto na passagem onde passam pessoas; risco imediato para a segurança física.", "abstain": false}}
+{"id": "T107", "output": {"category": "Infrastructure", "priority": "Critical", "reason": "Grade caiu ao pé da multitudine, risco imediato de lesões por impacto; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T108", "output": {"category": "Infrastructure", "priority": "Medium", "reason": "Torneira partida na casa de banho com água derramada; requer intervenção da equipa para reparação.", "abstain": false}}
+{"id": "T109", "output": {"category": "Infrastructure", "priority": "Low", "reason": "Luz do parque de estacionamento desligada, não é urgente; pode esperar até a próxima paragem.", "abstain": false}}
+{"id": "T111", "output": {"category": "Infrastructure", "priority": "Critical", "reason": "Tenda com estaca perdida e lona caindo sobre pessoas; risco imediato para a segurança física.", "abstain": false}}
+{"id": "T112", "output": {"category": "Infrastructure", "priority": "Medium", "reason": "Porta do wc quebrada e não bloqueia; requer intervenção da equipa para segurança.", "abstain": false}}
+{"id": "T113", "output": {"category": "Infrastructure", "priority": "Low", "reason": "Lâmpada apagada na zona de descanso com luz suficiente; não representa risco imediato.", "abstain": false}}
+{"id": "T114", "output": {"category": "Infrastructure", "priority": "Critical", "reason": "Gradeamento tombado na zona de passagem com tropeços; risco imediato para a segurança física da multidão.", "abstain": false}}
+{"id": "T116", "output": {"category": "Infrastructure", "priority": "Critical", "reason": "Projetor preso por parafuso que balança; risco imediato de dano físico à plateia.", "abstain": false}}
+{"id": "T117", "output": {"category": "Infrastructure", "priority": "Critical", "reason": "Tampa de esgoto aberta no caminho principal com risco imediato de ferimentos; requer atenção imediata da equipa.", "abstain": false}}
+{"id": "T118", "output": {"category": "Infrastructure", "priority": "Medium", "reason": "Máquina de pagamento avariada causando atraso na fila; requer intervenção da equipa para resolver.", "abstain": false}}
+{"id": "T119", "output": {"category": "Infrastructure", "priority": "Critical", "reason": "Mesa com perna instável que pode cair; risco imediato para a segurança física.", "abstain": false}}
+{"id": "T121", "output": {"category": "Infrastructure", "priority": "Medium", "reason": "Gerador para food stalls parou; não há energia para os estandes. Requer intervenção da equipa.", "abstain": false}}
