@@ -58,7 +58,10 @@ public final class Jwks {
     return "http://127.0.0.1:" + server.getAddress().getPort() + "/certs";
   }
 
-  /** Claims of a good token; the other builders change one of them. */
+  /**
+   * Claims of a good token; the other builders change one of them. {@code email_verified} is true, as Keycloak sends
+   * it for an ordinary user: only then is the e-mail stored (D5), so the unverified cases set the claim themselves.
+   */
   public JWTClaimsSet.Builder claims(String subject) {
     var expiry = Instant.now().plusSeconds(300);
     return new JWTClaimsSet.Builder()
@@ -67,7 +70,8 @@ public final class Jwks {
         .audience(List.of(AUDIENCE))
         .issueTime(Date.from(expiry.minusSeconds(300)))
         .expirationTime(Date.from(expiry))
-        .claim("email", subject + "@farol.test");
+        .claim("email", subject + "@farol.test")
+        .claim("email_verified", true);
   }
 
   public String sign(JWTClaimsSet claims) {

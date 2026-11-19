@@ -40,10 +40,12 @@ class MeIT extends IntegrationTest {
         .param("id", user).query(String.class).single();
   }
 
+  /** email_verified false, so two fixtures may share an address: these tests are about the status, not the e-mail. */
   private void insertAccount(UUID user, String email, String status) {
     jdbc.sql("""
-        INSERT INTO user_account (user_id, email, display_name, status, version, created_at, updated_at)
-        VALUES (:id, :email, 'Ana', :status, 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+        INSERT INTO user_account (user_id, email, email_verified, display_name, status, version, created_at,
+            updated_at)
+        VALUES (:id, :email, false, 'Ana', :status, 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
         """).param("id", user).param("email", email).param("status", status).update();
   }
 

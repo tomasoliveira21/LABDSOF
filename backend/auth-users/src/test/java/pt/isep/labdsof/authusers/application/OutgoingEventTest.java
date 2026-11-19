@@ -18,7 +18,7 @@ class OutgoingEventTest {
   private static final UUID USER = UUID.fromString("11111111-2222-3333-4444-555555555555");
   private static final Instant AT = Instant.parse("2026-11-17T10:00:00.123456Z");
 
-  private final UserAccount account = UserAccount.provision(USER, "ana@farol.test", "Ana", AT);
+  private final UserAccount account = UserAccount.provision(USER, "ana@farol.test", true, "Ana", AT);
 
   @Test
   @DisplayName("191 AC-5 the envelope has the fields of API outline §7.1, producer auth-users and no eventId")

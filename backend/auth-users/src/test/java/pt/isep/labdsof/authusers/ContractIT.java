@@ -61,16 +61,16 @@ class ContractIT extends IntegrationTest {
 
   private static Stream<Arguments> enumCases() {
     return Stream.of(
-        enumCase(GlobalRole.FAROL_ADMIN, "FarolAdmin", GlobalRole::fromValue),
-        enumCase(EventRole.EVENT_ADMIN, "EventAdmin", EventRole::fromValue),
-        enumCase(EventRole.REGULAR_USER, "RegularUser", EventRole::fromValue),
-        enumCase(EventStatus.DRAFT, "Draft", EventStatus::fromValue),
-        enumCase(EventStatus.PUBLISHED, "Published", EventStatus::fromValue),
-        enumCase(EventStatus.SUSPENDED, "Suspended", EventStatus::fromValue),
-        enumCase(EventStatus.CLOSED, "Closed", EventStatus::fromValue),
-        enumCase(NameEventAdmin.RoleEnum.EVENT_ADMIN, "EventAdmin", NameEventAdmin.RoleEnum::fromValue),
-        enumCase(ServiceStatus.ServiceEnum.AUTH_USERS, "auth-users", ServiceStatus.ServiceEnum::fromValue),
-        enumCase(ServiceStatus.StatusEnum.OK, "ok", ServiceStatus.StatusEnum::fromValue));
+        enumCase(GlobalRole.FarolAdmin, "FarolAdmin", GlobalRole::fromValue),
+        enumCase(EventRole.EventAdmin, "EventAdmin", EventRole::fromValue),
+        enumCase(EventRole.RegularUser, "RegularUser", EventRole::fromValue),
+        enumCase(EventStatus.Draft, "Draft", EventStatus::fromValue),
+        enumCase(EventStatus.Published, "Published", EventStatus::fromValue),
+        enumCase(EventStatus.Suspended, "Suspended", EventStatus::fromValue),
+        enumCase(EventStatus.Closed, "Closed", EventStatus::fromValue),
+        enumCase(NameEventAdmin.RoleEnum.EventAdmin, "EventAdmin", NameEventAdmin.RoleEnum::fromValue),
+        enumCase(ServiceStatus.ServiceEnum.authUsers, "auth-users", ServiceStatus.ServiceEnum::fromValue),
+        enumCase(ServiceStatus.StatusEnum.ok, "ok", ServiceStatus.StatusEnum::fromValue));
   }
 
   private static Arguments enumCase(Enum<?> constant, String value, Function<String, Object> fromValue) {
@@ -90,27 +90,27 @@ class ContractIT extends IntegrationTest {
   /** Each case carries its JSON without the closing brace, so the unknown field can be appended. */
   private static Stream<Arguments> models() {
     return Stream.of(
-        model(new Me(ID, "ana@farol.test", "Ana", List.of(GlobalRole.FAROL_ADMIN)),
+        model(new Me(ID, "ana@farol.test", "Ana", List.of(GlobalRole.FarolAdmin)),
             Set.of("userId", "email", "displayName", "globalRoles"),
             "{\"userId\":\"" + ID + "\",\"email\":\"ana@farol.test\",\"displayName\":\"Ana\","
                 + "\"globalRoles\":[\"FarolAdmin\"]"),
-        model(new Membership(ID, "Festival", EventStatus.PUBLISHED, EventRole.EVENT_ADMIN, List.of(OTHER)),
+        model(new Membership(ID, "Festival", EventStatus.Published, EventRole.EventAdmin, List.of(OTHER)),
             Set.of("eventId", "eventName", "eventStatus", "role", "teamIds"),
             "{\"eventId\":\"" + ID + "\",\"eventName\":\"Festival\",\"eventStatus\":\"Published\","
                 + "\"role\":\"EventAdmin\",\"teamIds\":[\"" + OTHER + "\"]"),
-        model(new Member(ID, "Ana", EventRole.REGULAR_USER, List.of(OTHER)),
+        model(new Member(ID, "Ana", EventRole.RegularUser, List.of(OTHER)),
             Set.of("userId", "displayName", "role", "teamIds"),
             "{\"userId\":\"" + ID + "\",\"displayName\":\"Ana\",\"role\":\"RegularUser\","
                 + "\"teamIds\":[\"" + OTHER + "\"]"),
         model(new AccountSummary(ID, "Ana"), Set.of("userId", "displayName"),
             "{\"userId\":\"" + ID + "\",\"displayName\":\"Ana\""),
-        model(new NameEventAdmin(ID, NameEventAdmin.RoleEnum.EVENT_ADMIN), Set.of("userId", "role"),
+        model(new NameEventAdmin(ID, NameEventAdmin.RoleEnum.EventAdmin), Set.of("userId", "role"),
             "{\"userId\":\"" + ID + "\",\"role\":\"EventAdmin\""),
         model(new Problem("about:blank", "Not found", 404, "No such thing", "/api/v1/x"),
             Set.of("type", "title", "status", "detail", "instance"),
             "{\"type\":\"about:blank\",\"title\":\"Not found\",\"status\":404,"
                 + "\"detail\":\"No such thing\",\"instance\":\"/api/v1/x\""),
-        model(new ServiceStatus(ServiceStatus.ServiceEnum.AUTH_USERS, ServiceStatus.StatusEnum.OK),
+        model(new ServiceStatus(ServiceStatus.ServiceEnum.authUsers, ServiceStatus.StatusEnum.ok),
             Set.of("service", "status"), "{\"service\":\"auth-users\",\"status\":\"ok\""));
   }
 
@@ -153,8 +153,8 @@ class ContractIT extends IntegrationTest {
   @DisplayName("191 D2 a missing list is read as an empty list")
   void missingListIsEmpty() {
     assertThat(new Me(ID, "a@b.test", "A", null).globalRoles()).isEmpty();
-    assertThat(new Membership(ID, "E", EventStatus.DRAFT, EventRole.REGULAR_USER, null).teamIds()).isEmpty();
-    assertThat(new Member(ID, "A", EventRole.REGULAR_USER, null).teamIds()).isEmpty();
+    assertThat(new Membership(ID, "E", EventStatus.Draft, EventRole.RegularUser, null).teamIds()).isEmpty();
+    assertThat(new Member(ID, "A", EventRole.RegularUser, null).teamIds()).isEmpty();
 
     var me = json.readValue("{\"userId\":\"%s\",\"email\":\"a@b.test\",\"displayName\":\"A\"}".formatted(ID),
         Me.class);

@@ -178,7 +178,7 @@ class EventContractIT extends IntegrationTest {
     var id = UUID.randomUUID();
     var event = "UserProfileChanged".equals(type)
         ? OutgoingEvent.userProfileChanged(UUID.randomUUID(),
-            UserAccount.provision(id, id + "@farol.test", "Ana Silva", Instant.now()), id.toString())
+            UserAccount.provision(id, id + "@farol.test", true, "Ana Silva", Instant.now()), id.toString())
         : OutgoingEvent.globalRoleChanged(UUID.randomUUID(), id, GlobalRole.FarolAdmin, true, 1, Instant.now(), "");
     return json.writeValueAsString(event.envelope());
   }

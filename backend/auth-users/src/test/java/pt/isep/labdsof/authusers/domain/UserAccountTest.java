@@ -63,10 +63,44 @@ class UserAccountTest {
     assertThat(UserAccount.displayNameFrom(null, "a@b")).isEqualTo("a");
   }
 
+  @ParameterizedTest(name = "e-mail [{0}]")
+  @ValueSource(strings = {"  rita@farol.test", "rita @farol.test ", "\trita\t@farol.test"})
+  @DisplayName("191 review a fallback name is stripped, so spaces around the local part never reach the column")
+  void fallbackNameIsStripped(String email) {
+    assertThat(UserAccount.displayNameFrom(null, email)).isEqualTo("rita");
+  }
+
+  @ParameterizedTest(name = "e-mail [{0}]")
+  @ValueSource(strings = {" @farol.test", "   @farol.test", "\t@x.pt"})
+  @DisplayName("191 review an e-mail with only spaces before the @ falls back to the whole address, never blank")
+  void blankLocalPartFallsBackToWholeEmail(String email) {
+    var shown = UserAccount.displayNameFrom(null, email);
+
+    assertThat(shown).isEqualTo(email.strip()).isNotBlank();
+  }
+
+  @Test
+  @DisplayName("191 review a NUL in the name or the e-mail is dropped: PostgreSQL text columns reject it")
+  void nulIsDroppedFromTheDisplayName() {
+    assertThat(UserAccount.displayNameFrom("An\0a Silva", "x@farol.test")).isEqualTo("Ana Silva");
+    assertThat(UserAccount.displayNameFrom("\0", "rita@farol.test")).isEqualTo("rita");
+    assertThat(UserAccount.displayNameFrom(null, "ri\0ta@farol.test")).isEqualTo("rita");
+    assertThat(UserAccount.displayNameFrom("\0  \0", "\0@farol.test")).isEqualTo("@farol.test");
+    assertThat(UserAccount.provision(USER, "rita@farol.test", false, "An\0a", NOW).displayName())
+        .isEqualTo("Ana");
+  }
+
+  @Test
+  @DisplayName("191 review provision records whether the token's e-mail was verified")
+  void provisionRecordsWhetherTheEmailIsVerified() {
+    assertThat(UserAccount.provision(USER, "ana@farol.test", true, "Ana", NOW).emailVerified()).isTrue();
+    assertThat(UserAccount.provision(USER, "ana@farol.test", false, "Ana", NOW).emailVerified()).isFalse();
+  }
+
   @Test
   @DisplayName("191 AC-5 a new account is Active at version 1 with the token's id and e-mail")
   void newAccountIsActiveAtVersionOne() {
-    var account = UserAccount.provision(USER, "ana@farol.test", "Ana", NOW);
+    var account = UserAccount.provision(USER, "ana@farol.test", true, "Ana", NOW);
 
     assertThat(account.userId()).isEqualTo(USER);
     assertThat(account.email()).isEqualTo("ana@farol.test");
@@ -78,12 +112,13 @@ class UserAccountTest {
   @Test
   @DisplayName("191 AC-5 a new e-mail keeps the name, status, version and creation time")
   void newEmailKeepsTheRest() {
-    var original = new UserAccount(USER, "old@farol.test", "Ana", AccountStatus.Active, 7,
+    var original = new UserAccount(USER, "old@farol.test", false, "Ana", AccountStatus.Active, 7,
         Instant.parse("2026-01-01T00:00:00Z"), Instant.parse("2026-01-02T00:00:00Z"));
 
-    var changed = original.withEmail("new@farol.test", NOW);
+    var changed = original.withEmail("new@farol.test", true, NOW);
 
     assertThat(changed.email()).isEqualTo("new@farol.test");
+    assertThat(changed.emailVerified()).isTrue();
     assertThat(changed.displayName()).isEqualTo("Ana");
     assertThat(changed.status()).isEqualTo(AccountStatus.Active);
     assertThat(changed.version()).isEqualTo(7);
@@ -95,7 +130,7 @@ class UserAccountTest {
   @Test
   @DisplayName("191 AC-5 times are kept to the microsecond, as the database stores them")
   void timesAreKeptToTheMicrosecond() {
-    var account = UserAccount.provision(USER, "ana@farol.test", "Ana", NOW);
+    var account = UserAccount.provision(USER, "ana@farol.test", true, "Ana", NOW);
 
     assertThat(account.createdAt()).isEqualTo(Instant.parse("2026-11-17T10:00:00.123456Z"));
     assertThat(account.updatedAt()).isEqualTo(account.createdAt());

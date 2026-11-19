@@ -2,16 +2,23 @@
 -- user_id is the token's sub (a UUID, D4). States follow the proposal of 15 November 2026 §4 (#198 still open).
 
 CREATE TABLE user_account (
-    user_id      uuid        PRIMARY KEY,
-    email        text        NOT NULL,
-    display_name text        NOT NULL
+    user_id        uuid        PRIMARY KEY,
+    email          text        NOT NULL,
+    -- Whether Keycloak had verified the e-mail above when it was last written (D5): only then is it trustworthy
+    email_verified boolean     NOT NULL,
+    display_name   text        NOT NULL
         CONSTRAINT user_account_display_name_length CHECK (char_length(display_name) BETWEEN 1 AND 100),
-    status       text        NOT NULL
+    status         text        NOT NULL
         CONSTRAINT user_account_status CHECK (status IN ('Active', 'Disabled', 'DeletionPending')),
-    version      bigint      NOT NULL CONSTRAINT user_account_version CHECK (version >= 1),
-    created_at   timestamptz NOT NULL,
-    updated_at   timestamptz NOT NULL
+    version        bigint      NOT NULL CONSTRAINT user_account_version CHECK (version >= 1),
+    created_at     timestamptz NOT NULL,
+    updated_at     timestamptz NOT NULL
 );
+
+-- Two accounts may never hold the same verified e-mail (D5): Keycloak keeps verified e-mails unique in the realm, and
+-- US-06's GET /accounts?email= returns a single account, so the lookup reads only verified rows. An unverified copy of
+-- the same address is allowed and is never matched: it is only what the token said, and nobody may act on it.
+CREATE UNIQUE INDEX user_account_verified_email ON user_account (lower(email)) WHERE email_verified;
 
 -- Only the sub and when it was deleted (API outline §2): refuses tokens issued before the deletion.
 CREATE TABLE user_tombstone (

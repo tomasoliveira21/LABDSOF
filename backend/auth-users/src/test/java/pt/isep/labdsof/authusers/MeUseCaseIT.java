@@ -54,10 +54,12 @@ class MeUseCaseIT extends IntegrationTest {
         .param("id", user).query(Long.class).single();
   }
 
+  /** email_verified false, so two fixtures may share an address: these tests are about the status, not the e-mail. */
   private void insertAccount(UUID user, String email, String status) {
     jdbc.sql("""
-        INSERT INTO user_account (user_id, email, display_name, status, version, created_at, updated_at)
-        VALUES (:id, :email, 'Ana', :status, 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+        INSERT INTO user_account (user_id, email, email_verified, display_name, status, version, created_at,
+            updated_at)
+        VALUES (:id, :email, false, 'Ana', :status, 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
         """).param("id", user).param("email", email).param("status", status).update();
   }
 
@@ -130,6 +132,71 @@ class MeUseCaseIT extends IntegrationTest {
     assertThat(third.account().version()).isEqualTo(1);
     assertThat(third.account().createdAt()).isEqualTo(first.account().createdAt());
     assertThat(emailOf(user)).isEqualTo("ana.new@farol.test");
+    assertThat(outboxRows(user)).isEqualTo(1);
+  }
+
+  private boolean verifiedOf(UUID user) {
+    return jdbc.sql("SELECT email_verified FROM user_account WHERE user_id = :id")
+        .param("id", user).query(Boolean.class).single();
+  }
+
+  @Test
+  @DisplayName("191 review an unverified token never replaces the stored e-mail on the real schema")
+  void anUnverifiedTokenDoesNotRefreshTheStoredEmail() {
+    var user = UUID.randomUUID();
+    var email = "rita-" + UUID.randomUUID() + "@farol.test";
+    service.me(identity(user, email));
+
+    var result = service.me(new Identity(user, "taken-over-" + UUID.randomUUID() + "@farol.test", false, "Rita"));
+
+    assertThat(result.account().email()).isEqualTo(email);
+    assertThat(emailOf(user)).isEqualTo(email);
+    assertThat(verifiedOf(user)).isTrue();
+  }
+
+  @Test
+  @DisplayName("191 review a verified caller takes the address from the stale account, so the unique index of D3 "
+      + "still holds")
+  void aVerifiedCallerTakesTheAddressOver() {
+    var shared = "shared-" + UUID.randomUUID() + "@farol.test";
+    var stale = UUID.randomUUID();
+    var current = UUID.randomUUID();
+    service.me(identity(stale, shared));
+
+    service.me(identity(current, shared));
+
+    assertThat(verifiedOf(stale)).isFalse();
+    assertThat(emailOf(stale)).isEqualTo(shared);
+    assertThat(verifiedOf(current)).isTrue();
+    assertThat(emailOf(current)).isEqualTo(shared);
+  }
+
+  @Test
+  @DisplayName("191 review an unverified first call stores the e-mail as unverified and claims the address for "
+      + "nobody")
+  void anUnverifiedFirstCallClaimsNothing() {
+    var shared = "unclaimed-" + UUID.randomUUID() + "@farol.test";
+    var first = UUID.randomUUID();
+    var second = UUID.randomUUID();
+
+    service.me(new Identity(first, shared, false, "Rita"));
+    service.me(new Identity(second, shared, false, "Rita"));
+
+    assertThat(verifiedOf(first)).isFalse();
+    assertThat(verifiedOf(second)).isFalse();
+  }
+
+  @Test
+  @DisplayName("191 review a later verified token marks the stored e-mail verified without a new event")
+  void aLaterVerifiedTokenMarksTheEmailVerified() {
+    var user = UUID.randomUUID();
+    var email = "later-" + UUID.randomUUID() + "@farol.test";
+    service.me(new Identity(user, email, false, "Rita"));
+
+    service.me(new Identity(user, email, true, "Rita"));
+
+    assertThat(verifiedOf(user)).isTrue();
+    assertThat(emailOf(user)).isEqualTo(email);
     assertThat(outboxRows(user)).isEqualTo(1);
   }
 
@@ -262,6 +329,27 @@ class MeUseCaseIT extends IntegrationTest {
         .param("id", user).query(Long.class).single()).isZero();
     assertThat(outboxRows(user, "GlobalRoleChanged")).isZero();
     assertThat(outboxRows(user, "UserProfileChanged")).isEqualTo(1);
+  }
+
+  @Test
+  @DisplayName("191 review the bootstrap account that verifies its e-mail after its first call gets FarolAdmin and "
+      + "GlobalRoleChanged on the next one, once")
+  void bootstrapVerifiedAfterTheFirstCallIsGrantedLater() {
+    var user = UUID.randomUUID();
+    assertThat(service.me(new Identity(user, Infrastructure.BOOTSTRAP_EMAIL, false, "Daniel")).globalRoles())
+        .isEmpty();
+
+    var result = service.me(new Identity(user, Infrastructure.BOOTSTRAP_EMAIL, true, "Daniel"));
+
+    assertThat(result.globalRoles()).containsExactly(GlobalRole.FarolAdmin);
+    assertThat(jdbc.sql("SELECT role FROM global_role_grant WHERE user_id = :id")
+        .param("id", user).query(String.class).list()).containsExactly("FarolAdmin");
+    assertThat(outboxRows(user, "GlobalRoleChanged")).isEqualTo(1);
+
+    // A third call grants nothing more
+    assertThat(service.me(new Identity(user, Infrastructure.BOOTSTRAP_EMAIL, true, "Daniel")).globalRoles())
+        .containsExactly(GlobalRole.FarolAdmin);
+    assertThat(outboxRows(user, "GlobalRoleChanged")).isEqualTo(1);
   }
 
   @Test

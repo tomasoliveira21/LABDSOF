@@ -10,6 +10,6 @@ public class StatusController implements StatusApi {
 
   @Override
   public ResponseEntity<ServiceStatus> getServiceStatus() {
-    return ResponseEntity.ok(new ServiceStatus(ServiceStatus.ServiceEnum.AUTH_USERS, ServiceStatus.StatusEnum.OK));
+    return ResponseEntity.ok(new ServiceStatus(ServiceStatus.ServiceEnum.authUsers, ServiceStatus.StatusEnum.ok));
   }
 }

@@ -11,9 +11,11 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 class MigrationIT extends IntegrationTest {
 
+  // email_verified false, so the same address may be reused: these tests are about the other constraints, and only a
+  // verified e-mail is unique (D3, D5)
   private static final String ACCOUNT_SQL = """
-      INSERT INTO user_account (user_id, email, display_name, status, version, created_at, updated_at)
-      VALUES (:id, 'a@farol.test', :name, :status, 1, now(), now())
+      INSERT INTO user_account (user_id, email, email_verified, display_name, status, version, created_at, updated_at)
+      VALUES (:id, 'a@farol.test', false, :name, :status, 1, now(), now())
       """;
 
   @Test
@@ -83,6 +85,20 @@ class MigrationIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("191 review only one account may hold an e-mail as verified, whatever the case; unverified copies of "
+      + "the same address are allowed")
+  void onlyOneAccountHoldsAVerifiedEmail() {
+    assertThat(jdbc.sql("SELECT indexdef FROM pg_indexes WHERE indexname = 'user_account_verified_email'")
+        .query(String.class).single()).contains("lower(email)").contains("WHERE email_verified");
+
+    insertVerified(UUID.randomUUID(), "rita@farol.test");
+    assertThatThrownBy(() -> insertVerified(UUID.randomUUID(), "RITA@Farol.TEST"))
+        .isInstanceOf(DataIntegrityViolationException.class);
+    insertUnverified(UUID.randomUUID(), "rita@farol.test");
+    insertUnverified(UUID.randomUUID(), "rita@farol.test");
+  }
+
+  @Test
   @DisplayName("191 AC-1 the outbox has the columns of #214 D4 plus correlation_id and a partial index on "
       + "unpublished rows")
   void outboxHasItsColumnsAndPartialIndex() {
@@ -95,6 +111,22 @@ class MigrationIT extends IntegrationTest {
 
   private void insertAccount(UUID id, String name, String status) {
     jdbc.sql(ACCOUNT_SQL).param("id", id).param("name", name).param("status", status).update();
+  }
+
+  private void insertVerified(UUID id, String email) {
+    insertWithEmail(id, email, true);
+  }
+
+  private void insertUnverified(UUID id, String email) {
+    insertWithEmail(id, email, false);
+  }
+
+  private void insertWithEmail(UUID id, String email, boolean verified) {
+    jdbc.sql("""
+        INSERT INTO user_account (user_id, email, email_verified, display_name, status, version, created_at,
+            updated_at)
+        VALUES (:id, :email, :verified, 'Rita', 'Active', 1, now(), now())
+        """).param("id", id).param("email", email).param("verified", verified).update();
   }
 
   private void grant(UUID user, String role) {

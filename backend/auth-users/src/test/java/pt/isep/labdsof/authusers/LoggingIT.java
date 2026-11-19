@@ -147,8 +147,9 @@ class LoggingIT extends IntegrationTest {
     var tampered = Jwks.tampered(JWKS.valid(UUID.randomUUID().toString()));
     var disabled = UUID.randomUUID();
     jdbc.sql("""
-        INSERT INTO user_account (user_id, email, display_name, status, version, created_at, updated_at)
-        VALUES (:id, :email, :name, 'Disabled', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+        INSERT INTO user_account (user_id, email, email_verified, display_name, status, version, created_at,
+            updated_at)
+        VALUES (:id, :email, true, :name, 'Disabled', 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
         """).param("id", disabled).param("email", email.replace("leak-", "disabled-")).param("name", name).update();
     var disabledToken = JWKS.sign(JWKS.claims(disabled.toString()).claim("email", email).claim("name", name).build());
     var badEmail = URLEncoder.encode("not-" + email.replace("@", "-at-"), StandardCharsets.UTF_8);
@@ -176,10 +177,11 @@ class LoggingIT extends IntegrationTest {
   void rejectedCorrelationIdIsNotLogged(CapturedOutput output) {
     var rejected = "reject me " + UUID.randomUUID();
 
-    var response = get("/api/v1/status", null, rejected);
+    // Not /api/v1/status: the health check is logged at DEBUG, so it writes no access line to wait for
+    var response = get("/api/v1/me", null, rejected);
 
     var replaced = response.headers().firstValue(HEADER).orElseThrow();
-    awaitAccessLine(output, replaced, 200);
+    awaitAccessLine(output, replaced, 401);
     assertThat(output.getAll()).doesNotContain(rejected).doesNotContain(rejected.substring(10));
   }
 }

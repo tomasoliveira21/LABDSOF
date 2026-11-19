@@ -135,6 +135,9 @@
                 <documentationProvider>none</documentationProvider>
                 <annotationLibrary>none</annotationLibrary>
                 <skipDefaultInterface>true</skipDefaultInterface>
+                <!-- Enum constants equal the wire values (EventAdmin, not EVENT_ADMIN), so Spring's own query
+                     parameter binding is the contract: ?role=EVENT_ADMIN is a 400 with no converter of ours -->
+                <enumPropertyNaming>original</enumPropertyNaming>
               </configOptions>
             </configuration>
           </execution>

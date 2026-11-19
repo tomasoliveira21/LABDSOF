@@ -38,8 +38,12 @@ class MeServiceTest {
   }
 
   private UserAccount stored(String email, AccountStatus status) {
-    var account = new UserAccount(USER, email, "Ana", status, 1, START_MICROS, START_MICROS);
-    ports.accounts.put(USER, account);
+    return stored(USER, email, true, status);
+  }
+
+  private UserAccount stored(UUID userId, String email, boolean emailVerified, AccountStatus status) {
+    var account = new UserAccount(userId, email, emailVerified, "Ana", status, 1, START_MICROS, START_MICROS);
+    ports.accounts.put(userId, account);
     return account;
   }
 
@@ -48,6 +52,7 @@ class MeServiceTest {
     assertThat(ports.outbox).isEmpty();
     assertThat(ports.roles).isEmpty();
     assertThat(ports.emailUpdates).isZero();
+    assertThat(ports.releasedEmails).isEmpty();
   }
 
   @Test
@@ -55,7 +60,7 @@ class MeServiceTest {
   void firstCallCreatesAccountAndWritesEvent() {
     var result = service.me(identity("ana@farol.test", true, "Ana Silva"));
 
-    var expected = new UserAccount(USER, "ana@farol.test", "Ana Silva", AccountStatus.Active, 1, START_MICROS,
+    var expected = new UserAccount(USER, "ana@farol.test", true, "Ana Silva", AccountStatus.Active, 1, START_MICROS,
         START_MICROS);
     assertThat(result.account()).isEqualTo(expected);
     assertThat(result.globalRoles()).isEmpty();
@@ -120,7 +125,7 @@ class MeServiceTest {
   @DisplayName("191 AC-5 a call that loses the race to create the account returns the winner's account and "
       + "writes no event")
   void losingTheRaceReturnsTheWinnersAccount() {
-    var winner = new UserAccount(USER, "ana@farol.test", "Winner", AccountStatus.Active, 1,
+    var winner = new UserAccount(USER, "ana@farol.test", true, "Winner", AccountStatus.Active, 1,
         START_MICROS.minusSeconds(1), START_MICROS.minusSeconds(1));
     ports.concurrentWinner = winner;
 
@@ -200,16 +205,111 @@ class MeServiceTest {
   }
 
   @Test
-  @DisplayName("191 AC-6 an existing account whose e-mail later matches the bootstrap e-mail gets no role")
-  void existingAccountLaterMatchingBootstrapGetsNoRole() {
-    stored("old@farol.test", AccountStatus.Active);
+  @DisplayName("191 review the bootstrap account that verified its e-mail after its first call gets FarolAdmin on "
+      + "the next one, or the deployment would have no admin")
+  void bootstrapVerifiedAfterTheFirstCallGetsTheRoleLater() {
+    var first = service.me(identity("daniel@farol.test", false, "Daniel"));
+    assertThat(first.globalRoles()).isEmpty();
+    assertThat(ports.outbox).extracting(OutgoingEvent::type).containsExactly("UserProfileChanged");
+    clock.advance(Duration.ofHours(2));
 
-    var result = service.me(identity("daniel@farol.test", true, "Daniel"));
+    var second = service.me(identity("daniel@farol.test", true, "Daniel"));
 
-    assertThat(result.account().email()).isEqualTo("daniel@farol.test");
+    assertThat(second.globalRoles()).containsExactly(GlobalRole.FarolAdmin);
+    assertThat(ports.roles.get(USER)).containsExactly(GlobalRole.FarolAdmin);
+    assertThat(ports.outbox).extracting(OutgoingEvent::type)
+        .containsExactly("UserProfileChanged", "GlobalRoleChanged");
+    var granted = ports.outbox.get(1);
+    assertThat(granted.actorUserId()).isEmpty();
+    assertThat(granted.occurredAt()).isEqualTo(START_MICROS.plus(Duration.ofHours(2)));
+    assertThat(granted.payload()).isEqualTo(java.util.Map.of("userId", USER.toString(), "role", "FarolAdmin",
+        "granted", true, "version", 1L));
+  }
+
+  @Test
+  @DisplayName("191 review an account whose unverified e-mail matches the bootstrap e-mail gets no role")
+  void unverifiedBootstrapEmailOnALaterCallGetsNoRole() {
+    stored(USER, "daniel@farol.test", false, AccountStatus.Active);
+
+    var result = service.me(identity("daniel@farol.test", false, "Daniel"));
+
     assertThat(result.globalRoles()).isEmpty();
     assertThat(ports.roles).isEmpty();
     assertThat(ports.outbox).isEmpty();
+  }
+
+  @Test
+  @DisplayName("191 review a verified e-mail that another account already holds as verified takes it over, so the "
+      + "US-06 lookup can never find two accounts")
+  void aVerifiedEmailIsTakenFromTheStaleAccount() {
+    var other = UUID.fromString("99999999-8888-7777-6666-555555555555");
+    stored(other, "ana@farol.test", true, AccountStatus.Active);
+
+    service.me(identity("ana@farol.test", true, "Ana"));
+
+    assertThat(ports.releasedEmails).containsExactly("ana@farol.test");
+    assertThat(ports.accounts.get(other).emailVerified()).as("the stale copy gives the address up").isFalse();
+    assertThat(ports.accounts.get(other).email()).isEqualTo("ana@farol.test");
+    assertThat(ports.accounts.get(USER).emailVerified()).isTrue();
+  }
+
+  @Test
+  @DisplayName("191 review an unverified token never replaces the stored e-mail: it could take over another account")
+  void anUnverifiedTokenDoesNotRefreshTheEmail() {
+    var account = stored("ana@farol.test", AccountStatus.Active);
+
+    var result = service.me(identity("victim@farol.test", false, "Ana"));
+
+    assertThat(result.account()).isEqualTo(account);
+    assertThat(result.account().email()).isEqualTo("ana@farol.test");
+    assertThat(ports.accounts.get(USER)).isEqualTo(account);
+    assertThat(ports.emailUpdates).isZero();
+    assertThat(ports.releasedEmails).isEmpty();
+  }
+
+  @ParameterizedTest(name = "email_verified {0}")
+  @NullSource
+  @ValueSource(booleans = false)
+  @DisplayName("191 review an unverified e-mail is stored as unverified on the first call, and claims nothing")
+  void anUnverifiedFirstCallStoresAnUnverifiedEmail(Boolean verified) {
+    var result = service.me(identity("ana@farol.test", verified, "Ana"));
+
+    assertThat(result.account().emailVerified()).isFalse();
+    assertThat(ports.accounts.get(USER).emailVerified()).isFalse();
+    assertThat(ports.releasedEmails).as("an unverified e-mail never takes an address from another account").isEmpty();
+  }
+
+  @Test
+  @DisplayName("191 review a token whose e-mail is verified later sets the stored flag without a new event")
+  void aVerifiedTokenLaterMarksTheStoredEmailVerified() {
+    service.me(identity("ana@farol.test", false, "Ana"));
+    clock.advance(Duration.ofHours(1));
+
+    var second = service.me(identity("ana@farol.test", true, "Ana"));
+
+    assertThat(second.account().emailVerified()).isTrue();
+    assertThat(second.account().email()).isEqualTo("ana@farol.test");
+    assertThat(ports.emailUpdates).isEqualTo(1);
+    assertThat(ports.outbox).extracting(OutgoingEvent::type).containsExactly("UserProfileChanged");
+  }
+
+  @ParameterizedTest(name = "e-mail [{0}]")
+  @ValueSource(strings = {"\0", "an\0a@farol.test", "ana@farol.test\0"})
+  @DisplayName("191 review an e-mail with a NUL is refused with 401: no PostgreSQL text column accepts it")
+  void anEmailWithNulIsRefused(String email) {
+    assertThatThrownBy(() -> service.me(identity(email, true, "Ana")))
+        .isInstanceOf(MissingEmailException.class);
+
+    assertNothingWritten(null);
+  }
+
+  @Test
+  @DisplayName("191 review the e-mail is stored stripped, so the same address is one value for the lookup")
+  void theEmailIsStoredStripped() {
+    var result = service.me(identity("  ana@farol.test\t", true, "Ana"));
+
+    assertThat(result.account().email()).isEqualTo("ana@farol.test");
+    assertThat(ports.releasedEmails).containsExactly("ana@farol.test");
   }
 
   @Test

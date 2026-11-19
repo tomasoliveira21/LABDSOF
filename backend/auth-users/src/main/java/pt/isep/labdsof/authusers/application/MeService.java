@@ -1,6 +1,9 @@
 package pt.isep.labdsof.authusers.application;
 
 import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -33,44 +36,83 @@ public class MeService {
 
   @Transactional
   public MyAccount me(Identity identity) {
-    if (identity.email() == null || identity.email().isBlank()) {
-      throw new MissingEmailException();
-    }
+    var email = emailOf(identity);
+    boolean verified = Boolean.TRUE.equals(identity.emailVerified());
     if (tombstones.exists(identity.userId())) {
       throw new AccountUnavailableException();
     }
     var existing = accounts.findById(identity.userId());
     if (existing.isPresent()) {
-      return existing(existing.get(), identity);
+      return existing(existing.get(), email, verified);
     }
-    var account = UserAccount.provision(identity.userId(), identity.email(), identity.name(), clock.instant());
+    if (verified) {
+      accounts.releaseVerifiedEmail(email, identity.userId(), now());
+    }
+    var account = UserAccount.provision(identity.userId(), email, verified, identity.name(), clock.instant());
     if (!accounts.insertIfAbsent(account)) {
       // Another first call committed the same sub (ON CONFLICT waited for it): use that account, write no event (D5)
-      return existing(accounts.findById(identity.userId()).orElseThrow(), identity);
+      return existing(accounts.findById(identity.userId()).orElseThrow(), email, verified);
     }
     outbox.add(OutgoingEvent.userProfileChanged(UUID.randomUUID(), account, identity.userId().toString()));
-    if (!bootstrap.grants(identity.email(), identity.emailVerified())) {
+    if (!bootstrap.grants(email, identity.emailVerified())) {
       return new MyAccount(account, Set.of());
     }
-    grants.grantBySystem(account.userId(), GlobalRole.FarolAdmin, account.createdAt());
-    // A system grant: empty actor (§7.1) and no granting user in the table
-    outbox.add(OutgoingEvent.globalRoleChanged(UUID.randomUUID(), account.userId(), GlobalRole.FarolAdmin, true, 1,
-        account.createdAt(), ""));
+    grantFarolAdmin(account.userId(), account.createdAt());
     return new MyAccount(account, Set.of(GlobalRole.FarolAdmin));
   }
 
-  private MyAccount existing(UserAccount account, Identity identity) {
+  /** A token without a usable e-mail gets {@code 401}: NUL included, which no PostgreSQL text column accepts. */
+  private static String emailOf(Identity identity) {
+    var email = identity.email();
+    if (email == null || email.isBlank() || email.indexOf('\0') >= 0) {
+      throw new MissingEmailException();
+    }
+    return email.strip();
+  }
+
+  private MyAccount existing(UserAccount account, String email, boolean verified) {
     if (account.status() == AccountStatus.Disabled) {
       throw new AccountDisabledException();
     }
     if (account.status() == AccountStatus.DeletionPending) {
       throw new AccountUnavailableException();
     }
-    var current = account;
-    if (!account.email().equals(identity.email())) {
-      current = account.withEmail(identity.email(), clock.instant());
-      accounts.updateEmail(current);
+    var current = refreshEmail(account, email, verified);
+    var roles = grants.rolesOf(account.userId());
+    if (roles.contains(GlobalRole.FarolAdmin) || !bootstrap.grants(email, verified)) {
+      return new MyAccount(current, roles);
     }
-    return new MyAccount(current, grants.rolesOf(account.userId()));
+    // The bootstrap account's first call can happen before the e-mail is verified (D6): without this, no later call
+    // would grant the role and the deployment would have no FarolAdmin at all
+    grantFarolAdmin(account.userId(), now());
+    var granted = EnumSet.of(GlobalRole.FarolAdmin);
+    granted.addAll(roles);
+    return new MyAccount(current, granted);
+  }
+
+  /**
+   * Keycloak owns the e-mail, but only a verified claim is written (D5): an unverified token must never replace what
+   * is stored, or it could take over another account's address and US-06's lookup would find the wrong account.
+   */
+  private UserAccount refreshEmail(UserAccount account, String email, boolean verified) {
+    if (!verified || (account.email().equals(email) && account.emailVerified())) {
+      return account;
+    }
+    var now = now();
+    accounts.releaseVerifiedEmail(email, account.userId(), now);
+    var current = account.withEmail(email, true, now);
+    accounts.updateEmail(current);
+    return current;
+  }
+
+  private void grantFarolAdmin(UUID userId, Instant at) {
+    grants.grantBySystem(userId, GlobalRole.FarolAdmin, at);
+    // A system grant: empty actor (§7.1) and no granting user in the table
+    outbox.add(OutgoingEvent.globalRoleChanged(UUID.randomUUID(), userId, GlobalRole.FarolAdmin, true, 1, at, ""));
+  }
+
+  /** To the microsecond, as the database stores it and the events carry it. */
+  private Instant now() {
+    return clock.instant().truncatedTo(ChronoUnit.MICROS);
   }
 }

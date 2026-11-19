@@ -11,14 +11,18 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.MDC;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import pt.isep.labdsof.authusers.adapters.out.persistence.JdbcOutbox;
 
+@ExtendWith(OutputCaptureExtension.class)
 class CorrelationIdFilterTest {
 
   private final CorrelationIdFilter filter = new CorrelationIdFilter();
@@ -90,6 +94,49 @@ class CorrelationIdFilterTest {
     })).isSameAs(failure);
 
     assertThat(MDC.get(JdbcOutbox.CORRELATION_ID_MDC_KEY)).isNull();
+  }
+
+  @Test
+  @DisplayName("191 review a request whose exception escapes the chain is logged as the 500 it becomes, not 200")
+  void anEscapedExceptionIsLoggedAsFiveHundred(CapturedOutput output) {
+    var request = new MockHttpServletRequest("GET", "/api/v1/me");
+    var failure = new ServletException("boom");
+
+    assertThatThrownBy(() -> filter.doFilter(request, response, (req, res) -> {
+      throw failure;
+    })).isSameAs(failure);
+
+    assertThat(response.getStatus()).as("the container has not set the error status yet").isEqualTo(200);
+    assertThat(output.getOut()).contains("GET /api/v1/me -> 500 in").doesNotContain("-> 200 in");
+  }
+
+  @Test
+  @DisplayName("191 review a request that is answered is logged with the response status")
+  void anAnsweredRequestIsLoggedWithItsStatus(CapturedOutput output) throws Exception {
+    var request = new MockHttpServletRequest("GET", "/api/v1/me");
+
+    filter.doFilter(request, response, (req, res) -> ((MockHttpServletResponse) res).setStatus(403));
+
+    assertThat(output.getOut()).contains("GET /api/v1/me -> 403 in");
+  }
+
+  @Test
+  @DisplayName("191 review the health check is not logged at INFO: every 5 s it would push out the real requests")
+  void theHealthCheckIsNotLoggedAtInfo(CapturedOutput output) throws Exception {
+    filter.doFilter(new MockHttpServletRequest("GET", "/api/v1/status"), response, new MockFilterChain());
+
+    assertThat(output.getOut()).doesNotContain("/api/v1/status");
+  }
+
+  @Test
+  @DisplayName("191 review the query string is never logged, whatever the status")
+  void theQueryStringIsNeverLogged(CapturedOutput output) throws Exception {
+    var request = new MockHttpServletRequest("GET", "/api/v1/accounts");
+    request.setQueryString("email=ana@farol.test");
+
+    filter.doFilter(request, response, new MockFilterChain());
+
+    assertThat(output.getOut()).contains("GET /api/v1/accounts -> 200 in").doesNotContain("ana@farol.test");
   }
 
   @Test

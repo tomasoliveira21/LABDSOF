@@ -21,6 +21,8 @@ import pt.isep.labdsof.authusers.adapters.out.persistence.JdbcOutbox;
 final class CorrelationIdFilter extends OncePerRequestFilter {
 
   static final String HEADER = "X-Correlation-Id";
+  /** The Compose health check, every 5 s: logged at DEBUG, or it would push real requests out of the log. */
+  static final String HEALTH_CHECK_PATH = "/api/v1/status";
   private static final Pattern VALID = Pattern.compile("[A-Za-z0-9-]{8,64}");
   private static final Logger log = LoggerFactory.getLogger(CorrelationIdFilter.class);
 
@@ -31,12 +33,21 @@ final class CorrelationIdFilter extends OncePerRequestFilter {
     response.setHeader(HEADER, id);
     MDC.put(JdbcOutbox.CORRELATION_ID_MDC_KEY, id);
     long start = System.nanoTime();
+    // When an exception escapes the chain the container has not set the error status yet, so the request is reported
+    // as the 500 it becomes, never as the 200 the response still holds
+    int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
     try {
       chain.doFilter(request, response);
+      status = response.getStatus();
     } finally {
       // Method, path without the query string (GET /accounts?email= must never be logged), status, duration
-      log.info("{} {} -> {} in {} ms", request.getMethod(), request.getRequestURI(), response.getStatus(),
-          (System.nanoTime() - start) / 1_000_000);
+      long millis = (System.nanoTime() - start) / 1_000_000;
+      var path = request.getRequestURI();
+      if (HEALTH_CHECK_PATH.equals(path)) {
+        log.debug("{} {} -> {} in {} ms", request.getMethod(), path, status, millis);
+      } else {
+        log.info("{} {} -> {} in {} ms", request.getMethod(), path, status, millis);
+      }
       MDC.remove(JdbcOutbox.CORRELATION_ID_MDC_KEY);
     }
   }

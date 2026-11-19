@@ -24,6 +24,7 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   final Set<UUID> tombstones = new HashSet<>();
   final Map<UUID, EnumSet<GlobalRole>> roles = new HashMap<>();
   final List<OutgoingEvent> outbox = new ArrayList<>();
+  final List<String> releasedEmails = new ArrayList<>();
   int emailUpdates;
   int insertAttempts;
   /** When set, the next insert loses the race: this account is stored as if another call just committed it. */
@@ -49,6 +50,17 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   public void updateEmail(UserAccount account) {
     emailUpdates++;
     accounts.put(account.userId(), account);
+  }
+
+  @Override
+  public int releaseVerifiedEmail(String email, UUID keep, Instant at) {
+    releasedEmails.add(email);
+    var released = accounts.values().stream()
+        .filter(account -> account.emailVerified() && !account.userId().equals(keep)
+            && account.email().equalsIgnoreCase(email))
+        .toList();
+    released.forEach(account -> accounts.put(account.userId(), account.withEmail(account.email(), false, at)));
+    return released.size();
   }
 
   @Override
