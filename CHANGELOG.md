@@ -7,7 +7,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 **Why:** #149 needs one actual run of the selected local model on the frozen test split, with a reproducible manifest and the results as they are (#224 is that part; #149 stays open for the label review and routing).
 
 ### Added
-- [`run_ollama.py`](Docs/Research/architecture-investigation/evaluation/run_ollama.py): standard-library runner for a local Ollama, input only, the runtime contract's settings, 20 s single attempt; unscored warm-up, `--resume` and `--verify` (checks of the [spec](Docs/specs/224-ollama-evaluation-run.md)).
+- [`run_ollama.py`](Docs/Research/architecture-investigation/evaluation/run_ollama.py): standard-library runner for a local Ollama, input only, the runtime contract's settings, 20 s single attempt on the whole call; unscored warm-up, `--resume`, `--verify` and `--self-test` (checks of the [spec](Docs/specs/224-ollama-evaluation-run.md)). The scorer's package file list is one constant.
 - [Run of 19 November 2026](Docs/Research/architecture-investigation/evaluation/runs/2026-11-19-local-qwen3/manifest.json): `qwen3:4b` Q4_K_M on `ollama/ollama:0.40.16` in Docker, CPU only, once on the 97 test cases. **Offline quality gate failed** on check 3: 5 `Low`/`Medium` cases rated `Critical`. Passed: 0 of 39 urgent cases missed, none below its minimum, category accuracy 0.966, coverage 0.978, 8 of 8 abstentions (keyword baseline: 22 of 39 missed, 0.573, 0.596). `provider_ms` median 10.0 s, p95 12.8 s, no timeout; cold start 58.5 s; container memory peak 3.40 GB. Repeated runs not done.
 
 ### Changed
