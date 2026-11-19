@@ -35,6 +35,16 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Spec D2: `openapi-generator` with `skipDefaultInterface=true` and no coverage exclusion (a contract test covers the generated records and enums), as an answer to the open point of #214 D14.
 - The account states of §4 of the meeting of 15 November 2026 (`Active`, `Disabled`, `DeletionPending`; no `MembershipStatus`), while #198 is open.
 
+## [Unreleased] · 2026-11-18 · A Maven cache per service for the image builds (#219, Tiago Teixeira)
+
+**Why:** the CI job on `main` failed twice (16 and 17 November 2026) while building the stack: the seven images build at the same time, each Java image downloaded every dependency from scratch, and Maven Central refused with `429 Too Many Requests`. It gets worse as each service adds dependencies.
+
+### Changed
+- The six backend `Dockerfile`s: the Maven build reads and fills a BuildKit cache of its own, `farol-maven-<service>`, kept between builds, drops the `*.lastUpdated` markers it finds there first (so a dependency that failed to resolve once is tried again instead of being refused for up to 24 h) and retries Maven Central up to 10 times instead of 3. Same stages, base images, goal (`package` in Reports, #194) and jar; the cache is never copied into an image. One cache shared by the six was tried first and failed in CI: two Maven processes writing the same files at once.
+- `ci.yml`: before building the stack, the new step "Give the image builds the Maven dependencies" fills those caches with the repository the module builds of the same run already downloaded, so the image builds download nothing. The cache ids are read from `backend/*/Dockerfile`, and a backend Dockerfile without a Maven cache fails the step.
+- [`local-delivery.md`](Docs/Technical/local-delivery.md) §0: the caches, and how to empty them.
+
+
 ## [Unreleased] · 2026-11-18 · Review of PR #217: over-prioritisation and scale-example cases (#197, Bruno de Abreu Lopes)
 
 **Why:** the review of PR #217 found that a model answering `Critical` for everything passed the priority gates, and that most `Infrastructure` test cases restate the scale examples the prompt quotes.
