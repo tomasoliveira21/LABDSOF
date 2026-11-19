@@ -136,6 +136,8 @@ jobs:
           print("issuer", d["issuer"], "jwks", d["jwks_uri"])'
       - name: Check that Reports validates Keycloak tokens and reaches its database (#194)
         run: python3 -I infra/tests/reports_smoke.py infra/.env.example
+      - name: Check that Auth & Users validates Keycloak tokens and publishes its first event (#191)
+        run: python3 -I infra/tests/auth_users_smoke.py infra/.env.example farol-ci
       - name: Check that only 127.0.0.1 is published and the new containers are hardened
         shell: bash
         run: |

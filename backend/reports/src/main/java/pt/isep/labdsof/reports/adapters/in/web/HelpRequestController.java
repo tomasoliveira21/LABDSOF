@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -20,8 +21,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pt.isep.labdsof.reports.application.ClientRequestConflictException;
+import pt.isep.labdsof.reports.application.ForbiddenException;
 import pt.isep.labdsof.reports.application.HelpRequestService;
 import pt.isep.labdsof.reports.application.NotFoundException;
 import pt.isep.labdsof.reports.domain.Category;
@@ -77,6 +80,17 @@ class HelpRequestController {
         .body(participant(request));
   }
 
+  /** One poll of the live list (US-26): the items, and the serverTime to send as updatedSince next time. */
+  record ListView(List<ControlRoomView> items, Instant serverTime) {}
+
+  @GetMapping(produces = "application/json")
+  ListView list(@PathVariable UUID eventId, @RequestParam(required = false) Instant updatedSince,
+      @AuthenticationPrincipal Jwt jwt) {
+    var changes = service.list(eventId, jwt.getSubject(), updatedSince);
+    return new ListView(changes.items().stream().map(HelpRequestController::controlRoom).toList(),
+        changes.serverTime());
+  }
+
   @GetMapping(value = "/{requestId}", produces = "application/json")
   Object get(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt) {
     var read = service.get(eventId, jwt.getSubject(), requestId);
@@ -94,6 +108,12 @@ class HelpRequestController {
   ResponseEntity<ProblemDetail> conflict(ClientRequestConflictException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
+  }
+
+  @ExceptionHandler(ForbiddenException.class)
+  ResponseEntity<ProblemDetail> forbidden() {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Forbidden"));
   }
 
   @ExceptionHandler(NotFoundException.class)
