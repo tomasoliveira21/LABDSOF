@@ -78,3 +78,21 @@ The offline quality gate of the package (seven checks, priority first) is **repo
 | v4, v3 plus a lost person who cannot look after themselves in High | 0 | 0 | 21 of 22 | 21 of 22 | 2 of 2 | passed (only T085, a question for the staff, abstained) |
 
   v4 is frozen. Red before green: after the prompt change `--self-test` failed only with `197 AC-4 committed baseline report is reproducible`, then passed with the regenerated report (only the prompt hash changed; the baseline numbers are the same).
+- Manifest committed before the test run (1705048), with the runner commit 37dbba0. The container was restarted first, so the model was unloaded and the cgroup memory counters reset.
+- **Gated run**, 19 November 2026, 07:23:37 to 07:41:06 UTC, once, 97 test cases, no interruption, no timeout, no transport or JSON error, every reply ended with `stop` (at most 63 output tokens). `provider_ms`: minimum 5,924, median 10,021, p95 12,811, maximum 13,833 ms; none over the 16 s slow threshold. Cold start (unscored warm-up): 58,541 ms, of which 5,068 ms model load; the rest is the first evaluation of the ~790-token prompt, which later calls reuse. Container `memory.peak` 3,398,074,368 bytes (includes the page cache of the mapped model); `/api/ps` 3,186,108,660 bytes on CPU.
+- **Scorer report** (`report-run-1.json`), offline quality gate **failed**:
+
+| Check, in order | Keyword baseline | `qwen3:4b` run 1 | Result |
+|---|---|---|---|
+| 1. Urgent cases missed | 22 of 39 | 0 of 39 | pass |
+| 2. Below the minimum priority | 6 | 0 | pass |
+| 3. `Low`/`Medium` rated `Critical` | 0 | 5 (T006, T007, T013, T017, T119) | **fail** |
+| 4. Category accuracy | 0.573 | 0.966 (86 of 89; T081, T084 abstained, T101 `Safety` for `Infrastructure`) | pass |
+| 5. Suggestion coverage | 0.596 | 0.978 (87 of 89; T081, T084) | pass |
+| 6. Expected abstentions | 8 of 8 | 8 of 8 | pass |
+| 7. Semantic inconsistencies | 0 | 0 | pass |
+
+  Exact priority 0.629 (56 of 89); 31 above the minimum. Slices: urgent 39, none missed; English 7, mixed 4, injection 8, no-content 3, multiple 1: no failure; slang 7 and ambiguous 2: one ceiling failure each (T006, T007); plain 35: T013, T017, T119 rated `Critical`, T081 and T084 abstained; `scale-example` 11: no urgent miss, category 10 of 11 (T101). Timeouts did not occur, so no diagnostic run with a longer timeout was needed.
+- Reasons, before any human review: 13 use Brazilian rather than European Portuguese forms (gerunds such as *não respondendo*, *em andamento*, *acessar*, *estandes*), T107 has a non-Portuguese word (*multitudine*), T074 says there is physical risk but gives `Medium`, T027 puts the risk on the team; no treatment advice and no copied injection seen. Human review of every reason is pending.
+- Run checks: `run_ollama.py --verify` passes its six checks; red before green: each check failed on a tampered copy (a changed hash, temperature 0.6, an empty runner commit, a missing prediction, a report edited by hand, a null output without an error with the report regenerated). `evaluate.py --validate` (121, 24, 97) and `--self-test` pass with `python -I`.
+- Not done, and not claimed: repeated runs (D4; #149 AC-4); the label review (#149 AC-2, needs another teammate); routing and the event-specific contract (#149 AC-3, depends on US-34, #81); SC3 and SC5 (#58, #81, #83). The container is stopped and removed; the model volume `farol-224-ollama-models` is kept for #81.
