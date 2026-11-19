@@ -57,7 +57,7 @@ class DocumentationIT {
       assertThat(tests).as(named.group(1)).contains("\"" + named.group(1) + "\"");
       count++;
     }
-    assertThat(count).isGreaterThan(atLeast);
+    assertThat(count).isGreaterThanOrEqualTo(atLeast);
     for (int ac = 1; ac <= criteria; ac++) {
       assertThat(tests).as("AC-" + ac).contains("@DisplayName(\"" + prefix + " AC-" + ac + " ");
     }

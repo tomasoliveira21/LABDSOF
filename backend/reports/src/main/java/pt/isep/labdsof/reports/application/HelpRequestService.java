@@ -92,7 +92,7 @@ public class HelpRequestService {
     var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
     var items = since == null ? helpRequests.open(eventId)
         : helpRequests.candidatesSince(eventId, since).stream().filter(r -> r.changedAfter(since, now)).toList();
-    // ponytail: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
+    // Limit: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
     // cursor (snapshot xmin) if one ever is
     return new Changes(items.stream().map(r -> r.asSeenAt(now)).toList(), now.minus(POLL_OVERLAP));
   }
