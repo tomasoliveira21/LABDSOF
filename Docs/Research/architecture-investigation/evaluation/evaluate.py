@@ -434,6 +434,9 @@ def self_test(cases):
     check(package_files() == PACKAGE_FILES and package_files(["holdout.jsonl"], "prompts/v5.txt") == ("holdout.jsonl", "prompts/v5.txt", "output.schema.json")
           and list(score(cases, reference, files=("cases.jsonl", "output.schema.json"))["hashes_sha256"]) == ["cases.jsonl", "output.schema.json"],
           "227 AC-1 a report hashes the cases and prompt files the run used")
+    files = package_files(["holdout.jsonl"])
+    check(render(run_baseline(load_cases(files[:1]), "holdout", files)).encode("utf-8") == (HERE / "baseline-holdout-report.json").read_bytes(),
+          "227 AC-4 committed holdout baseline report is reproducible")
     print("Dataset and scorer checks passed; fixtures are NOT model results.")
 
 
