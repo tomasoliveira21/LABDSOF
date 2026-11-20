@@ -66,15 +66,7 @@ class LocalCopyListener {
     Envelope envelope;
     Object copy;
     try {
-      envelope = json.readValue(message.getBody(), Envelope.class);
-      if (envelope == null || envelope.messageId() == null || envelope.type() == null
-          || envelope.occurredAt() == null
-          || envelope.producer() == null || envelope.actorUserId() == null) {
-        throw new IllegalArgumentException("messageId, type, occurredAt, producer and actorUserId are required");
-      }
-      if (!Integer.valueOf(1).equals(envelope.schemaVersion())) {
-        throw new IllegalArgumentException("schemaVersion " + envelope.schemaVersion() + " is not supported");
-      }
+      envelope = envelope(json, message);
       copy = switch (envelope.type()) {
         case "MembershipChanged" -> membership(envelope);
         case "TeamChanged" -> team(envelope);
@@ -93,6 +85,23 @@ class LocalCopyListener {
         ? copies.apply(envelope.messageId(), m)
         : copies.apply(envelope.messageId(), (Team) copy);
     log.debug("Event {} ({}): {}", envelope.messageId(), envelope.type(), outcome);
+  }
+
+  /**
+   * The envelope of API outline §7.1, checked; an invalid one throws (and goes to the dead-letter queue). Shared with
+   * the triage consumer (US-34).
+   */
+  static Envelope envelope(JsonMapper json, Message message) {
+    var envelope = json.readValue(message.getBody(), Envelope.class);
+    if (envelope == null || envelope.messageId() == null || envelope.type() == null
+        || envelope.occurredAt() == null
+        || envelope.producer() == null || envelope.actorUserId() == null) {
+      throw new IllegalArgumentException("messageId, type, occurredAt, producer and actorUserId are required");
+    }
+    if (!Integer.valueOf(1).equals(envelope.schemaVersion())) {
+      throw new IllegalArgumentException("schemaVersion " + envelope.schemaVersion() + " is not supported");
+    }
+    return envelope;
   }
 
   private Membership membership(Envelope envelope) {
