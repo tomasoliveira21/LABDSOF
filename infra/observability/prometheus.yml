@@ -9,18 +9,11 @@ scrape_configs:
   - job_name: farol-services
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["gateway:8081", "reports:8081", "events:8081", "auth-users:8081"]
-    relabel_configs: &service-label
+      - targets: ["gateway:8081", "reports:8081", "events:8081", "auth-users:8081", "transports:8081", "badges:8081"]
+    relabel_configs:
       - source_labels: [__address__]
         regex: "([^:]+):.*"
         target_label: service
-  # Listed so the dashboard shows them as down until their owners expose the endpoint (hand-offs of #148):
-  # Transports and Badges have no actuator yet.
-  - job_name: farol-handoff
-    metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ["transports:8081", "badges:8081"]
-    relabel_configs: *service-label
   # RabbitMQ's own rabbitmq_prometheus plugin (enabled in the image): broker totals, then per queue.
   # Queue names are a fixed list (infra/rabbitmq/topology.json), so the queue label stays bounded.
   - job_name: rabbitmq

@@ -83,7 +83,7 @@
           "legendFormat": "{{service}} ({{job}})"
         }
       ],
-      "description": "1 = scraped, 0 = down. Transports and Badges stay down until they expose /actuator/prometheus (hand-off of #148).",
+      "description": "1 = scraped, 0 = down (the service-down alert fires after 2 min).",
       "options": {
         "colorMode": "background",
         "textMode": "value_and_name",
@@ -437,7 +437,7 @@
           "legendFormat": "age"
         }
       ],
-      "description": "No data: Transports does not expose metrics yet (hand-off of #148). Warning above 5 min (plan \u00a74)."
+      "description": "No data until Transports imports data and emits farol_transport_data_age_seconds. Warning above 5 min (plan \u00a74)."
     },
     {
       "id": 15,

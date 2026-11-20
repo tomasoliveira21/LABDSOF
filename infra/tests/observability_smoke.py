@@ -22,8 +22,8 @@ import urllib.request
 import uuid
 
 COMPOSE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "compose.yaml")
-# Watched by the service-down alert; Transports and Badges are listed as hand-offs and may be down
-EXPECTED_UP = {"gateway", "reports", "events", "auth-users", "rabbitmq"}
+# Every target the service-down alert watches
+EXPECTED_UP = {"gateway", "reports", "events", "auth-users", "transports", "badges", "rabbitmq"}
 ALERT_RULES = {"farol-service-down", "farol-outbox-stalled", "farol-triage-below-target"}
 failures = 0
 
@@ -112,10 +112,12 @@ def main(env_path: str, project: str | None = None) -> int:
     status, headers, _ = get(gateway + path,{"X-Correlation-Id": "bad id\twith tab" + "x" * 80})
     replaced = {k.lower(): v for k, v in headers.items()}.get("x-correlation-id", "")
     check(len(replaced) == 36 and "bad" not in replaced, f"the gateway replaces an invalid X-Correlation-Id ({replaced})")
+    # Events has no such endpoint yet: it answers 404 and still logs the request with the gateway's id
+    events_id = str(uuid.uuid4())
+    get(gateway + f"/api/v1/events/{uuid.uuid4()}", {"X-Correlation-Id": events_id})
     time.sleep(1)
-    for service in ("gateway", "reports"):
-        check(logged_with(env_path, project, service, correlation_id),
-              f"{service} logs a JSON line with correlationId {correlation_id}")
+    for service, cid in (("gateway", correlation_id), ("reports", correlation_id), ("events", events_id)):
+        check(logged_with(env_path, project, service, cid), f"{service} logs a JSON line with correlationId {cid}")
 
     return 1 if failures else 0
 

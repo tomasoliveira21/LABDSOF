@@ -22,7 +22,6 @@ A synthetic membership row was inserted into Reports' `membership_copy` for the 
 
 - **SC3/SC5** (moved to #149): no triage worker exists, so no cohort, ratio or AI-off visibility was measured.
 - **Outbox stalled alert** was provisioned and evaluated (state *Normal*, value 0) but not driven above 60 s in this drill.
-- **Transports and Badges** have no actuator; **Events** has metrics but no correlation filter (Java code); all are hand-offs to their owners.
 - **PostgreSQL** has no exporter (it would be a third container); outbox age comes from Reports.
 - Evaluation every **10 s**, not the plan's 15 s: Grafana's scheduler ticks every 10 s and refuses a 15 s rule interval. The `for` windows are the plan's.
 - Load, latency percentiles and long-run behaviour: not measured.
@@ -43,3 +42,45 @@ PASS reports logs a JSON line with correlationId d0211a41-166a-4122-a75b-3213d5f
 ```
 
 On the Compose network `auth-users:8081/actuator/env` still answers `401`; the gateway does not route `/actuator` (`404`).
+
+## Update, 20 November 2026: every service scraped, Events correlated
+
+With their owners' agreement, Transports and Badges got actuator and the Prometheus registry, and Events a correlation filter like Auth & Users'. All six Spring services are now in the `farol-services` job. The CI-equivalent steps of `ci.yml` ran locally on the `farol-ci` project with 0 failed steps; `observability_smoke.py`:
+
+```
+PASS Prometheus scrapes ['auth-users', 'badges', 'events', 'gateway', 'rabbitmq', 'reports', 'transports'] (up: ['auth-users', 'badges', 'events', 'gateway', 'rabbitmq', 'reports', 'transports'])
+PASS Grafana is healthy (200)
+PASS the Farol dashboard is provisioned (200)
+PASS the three core alert rules are provisioned (['farol-outbox-stalled', 'farol-service-down', 'farol-triage-below-target'])
+PASS the gateway returns the caller's X-Correlation-Id (ad5aa4cb-b974-410e-8050-d35c9271a475)
+PASS the gateway replaces an invalid X-Correlation-Id (61870887-03b4-4b1a-aaec-88e5e36a7cf2)
+PASS gateway logs a JSON line with correlationId ad5aa4cb-b974-410e-8050-d35c9271a475
+PASS reports logs a JSON line with correlationId ad5aa4cb-b974-410e-8050-d35c9271a475
+PASS events logs a JSON line with correlationId b9555d2a-75e7-4614-bb64-40b1093d1167
+```
+
+Grafana alert rules right after (`/api/prometheus/grafana/api/v1/rules`):
+
+```
+captured 2026-11-20T12:08:11Z
+Service or telemetry down: state=inactive health=ok [('auth-users', 'Normal'), ('badges', 'Normal'), ('events', 'Normal'), ('gateway', 'Normal'), ('rabbitmq', 'Normal'), ('reports', 'Normal'), ('transports', 'Normal')]
+Outbox stalled: state=inactive health=ok [('reports', 'Normal')]
+Useful triage below 95 %: state=inactive health=nodata [('-', 'NoData')]
+```
+
+`docker stats --no-stream` of that stack (memory; 2006 MiB in total, Prometheus and Grafana included):
+
+```
+farol-ci-auth-users-1	216.5MiB / 512MiB
+farol-ci-badges-1	136.9MiB / 512MiB
+farol-ci-events-1	134.3MiB / 512MiB
+farol-ci-frontend-1	10.41MiB / 64MiB
+farol-ci-gateway-1	170.5MiB / 512MiB
+farol-ci-grafana-1	91.09MiB / 256MiB
+farol-ci-keycloak-1	635.2MiB / 1GiB
+farol-ci-postgres-1	104.6MiB / 512MiB
+farol-ci-prometheus-1	30.32MiB / 256MiB
+farol-ci-rabbitmq-1	119.5MiB / 512MiB
+farol-ci-reports-1	218MiB / 512MiB
+farol-ci-transports-1	138.2MiB / 512MiB
+```
