@@ -3,6 +3,11 @@ package pt.isep.labdsof.reports.adapters.out.messaging;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -42,6 +47,7 @@ class OutboxIT extends IntegrationTest {
   @Autowired RabbitTemplate rabbit;
   @Autowired TransactionTemplate tx;
   @Autowired JsonMapper json;
+  @Autowired MeterRegistry meters;
 
   final RabbitTemplate admin = Infrastructure.adminTemplate();
   final UUID event = UUID.randomUUID();
@@ -282,5 +288,57 @@ class OutboxIT extends IntegrationTest {
     assertThat(OutboxPublisher.backoff(6)).isEqualTo(Duration.ofSeconds(60));
     assertThat(OutboxPublisher.backoff(40)).isEqualTo(Duration.ofSeconds(60));
     assertThat(Set.of(OutboxPublisher.MAX_BACKOFF)).containsExactly(Duration.ofSeconds(60));
+  }
+
+  /** A submit through the API with this X-Correlation-Id header; returns the stored outbox correlation id. */
+  String submitWithCorrelationId(String header) throws Exception {
+    var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/v1/events/" + event
+            + "/help-requests"))
+        .header("Authorization", "Bearer " + JWKS.valid("ana"))
+        .header("Content-Type", "application/json")
+        .header("X-Correlation-Id", header)
+        .POST(HttpRequest.BodyPublishers.ofString(submitBody(UUID.randomUUID(), "help")))
+        .build();
+    String id;
+    try (var client = HttpClient.newHttpClient()) {
+      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      assertThat(response.statusCode()).isEqualTo(201);
+      id = json.readTree(response.body()).get("id").asString();
+    }
+    return jdbc.sql("SELECT correlation_id FROM outbox WHERE body->'payload'->>'requestId' = :id")
+        .param("id", id).query(String.class).single();
+  }
+
+  @Test
+  @DisplayName("148 the caller's X-Correlation-Id goes with its event into the outbox and out as the AMQP correlation id")
+  void correlationIdCrossesTheBroker() throws Exception {
+    var correlationId = "it-" + UUID.randomUUID();
+    assertThat(submitWithCorrelationId(correlationId)).isEqualTo(correlationId);
+
+    assertThat(publisher(rabbit).publishDue()).isEqualTo(1);
+
+    assertThat(drain()).singleElement()
+        .satisfies(m -> assertThat(m.getMessageProperties().getCorrelationId()).isEqualTo(correlationId));
+  }
+
+  @Test
+  @DisplayName("148 an invalid X-Correlation-Id is replaced by a new UUID")
+  void invalidCorrelationIdReplaced() throws Exception {
+    var stored = submitWithCorrelationId("bad id;" + "x".repeat(80));
+    assertThat(UUID.fromString(stored)).isNotNull();
+  }
+
+  @Test
+  @DisplayName("148 the age of the oldest unpublished outbox row is a gauge, 0 when none is pending")
+  void oldestPendingGauge() {
+    var gauge = meters.get("farol.outbox.oldest.pending").gauge();
+    assertThat(gauge.getId().getBaseUnit()).isEqualTo("seconds");
+    assertThat(gauge.value()).isZero();
+
+    submit();
+
+    await().atMost(Duration.ofSeconds(5)).until(() -> gauge.value() > 0.5);
+    publisher(rabbit).publishDue();
+    assertThat(gauge.value()).isZero();
   }
 }
