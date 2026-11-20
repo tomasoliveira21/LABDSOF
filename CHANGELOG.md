@@ -2,6 +2,23 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-19 · Local Ollama triage evaluation run (#224, Bruno de Abreu Lopes)
+
+**Why:** #149 needs one actual run of the selected local model on the frozen test split, with a reproducible manifest and the results as they are (#224 is that part; #149 stays open for the label review and routing).
+
+### Added
+- [`run_ollama.py`](Docs/Research/architecture-investigation/evaluation/run_ollama.py): standard-library runner for a local Ollama, input only, the runtime contract's settings, 20 s single attempt on the whole call; unscored warm-up, `--resume`, `--verify` and `--self-test` (checks of the [spec](Docs/specs/224-ollama-evaluation-run.md)). The scorer's package file list is one constant.
+- [Run of 19 November 2026](Docs/Research/architecture-investigation/evaluation/runs/2026-11-19-local-qwen3/manifest.json): `qwen3:4b` Q4_K_M on `ollama/ollama:0.40.16` in Docker, CPU only, once on the 97 test cases. **Offline quality gate failed** on check 3: 5 `Low`/`Medium` cases rated `Critical`. Passed: 0 of 39 urgent cases missed, none below its minimum, category accuracy 0.966, coverage 0.978, 8 of 8 abstentions (keyword baseline: 22 of 39 missed, 0.573, 0.596). `provider_ms` median 10.0 s, p95 12.8 s, no timeout; cold start 58.5 s; container memory peak 3.40 GB. Repeated runs not done.
+
+### Changed
+- [System prompt](Docs/Research/architecture-investigation/evaluation/system-prompt.txt), on the development split only and frozen before the test run: category definitions as `features.md` §4.2, *not responding* in Critical, a lost person who cannot look after themselves in High, past incidents and questions are usable, European Portuguese, two development examples. Baseline report regenerated for the new prompt hash (same numbers).
+- Evaluation README (*Runs*), ADR-005, the local AI decisions, `responsible-ai.md` (model column, slices, reasons, latency), the decisions guide K2 and `Docs/README.md` record the run with dated notes. Still open: label review and reason review (#149), routing (US-34, #81), SC3/SC5.
+
+### Fixed (review of PR #225, 19 November 2026)
+- Spec 224 §6 said *six* `--verify` checks: there are eight.
+- `--resume` never retries a case already written, even as `output: null` (a failure stays a failure): now said in the flag's help, the runner's docstring and the evaluation README.
+- The manifest and `--verify` show integrity, not bit-for-bit reproducibility: seed 42 and temperature 0 do not fix the output across batch size, threads or backend (spec 224 §1, evaluation README). A prompt change for the five ceiling failures must be tuned on the development split or new cases, never on the test split (spec 224 §6).
+
 ## [Unreleased] · 2026-11-19 · Auth & Users service (#191, Tiago Teixeira)
 
 **Why:** every Sprint B service needs to know who calls it: the Farol account of a Keycloak user, the first FarolAdmin (#179) and, from US-06, the members of each event. Auth & Users was an empty skeleton. Spec, decisions and edge-case matrix: [`Docs/specs/191-auth-users-service.md`](Docs/specs/191-auth-users-service.md).
@@ -43,7 +60,6 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The six backend `Dockerfile`s: the Maven build reads and fills a BuildKit cache of its own, `farol-maven-<service>`, kept between builds, drops the `*.lastUpdated` markers it finds there first (so a dependency that failed to resolve once is tried again instead of being refused for up to 24 h) and retries Maven Central up to 10 times instead of 3. Same stages, base images, goal (`package` in Reports, #194) and jar; the cache is never copied into an image. One cache shared by the six was tried first and failed in CI: two Maven processes writing the same files at once.
 - `ci.yml`: before building the stack, the new step "Give the image builds the Maven dependencies" fills those caches with the repository the module builds of the same run already downloaded, so the image builds download nothing. The cache ids are read from `backend/*/Dockerfile`, and a backend Dockerfile without a Maven cache fails the step.
 - [`local-delivery.md`](Docs/Technical/local-delivery.md) §0: the caches, and how to empty them.
-
 
 ## [Unreleased] · 2026-11-18 · Review of PR #217: over-prioritisation and scale-example cases (#197, Bruno de Abreu Lopes)
 
