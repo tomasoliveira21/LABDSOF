@@ -22,8 +22,8 @@ import urllib.request
 import uuid
 
 COMPOSE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "compose.yaml")
-# Watched by the service-down alert; Auth & Users, Transports and Badges are listed as hand-offs and may be down
-EXPECTED_UP = {"gateway", "reports", "events", "rabbitmq"}
+# Watched by the service-down alert; Transports and Badges are listed as hand-offs and may be down
+EXPECTED_UP = {"gateway", "reports", "events", "auth-users", "rabbitmq"}
 ALERT_RULES = {"farol-service-down", "farol-outbox-stalled", "farol-triage-below-target"}
 failures = 0
 

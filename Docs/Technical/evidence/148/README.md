@@ -22,8 +22,24 @@ A synthetic membership row was inserted into Reports' `membership_copy` for the 
 
 - **SC3/SC5** (moved to #149): no triage worker exists, so no cohort, ratio or AI-off visibility was measured.
 - **Outbox stalled alert** was provisioned and evaluated (state *Normal*, value 0) but not driven above 60 s in this drill.
-- **Auth & Users is not scraped:** its security filter chain also covers the management port, so Prometheus gets `401`. It needs one more `SecurityFilterChain` for `EndpointRequest.to("health", "prometheus")` (as Reports has), a Java security change outside the configuration-only agreement. Its correlation id already works (#191).
 - **Transports and Badges** have no actuator; **Events** has metrics but no correlation filter (Java code); all are hand-offs to their owners.
 - **PostgreSQL** has no exporter (it would be a third container); outbox age comes from Reports.
 - Evaluation every **10 s**, not the plan's 15 s: Grafana's scheduler ticks every 10 s and refuses a 15 s rule interval. The `for` windows are the plan's.
 - Load, latency percentiles and long-run behaviour: not measured.
+
+## Update, 20 November 2026: Auth & Users scraped
+
+The drill above ran when Auth & Users still answered `401` on its management port (its security chain covered it), so its `up` is 0 in those snapshots. With its owner's agreement it now has the same management `SecurityFilterChain` as Reports (only `health` and `prometheus`, only on a separate management port), and it is in the `farol-services` job. `observability_smoke.py` on the rebuilt stack:
+
+```
+PASS Prometheus scrapes ['auth-users', 'events', 'gateway', 'rabbitmq', 'reports'] (up: ['auth-users', 'events', 'gateway', 'rabbitmq', 'reports'])
+PASS Grafana is healthy (200)
+PASS the Farol dashboard is provisioned (200)
+PASS the three core alert rules are provisioned (['farol-outbox-stalled', 'farol-service-down', 'farol-triage-below-target'])
+PASS the gateway returns the caller's X-Correlation-Id (d0211a41-166a-4122-a75b-3213d5f71609)
+PASS the gateway replaces an invalid X-Correlation-Id (14781796-b928-4194-8f14-2c3af363932e)
+PASS gateway logs a JSON line with correlationId d0211a41-166a-4122-a75b-3213d5f71609
+PASS reports logs a JSON line with correlationId d0211a41-166a-4122-a75b-3213d5f71609
+```
+
+On the Compose network `auth-users:8081/actuator/env` still answers `401`; the gateway does not route `/actuator` (`404`).
