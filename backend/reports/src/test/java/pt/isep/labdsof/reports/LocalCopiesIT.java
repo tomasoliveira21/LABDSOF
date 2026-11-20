@@ -4,6 +4,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
@@ -11,6 +14,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.LoggerFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.amqp.core.Message;
@@ -258,5 +262,30 @@ class LocalCopiesIT extends IntegrationTest {
     var result = Infrastructure.RABBIT.execInContainer(command);
     assertThat(result.getExitCode()).as(result.getStderr()).isZero();
     return result.getStdout();
+  }
+
+  @Test
+  @DisplayName("148 a consumed message's AMQP correlation id is in the log context while it is handled")
+  void correlationIdInLogContext() {
+    var logger = (Logger) LoggerFactory.getLogger("pt.isep.labdsof.reports.adapters.in.messaging.LocalCopyListener");
+    var appender = new ListAppender<ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      var messageId = UUID.randomUUID();
+      var properties = new MessageProperties();
+      properties.setMessageId(messageId.toString());
+      properties.setCorrelationId("corr-" + messageId);
+      properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+      admin.send("farol.events", "team.changed", new Message(
+          envelope(messageId, "SomethingNew", event, "{}").getBytes(UTF_8), properties));
+
+      await().atMost(WAIT).until(() -> appender.list.stream()
+          .anyMatch(e -> e.getFormattedMessage().contains(messageId.toString())));
+      assertThat(appender.list).filteredOn(e -> e.getFormattedMessage().contains(messageId.toString()))
+          .allSatisfy(e -> assertThat(e.getMDCPropertyMap()).containsEntry("correlationId", "corr-" + messageId));
+    } finally {
+      logger.detachAppender(appender);
+    }
   }
 }

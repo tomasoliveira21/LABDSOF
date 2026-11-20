@@ -161,12 +161,27 @@ jobs:
           done
       - name: Check the web app
         run: curl --fail --silent --show-error http://127.0.0.1:3000/ | grep -q "<title>Farol</title>"
+      # #148: the optional observability profile on top of the same stack (the checks above ran without it)
+      - name: Start the observability profile and check it (#148)
+        shell: bash
+        run: |
+          compose="docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example --profile observability"
+          $compose up -d --wait --wait-timeout 300 prometheus grafana
+          python3 -I infra/tests/observability_smoke.py infra/.env.example farol-ci
+          for service in prometheus grafana; do
+            container=$($compose ps -q "$service")
+            outside=$(docker port "$container" | grep -v -- '-> 127\.0\.0\.1:' || true)
+            test -z "$outside" || { echo "::error::$service is published outside 127.0.0.1: $outside"; exit 1; }
+            settings=$(docker inspect "$container" --format '{{.HostConfig.ReadonlyRootfs}} {{.HostConfig.CapDrop}} {{.HostConfig.SecurityOpt}}')
+            test "$settings" = "true [ALL] [no-new-privileges:true]" || { echo "::error::$service hardening: $settings"; exit 1; }
+          done
       - name: Show container logs on failure
         if: failure()
         run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example logs --no-color --tail=100
       - name: Stop the CI stack
         if: always()
-        run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example down --volumes --remove-orphans
+        # --profile observability: without it, `down` leaves the Prometheus and Grafana containers running (#148)
+        run: docker compose -p farol-ci -f infra/compose.yaml --env-file infra/.env.example --profile observability down --volumes --remove-orphans
 
   sonar:
     name: SonarQube Cloud

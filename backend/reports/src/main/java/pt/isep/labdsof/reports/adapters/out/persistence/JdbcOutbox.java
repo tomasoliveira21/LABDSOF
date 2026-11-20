@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.MDC;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import pt.isep.labdsof.reports.application.Outbox;
@@ -21,7 +22,7 @@ public class JdbcOutbox implements Outbox {
 
   /** One row claimed for publishing. */
   public record Pending(long id, UUID messageId, String exchange, String routingKey, String type,
-      String body, int attempts) {}
+      String body, int attempts, String correlationId) {}
 
   private final JdbcClient jdbc;
   private final JsonMapper json;
@@ -44,21 +45,22 @@ public class JdbcOutbox implements Outbox {
     envelope.put("actorUserId", event.actorUserId());
     envelope.put("payload", event.payload());
     jdbc.sql("""
-        INSERT INTO outbox (message_id, exchange, routing_key, type, body)
-        VALUES (:messageId, :exchange, :routingKey, :type, CAST(:body AS jsonb))
+        INSERT INTO outbox (message_id, exchange, routing_key, type, body, correlation_id)
+        VALUES (:messageId, :exchange, :routingKey, :type, CAST(:body AS jsonb), :correlationId)
         """)
         .param("messageId", event.messageId())
         .param("exchange", event.exchange())
         .param("routingKey", event.routingKey())
         .param("type", event.type())
         .param("body", json.writeValueAsString(envelope))
+        .param("correlationId", MDC.get("correlationId")) // #148: the request's, set by CorrelationIdFilter
         .update();
   }
 
   /** Locks up to {@code limit} due rows in publishing order; rows locked by another publisher are skipped. */
   public List<Pending> claimDue(int limit) {
     return jdbc.sql("""
-        SELECT id, message_id, exchange, routing_key, type, body::text AS body, attempts
+        SELECT id, message_id, exchange, routing_key, type, body::text AS body, attempts, correlation_id
         FROM outbox
         WHERE published_at IS NULL AND next_attempt_at <= now()
         ORDER BY id
@@ -68,8 +70,14 @@ public class JdbcOutbox implements Outbox {
         .param("limit", limit)
         .query((rs, row) -> new Pending(rs.getLong("id"), rs.getObject("message_id", UUID.class),
             rs.getString("exchange"), rs.getString("routing_key"), rs.getString("type"),
-            rs.getString("body"), rs.getInt("attempts")))
+            rs.getString("body"), rs.getInt("attempts"), rs.getString("correlation_id")))
         .list();
+  }
+
+  /** #148: seconds since the oldest unpublished row was written, 0 when none is pending (the outbox alert). */
+  public double oldestPendingSeconds() {
+    return jdbc.sql("SELECT COALESCE(EXTRACT(EPOCH FROM now() - min(created_at)), 0) FROM outbox "
+        + "WHERE published_at IS NULL").query(Double.class).single();
   }
 
   public void markPublished(long id, Instant at) {
