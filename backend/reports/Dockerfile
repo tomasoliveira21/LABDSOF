@@ -4,7 +4,12 @@ COPY pom.xml ./
 COPY src ./src
 COPY contracts ./contracts
 # Unit tests only: the *IT tests need Docker (Testcontainers) and run in `mvn verify` in CI (spec D17).
-RUN mvn --batch-mode --no-transfer-progress package
+# Maven dependencies stay in a cache kept between builds (#219), one per service so no two Maven processes write
+# the same files; CI fills it beforehand. Maven's not-found markers are not kept, or a dependency that failed to
+# resolve once would not be tried again for 24 h. Maven also retries Maven Central for longer (429 Too Many Requests)
+RUN --mount=type=cache,id=farol-maven-reports,target=/root/.m2/repository,sharing=locked \
+    find /root/.m2/repository -name '*.lastUpdated' -delete && \
+    mvn --batch-mode --no-transfer-progress -Daether.connector.http.retryHandler.count=10 package
 
 FROM eclipse-temurin:21-jre-alpine@sha256:82cf3d9ccbe1ed46252008d51b2f2329e6b9e8a2f4394c4bebefc3ea7f4b1372
 WORKDIR /app
