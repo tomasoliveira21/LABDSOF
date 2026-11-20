@@ -6,7 +6,7 @@
   ],
   "hashes_sha256": {
     "cases.jsonl": "05c6aec1cecd09a49990bce503c4c0e03336ae6e42b4951bc3ccf9210af3698a",
-    "system-prompt.txt": "088dee0391ea0dee039164c6b62d78d56f5fc8452f48849e3741d2cf36471116",
+    "system-prompt.txt": "2564cdf2257cb3c2a1426a6b9572956446edd078992222032ff43f69d9f9dbd1",
     "output.schema.json": "66e38f9fd4ad652c29eaa604eb4eb0929f404772f2d18dcd09a24ecfb4abd2ae"
   },
   "overall": {

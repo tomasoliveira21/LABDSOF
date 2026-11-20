@@ -14,6 +14,8 @@ LEVEL = {"Low": 0, "Medium": 1, "High": 2, "Critical": 3}
 CATEGORIES = ("Health", "Safety", "LostPerson", "Infrastructure", "Other")
 TAGS = {"plain", "urgent", "slang", "ambiguous", "english", "mixed", "multiple", "abstain", "no-content", "injection", "scale-example"}
 SCHEMA = json.loads((HERE / "output.schema.json").read_text(encoding="utf-8"))
+# The files a run is frozen with; their SHA-256 goes in every report and run manifest.
+PACKAGE_FILES = ("cases.jsonl", "system-prompt.txt", "output.schema.json")
 # ADR-005 decision 4 and coverage definition (aligned with observability in #145).
 MIN_CATEGORY_ACCURACY = 0.80
 MIN_SUGGESTION_COVERAGE = 0.95
@@ -206,7 +208,7 @@ def score(cases, predictions, mode="predictions"):
     timing = (overall["latency_samples"] == len(cases) and overall["urgent_late_or_missing_timing"] == 0
               and overall["valid_on_time_coverage"] is not None and overall["valid_on_time_coverage"] >= MIN_ON_TIME_COVERAGE)
     return {"kind": mode, "dataset_labels": "synthetic draft, not independently reviewed", "split": sorted({x["split"] for x in cases}),
-            "hashes_sha256": {name: hashlib.sha256((HERE / name).read_bytes()).hexdigest() for name in ["cases.jsonl", "system-prompt.txt", "output.schema.json"]},
+            "hashes_sha256": {name: hashlib.sha256((HERE / name).read_bytes()).hexdigest() for name in PACKAGE_FILES},
             "overall": overall, "slices": {tag: aggregate([x for x in rows if tag in x["tags"]]) for tag in sorted({t for x in rows for t in x["tags"]})},
             "offline_quality_gate_checks": gate_checks, "offline_quality_gate": all(gate_checks.values()), "reported_timing_gate": timing,
             "production_readiness": "NOT ESTABLISHED: independent labels, provider/privacy review, reason review and deployed SC3/SC5 tests still required",
