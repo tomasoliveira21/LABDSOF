@@ -266,7 +266,22 @@ class TriageServiceTest {
       assertThat(appender.list).isNotEmpty();
       assertThat(appender.list).allSatisfy(e -> assertThat(e.getFormattedMessage())
           .doesNotContain(DESCRIPTION).doesNotContain("Desmaio").doesNotContain("fake"));
-      assertThat(appender.list.get(0).getFormattedMessage()).contains(request.id().toString()).contains("Suggested");
+      assertThat(appender.list.get(0).getFormattedMessage()).contains(request.id().toString()).contains("SAVED Suggested");
+      assertThat(appender.list.get(1).getFormattedMessage()).contains("SAVED NotTriaged ProviderError");
+      // a late failure keeps its reason in the log; an outcome that saved nothing never reads "Suggested"
+      var late = submitted();
+      clock.now = SUBMITTED;
+      model.failure = NotTriagedReason.Timeout;
+      model.takes = Duration.ofSeconds(31);
+      service().triage(EVENT, late.id());
+      assertThat(appender.list.get(2).getFormattedMessage()).contains("LATE NotTriaged Timeout");
+      service().triage(EVENT, UUID.randomUUID());
+      assertThat(appender.list.get(3).getFormattedMessage()).contains("NOT_FOUND").doesNotContain("Suggested");
+      var lateSuggestion = submitted();
+      clock.now = SUBMITTED;
+      model.failure = null;
+      service().triage(EVENT, lateSuggestion.id());
+      assertThat(appender.list.get(4).getFormattedMessage()).contains("LATE Suggested");
     } finally {
       logger.detachAppender(appender);
     }

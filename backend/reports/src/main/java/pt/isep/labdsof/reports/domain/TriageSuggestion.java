@@ -67,9 +67,16 @@ public record TriageSuggestion(
         ? notTriaged(NotTriagedReason.InvalidOutput) : suggested(category, priority, (String) map.get("reason"));
   }
 
+  /** 1 to 240 code points, as the schema and varchar(240) count; no control, format or line-separator character. */
   private static boolean validReason(Object reason) {
-    return reason instanceof String text && !text.isEmpty() && text.length() <= MAX_REASON
-        && text.chars().noneMatch(c -> c < 0x20 || c == 0x7f);
+    return reason instanceof String text && !text.isEmpty() && text.codePointCount(0, text.length()) <= MAX_REASON
+        && text.codePoints().noneMatch(TriageSuggestion::unsafe);
+  }
+
+  private static boolean unsafe(int c) {
+    var type = Character.getType(c);
+    return type == Character.CONTROL || type == Character.FORMAT || type == Character.LINE_SEPARATOR
+        || type == Character.PARAGRAPH_SEPARATOR;
   }
 
   private static <E extends Enum<E>> E value(Class<E> type, Object name) {

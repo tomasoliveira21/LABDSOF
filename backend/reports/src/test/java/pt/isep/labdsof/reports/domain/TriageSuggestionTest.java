@@ -36,6 +36,12 @@ class TriageSuggestionTest {
         "Pessoa caída; requer a equipa.", null));
     assertThat(TriageSuggestion.fromModel(output("Other", "Low", "x".repeat(240), false)).suggestedReason())
         .hasSize(240);
+    // 240 code points, as the schema's maxLength and varchar(240) count them, even when UTF-16 needs 480 units
+    var ambulances = "🚑".repeat(240);
+    assertThat(TriageSuggestion.fromModel(output("Health", "High", ambulances, false)).suggestedReason())
+        .isEqualTo(ambulances);
+    assertThat(TriageSuggestion.fromModel(output("Health", "High", "Já está à espera; equipa médica €", false)).state())
+        .isEqualTo(TriageState.Suggested);
     for (var c : Category.values()) {
       for (var p : Priority.values()) {
         assertThat(TriageSuggestion.fromModel(output(c.name(), p.name(), "r", false)))
@@ -73,6 +79,11 @@ class TriageSuggestionTest {
         Arguments.of("control character", output("Health", "High", "a\u0007b", false)),
         Arguments.of("newline", output("Health", "High", "a\nb", false)),
         Arguments.of("delete character", output("Health", "High", "a\u007fb", false)),
+        Arguments.of("C1 control (NEL)", output("Health", "High", "a\u0085b", false)),
+        Arguments.of("bidi override", output("Health", "High", "a‮b", false)),
+        Arguments.of("line separator", output("Health", "High", "a b", false)),
+        Arguments.of("paragraph separator", output("Health", "High", "a b", false)),
+        Arguments.of("241 code points", output("Health", "High", "🚑".repeat(241), false)),
         Arguments.of("abstain as a string", output("Health", "High", "r", "false")),
         Arguments.of("abstain null", output("Health", "High", "r", null)),
         Arguments.of("abstention with a category", output("Health", null, "r", true)),

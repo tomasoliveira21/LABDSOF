@@ -144,6 +144,7 @@ class JdbcHelpRequests implements HelpRequests {
                 suggested_priority = :priority, suggested_reason = :reason, not_triaged_reason = :notTriagedReason,
                 updated_at = :updatedAt
             WHERE request_id = :id AND event_id = :eventId AND state = 'Pending' AND not_triaged_reason IS NULL
+              AND clock_timestamp() <= :deadline
             RETURNING request_id)
         UPDATE help_request SET updated_at = :updatedAt WHERE id IN (SELECT request_id FROM saved)
         """)
@@ -155,6 +156,8 @@ class JdbcHelpRequests implements HelpRequests {
         .param("reason", t.suggestedReason())
         .param("notTriagedReason", name(t.notTriagedReason()))
         .param("updatedAt", Timestamp.from(r.updatedAt()))
+        // A result written after the deadline would turn a NotTriaged/Timeout the operator saw into a suggestion
+        .param("deadline", Timestamp.from(r.submittedAt().plus(TriageSuggestion.TRIAGE_DEADLINE)))
         .update() == 1;
   }
 

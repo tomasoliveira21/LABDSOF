@@ -63,7 +63,7 @@ public class TriageService {
     var providerMs = Duration.between(start, done).toMillis();
     if (done.isAfter(deadline)) {
       // Completion: a late result is discarded; the request reads NotTriaged/Timeout (runtime contract)
-      return logged(requestId, new Result(Outcome.LATE, null, providerMs));
+      return logged(requestId, new Result(Outcome.LATE, triage.notTriagedReason(), providerMs));
     }
     var saved = helpRequests.saveTriage(request.withTriage(triage, done));
     return logged(requestId, new Result(saved ? Outcome.SAVED : Outcome.ALREADY_TRIAGED,
@@ -72,8 +72,9 @@ public class TriageService {
 
   /** Metadata only, never the description or the model's text (ADR-005 decision 5). */
   private static Result logged(UUID requestId, Result result) {
-    log.info("Triage of request {}: {} {} in {} ms", requestId, result.outcome(),
-        result.reason() == null ? "Suggested" : "NotTriaged " + result.reason(), result.providerMs());
+    var triage = result.reason() != null ? "NotTriaged " + result.reason()
+        : result.outcome() == Outcome.SAVED || result.outcome() == Outcome.LATE ? "Suggested" : "-";
+    log.info("Triage of request {}: {} {} in {} ms", requestId, result.outcome(), triage, result.providerMs());
     return result;
   }
 }

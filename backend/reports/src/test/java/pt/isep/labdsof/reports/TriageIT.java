@@ -25,6 +25,12 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import pt.isep.labdsof.reports.application.HelpRequests;
+import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.Location;
+import pt.isep.labdsof.reports.domain.Priority;
+import pt.isep.labdsof.reports.domain.TriageSuggestion;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.Membership.Role;
 import pt.isep.labdsof.reports.domain.Permission;
@@ -216,6 +222,31 @@ class TriageIT extends IntegrationTest {
     var id = submit("[long] uma pessoa caiu");
     var body = triaged(id, Instant.now());
     assertThat(JsonPath.<String>read(body, "$.triage.suggestedReason")).isEqualTo(REASON_240);
+  }
+
+  @Test
+  @DisplayName("229 AC-1 the model is warmed up when Reports starts")
+  void warmUp() {
+    await().atMost(Duration.ofSeconds(10)).until(() -> CALLS.stream().anyMatch(c -> c.contains(
+        pt.isep.labdsof.reports.adapters.out.ai.OllamaTriageModel.WARM_UP_TEXT)));
+  }
+
+  @Autowired HelpRequests helpRequests;
+
+  @Test
+  @DisplayName("229 AC-3 the database refuses a triage after the deadline")
+  void deadlineInTheDatabase() {
+    var now = Instant.now();
+    var late = HelpRequest.submit(UUID.randomUUID(), event, participant, UUID.randomUUID(), "late",
+        new Location(3, 0.42, 0.77), now.minusSeconds(31));
+    var onTime = HelpRequest.submit(UUID.randomUUID(), event, participant, UUID.randomUUID(), "on time",
+        new Location(3, 0.42, 0.77), now.minusSeconds(1));
+    helpRequests.insertIfNew(late);
+    helpRequests.insertIfNew(onTime);
+    var suggestion = TriageSuggestion.suggested(Category.Health, Priority.High, "r");
+    assertThat(helpRequests.saveTriage(late.withTriage(suggestion, now))).isFalse();
+    assertThat(helpRequests.saveTriage(onTime.withTriage(suggestion, now))).isTrue();
+    assertThat(helpRequests.find(event, late.id()).orElseThrow().triage()).isEqualTo(TriageSuggestion.pending());
   }
 
   @Test
