@@ -12,6 +12,10 @@ because the run no longer measures the current package and must be redone (local
 It checks integrity, not reproducibility: seed 42 and temperature 0 do not make a rerun give the same outputs bit for
 bit, as llama.cpp output also depends on batch size, threads and backend.
 
+--cases and --prompt (#227) choose the cases files and the prompt version (prompts/...); the defaults are the #224
+package (cases.jsonl, system-prompt.txt). A run directory with several runs holds predictions-run-1.jsonl,
+predictions-run-2.jsonl and so on, each with its raw and report file; --verify checks every one of them.
+
 --resume runs only the IDs missing from --out: a case already written, even as output null, is never run again, so a
 failure stays a failure.
 """
@@ -69,9 +73,9 @@ def attempt(args, prompt, schema, case_id, text, timeout=TIMEOUT_S):
 
 
 def run(args):
-    prompt = (HERE / "system-prompt.txt").read_text(encoding="utf-8")
+    prompt = (HERE / args.prompt).read_text(encoding="utf-8")
     schema = json.loads((HERE / "output.schema.json").read_text(encoding="utf-8"))
-    cases = [c for c in evaluate.read_jsonl(HERE / "cases.jsonl") if c["split"] == args.split]
+    cases = [c for c in evaluate.load_cases(args.cases) if c["split"] == args.split]
     # --resume after an interruption: keep the IDs already written and run only the missing ones, same settings.
     done = {row["id"] for row in evaluate.read_jsonl(args.out)} if args.resume and args.out.exists() else set()
     mode = "a" if args.resume else "w"
@@ -94,10 +98,14 @@ def check(condition, name):
 
 
 def verify(run_dir, split):
-    """Checks of spec 224 §1 on a committed run directory."""
+    """Checks of spec 224 §1 (and spec 227 §1 for a manifest with a repeated-run gate) on a committed run directory."""
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     settings = manifest["settings"]
-    check({n: hashlib.sha256((HERE / n).read_bytes()).hexdigest() for n in evaluate.PACKAGE_FILES} == manifest["package_sha256"],
+    # #227: the manifest names the cases files, prompt and split it ran with; without them it is the #224 package.
+    used = manifest.get("files", {})
+    files = evaluate.package_files(used.get("cases", ["cases.jsonl"]), used.get("prompt", "system-prompt.txt"))
+    split = manifest.get("split", split)
+    check({n: hashlib.sha256((HERE / n).read_bytes()).hexdigest() for n in files} == manifest["package_sha256"],
           "224 AC-1 manifest hashes match the package")
     check(settings["options"] == OPTIONS and settings["think"] is False and settings["stream"] is False
           and settings["response_timeout_s"] == TIMEOUT_S and settings["keep_alive"] == KEEP_ALIVE,
@@ -106,25 +114,40 @@ def verify(run_dir, split):
           and all(manifest["model"].get(k) for k in ("name", "digest", "quantization"))
           and all(manifest.get(k) for k in ("runner_commit", "hardware", "date")),
           "224 AC-1 manifest names runtime, model, runner commit, hardware and date")
-    cases = [c for c in evaluate.read_jsonl(HERE / "cases.jsonl") if c["split"] == split]
-    predictions = evaluate.read_jsonl(run_dir / "predictions-run-1.jsonl")
+    cases = [c for c in evaluate.load_cases(files[:-2]) if c["split"] == split]
+    runs = sorted(int(p.stem.rsplit("-", 1)[1]) for p in run_dir.glob("predictions-run-*.jsonl"))
+    check(runs and runs == list(range(1, len(runs) + 1)), "227 AC-4 the run files are numbered from 1 without gaps")
+    gate = manifest.get("repeated_run_gate")
+    if gate is not None:
+        check(gate.get("rule") and gate.get("runs") == len(runs), "227 AC-3 manifest pre-registers the gate rule and the number of runs")
+    passed = [verify_run(run_dir, n, cases, files) for n in runs]
+    if gate is not None:
+        check(manifest["result"]["offline_quality_gate_every_run"] == all(passed) and manifest["result"]["runs_passing_gate"] == sum(passed),
+              "227 AC-4 the repeated-run gate passes only when every run passes")
+
+
+def verify_run(run_dir, n, cases, files):
+    print("run", n)
+    predictions = evaluate.read_jsonl(run_dir / f"predictions-run-{n}.jsonl")
     check(sorted(p["id"] for p in predictions) == sorted(c["id"] for c in cases) and all(set(p) == {"id", "output"} for p in predictions),
           "224 AC-2 predictions cover every case once, without elapsed_ms")
-    raw = [r for r in evaluate.read_jsonl(run_dir / "raw-run-1.jsonl") if r["id"] != "warm-up"]
+    raw = [r for r in evaluate.read_jsonl(run_dir / f"raw-run-{n}.jsonl") if r["id"] != "warm-up"]
     by_id = {r["id"]: r for r in raw}
 
     def from_raw(r):
         return None if r is None or r["error"] or r["content"] is None else json.loads(r["content"])
     check(len(by_id) == len(raw) == len(predictions) and all(p["output"] == from_raw(by_id.get(p["id"])) for p in predictions),
           "224 AC-2 predictions are the raw replies")
-    check((run_dir / "report-run-1.json").read_bytes() == evaluate.render(evaluate.score(cases, predictions, "reported-provider-predictions")).encode(),
+    check((run_dir / f"report-run-{n}.json").read_bytes()
+          == evaluate.render(evaluate.score(cases, predictions, "reported-provider-predictions", files)).encode(),
           "224 AC-2 committed report is what the scorer produces")
-    report = json.loads((run_dir / "report-run-1.json").read_text(encoding="utf-8"))
+    report = json.loads((run_dir / f"report-run-{n}.json").read_text(encoding="utf-8"))
     nulls = {p["id"] for p in predictions if p["output"] is None}
     check(all(by_id[i]["error"] for i in nulls) and nulls <= set(report["failing_case_ids"]),
           "224 AC-3 every timeout or invalid output is null, has its error and counts as a failure")
     check(all(by_id[p["id"]]["provider_ms"] <= TIMEOUT_S * 1000 for p in predictions if p["output"] is not None),
           "224 AC-3 no output is accepted after the 20 s timeout")
+    return report["offline_quality_gate"]
 
 
 def self_test():
@@ -158,7 +181,10 @@ def self_test():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--split", choices=["dev", "test"], default="test")
+    parser.add_argument("--split", choices=["dev", "test", "holdout"], default="test")
+    parser.add_argument("--cases", nargs="+", default=["cases.jsonl"], metavar="FILE",
+                        help="cases files in this folder (#227: holdout.jsonl, dev-extra.jsonl); default cases.jsonl")
+    parser.add_argument("--prompt", default="system-prompt.txt", metavar="FILE", help="prompt file in this folder (#227: prompts/...)")
     parser.add_argument("--verify", type=Path, metavar="RUN_DIR")
     parser.add_argument("--self-test", action="store_true", help="runner checks against a local stub server")
     parser.add_argument("--model", default="qwen3:4b")
