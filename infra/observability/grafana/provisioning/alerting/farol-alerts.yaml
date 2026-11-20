@@ -1,0 +1,82 @@
+# #148: the three core Grafana-managed alerts (plans/local-observability.md §4). Evaluated every 10 s, not the plan's
+# 15 s: Grafana's scheduler ticks every 10 s and refuses an interval it does not divide; the windows (`for`) are the
+# plan's. Firing and recovery are seen in Grafana only (no contact point is configured: no e-mail, no Slack).
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: farol-core
+    folder: Farol
+    interval: 10s
+    rules:
+      # One instance per expected target. A stopped service makes its `up` 0; Prometheus itself unreachable is an
+      # error, and no sample at all is no data: both are telemetry down, so both alert too.
+      - uid: farol-service-down
+        title: Service or telemetry down
+        condition: C
+        for: 2m
+        noDataState: Alerting
+        execErrState: Alerting
+        labels: {severity: critical}
+        annotations:
+          summary: "{{ $labels.service }} has not answered the Prometheus scrape for 2 minutes"
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 60, to: 0}
+            model: {refId: A, instant: true, expr: 'up{job=~"farol-services|rabbitmq"}'}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: lt, params: [1]}}]
+      # Reports' oldest unpublished outbox row (ADR-004, NFR #139: 60 s)
+      - uid: farol-outbox-stalled
+        title: Outbox stalled
+        condition: C
+        for: 2m
+        noDataState: NoData
+        execErrState: Alerting
+        labels: {severity: warning}
+        annotations:
+          summary: "The oldest unpublished outbox row of {{ $labels.service }} is older than 60 s"
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 60, to: 0}
+            model: {refId: A, instant: true, expr: farol_outbox_oldest_pending_seconds}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: gt, params: [60]}}]
+      # Mature one-hour cohort (plan §3). No service emits these two gauges until #81–#83: the rule shows No data.
+      - uid: farol-triage-below-target
+        title: Useful triage below 95 %
+        condition: C
+        for: 5m
+        noDataState: NoData
+        execErrState: Alerting
+        labels: {severity: warning}
+        annotations:
+          summary: Fewer than 95 % of the mature one-hour cohort got a valid suggestion stored within 30 s
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: {from: 60, to: 0}
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                sum(farol_triage_window_valid_on_time) / sum(farol_triage_window_eligible)
+                and on() sum(farol_triage_window_eligible) >= 20
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions: [{evaluator: {type: lt, params: [0.95]}}]

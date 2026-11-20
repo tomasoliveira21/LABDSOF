@@ -1,0 +1,37 @@
+# #148: what Prometheus scrapes (plans/local-observability.md §1). Every 15 s, over the Compose network only.
+# Each service exposes /actuator/prometheus on its private management port 8081, never published.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # The services the three alerts watch: `up == 0` for one of them is "service down"
+  - job_name: farol-services
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["gateway:8081", "reports:8081", "events:8081"]
+    relabel_configs: &service-label
+      - source_labels: [__address__]
+        regex: "([^:]+):.*"
+        target_label: service
+  # Listed so the dashboard shows them as down until their owners expose the endpoint (hand-offs of #148):
+  # Transports and Badges have no actuator yet; Auth & Users answers 401, because its security filter chain also
+  # covers the management port, and permitting it is a change to its Java security configuration.
+  - job_name: farol-handoff
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["auth-users:8081", "transports:8081", "badges:8081"]
+    relabel_configs: *service-label
+  # RabbitMQ's own rabbitmq_prometheus plugin (enabled in the image): broker totals, then per queue.
+  # Queue names are a fixed list (infra/rabbitmq/topology.json), so the queue label stays bounded.
+  - job_name: rabbitmq
+    static_configs:
+      - targets: ["rabbitmq:15692"]
+        labels: {service: rabbitmq}
+  - job_name: rabbitmq-queues
+    metrics_path: /metrics/detailed
+    params:
+      family: [queue_coarse_metrics]
+    static_configs:
+      - targets: ["rabbitmq:15692"]
+        labels: {service: rabbitmq}
