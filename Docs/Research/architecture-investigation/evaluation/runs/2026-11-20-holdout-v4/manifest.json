@@ -2,7 +2,7 @@
   "issue": "#227, part of #149",
   "date": "2026-11-20",
   "purpose": "Comparison: one run of the #224 prompt (v4) on the same fresh holdout (#227). Not a gate for v8; quality gate only, no elapsed_ms.",
-  "status": "frozen before the holdout runs; results added after them",
+  "status": "frozen before the holdout runs; results added after them (1 run done on 20 November 2026)",
   "runner_commit": "b2fff0f09507569b10110a186ff347461ab08eb7",
   "split": "holdout",
   "files": {
@@ -79,5 +79,60 @@
     "runs": 1,
     "rule": "one run, reported as a comparison; its gate is reported as for any run",
     "source": "spec 227 D4, committed before the runs (6bcdae6)"
+  },
+  "result": {
+    "offline_quality_gate_every_run": false,
+    "runs_passing_gate": 0,
+    "memory_source": "docker exec farol-224-ollama cat /sys/fs/cgroup/memory.peak and memory.current after each run (cgroup v2, counters reset by the restart before the run; includes the page cache of the mapped model file)",
+    "provider_ms_definition": "client-side wall time of one /api/chat call, request to parsed reply; not elapsed_ms, not SC3",
+    "runs": {
+      "run-1": {
+        "started_utc": "2026-11-20T09:08:33Z",
+        "finished_utc": "2026-11-20T09:23:27Z",
+        "host_free_ram_gib_before": 2.44,
+        "host_free_ram_gib_after": 2.65,
+        "container_memory_peak_bytes": 3392741376,
+        "container_memory_current_after_bytes": 3391074304,
+        "ollama_ps_size_bytes": 3186108660,
+        "interruptions": "none; no case resumed",
+        "cases": 72,
+        "timeouts_or_errors": 0,
+        "done_reasons": [
+          "stop"
+        ],
+        "max_output_tokens_seen": 73,
+        "provider_ms": {
+          "min": 7307,
+          "median": 11896.5,
+          "p95_nearest_rank": 14668,
+          "max": 15594,
+          "over_16000_slow_threshold": 0,
+          "over_20000_timeout": 0
+        },
+        "cold_start": {
+          "warm_up_provider_ms": 50595,
+          "load_duration_ms": 4831
+        },
+        "offline_quality_gate": false,
+        "failed_checks": [
+          "1_zero_urgent_failures",
+          "2_no_case_below_its_minimum_priority",
+          "3_no_low_or_medium_case_rated_critical"
+        ],
+        "failing_case_ids": [
+          "H010",
+          "H011",
+          "H025",
+          "H031",
+          "H036",
+          "H037",
+          "H046",
+          "H047",
+          "H053",
+          "H059",
+          "H060"
+        ]
+      }
+    }
   }
 }

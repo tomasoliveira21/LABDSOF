@@ -2,7 +2,7 @@
   "issue": "#227, part of #149",
   "date": "2026-11-20",
   "purpose": "Three direct model-call runs of the fresh holdout (72 cases) with the prompt frozen on the development split (#227). Quality gate only: no elapsed_ms, so no SC3 claim.",
-  "status": "frozen before the holdout runs; results added after them",
+  "status": "frozen before the holdout runs; results added after them (3 runs done on 20 November 2026)",
   "runner_commit": "b2fff0f09507569b10110a186ff347461ab08eb7",
   "split": "holdout",
   "files": {
@@ -79,5 +79,151 @@
     "runs": 3,
     "rule": "the offline quality gate passes only when it passes in every run; the release gate of the local AI decisions (step 6) does not say how repeated runs combine, so the strictest reading applies",
     "source": "spec 227 D4, committed before the runs (6bcdae6)"
+  },
+  "result": {
+    "offline_quality_gate_every_run": false,
+    "runs_passing_gate": 0,
+    "memory_source": "docker exec farol-224-ollama cat /sys/fs/cgroup/memory.peak and memory.current after each run (cgroup v2, counters reset by the restart before the run; includes the page cache of the mapped model file)",
+    "provider_ms_definition": "client-side wall time of one /api/chat call, request to parsed reply; not elapsed_ms, not SC3",
+    "runs": {
+      "run-1": {
+        "started_utc": "2026-11-20T08:22:55Z",
+        "finished_utc": "2026-11-20T08:38:00Z",
+        "host_free_ram_gib_before": 2.04,
+        "host_free_ram_gib_after": 2.47,
+        "container_memory_peak_bytes": 3393724416,
+        "container_memory_current_after_bytes": 3391586304,
+        "ollama_ps_size_bytes": 3186108660,
+        "interruptions": "none; no case resumed",
+        "cases": 72,
+        "timeouts_or_errors": 0,
+        "done_reasons": [
+          "stop"
+        ],
+        "max_output_tokens_seen": 74,
+        "provider_ms": {
+          "min": 6827,
+          "median": 11661.0,
+          "p95_nearest_rank": 15289,
+          "max": 18456,
+          "over_16000_slow_threshold": 1,
+          "over_20000_timeout": 0
+        },
+        "cold_start": {
+          "warm_up_provider_ms": 53449,
+          "load_duration_ms": 4052
+        },
+        "offline_quality_gate": false,
+        "failed_checks": [
+          "1_zero_urgent_failures",
+          "2_no_case_below_its_minimum_priority",
+          "3_no_low_or_medium_case_rated_critical"
+        ],
+        "failing_case_ids": [
+          "H011",
+          "H025",
+          "H036",
+          "H037",
+          "H046",
+          "H053",
+          "H057",
+          "H059",
+          "H060",
+          "H067"
+        ]
+      },
+      "run-2": {
+        "started_utc": "2026-11-20T08:38:07Z",
+        "finished_utc": "2026-11-20T08:53:09Z",
+        "host_free_ram_gib_before": 2.49,
+        "host_free_ram_gib_after": 2.33,
+        "container_memory_peak_bytes": 3392606208,
+        "container_memory_current_after_bytes": 3390885888,
+        "ollama_ps_size_bytes": 3186108660,
+        "interruptions": "none; no case resumed",
+        "cases": 72,
+        "timeouts_or_errors": 0,
+        "done_reasons": [
+          "stop"
+        ],
+        "max_output_tokens_seen": 74,
+        "provider_ms": {
+          "min": 7624,
+          "median": 11653.5,
+          "p95_nearest_rank": 14905,
+          "max": 16683,
+          "over_16000_slow_threshold": 1,
+          "over_20000_timeout": 0
+        },
+        "cold_start": {
+          "warm_up_provider_ms": 51831,
+          "load_duration_ms": 5578
+        },
+        "offline_quality_gate": false,
+        "failed_checks": [
+          "1_zero_urgent_failures",
+          "2_no_case_below_its_minimum_priority",
+          "3_no_low_or_medium_case_rated_critical"
+        ],
+        "failing_case_ids": [
+          "H011",
+          "H025",
+          "H036",
+          "H037",
+          "H046",
+          "H053",
+          "H057",
+          "H059",
+          "H060",
+          "H067"
+        ]
+      },
+      "run-3": {
+        "started_utc": "2026-11-20T08:53:17Z",
+        "finished_utc": "2026-11-20T09:08:27Z",
+        "host_free_ram_gib_before": 2.41,
+        "host_free_ram_gib_after": 2.48,
+        "container_memory_peak_bytes": 3392974848,
+        "container_memory_current_after_bytes": 3391594496,
+        "ollama_ps_size_bytes": 3186108660,
+        "interruptions": "none; no case resumed",
+        "cases": 72,
+        "timeouts_or_errors": 0,
+        "done_reasons": [
+          "stop"
+        ],
+        "max_output_tokens_seen": 74,
+        "provider_ms": {
+          "min": 6374,
+          "median": 11743.0,
+          "p95_nearest_rank": 15585,
+          "max": 16012,
+          "over_16000_slow_threshold": 1,
+          "over_20000_timeout": 0
+        },
+        "cold_start": {
+          "warm_up_provider_ms": 51267,
+          "load_duration_ms": 4599
+        },
+        "offline_quality_gate": false,
+        "failed_checks": [
+          "1_zero_urgent_failures",
+          "2_no_case_below_its_minimum_priority",
+          "3_no_low_or_medium_case_rated_critical"
+        ],
+        "failing_case_ids": [
+          "H011",
+          "H025",
+          "H036",
+          "H037",
+          "H046",
+          "H053",
+          "H057",
+          "H059",
+          "H060",
+          "H067"
+        ]
+      }
+    }
   }
 }
