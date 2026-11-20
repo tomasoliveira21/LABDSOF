@@ -83,3 +83,23 @@ The offline quality gate (seven checks, priority first) is **reported, never low
 | v8 | v7 plus *Low … however strongly it is worded* and *music that is too loud* in the Low examples | 0 | 0 | 0 | 42 of 45 | 45 of 45 | 3 of 3 | **passed** |
 
   v8 is frozen (b2fff0f; SHA-256 `4f29389301a9bd8d5fb2f5e6ab15eb9c64fef92e1c748b6a30faf56f47eafbc3`). It still has three category errors on development (D003 and D006 `Other` versus `Infrastructure`, D009 `Infrastructure` for a noise complaint labelled `Other`). Single runs on 48 cases: v5 and v6 show that a small wording change moves urgent cases too, so the holdout runs, not these, are the evidence.
+- **Gate rule and manifests** committed in 501bd8b, before the first holdout run; D4 has been in this spec since 6bcdae6. Runner commit in the manifests: b2fff0f (the runner did not change after it).
+- **Holdout runs**, 20 November 2026, sequential, each after a container restart, no interruption, no timeout or error, every reply ended with `stop` (at most 74 output tokens). v8 runs 1 to 3: 08:22:55 to 09:08:27 UTC; v4: 09:08:33 to 09:23:27 UTC. While run 3 was going, Claude Code reported its background job stopped for low memory, but the run's processes kept going and finished; nothing was restarted, and the predictions have no gap (`--verify`).
+
+| Check, in order | Keyword baseline | v4 (#224 prompt), once | v8 run 1 | v8 run 2 | v8 run 3 |
+|---|---|---|---|---|---|
+| 1. Urgent cases missed (of 29) | 26 | 2 (H046, H060) | 2 (H046, H060) | 2 | 2 |
+| 2. Below the minimum | 8 | 2 | 2 | 2 | 2 |
+| 3. `Low`/`Medium` rated `Critical` | 2 | 1 (H037) | 2 (H037, H067) | 2 | 2 |
+| 4. Category accuracy (of 66) | 0.152 | 0.879 (H010, H011, H025, H031, H036, H053, H059 wrong; H047 abstained) | 0.909 (H011, H025, H036, H053, H057, H059) | 0.909 | 0.909 |
+| 5. Coverage (of 66) | 0.333 | 0.985 (H047 abstained, a question in English) | 1.0 | 1.0 | 1.0 |
+| 6. Expected abstentions | 6 of 6 | 6 of 6 | 6 of 6 | 6 of 6 | 6 of 6 |
+| 7. Semantic inconsistencies | 0 | 0 | 0 | 0 | 0 |
+| Gate | failed | **failed** | **failed** | **failed** | **failed** |
+
+  **The repeated-run gate (D4) fails: 0 of 3 runs pass.** The three v8 runs gave byte-identical predictions, so the spread across runs is zero on every check. Both prompts rated `High` the two cases labelled `Critical` (H046 `LostPerson`, H060 `Safety`), so the under-rating is not caused by the v8 change; v8 has one more ceiling failure (H067, `Infrastructure` `Medium` rated `Critical`) and one fewer category error. The development gains (§6 table) did not carry over to the holdout. Exact priority 0.652 for v8 (21 above the minimum), 0.621 for v4 (22 above). No label was changed after the runs; the holdout labels are not independently reviewed, so whether H046 and H060 are `Critical` is for the label review (#149 AC-2).
+- `provider_ms` (direct calls, not SC3): v8 runs median 11,661 / 11,654 / 11,743 ms, p95 15,289 / 14,905 / 15,585 ms, maximum 18,456 / 16,683 / 16,012 ms, one call per run over the 16 s slow threshold, none over 20 s; v4 median 11,897 ms, maximum 15,594 ms. Cold start (warm-up) 51.3 to 53.4 s, model load 4.1 to 5.6 s. Container `memory.peak` 3.39 GB in every run; host free RAM 2.0 to 2.7 GiB. Calls are about 1.7 s slower than in #224 (median 10.0 s) with the same settings; the laptop had less free RAM.
+- Reasons (script only, no person read them and no reason text is quoted, to keep the holdout unread): Brazilian rather than European Portuguese forms in 7 v8 reasons and 11 v4 reasons; no English word, mention of instructions or treatment-like verb flagged. Human review of every reason is still pending.
+- Run checks: `--verify` passes on `runs/2026-11-20-holdout-v8` (three runs), `runs/2026-11-20-holdout-v4` and the #224 run. Red before green on copies of the v8 directory: a manifest saying the gate passed, a missing `predictions-run-2.jsonl`, and a manifest with 2 runs each failed with `227 AC-4 the repeated-run gate passes only when every run passes`, `227 AC-4 the run files are numbered from 1 without gaps` and `227 AC-3 manifest pre-registers the gate rule and the number of runs`.
+- The Ollama container is stopped and removed; the image `ollama/ollama:0.40.16` and the volume `farol-224-ollama-models` are kept.
+- Not done, and not claimed: the label review (#149 AC-2) and the human review of reasons; routing (#149 AC-3, US-34 #81); SC3 and SC5. A next attempt would need new development cases and a new holdout, since this one is now known by its failing IDs (not by its texts).
