@@ -23,6 +23,9 @@ import argparse
 import hashlib
 import http.server
 import json
+import math
+import re
+import statistics
 import sys
 import threading
 import time
@@ -75,7 +78,7 @@ def attempt(args, prompt, schema, case_id, text, timeout=TIMEOUT_S):
 def run(args):
     prompt = (HERE / args.prompt).read_text(encoding="utf-8")
     schema = json.loads((HERE / "output.schema.json").read_text(encoding="utf-8"))
-    cases = [c for c in evaluate.load_cases(args.cases) if c["split"] == args.split]
+    cases = evaluate.select(evaluate.load_cases(args.cases), args.split)
     # --resume after an interruption: keep the IDs already written and run only the missing ones, same settings.
     done = {row["id"] for row in evaluate.read_jsonl(args.out)} if args.resume and args.out.exists() else set()
     mode = "a" if args.resume else "w"
@@ -114,19 +117,24 @@ def verify(run_dir, split):
           and all(manifest["model"].get(k) for k in ("name", "digest", "quantization"))
           and all(manifest.get(k) for k in ("runner_commit", "hardware", "date")),
           "224 AC-1 manifest names runtime, model, runner commit, hardware and date")
-    cases = [c for c in evaluate.load_cases(files[:-2]) if c["split"] == split]
-    runs = sorted(int(p.stem.rsplit("-", 1)[1]) for p in run_dir.glob("predictions-run-*.jsonl"))
-    check(runs and runs == list(range(1, len(runs) + 1)), "227 AC-4 the run files are numbered from 1 without gaps")
+    cases = evaluate.select(evaluate.load_cases(files[:-2]), split)
+    numbers = {kind: sorted(int(m.group(1)) for f in run_dir.iterdir() if (m := re.fullmatch(kind + r"-run-(\d+)\.jsonl?", f.name)))
+               for kind in ("predictions", "raw", "report")}
+    runs = numbers["predictions"]
+    check(runs and runs == list(range(1, len(runs) + 1)) and numbers["raw"] == runs == numbers["report"],
+          "227 AC-4 the run files are numbered from 1 without gaps")
     gate = manifest.get("repeated_run_gate")
     if gate is not None:
         check(gate.get("rule") and gate.get("runs") == len(runs), "227 AC-3 manifest pre-registers the gate rule and the number of runs")
-    passed = [verify_run(run_dir, n, cases, files) for n in runs]
+    per_run = manifest.get("result", {}).get("runs")
+    passed = [verify_run(run_dir, n, cases, files, per_run) for n in runs]
     if gate is not None:
-        check(manifest["result"]["offline_quality_gate_every_run"] == all(passed) and manifest["result"]["runs_passing_gate"] == sum(passed),
+        check(manifest["result"]["offline_quality_gate_every_run"] == all(passed) and manifest["result"]["runs_passing_gate"] == sum(passed)
+              and len(per_run or {}) == len(runs),
               "227 AC-4 the repeated-run gate passes only when every run passes")
 
 
-def verify_run(run_dir, n, cases, files):
+def verify_run(run_dir, n, cases, files, per_run=None):
     print("run", n)
     predictions = evaluate.read_jsonl(run_dir / f"predictions-run-{n}.jsonl")
     check(sorted(p["id"] for p in predictions) == sorted(c["id"] for c in cases) and all(set(p) == {"id", "output"} for p in predictions),
@@ -147,6 +155,17 @@ def verify_run(run_dir, n, cases, files):
           "224 AC-3 every timeout or invalid output is null, has its error and counts as a failure")
     check(all(by_id[p["id"]]["provider_ms"] <= TIMEOUT_S * 1000 for p in predictions if p["output"] is not None),
           "224 AC-3 no output is accepted after the 20 s timeout")
+    if per_run is not None:  # #227: the manifest's per-run figures are the report's and the raw file's
+        entry, ms = per_run.get(f"run-{n}", {}), sorted(r["provider_ms"] for r in raw)
+        check(set(per_run) == {f"run-{i}" for i in range(1, len(per_run) + 1)}
+              and entry.get("offline_quality_gate") == report["offline_quality_gate"]
+              and entry.get("failed_checks") == [k for k, v in report["offline_quality_gate_checks"].items() if not v]
+              and entry.get("failing_case_ids") == report["failing_case_ids"]
+              and entry.get("cases") == len(predictions) and entry.get("timeouts_or_errors") == sum(1 for r in raw if r["error"])
+              and entry.get("provider_ms", {}).get("min") == ms[0] and entry["provider_ms"].get("max") == ms[-1]
+              and entry["provider_ms"].get("median") == statistics.median(ms)
+              and entry["provider_ms"].get("p95_nearest_rank") == ms[math.ceil(.95 * len(ms)) - 1],
+              "227 AC-4 the manifest's per-run results are the report and raw files")
     return report["offline_quality_gate"]
 
 

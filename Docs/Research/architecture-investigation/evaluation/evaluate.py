@@ -156,7 +156,20 @@ def load_cases(files=("cases.jsonl",)):
             validate_extra(extra, main)
             rows += extra
     check(len({x["id"] for x in rows}) == len(rows), "duplicate IDs")
+    distinct_texts(rows)
     return rows
+
+
+def distinct_texts(rows):
+    """No description is in two cases files: a development copy of a holdout case would unblind it (#227 review)."""
+    check(len({x["input"]["text"] for x in rows}) == len(rows), "227 AC-2 no text is in two cases files")
+
+
+def select(cases, split):
+    """The cases of one split; empty means the split does not match the cases files, which is refused (#227 review)."""
+    selected = [c for c in cases if split == "all" or c["split"] == split]
+    check(selected, "227 AC-4 the split selects at least one case of the given files")
+    return selected
 
 
 def validate_cases(cases):
@@ -268,7 +281,7 @@ def score(cases, predictions, mode="predictions", files=PACKAGE_FILES):
 
 
 def run_baseline(cases, split, files=PACKAGE_FILES):
-    selected = [c for c in cases if split == "all" or c["split"] == split]
+    selected = select(cases, split)
     return score(selected, [baseline(c) for c in selected], "deterministic-keyword-baseline-not-model", files)
 
 
@@ -410,6 +423,13 @@ def self_test(cases):
           "197 AC-4 committed baseline report is reproducible")
 
     # #227: extra cases files (holdout, extra development cases) and the files a report hashes.
+    def rejects_with(call, name):
+        try:
+            call()
+        except AssertionError as e:
+            return str(e) == name
+        return False
+
     def rejects(rows, prompts, name):
         try:
             validate_extra(rows, cases, prompts)
@@ -434,6 +454,11 @@ def self_test(cases):
     check(package_files() == PACKAGE_FILES and package_files(["holdout.jsonl"], "prompts/v5.txt") == ("holdout.jsonl", "prompts/v5.txt", "output.schema.json")
           and list(score(cases, reference, files=("cases.jsonl", "output.schema.json"))["hashes_sha256"]) == ["cases.jsonl", "output.schema.json"],
           "227 AC-1 a report hashes the cases and prompt files the run used")
+    shared = copy.deepcopy(holdout[:2]); shared[1]["id"] = "D001"; shared[1]["split"] = "dev"; shared[1]["input"] = dict(shared[0]["input"])
+    check(rejects_with(lambda: distinct_texts(shared), "227 AC-2 no text is in two cases files"), "227 AC-2 a text in two cases files is rejected")
+    check(rejects_with(lambda: select(holdout, "test"), "227 AC-4 the split selects at least one case of the given files")
+          and select(holdout, "holdout") == holdout, "227 AC-4 a run or report on an empty selection is refused")
+    load_cases(["holdout.jsonl", "dev-extra.jsonl"])  # validates both extra files with every --self-test
     files = package_files(["holdout.jsonl"])
     check(render(run_baseline(load_cases(files[:1]), "holdout", files)).encode("utf-8") == (HERE / "baseline-holdout-report.json").read_bytes(),
           "227 AC-4 committed holdout baseline report is reproducible")
@@ -465,7 +490,7 @@ def main():
     if args.baseline:
         result = run_baseline(cases, args.split, files)
     else:
-        selected = [c for c in cases if args.split == "all" or c["split"] == args.split]
+        selected = select(cases, args.split)
         # Supply only predictions from the selected split; unexpected IDs fail explicitly.
         result = score(selected, read_jsonl(args.predictions), "reported-provider-predictions", files)
     if args.out:
