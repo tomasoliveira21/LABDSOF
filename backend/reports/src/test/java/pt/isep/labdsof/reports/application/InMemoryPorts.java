@@ -60,6 +60,16 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
         r -> r.updatedAt().isAfter(since) || r.submittedAt().isAfter(submittedAfter));
   }
 
+  @Override
+  public boolean saveTriage(HelpRequest triaged) {
+    var current = requests.get(triaged.id());
+    if (current == null || !current.eventId().equals(triaged.eventId()) || !current.triage().awaitsModel()) {
+      return false;
+    }
+    requests.put(triaged.id(), current.withTriage(triaged.triage(), triaged.updatedAt()));
+    return true;
+  }
+
   private List<HelpRequest> inArrivalOrder(UUID eventId, Predicate<HelpRequest> filter) {
     return requests.values().stream().filter(r -> r.eventId().equals(eventId)).filter(filter)
         .sorted(Comparator.comparing(HelpRequest::submittedAt).thenComparing(HelpRequest::id)).toList();

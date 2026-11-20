@@ -136,6 +136,11 @@ class HelpRequestServiceTest {
       public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
         return List.of();
       }
+
+      @Override
+      public boolean saveTriage(HelpRequest triaged) {
+        return false;
+      }
     };
     var service = new HelpRequestService(refusing, ports, ports, clock);
     var clientRequestId = UUID.randomUUID();
