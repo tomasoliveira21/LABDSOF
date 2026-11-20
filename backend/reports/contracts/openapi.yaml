@@ -702,8 +702,8 @@ components:
             suggestedReason:
               type: string
               nullable: true
-              maxLength: 200
-              description: Short plain text from the AI; escape it when shown (ADR-005, assessment T10).
+              maxLength: 240
+              description: Short plain text from the AI (1 to 240 characters, US-34 D9); escape it when shown (ADR-005, assessment T10). A suggestion is shown as a suggestion, never as the request's own category or priority (NFR-22).
             notTriagedReason:
               allOf: [{$ref: '#/components/schemas/NotTriagedReason'}]
               nullable: true
