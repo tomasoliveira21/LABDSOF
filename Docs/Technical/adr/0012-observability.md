@@ -38,3 +38,9 @@ Correlated request log entries, scraped metrics/dashboard, no-sensitive-data ins
 ## I1–I3 completion record (26 October 2026, #148)
 
 The [decision specification](../plans/local-observability.md) fixes ports, 15 s scrape/evaluation, 1-day/512 MiB metric storage, rotated correlated logs, cohort accounting, four dashboard groups and three core Grafana alerts. Outbox alert is **>60 s for 2 min**, superseding the earlier 30 s research proposal and matching the NFR/resilience value. Configuration, compatible pinned versions and observed correlated logs/alerts/SLOs are implementation evidence, not open software-selection decisions.
+
+## Runtime update (20 November 2026, #148)
+
+Implemented and run locally, not yet a measured SLO: the `observability` Compose profile (Prometheus `v3.5.0`, Grafana `12.2.1`), health and metrics on a private management port, JSON logs with `correlationId`, the *Farol local operations* dashboard and the three core alerts, provisioned from `infra/observability/`. Measured on 20 November 2026 ([evidence](../evidence/148/README.md)): one help request carries the same correlation id through the gateway, Reports, its outbox publication and the AMQP message; stopping Reports fires *Service or telemetry down* in 150 s and it resolves 50 s after the restart; stopping Prometheus fires it as an error; the useful-triage rule shows *No data*; Prometheus and Grafana together use about 140 MiB.
+
+Limitations: evaluation every 10 s (Grafana refuses 15 s); Auth & Users is not scraped (its security chain covers the management port; Java change handed off), Transports and Badges expose no metrics, Events has no correlation filter, PostgreSQL has no exporter; no screenshots (API snapshots instead); SC3/SC5 not measured and moved to #149. The decision above is unchanged.

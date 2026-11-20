@@ -109,3 +109,8 @@ On 27 October 2026, both plans were simplified (#153, PR #154) and the list foll
 - **NFR-33:** only Prometheus and Grafana are added; correlation IDs in the logs replace distributed tracing, so Tempo, the Collector and Alertmanager are dropped.
 - **NFR-34:** three alerts in Grafana (service or telemetry down, outbox, useful triage); the other signals become dashboard and acceptance checks.
 - **NFR-19, telemetry retention:** metrics 1 day or 512 MiB, no traces stored; logs unchanged.
+
+## 6. Runtime evidence (20 November 2026, #148)
+
+- **NFR-33:** the stack runs as the optional `observability` Compose profile; one help request's correlation id was followed through the gateway, Reports, the outbox and the AMQP message ([evidence](../Technical/evidence/148/README.md)). Not scraped yet: Auth & Users, Transports, Badges.
+- **NFR-34:** the three alerts are provisioned in Grafana and evaluated every 10 s instead of 15 s (Grafana's scheduler refuses 15 s); the windows are unchanged. Service down fired and resolved in the drill; the useful-triage rule shows *No data* until #81–#83.

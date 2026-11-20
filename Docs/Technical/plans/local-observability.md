@@ -93,3 +93,13 @@ Minimum evidence: (1) healthy services and one live metric/dashboard, (2) the sa
 The >=95%/30 s target and one-hour cohort remain the product specification. A short demonstration, a small sample or a provider-only benchmark cannot establish an hour-long SLO; show actual counts/window and no-data until the cohort is mature. SC5 still requires 100% visibility in its AI-off test.
 
 **I1–I3 have explicit answers with two added containers.** More panels, distributed tracing, centralised log storage and external alert routing are optional extensions. Runtime files and results remain implementation evidence, separate from this documentary decision; architectural acceptance is based on those existing records and does not assert runtime success.
+
+## 6. Implementation notes (20 November 2026, #148)
+
+The files this plan names now exist: `infra/observability/prometheus.yml`, the Grafana data source, the dashboard JSON and the three alert rules as provisioning files (written directly, not exported from the UI), under the `observability` profile of `infra/compose.yaml`. Differences from §1–§4, measured or found while running it ([evidence](../evidence/148/README.md)):
+
+- Rules are evaluated every **10 s**: Grafana's scheduler ticks every 10 s and refuses a 15 s interval. Scrape stays 15 s; the `for` windows are unchanged.
+- Prometheus keeps **1 day or 512 MB**, Grafana keeps no state (provisioned at every start); both 256 MiB.
+- The service-down rule also fires when Prometheus cannot be queried or returns nothing (telemetry down), shown in the drill.
+- Correlation: the gateway and Reports accept 8 to 64 letters, digits or hyphens, the rule Auth & Users already used (#191). Reports stores the id with the outbox row and sends it as the AMQP `correlation_id`.
+- Not scraped yet: Auth & Users (`401` on the management port, Java security change handed off), Transports and Badges (no actuator); Events has no correlation filter; no PostgreSQL exporter. The useful-triage rule expects `farol_triage_window_eligible` and `farol_triage_window_valid_on_time` from #81–#83 and shows *No data* until then; SC3/SC5 measurement belongs to #149.

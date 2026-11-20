@@ -1,0 +1,62 @@
+{
+  "capturedAt": "2026-11-20T10:35:16Z",
+  "why": "prometheus stopped; firing=True",
+  "alertRules": {
+    "Service or telemetry down": {
+      "state": "firing",
+      "health": "error",
+      "instances": [
+        [
+          "events",
+          "Alerting (Error)"
+        ],
+        [
+          "gateway",
+          "Alerting (Error)"
+        ],
+        [
+          "rabbitmq",
+          "Alerting (Error)"
+        ],
+        [
+          "reports",
+          "Alerting (Error)"
+        ]
+      ]
+    },
+    "Outbox stalled": {
+      "state": "firing",
+      "health": "error",
+      "instances": [
+        [
+          "reports",
+          "Alerting (Error)"
+        ]
+      ]
+    },
+    "Useful triage below 95 %": {
+      "state": "pending",
+      "health": "error",
+      "instances": [
+        [
+          "Useful triage below 95 %",
+          "Pending (Error)"
+        ]
+      ]
+    }
+  },
+  "dashboard": {
+    "up": {
+      "status": 400,
+      "body": "{\"results\":{\"A\":{\"error\":\"Post \\\"http://prometheus:9090/api/v1/query\\\": dial tcp: lookup prometheus on 127.0.0.11:53: no such host\",\"errorSource\":\"downstream\",\"status\":502,\"frames\":[]}}}\n"
+    },
+    "farol_outbox_oldest_pending_seconds": {
+      "status": 400,
+      "body": "{\"results\":{\"A\":{\"error\":\"Post \\\"http://prometheus:9090/api/v1/query\\\": dial tcp: lookup prometheus on 127.0.0.11:53: no such host\",\"errorSource\":\"downstream\",\"status\":502,\"frames\":[]}}}\n"
+    },
+    "farol_triage_window_eligible": {
+      "status": 400,
+      "body": "{\"results\":{\"A\":{\"error\":\"Post \\\"http://prometheus:9090/api/v1/query\\\": dial tcp: lookup prometheus on 127.0.0.11:53: no such host\",\"errorSource\":\"downstream\",\"status\":502,\"frames\":[]}}}\n"
+    }
+  }
+}
