@@ -11,6 +11,8 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -42,12 +44,27 @@ public final class Infrastructure {
           MountableFile.forHostPath(REPOSITORY.resolve("infra/rabbitmq/topology.json")),
           "/etc/farol/topology.json");
 
+  /** The Porto Digital simulator with the recorded stubs of infra/wiremock (spec D8), as Compose runs it. */
+  public static final GenericContainer<?> WIREMOCK = new GenericContainer<>(DockerImageName.parse(composeImage("wiremock")))
+      .withCopyFileToContainer(MountableFile.forHostPath(REPOSITORY.resolve("infra/wiremock/mappings")),
+          "/home/wiremock/mappings")
+      .withCopyFileToContainer(MountableFile.forHostPath(REPOSITORY.resolve("infra/wiremock/__files")),
+          "/home/wiremock/__files")
+      .withExposedPorts(8080)
+      .waitingFor(Wait.forHttp("/__admin/health").forStatusCode(200));
+
   public static final Jwks JWKS = new Jwks();
 
   static {
     POSTGRES.start();
     RABBIT.start();
+    WIREMOCK.start();
     setUpBroker();
+  }
+
+  /** The base URL of the simulator, as Transports is configured with it. */
+  public static String wiremockUrl() {
+    return "http://" + WIREMOCK.getHost() + ":" + WIREMOCK.getMappedPort(8080);
   }
 
   private Infrastructure() {}
@@ -67,6 +84,8 @@ public final class Infrastructure {
     // Short backoff keeps the retry tests fast; production values are in application.yaml
     properties.put("spring.rabbitmq.listener.simple.retry.initial-interval", "50ms");
     properties.put("spring.rabbitmq.listener.simple.retry.max-interval", "200ms");
+    // Only the tests of the scheduled read switch it on (SourceImportIT)
+    properties.put("farol.transport.source.enabled", "false");
     return properties;
   }
 

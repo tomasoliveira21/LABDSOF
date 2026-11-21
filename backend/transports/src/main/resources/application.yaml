@@ -53,6 +53,20 @@ spring:
           jwk-set-uri: ${FAROL_JWKS_URI}
           audiences: farol-api
 
+farol:
+  transport:
+    # The bus source (spec D5, D7, ADR-008; values of architecture 9.1, J1). TRANSPORT_SOURCE_URL is WireMock in
+    # Compose; switched on without it, start-up fails. coords is the Queimodromo, written exactly as the recorded
+    # stubs match it (infra/wiremock/README.md), latitude first.
+    source:
+      enabled: true
+      url: ${TRANSPORT_SOURCE_URL:}
+      coords: "41.1724,-8.6841"
+      max-distance: 2000
+      interval: 30s
+      connect-timeout: 3s
+      read-timeout: 5s
+
 logging:
   structured:
     format:
