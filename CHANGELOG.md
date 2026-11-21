@@ -2,6 +2,13 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · API gateway security and rate limits (#190)
+
+- The gateway validates Keycloak JWTs and keeps the existing routing and diagnostic endpoints. The web container
+  and Vite development origins are allowed by default; Compose can override the origin list.
+- The gateway limits API traffic to 120 requests per minute per account by default and returns a Problem Details
+  response with `Retry-After` when the quota is exhausted.
+
 ## [Unreleased] · 2026-11-20 · Critical over-rating on a fresh holdout (#227, Bruno de Abreu Lopes)
 
 **Why:** the #224 run failed the gate on the `Critical` ceiling, and the review of PR #225 said a fix must be tuned on the development split or on new cases, never on the test split; #149 AC-4 also asks for repeated runs. Spec: [`Docs/specs/227-critical-ceiling-holdout.md`](Docs/specs/227-critical-ceiling-holdout.md).
