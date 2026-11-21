@@ -140,6 +140,8 @@ jobs:
         run: python3 -I infra/tests/auth_users_smoke.py infra/.env.example farol-ci
       - name: Check that Events validates Keycloak tokens and hides events from non-members (#192)
         run: python3 -I infra/tests/events_smoke.py infra/.env.example farol-ci
+      - name: Check that Transports validates Keycloak tokens and reads the bus source through WireMock (#193)
+        run: python3 -I infra/tests/transports_smoke.py infra/.env.example farol-ci
       - name: Check that Badges accepts a Keycloak token and reads its database (#201)
         run: python3 -I infra/tests/badges_smoke.py infra/.env.example
       - name: Check that only 127.0.0.1 is published and the new containers are hardened
