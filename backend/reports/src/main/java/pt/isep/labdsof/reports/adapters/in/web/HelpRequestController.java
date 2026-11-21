@@ -1,5 +1,7 @@
 package pt.isep.labdsof.reports.adapters.in.web;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -105,8 +107,24 @@ class HelpRequestController {
     return read.controlRoom() ? controlRoom(read.request()) : participant(read.request());
   }
 
-  /** What a member sets (US-35 AC-2, spec D2): either or both; a null is not sent. */
-  record ChangeBody(Category category, Priority priority) {}
+  /**
+   * What a member sets (US-35 AC-2, spec D2): either or both. A field left out keeps its setter uncalled; an explicit
+   * null is refused (400), as the contract says. Setters, not a record: a record's missing field also reads as null.
+   */
+  static final class ChangeBody {
+    private Category category;
+    private Priority priority;
+
+    @JsonSetter(nulls = Nulls.FAIL)
+    void setCategory(Category category) {
+      this.category = category;
+    }
+
+    @JsonSetter(nulls = Nulls.FAIL)
+    void setPriority(Priority priority) {
+      this.priority = priority;
+    }
+  }
 
   /** The control room takes the AI's suggestion as the request's values (US-35 AC-1, spec D1). */
   @PostMapping(value = "/help-requests/{requestId}/accept-suggestion", produces = "application/json")
@@ -119,7 +137,7 @@ class HelpRequestController {
   @PatchMapping(value = "/help-requests/{requestId}", consumes = "application/json", produces = "application/json")
   ControlRoomView change(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt,
       @RequestBody ChangeBody body) {
-    return controlRoom(service.change(eventId, jwt.getSubject(), requestId, body.category(), body.priority()));
+    return controlRoom(service.change(eventId, jwt.getSubject(), requestId, body.category, body.priority));
   }
 
   /** Whether a new request would be sent to the AI, for the web app's banner (US-36 AC-2, spec D4, D5). */

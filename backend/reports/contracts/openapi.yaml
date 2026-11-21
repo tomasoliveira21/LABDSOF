@@ -192,8 +192,9 @@ paths:
         Requires HelpRequests.Triage. The member's values make the triage Changed, from any triage state; the
         suggestion and the NotTriaged reason stay visible, and a suggestion that arrives later is discarded
         (NFR-22). Each changed field is recorded with who, when, the old and the new value (the history entries
-        of US-28); a change to the values the request already has records nothing. A null counts as not sent;
-        at least one of the two is required. Implemented by US-35 (#82, spec D2, D3); US-28 adds the status.
+        of US-28); a change to the values the request already has records nothing, whatever the triage state.
+        At least one of the two is required, and neither may be null. Implemented by US-35 (#82, spec D2, D3);
+        US-28 adds the status.
       x-farol-status: implemented
       requestBody:
         required: true

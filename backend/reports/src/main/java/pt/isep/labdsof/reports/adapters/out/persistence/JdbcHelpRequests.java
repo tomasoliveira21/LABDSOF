@@ -164,7 +164,13 @@ class JdbcHelpRequests implements HelpRequests {
 
   @Override
   public Optional<HelpRequest> findForUpdate(UUID eventId, UUID requestId) {
-    // Locks both rows: the worker's conditional UPDATE of triage_suggestion waits, then re-reads (spec US-35 D4)
+    // Locks both rows in the worker's order (saveTriage: triage_suggestion, then help_request), or each would wait
+    // on the other: the worker's conditional UPDATE waits, then re-reads the decided triage (spec US-35 D4)
+    jdbc.sql("SELECT 1 FROM triage_suggestion WHERE request_id = :id AND event_id = :eventId FOR UPDATE")
+        .param(EVENT_ID, eventId)
+        .param("id", requestId)
+        .query()
+        .listOfRows();
     return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.id = :id FOR UPDATE")
         .param(EVENT_ID, eventId)
         .param("id", requestId)

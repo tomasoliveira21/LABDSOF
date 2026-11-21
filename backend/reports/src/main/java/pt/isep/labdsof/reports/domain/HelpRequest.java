@@ -105,9 +105,14 @@ public record HelpRequest(
     if (newCategory == null && newPriority == null) {
       throw new InvalidHelpRequestException("category or priority is required");
     }
+    var mergedCategory = newCategory == null ? category : newCategory;
+    var mergedPriority = newPriority == null ? priority : newPriority;
+    if (mergedCategory == category && mergedPriority == priority) {
+      // The values the request already has: nothing is decided, so an Accepted triage stays Accepted
+      return new Decision(this, List.of());
+    }
     var seen = triage.asSeenAt(submittedAt, now);
-    return decide(newCategory == null ? category : newCategory, newPriority == null ? priority : newPriority,
-        seen.decided(TriageState.Changed), seen.state(), now);
+    return decide(mergedCategory, mergedPriority, seen.decided(TriageState.Changed), seen.state(), now);
   }
 
   private Decision decide(Category newCategory, Priority newPriority, TriageSuggestion newTriage, TriageState from,
@@ -121,9 +126,6 @@ public record HelpRequest(
     }
     if (newTriage.state() != from) {
       changes.add(new HelpRequestChange("triage", from.name(), newTriage.state().name()));
-    }
-    if (changes.isEmpty()) {
-      return new Decision(this, List.of());
     }
     return new Decision(new HelpRequest(id, eventId, requesterId, clientRequestId, description, location,
         newCategory, newPriority, status, defaultTeamId, routedTeamId, newTriage, submittedAt,

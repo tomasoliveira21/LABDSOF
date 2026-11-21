@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.EventAccess;
 import pt.isep.labdsof.reports.domain.HelpRequest;
@@ -121,7 +123,8 @@ public class HelpRequestService {
   public HelpRequest acceptSuggestion(UUID eventId, String userId, UUID requestId) {
     requireTriage(eventId, userId);
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
-    return decided(request, request.acceptSuggestion(clock.instant()), userId);
+    var now = clock.instant();
+    return decided(request, request.acceptSuggestion(now), userId, now);
   }
 
   /** The control room sets the category, the priority or both (US-35 AC-2, spec D2). */
@@ -129,21 +132,39 @@ public class HelpRequestService {
   public HelpRequest change(UUID eventId, String userId, UUID requestId, Category category, Priority priority) {
     requireTriage(eventId, userId);
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
-    return decided(request, request.change(category, priority, clock.instant()), userId);
+    var now = clock.instant();
+    return decided(request, request.change(category, priority, now), userId, now);
   }
 
-  /** Saves and records the decision, counts the first one on a suggestion, logs metadata only (D3, D6, D8). */
-  private HelpRequest decided(HelpRequest before, HelpRequest.Decision decision, String userId) {
+  /**
+   * Saves and records the decision taken at {@code now}, counts the first one on a suggestion once it is committed,
+   * logs metadata only (D3, D6, D8).
+   */
+  private HelpRequest decided(HelpRequest before, HelpRequest.Decision decision, String userId, Instant now) {
     var after = decision.request();
     if (!decision.changes().isEmpty()) {
       helpRequests.saveDecision(after, userId, decision.changes());
+      var state = after.triage().state();
       if (before.triage().state() == TriageState.Suggested) {
-        metrics.decided(after.triage().state());
+        afterCommit(() -> metrics.decided(state));
       }
-      log.info("Triage decision on request {}: {} -> {}", before.id(), before.asSeenAt(after.updatedAt()).triage()
-          .state(), after.triage().state());
+      log.info("Triage decision on request {}: {} -> {}", before.id(), before.asSeenAt(now).triage().state(), state);
     }
-    return after.asSeenAt(clock.instant());
+    return after.asSeenAt(now);
+  }
+
+  /** After the commit, so a decision rolled back is never counted (G8 review); at once outside a transaction. */
+  private static void afterCommit(Runnable action) {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override
+        public void afterCommit() {
+          action.run();
+        }
+      });
+    } else {
+      action.run();
+    }
   }
 
   private EventAccess access(UUID eventId, String userId) {

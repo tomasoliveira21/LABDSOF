@@ -18,6 +18,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestChange;
@@ -456,6 +458,22 @@ class HelpRequestServiceTest {
 
     assertThat(metrics.counted).containsExactly("decided Accepted", "decided Changed");
     assertThat(ports.decisions).hasSize(4);
+  }
+
+  @Test
+  @DisplayName("US-35 AC-1 inside a transaction the decision is counted only after the commit")
+  void countedAfterCommit() {
+    var service = operatorService();
+    var request = stored(SUGGESTED);
+    TransactionSynchronizationManager.initSynchronization();
+    try {
+      service.acceptSuggestion(EVENT, "miguel", request.id());
+      assertThat(metrics.counted).isEmpty();
+      TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
+      assertThat(metrics.counted).containsExactly("decided Accepted");
+    } finally {
+      TransactionSynchronizationManager.clearSynchronization();
+    }
   }
 
   @Test

@@ -8,7 +8,8 @@ import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
  * The triage counters (spec US-36 D7): {@code farol.triage.fallback{reason}} (architecture.md §9.2) and
- * {@code farol.triage.suggested}; the reason tag has the five values of {@link NotTriagedReason} only.
+ * {@code farol.triage.suggested}; the reason tag has the five values of {@link NotTriagedReason} only. And
+ * {@code farol.triage.decision{decision}} (spec US-35 D6), whose tag is Accepted or Changed.
  */
 @Component
 public class MicrometerTriageMetrics implements TriageMetrics {

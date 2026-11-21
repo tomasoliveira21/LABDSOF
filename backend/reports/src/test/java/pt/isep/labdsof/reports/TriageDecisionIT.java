@@ -3,6 +3,7 @@ package pt.isep.labdsof.reports;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.jayway.jsonpath.JsonPath;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -22,10 +23,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
+import pt.isep.labdsof.reports.application.HelpRequestService;
 import pt.isep.labdsof.reports.application.HelpRequests;
 import pt.isep.labdsof.reports.domain.Category;
-import pt.isep.labdsof.reports.domain.Membership;
 import pt.isep.labdsof.reports.domain.Membership.Role;
+import pt.isep.labdsof.reports.domain.Membership;
 import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Priority;
 import pt.isep.labdsof.reports.domain.Team;
@@ -40,6 +42,8 @@ class TriageDecisionIT extends IntegrationTest {
 
   @Autowired HelpRequests helpRequests;
   @Autowired TransactionTemplate transactions;
+  @Autowired HelpRequestService service;
+  @Autowired MeterRegistry meters;
 
   final UUID event = UUID.randomUUID();
   final String participant = "participant-" + UUID.randomUUID();
@@ -123,6 +127,27 @@ class TriageDecisionIT extends IntegrationTest {
     assertThat(JsonPath.<List<String>>read(poll, "$.items[*].id")).contains(id);
     assertThat(JsonPath.<List<String>>read(poll, "$.items[?(@.id == '" + id + "')].triage.state"))
         .containsExactly("Accepted");
+  }
+
+  double accepted() {
+    var counter = meters.find("farol.triage.decision").tag("decision", "Accepted").counter();
+    return counter == null ? 0 : counter.count();
+  }
+
+  @Test
+  @DisplayName("US-35 AC-1 a decision is counted after its commit, and one rolled back is not")
+  void countedAfterCommit() throws Exception {
+    var rolledBack = UUID.fromString(suggested());
+    var before = accepted();
+    transactions.executeWithoutResult(status -> {
+      service.acceptSuggestion(event, operator, rolledBack);
+      status.setRollbackOnly();
+    });
+    assertThat(accepted()).isEqualTo(before);
+    assertThat(helpRequests.find(event, rolledBack).orElseThrow().triage().state().name()).isEqualTo("Suggested");
+
+    assertThat(accept(rolledBack.toString(), JWKS.valid(operator)).statusCode()).isEqualTo(200);
+    assertThat(accepted()).isEqualTo(before + 1);
   }
 
   @Test
@@ -256,10 +281,47 @@ class TriageDecisionIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-35 AC-2 a member's decision locks the triage before the request, as the worker does")
+  void lockOrder() throws Exception {
+    // The worker's save updates triage_suggestion, then help_request; the member must take them in the same
+    // order, or the two wait on each other (deadlock, G8 review)
+    var id = UUID.fromString(submit());
+    var triageLocked = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    try (var pool = Executors.newFixedThreadPool(2)) {
+      var worker = pool.submit(() -> transactions.executeWithoutResult(status -> {
+        jdbc.sql("SELECT 1 FROM triage_suggestion WHERE request_id = :id FOR UPDATE").param("id", id).query()
+            .listOfRows();
+        triageLocked.countDown();
+        try {
+          assertThat(release.await(20, TimeUnit.SECONDS)).isTrue();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }));
+      assertThat(triageLocked.await(10, TimeUnit.SECONDS)).isTrue();
+      var member = pool.submit(() -> transactions.execute(status -> helpRequests.findForUpdate(event, id)));
+      try {
+        member.get(1, TimeUnit.SECONDS);
+        throw new AssertionError("the member did not wait for the triage lock");
+      } catch (TimeoutException expected) {
+        // waiting on the triage, as it should
+      }
+      // ... without holding the request: the worker's next statement would get it
+      assertThat(jdbc.sql("SELECT id FROM help_request WHERE id = :id FOR UPDATE NOWAIT").param("id", id)
+          .query(UUID.class).single()).isEqualTo(id);
+      release.countDown();
+      worker.get(10, TimeUnit.SECONDS);
+      assertThat(member.get(10, TimeUnit.SECONDS)).isPresent();
+    }
+  }
+
+  @Test
   @DisplayName("US-35 AC-2 a malformed change is rejected")
   void malformedChange() throws Exception {
     var id = suggested();
     for (var json : List.of("{}", "{\"category\":null}", "{\"category\":null,\"priority\":null}",
+        "{\"category\":null,\"priority\":\"High\"}",
         "{\"category\":\"Medical\"}", "{\"priority\":\"Urgent\"}",
         "{\"category\":\"Health'); DROP TABLE help_request;--\"}",
         "{\"category\":\"Health\",\"routedTeamId\":\"" + UUID.randomUUID() + "\"}",

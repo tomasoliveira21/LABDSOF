@@ -294,6 +294,12 @@ class HelpRequestTest {
     var same = changed.change(Category.Health, null, LATER.plusSeconds(1));
     assertThat(same.changes()).isEmpty();
     assertThat(same.request()).isEqualTo(changed);
+
+    // An accepted request sent its own values again stays Accepted (G8 review)
+    var accepted = withTriage(SUGGESTED).acceptSuggestion(LATER).request();
+    var resent = accepted.change(Category.Health, Priority.High, LATER.plusSeconds(1));
+    assertThat(resent.changes()).isEmpty();
+    assertThat(resent.request()).isEqualTo(accepted);
   }
 
   @Test
