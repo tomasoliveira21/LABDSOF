@@ -1,0 +1,27 @@
+# Transports (spec Docs/specs/193-transports-service.md). Every secret comes from the environment
+# (infra/compose.yaml, infra/.env); no default secret.
+spring:
+  application:
+    name: transports
+  mvc:
+    problemdetails:
+      # Problem Details for every MVC error (API outline 1.7)
+      enabled: true
+  jackson:
+    deserialization:
+      # Reject fields outside the documented bodies (mass assignment)
+      fail-on-unknown-properties: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      # At most 10 connections per service on the shared server (#189 handoff)
+      maximum-pool-size: 5
+  flyway:
+    locations: classpath:db/migration
+
+logging:
+  structured:
+    format:
+      console: logstash

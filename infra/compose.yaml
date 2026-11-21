@@ -142,6 +142,15 @@ services:
     image: farol-transports:${VERSION:-dev}
     build:
       context: ../backend/transports
+    # #193: its own database (Flyway at start-up, so it waits for PostgreSQL).
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0" # repeated: `environment` replaces the anchor's
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/transports
+      SPRING_DATASOURCE_USERNAME: transports
+      SPRING_DATASOURCE_PASSWORD: ${TRANSPORTS_DB_PASSWORD:?set TRANSPORTS_DB_PASSWORD in infra/.env}
 
   badges:
     <<: *spring
