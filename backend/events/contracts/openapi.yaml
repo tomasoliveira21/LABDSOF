@@ -5,9 +5,9 @@ info:
   description: >-
     Events, teams with their permissions and help categories, venue map versions and points of
     interest (API outline §3). Contract-first (C7): the server interfaces and DTOs are generated
-    from this file. Sprint B endpoints only; #192 implements GET /events/{eventId}, the other
-    operations answer 501 until their stories (US-06, US-11, US-16, US-17, US-19, US-20, US-21,
-    US-27). The members of an event are served by Auth & Users (ADR-013). Every /api/v1 call needs
+    from this file. Sprint B endpoints only; #192 implements GET /events/{eventId} and US-16 the
+    teams, the other operations answer 501 until their stories (US-06, US-11, US-17, US-19, US-20,
+    US-21, US-27). The members of an event are served by Auth & Users (ADR-013). Every /api/v1 call needs
     a valid access token issued by Keycloak to the web app (audience farol-api); /api/v1/status is
     the only diagnostic exception. The report type and point type codes are proposed until US-17
     and US-20 (spec D6).
@@ -204,6 +204,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /api/v1/events/{eventId}/teams/{teamId}/permissions:
     parameters:
       - $ref: '#/components/parameters/EventId'
@@ -466,7 +468,9 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     Conflict:
-      description: State conflict (a team name already taken, an event that is not a draft)
+      description: >-
+        State conflict: a team name already taken, an event that is not a draft, or an event that is
+        suspended or closed, whose teams are not changed (US-16)
       content:
         application/problem+json:
           schema:
@@ -618,6 +622,9 @@ components:
           maxLength: 100
         handledCategories:
           type: array
+          description: >-
+            A set: a repeated category is refused with 400. Not uniqueItems on purpose, because the
+            generator would then read it into a Set and deduplicate it silently (US-16 D7)
           items:
             $ref: '#/components/schemas/HelpCategory'
     MapPosition:
