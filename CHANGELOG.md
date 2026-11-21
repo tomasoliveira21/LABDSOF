@@ -16,6 +16,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `contracts/openapi.yaml`: `setHelpRequestCategoryAndPriority` and `acceptTriageSuggestion` are implemented; the default team after an accept stays planned (#81 AC-2).
 - Dated notes in the domain model (proposed transitions `Pending → Changed` and `Accepted → Changed`), the API outline §4.1, ADR-005 and `responsible-ai.md`. Decisions D2, D3 and D6 of the spec are proposed for the team's review.
+- Spec US-35 D6 (review of PR #233): `farol.triage.decision` counts only decisions on a `Suggested` request, so it measures the AI suggestions, not manual triage; most requests of a burst never get a suggestion (US-36 capacity limit).
 
 ## [Unreleased] · 2026-11-21 · Requests without AI (US-36, #83, Bruno de Abreu Lopes)
 

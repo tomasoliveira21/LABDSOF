@@ -42,8 +42,8 @@ import pt.isep.labdsof.reports.domain.TriageConflictException;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
- * Help requests, the control room's triage decisions and the triage status (API outline §4, contracts/openapi.yaml). The caller is always the token's
- * sub.
+ * Help requests, the control room's triage decisions and the triage status (API outline §4,
+ * contracts/openapi.yaml). The caller is always the token's sub.
  */
 @RestController
 @RequestMapping("/api/v1/events/{eventId}")
