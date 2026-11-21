@@ -1,0 +1,229 @@
+{
+  "issue": "#227, part of #149",
+  "date": "2026-11-20",
+  "purpose": "Three direct model-call runs of the fresh holdout (72 cases) with the prompt frozen on the development split (#227). Quality gate only: no elapsed_ms, so no SC3 claim.",
+  "status": "frozen before the holdout runs; results added after them (3 runs done on 20 November 2026)",
+  "runner_commit": "b2fff0f09507569b10110a186ff347461ab08eb7",
+  "split": "holdout",
+  "files": {
+    "cases": [
+      "holdout.jsonl"
+    ],
+    "prompt": "prompts/v8.txt"
+  },
+  "commands": {
+    "container": "docker run -d --name farol-224-ollama -p 127.0.0.1:11434:11434 -v farol-224-ollama-models:/root/.ollama -e OLLAMA_NUM_PARALLEL=1 -e OLLAMA_MAX_LOADED_MODELS=1 -e OLLAMA_MAX_QUEUE=1 -e OLLAMA_NO_CLOUD=1 ollama/ollama:0.40.16@sha256:910d0d8107b538fb0894e63163eb195de0cc7aefcbc666dc62d3b18f71124592",
+    "model": "curl http://127.0.0.1:11434/api/pull -d '{\"model\":\"qwen3:4b\"}'",
+    "before_run": "docker restart farol-224-ollama before each run (model unloaded, cgroup memory counters reset)",
+    "run": "python -I Docs/Research/architecture-investigation/evaluation/run_ollama.py --cases holdout.jsonl --split holdout --prompt prompts/v8.txt --warm-up --out <run dir>/predictions-run-N.jsonl --raw <run dir>/raw-run-N.jsonl",
+    "score": "python -I Docs/Research/architecture-investigation/evaluation/evaluate.py --cases holdout.jsonl --split holdout --prompt prompts/v8.txt --predictions <run dir>/predictions-run-N.jsonl --out <run dir>/report-run-N.json",
+    "verify": "python -I Docs/Research/architecture-investigation/evaluation/run_ollama.py --verify <run dir>"
+  },
+  "runtime": {
+    "name": "Ollama in Docker",
+    "image": "ollama/ollama:0.40.16",
+    "image_digest": "sha256:910d0d8107b538fb0894e63163eb195de0cc7aefcbc666dc62d3b18f71124592",
+    "version": "0.40.16",
+    "environment": {
+      "OLLAMA_NUM_PARALLEL": "1",
+      "OLLAMA_MAX_LOADED_MODELS": "1",
+      "OLLAMA_MAX_QUEUE": "1",
+      "OLLAMA_NO_CLOUD": "1"
+    },
+    "port": "127.0.0.1:11434 only",
+    "container_memory_limit": "none (the Docker Desktop VM limit applies)",
+    "inference": "CPU only (no GPU passed to the container)"
+  },
+  "model": {
+    "name": "qwen3:4b",
+    "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "gguf_layer": "sha256:3e4cb14174460404e7a233e531675303b2fbf7749c02f91864fe311ab6344e4f",
+    "quantization": "Q4_K_M",
+    "parameter_size": "4.0B",
+    "format": "gguf",
+    "source": "/api/tags and /api/show of the container"
+  },
+  "settings": {
+    "api": "POST /api/chat",
+    "stream": false,
+    "think": false,
+    "format": "output.schema.json",
+    "options": {
+      "temperature": 0,
+      "seed": 42,
+      "num_ctx": 4096,
+      "num_predict": 256
+    },
+    "keep_alive": "10m",
+    "response_timeout_s": 20,
+    "attempts": 1,
+    "concurrency": 1,
+    "warm_up": "one unscored synthetic call before the cases, own timeout 300 s, recorded in the raw file as id warm-up",
+    "input": "{\"text\": <description>} only; no labels, split or tags"
+  },
+  "deviations": [],
+  "package_sha256": {
+    "holdout.jsonl": "f52f52e1af26a641e70d94fadbaac00dd754e6cce87d5e628a6c62bf9f6eb9f1",
+    "prompts/v8.txt": "4f29389301a9bd8d5fb2f5e6ab15eb9c64fef92e1c748b6a30faf56f47eafbc3",
+    "output.schema.json": "66e38f9fd4ad652c29eaa604eb4eb0929f404772f2d18dcd09a24ecfb4abd2ae"
+  },
+  "prompt": "v8, frozen on the development split only (spec 227 D3)",
+  "hardware": {
+    "cpu": "12th Gen Intel Core i5-12450H, 8 cores (4P + 4E), 12 threads; integrated Intel UHD only",
+    "ram_gib": 15.7,
+    "os": "Windows 11 Home 10.0.26300",
+    "docker": "Docker Desktop 4.46.0, engine 28.4.0, WSL2 VM with 8 GiB (8167571456 bytes) and 12 CPUs, kernel 6.6.87.2-microsoft-standard-WSL2"
+  },
+  "client": "Python 3.13.17, standard library, on the same Windows host",
+  "repeated_run_gate": {
+    "runs": 3,
+    "rule": "the offline quality gate passes only when it passes in every run; the release gate of the local AI decisions (step 6) does not say how repeated runs combine, so the strictest reading applies",
+    "source": "spec 227 D4, committed before the runs (6bcdae6)"
+  },
+  "result": {
+    "offline_quality_gate_every_run": false,
+    "runs_passing_gate": 0,
+    "memory_source": "docker exec farol-224-ollama cat /sys/fs/cgroup/memory.peak and memory.current after each run (cgroup v2, counters reset by the restart before the run; includes the page cache of the mapped model file)",
+    "provider_ms_definition": "client-side wall time of one /api/chat call, request to parsed reply; not elapsed_ms, not SC3",
+    "runs": {
+      "run-1": {
+        "started_utc": "2026-11-20T08:22:55Z",
+        "finished_utc": "2026-11-20T08:38:00Z",
+        "host_free_ram_gib_before": 2.04,
+        "host_free_ram_gib_after": 2.47,
+        "container_memory_peak_bytes": 3393724416,
+        "container_memory_current_after_bytes": 3391586304,
+        "ollama_ps_size_bytes": 3186108660,
+        "interruptions": "none; no case resumed",
+        "cases": 72,
+        "timeouts_or_errors": 0,
+        "done_reasons": [
+          "stop"
+        ],
+        "max_output_tokens_seen": 74,
+        "provider_ms": {
+          "min": 6827,
+          "median": 11661.0,
+          "p95_nearest_rank": 15289,
+          "max": 18456,
+          "over_16000_slow_threshold": 1,
+          "over_20000_timeout": 0
+        },
+        "cold_start": {
+          "warm_up_provider_ms": 53449,
+          "load_duration_ms": 4052
+        },
+        "offline_quality_gate": false,
+        "failed_checks": [
+          "1_zero_urgent_failures",
+          "2_no_case_below_its_minimum_priority",
+          "3_no_low_or_medium_case_rated_critical"
+        ],
+        "failing_case_ids": [
+          "H011",
+          "H025",
+          "H036",
+          "H037",
+          "H046",
+          "H053",
+          "H057",
+          "H059",
+          "H060",
+          "H067"
+        ]
+      },
+      "run-2": {
+        "started_utc": "2026-11-20T08:38:07Z",
+        "finished_utc": "2026-11-20T08:53:09Z",
+        "host_free_ram_gib_before": 2.49,
+        "host_free_ram_gib_after": 2.33,
+        "container_memory_peak_bytes": 3392606208,
+        "container_memory_current_after_bytes": 3390885888,
+        "ollama_ps_size_bytes": 3186108660,
+        "interruptions": "none; no case resumed",
+        "cases": 72,
+        "timeouts_or_errors": 0,
+        "done_reasons": [
+          "stop"
+        ],
+        "max_output_tokens_seen": 74,
+        "provider_ms": {
+          "min": 7624,
+          "median": 11653.5,
+          "p95_nearest_rank": 14905,
+          "max": 16683,
+          "over_16000_slow_threshold": 1,
+          "over_20000_timeout": 0
+        },
+        "cold_start": {
+          "warm_up_provider_ms": 51831,
+          "load_duration_ms": 5578
+        },
+        "offline_quality_gate": false,
+        "failed_checks": [
+          "1_zero_urgent_failures",
+          "2_no_case_below_its_minimum_priority",
+          "3_no_low_or_medium_case_rated_critical"
+        ],
+        "failing_case_ids": [
+          "H011",
+          "H025",
+          "H036",
+          "H037",
+          "H046",
+          "H053",
+          "H057",
+          "H059",
+          "H060",
+          "H067"
+        ]
+      },
+      "run-3": {
+        "started_utc": "2026-11-20T08:53:17Z",
+        "finished_utc": "2026-11-20T09:08:27Z",
+        "host_free_ram_gib_before": 2.41,
+        "host_free_ram_gib_after": 2.48,
+        "container_memory_peak_bytes": 3392974848,
+        "container_memory_current_after_bytes": 3391594496,
+        "ollama_ps_size_bytes": 3186108660,
+        "interruptions": "none; no case resumed",
+        "cases": 72,
+        "timeouts_or_errors": 0,
+        "done_reasons": [
+          "stop"
+        ],
+        "max_output_tokens_seen": 74,
+        "provider_ms": {
+          "min": 6374,
+          "median": 11743.0,
+          "p95_nearest_rank": 15585,
+          "max": 16012,
+          "over_16000_slow_threshold": 1,
+          "over_20000_timeout": 0
+        },
+        "cold_start": {
+          "warm_up_provider_ms": 51267,
+          "load_duration_ms": 4599
+        },
+        "offline_quality_gate": false,
+        "failed_checks": [
+          "1_zero_urgent_failures",
+          "2_no_case_below_its_minimum_priority",
+          "3_no_low_or_medium_case_rated_critical"
+        ],
+        "failing_case_ids": [
+          "H011",
+          "H025",
+          "H036",
+          "H037",
+          "H046",
+          "H053",
+          "H057",
+          "H059",
+          "H060",
+          "H067"
+        ]
+      }
+    }
+  }
+}

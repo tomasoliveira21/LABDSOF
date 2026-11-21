@@ -2,6 +2,19 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-20 · Critical over-rating on a fresh holdout (#227, Bruno de Abreu Lopes)
+
+**Why:** the #224 run failed the gate on the `Critical` ceiling, and the review of PR #225 said a fix must be tuned on the development split or on new cases, never on the test split; #149 AC-4 also asks for repeated runs. Spec: [`Docs/specs/227-critical-ceiling-holdout.md`](Docs/specs/227-critical-ceiling-holdout.md).
+
+### Added
+- [`holdout.jsonl`](Docs/Research/architecture-investigation/evaluation/holdout.jsonl): 72 synthetic cases written from the rubric only, without access to the prompts, runs or reports, committed with its SHA-256 before any prompt change; labels not independently reviewed. [`dev-extra.jsonl`](Docs/Research/architecture-investigation/evaluation/dev-extra.jsonl): 24 new development cases. Keyword baseline on the holdout: [`baseline-holdout-report.json`](Docs/Research/architecture-investigation/evaluation/baseline-holdout-report.json).
+- Prompt versions v5 to v8 as files in [`prompts/`](Docs/Research/architecture-investigation/evaluation/prompts/), tuned on the development split only; v8 frozen (the only one that passed on development).
+- Runs of 20 November 2026 on the holdout: [v8 three times](Docs/Research/architecture-investigation/evaluation/runs/2026-11-20-holdout-v8/manifest.json) and [the #224 prompt once](Docs/Research/architecture-investigation/evaluation/runs/2026-11-20-holdout-v4/manifest.json), with the gate rule for repeated runs (a pass in every run) fixed before them. **The gate failed in every run**: v8 missed 2 urgent cases (H046, H060) and rated 2 `Low`/`Medium` cases `Critical` (H037, H067), identically in the three runs; the #224 prompt missed the same 2 urgent cases and had 1 ceiling failure.
+
+### Changed
+- `evaluate.py` and `run_ollama.py` take `--cases` and `--prompt`; reports hash the files their run used; `--verify` checks every run of a directory and, for a manifest with a repeated-run gate, the rule and the combined result. The defaults are the #224 package, so its run still passes `--verify`.
+- Evaluation README (dataset and *Runs*), ADR-005, the local AI decisions, `responsible-ai.md`, the decisions guide K2 and `Docs/README.md` record the holdout runs with dated notes. Still open: label review and reason review (#149 AC-2), routing (#149 AC-3, US-34 #81), SC3/SC5.
+
 ## [Unreleased] · 2026-11-19 · Local Ollama triage evaluation run (#224, Bruno de Abreu Lopes)
 
 **Why:** #149 needs one actual run of the selected local model on the frozen test split, with a reproducible manifest and the results as they are (#224 is that part; #149 stays open for the label review and routing).

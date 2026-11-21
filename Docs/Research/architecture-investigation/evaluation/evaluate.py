@@ -16,6 +16,10 @@ TAGS = {"plain", "urgent", "slang", "ambiguous", "english", "mixed", "multiple",
 SCHEMA = json.loads((HERE / "output.schema.json").read_text(encoding="utf-8"))
 # The files a run is frozen with; their SHA-256 goes in every report and run manifest.
 PACKAGE_FILES = ("cases.jsonl", "system-prompt.txt", "output.schema.json")
+# #227: the fresh holdout and the extra development cases live in their own files, and each prompt version after the
+# #224 one is its own file in prompts/, so the #224 run keeps its hashes (and its --verify) at HEAD.
+EXTRA_SPLITS = {"holdout": "H", "dev": "D"}
+MIN_HOLDOUT_CASES = 60
 # ADR-005 decision 4 and coverage definition (aligned with observability in #145).
 MIN_CATEGORY_ACCURACY = 0.80
 MIN_SUGGESTION_COVERAGE = 0.95
@@ -97,6 +101,77 @@ def consistent(output):
     return output["abstain"] == (output["category"] is None) == (output["priority"] is None)
 
 
+def package_files(cases_files=("cases.jsonl",), prompt="system-prompt.txt"):
+    """The files a run uses, in report order: its cases files, its prompt and the schema."""
+    return tuple(cases_files) + (prompt, "output.schema.json")
+
+
+def prompt_files():
+    return [HERE / "system-prompt.txt"] + sorted((HERE / "prompts").glob("*.txt"))
+
+
+def validate_case(case):
+    data, expected = case["input"], case["expected"]
+    check(set(data) == {"text"}, "197 AC-1 input is only the description")
+    check(isinstance(data["text"], str) and data["text"].strip() and len(data["text"]) <= 500,
+          "197 AC-1 description has 1 to 500 characters")
+    check(set(expected) == {"category", "minimum_priority", "abstain"} and type(expected["abstain"]) is bool,
+          "197 AC-1 expected labels have no team")
+    if expected["abstain"]:
+        check(expected["category"] is None and expected["minimum_priority"] is None,
+              "197 AC-1 abstention has no category and no priority")
+    else:
+        check(expected["category"] in CATEGORIES and expected["minimum_priority"] in LEVEL, "known reference labels")
+    check(case["origin"].startswith("synthetic-"), "synthetic origin")
+    check(case["tags"] and set(case["tags"]) <= TAGS, "known tags")
+
+
+def validate_extra(rows, main, prompts=None):
+    """#227: a holdout or extra development file. Its texts are new, and a holdout text is never in a prompt."""
+    splits = {x["split"] for x in rows}
+    check(len(splits) == 1 and splits <= set(EXTRA_SPLITS), "227 AC-2 an extra cases file holds one split, holdout or dev")
+    split = splits.pop()
+    check(split != "holdout" or len(rows) >= MIN_HOLDOUT_CASES, "227 AC-2 the holdout has at least 60 cases")
+    check(all(re.fullmatch(EXTRA_SPLITS[split] + r"\d{3}", x["id"]) for x in rows), "227 AC-2 extra case IDs are H001 or D001 style")
+    texts = [x["input"]["text"] for x in rows]
+    check(len(set(texts)) == len(texts) and len({x["id"] for x in rows}) == len(rows), "duplicate IDs or inputs")
+    check(not set(texts) & {x["input"]["text"] for x in main}, "227 AC-2 no extra case repeats a case of cases.jsonl")
+    for case in rows:
+        validate_case(case)
+    if split == "holdout":
+        prompts = [p.read_text(encoding="utf-8") for p in prompt_files()] if prompts is None else prompts
+        check(not any(t in p for t in texts if len(t) > 12 for p in prompts), "227 AC-2 no holdout input is in a prompt")
+
+
+def load_cases(files=("cases.jsonl",)):
+    """Reads and validates cases.jsonl plus any extra cases file (#227); returns the rows of the given files, in order."""
+    main = read_jsonl(HERE / "cases.jsonl")
+    validate_cases(main)
+    rows = []
+    for name in files:
+        if name == "cases.jsonl":
+            rows += main
+        else:
+            extra = read_jsonl(HERE / name)
+            validate_extra(extra, main)
+            rows += extra
+    check(len({x["id"] for x in rows}) == len(rows), "duplicate IDs")
+    distinct_texts(rows)
+    return rows
+
+
+def distinct_texts(rows):
+    """No description is in two cases files: a development copy of a holdout case would unblind it (#227 review)."""
+    check(len({x["input"]["text"] for x in rows}) == len(rows), "227 AC-2 no text is in two cases files")
+
+
+def select(cases, split):
+    """The cases of one split; empty means the split does not match the cases files, which is refused (#227 review)."""
+    selected = [c for c in cases if split == "all" or c["split"] == split]
+    check(selected, "227 AC-4 the split selects at least one case of the given files")
+    return selected
+
+
 def validate_cases(cases):
     check(len(cases) >= 100, "at least 100 cases")
     check(len({x["id"] for x in cases}) == len(cases), "duplicate IDs")
@@ -105,25 +180,13 @@ def validate_cases(cases):
     check({x["expected"]["category"] for x in cases if not x["expected"]["abstain"]} == set(CATEGORIES),
           "197 AC-1 reference categories are the five of decision 8")
     for case in cases:
-        data, expected = case["input"], case["expected"]
-        check(set(data) == {"text"}, "197 AC-1 input is only the description")
-        check(isinstance(data["text"], str) and data["text"].strip() and len(data["text"]) <= 500,
-              "197 AC-1 description has 1 to 500 characters")
-        check(set(expected) == {"category", "minimum_priority", "abstain"} and type(expected["abstain"]) is bool,
-              "197 AC-1 expected labels have no team")
-        if expected["abstain"]:
-            check(expected["category"] is None and expected["minimum_priority"] is None,
-                  "197 AC-1 abstention has no category and no priority")
-        else:
-            check(expected["category"] in CATEGORIES and expected["minimum_priority"] in LEVEL, "known reference labels")
-        check(case["origin"].startswith("synthetic-"), "synthetic origin")
-        check(case["tags"] and set(case["tags"]) <= TAGS, "known tags")
+        validate_case(case)
         check(case["split"] == ("dev" if int(case["id"][1:]) % 5 == 0 else "test"), "every fifth ID is development")
-    # Prompt few-shot examples are development-only.
-    prompt = (HERE / "system-prompt.txt").read_text(encoding="utf-8")
-    for case in cases:
-        if case["split"] == "test" and len(case["input"]["text"]) > 12:
-            check(case["input"]["text"] not in prompt, "test input leaked into the prompt")
+    # Prompt few-shot examples are development-only, in every prompt version (#227).
+    for prompt in (p.read_text(encoding="utf-8") for p in prompt_files()):
+        for case in cases:
+            if case["split"] == "test" and len(case["input"]["text"]) > 12:
+                check(case["input"]["text"] not in prompt, "test input leaked into the prompt")
 
 
 def normalise(text):
@@ -141,7 +204,7 @@ def baseline(case):
     return {"id": case["id"], "output": output}
 
 
-def score(cases, predictions, mode="predictions"):
+def score(cases, predictions, mode="predictions", files=PACKAGE_FILES):
     known = {x["id"] for x in cases}
     indexed = {}
     for row in predictions:
@@ -208,7 +271,7 @@ def score(cases, predictions, mode="predictions"):
     timing = (overall["latency_samples"] == len(cases) and overall["urgent_late_or_missing_timing"] == 0
               and overall["valid_on_time_coverage"] is not None and overall["valid_on_time_coverage"] >= MIN_ON_TIME_COVERAGE)
     return {"kind": mode, "dataset_labels": "synthetic draft, not independently reviewed", "split": sorted({x["split"] for x in cases}),
-            "hashes_sha256": {name: hashlib.sha256((HERE / name).read_bytes()).hexdigest() for name in PACKAGE_FILES},
+            "hashes_sha256": {name: hashlib.sha256((HERE / name).read_bytes()).hexdigest() for name in files},
             "overall": overall, "slices": {tag: aggregate([x for x in rows if tag in x["tags"]]) for tag in sorted({t for x in rows for t in x["tags"]})},
             "offline_quality_gate_checks": gate_checks, "offline_quality_gate": all(gate_checks.values()), "reported_timing_gate": timing,
             "production_readiness": "NOT ESTABLISHED: independent labels, provider/privacy review, reason review and deployed SC3/SC5 tests still required",
@@ -217,9 +280,9 @@ def score(cases, predictions, mode="predictions"):
                                  or not x["abstain_correct"] or (not x["expected_abstain"] and not x["category_correct"])]}
 
 
-def run_baseline(cases, split):
-    selected = [c for c in cases if split == "all" or c["split"] == split]
-    return score(selected, [baseline(c) for c in selected], "deterministic-keyword-baseline-not-model")
+def run_baseline(cases, split, files=PACKAGE_FILES):
+    selected = select(cases, split)
+    return score(selected, [baseline(c) for c in selected], "deterministic-keyword-baseline-not-model", files)
 
 
 def render(report):
@@ -358,6 +421,47 @@ def self_test(cases):
           "197 AC-4 baseline abstains without a keyword")
     check(render(run_baseline(cases, "test")).encode("utf-8") == (HERE / "baseline-report.json").read_bytes(),
           "197 AC-4 committed baseline report is reproducible")
+
+    # #227: extra cases files (holdout, extra development cases) and the files a report hashes.
+    def rejects_with(call, name):
+        try:
+            call()
+        except AssertionError as e:
+            return str(e) == name
+        return False
+
+    def rejects(rows, prompts, name):
+        try:
+            validate_extra(rows, cases, prompts)
+        except AssertionError as e:
+            return str(e) == name
+        return False
+    holdout = []
+    for i in range(MIN_HOLDOUT_CASES):
+        case = copy.deepcopy(template)
+        case.update(id=f"H{i + 1:03}", split="holdout", input={"text": f"Synthetic holdout fixture number {i + 1}."})
+        holdout.append(case)
+    validate_extra(holdout, cases, [])
+    check(rejects(holdout[1:], [], "227 AC-2 the holdout has at least 60 cases"), "227 AC-2 a holdout under 60 cases is rejected")
+    check(rejects(holdout, [holdout[5]["input"]["text"]], "227 AC-2 no holdout input is in a prompt"),
+          "227 AC-2 a holdout input in a prompt is rejected")
+    copied = copy.deepcopy(holdout); copied[0]["input"]["text"] = cases[medium]["input"]["text"]
+    check(rejects(copied, [], "227 AC-2 no extra case repeats a case of cases.jsonl"), "227 AC-2 a holdout case repeating cases.jsonl is rejected")
+    renamed = copy.deepcopy(holdout); renamed[0]["id"] = "T999"
+    check(rejects(renamed, [], "227 AC-2 extra case IDs are H001 or D001 style"), "227 AC-2 a holdout ID outside H001 style is rejected")
+    mixed = copy.deepcopy(holdout); mixed[0]["split"] = "test"
+    check(rejects(mixed, [], "227 AC-2 an extra cases file holds one split, holdout or dev"), "227 AC-2 a holdout file with another split is rejected")
+    check(package_files() == PACKAGE_FILES and package_files(["holdout.jsonl"], "prompts/v5.txt") == ("holdout.jsonl", "prompts/v5.txt", "output.schema.json")
+          and list(score(cases, reference, files=("cases.jsonl", "output.schema.json"))["hashes_sha256"]) == ["cases.jsonl", "output.schema.json"],
+          "227 AC-1 a report hashes the cases and prompt files the run used")
+    shared = copy.deepcopy(holdout[:2]); shared[1]["id"] = "D001"; shared[1]["split"] = "dev"; shared[1]["input"] = dict(shared[0]["input"])
+    check(rejects_with(lambda: distinct_texts(shared), "227 AC-2 no text is in two cases files"), "227 AC-2 a text in two cases files is rejected")
+    check(rejects_with(lambda: select(holdout, "test"), "227 AC-4 the split selects at least one case of the given files")
+          and select(holdout, "holdout") == holdout, "227 AC-4 a run or report on an empty selection is refused")
+    load_cases(["holdout.jsonl", "dev-extra.jsonl"])  # validates both extra files with every --self-test
+    files = package_files(["holdout.jsonl"])
+    check(render(run_baseline(load_cases(files[:1]), "holdout", files)).encode("utf-8") == (HERE / "baseline-holdout-report.json").read_bytes(),
+          "227 AC-4 committed holdout baseline report is reproducible")
     print("Dataset and scorer checks passed; fixtures are NOT model results.")
 
 
@@ -368,23 +472,27 @@ def main():
     action.add_argument("--self-test", action="store_true")
     action.add_argument("--baseline", action="store_true")
     action.add_argument("--predictions", type=Path)
-    parser.add_argument("--split", choices=["all", "dev", "test"], default="test")
+    parser.add_argument("--split", choices=["all", "dev", "test", "holdout"], default="test")
+    parser.add_argument("--cases", nargs="+", default=["cases.jsonl"], metavar="FILE",
+                        help="cases files in this folder (#227: holdout.jsonl, dev-extra.jsonl); default cases.jsonl")
+    parser.add_argument("--prompt", default="system-prompt.txt", metavar="FILE",
+                        help="prompt file the run used, in this folder, for the report hashes (#227: prompts/...)")
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
-    cases = read_jsonl(HERE / "cases.jsonl")
-    validate_cases(cases)
+    files = package_files(args.cases, args.prompt)
+    cases = load_cases(args.cases)
     if args.self_test:
-        self_test(cases)
+        self_test(read_jsonl(HERE / "cases.jsonl"))
         return
     if args.validate:
-        print(json.dumps({"cases": len(cases), "dev": sum(c["split"] == "dev" for c in cases), "test": sum(c["split"] == "test" for c in cases)}, indent=2))
+        print(json.dumps(dict(cases=len(cases), **{s: sum(c["split"] == s for c in cases) for s in sorted({c["split"] for c in cases})}), indent=2))
         return
     if args.baseline:
-        result = run_baseline(cases, args.split)
+        result = run_baseline(cases, args.split, files)
     else:
-        selected = [c for c in cases if args.split == "all" or c["split"] == args.split]
+        selected = select(cases, args.split)
         # Supply only predictions from the selected split; unexpected IDs fail explicitly.
-        result = score(selected, read_jsonl(args.predictions), "reported-provider-predictions")
+        result = score(selected, read_jsonl(args.predictions), "reported-provider-predictions", files)
     if args.out:
         args.out.write_text(render(result), encoding="utf-8", newline="\n")
     else:
