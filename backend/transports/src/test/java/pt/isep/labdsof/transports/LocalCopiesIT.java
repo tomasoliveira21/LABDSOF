@@ -207,6 +207,18 @@ class LocalCopiesIT extends IntegrationTest {
                 + "\"payload\":" + good + "}"),
         Arguments.of("schemaVersion 2", AUTH_USERS, "membership.changed", AUTH_USERS_DLQ,
             membershipTemplate(good).replace("\"schemaVersion\":1", "\"schemaVersion\":2")),
+        Arguments.of("no messageId", AUTH_USERS, "membership.changed", AUTH_USERS_DLQ,
+            membershipTemplate(good).replace("\"messageId\":\"%1$s\",", "")),
+        Arguments.of("no type", AUTH_USERS, "membership.changed", AUTH_USERS_DLQ,
+            membershipTemplate(good).replace("\"type\":\"MembershipChanged\",", "")),
+        Arguments.of("no occurredAt", EVENTS, "event.changed", EVENTS_DLQ,
+            eventTemplate("EventChanged", eventPayload("Draft", 1))
+                .replace("\"occurredAt\":\"2027-05-08T23:14:05Z\",", "")),
+        Arguments.of("no producer", EVENTS, "event.changed", EVENTS_DLQ,
+            eventTemplate("EventChanged", eventPayload("Draft", 1)).replace("\"producer\":\"events\",", "")),
+        Arguments.of("no actorUserId", EVENTS, "team.changed", EVENTS_DLQ,
+            eventTemplate("TeamChanged", teamPayload(UUID.fromString(id), false, 1))
+                .replace("\"actorUserId\":\"\",", "")),
         Arguments.of("unknown role", AUTH_USERS, "membership.changed", AUTH_USERS_DLQ,
             membershipTemplate(good.replace("RegularUser", "Owner"))),
         Arguments.of("a null team id", AUTH_USERS, "membership.changed", AUTH_USERS_DLQ,
