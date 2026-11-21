@@ -2,6 +2,14 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
+
+- Badges starts in Compose with its own PostgreSQL database, Flyway migrations, Keycloak JWT validation,
+  health checks and the existing least-privilege RabbitMQ user.
+- The OpenAPI contract defines the badge list and preference routes. The list reads the authenticated
+  account's progress and returns an empty array for new accounts. Preference behavior follows in US-56.
+- CI exercises the request through the gateway with a real Keycloak token.
+
 ## [Unreleased] · 2026-11-21 · Domain entity lifecycles (#198)
 
 - Documented state transitions, triggers and story references for the account, membership, event, help request,
