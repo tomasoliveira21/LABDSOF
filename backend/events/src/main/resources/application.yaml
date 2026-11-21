@@ -1,0 +1,69 @@
+# Events (spec Docs/specs/192-events-service.md). Every secret comes from the environment
+# (infra/compose.yaml, infra/.env); no default secret.
+spring:
+  application:
+    name: events
+  mvc:
+    problemdetails:
+      # Problem Details for every MVC error (API outline 1.7); ProblemDetailsAdvice extends ResponseEntityExceptionHandler
+      enabled: true
+  jackson:
+    deserialization:
+      # Reject fields outside the documented bodies (mass assignment). The consumer of
+      # events.auth-users-events tolerates unknown fields on its own mapper (contracts evolve by adding).
+      fail-on-unknown-properties: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      # At most 10 connections per service on the shared server (#189 handoff)
+      maximum-pool-size: 5
+  flyway:
+    locations: classpath:db/migration
+  rabbitmq:
+    # The events user declares nothing; the topology comes from infra/rabbitmq/topology.json (#212, spec D1)
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:}
+    password: ${SPRING_RABBITMQ_PASSWORD:}
+    # A dead letter is acknowledged by the broker before the original is (spec D2, #214 D8); the
+    # outbox publisher of F02 relies on the same confirms
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        # Start before rabbitmq-setup has created the queues and consume once they exist (spec D2, #214 D9)
+        missing-queues-fatal: false
+        # 4 attempts, backoff 1 s, 2 s, 4 s, then the dead-letter queue (spec D2, ADR-004 decision 3)
+        retry:
+          enabled: true
+          max-retries: 3
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 4s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # ADR-006: public issuer checked against iss, keys from Keycloak's internal address, audience farol-api
+          issuer-uri: ${FAROL_ISSUER_URI}
+          jwk-set-uri: ${FAROL_JWKS_URI}
+          audiences: farol-api
+
+farol:
+  # Same values as Auth & Users (#191) and Reports (#214 D5), so the services the team reviews behave alike
+  # (spec D1). Inside architecture section 6 (poll up to 1 s, batch up to 100): 500 ms keeps the delay to
+  # consumers under 1 s including the confirm, and 50 is far above the rate of event and team changes.
+  outbox:
+    enabled: true
+    poll-interval: 500ms
+    batch-size: 50
+    confirm-timeout: 5s
+
+logging:
+  structured:
+    format:
+      console: logstash
