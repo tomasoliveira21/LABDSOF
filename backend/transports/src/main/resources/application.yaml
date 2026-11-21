@@ -9,7 +9,8 @@ spring:
       enabled: true
   jackson:
     deserialization:
-      # Reject fields outside the documented bodies (mass assignment)
+      # Reject fields outside the documented bodies (mass assignment). The consumers tolerate unknown fields on
+      # their own mapper (contracts evolve by adding).
       fail-on-unknown-properties: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:}
@@ -20,6 +21,29 @@ spring:
       maximum-pool-size: 5
   flyway:
     locations: classpath:db/migration
+  rabbitmq:
+    # The transports user declares nothing and publishes only dead letters; the topology comes from
+    # infra/rabbitmq/topology.json (#212, spec D2, D3)
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:}
+    password: ${SPRING_RABBITMQ_PASSWORD:}
+    # A dead letter is confirmed by the broker before the original is acknowledged (spec D3, #214 D8)
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        # Start before rabbitmq-setup has created the queues and consume once they exist (spec D3, #214 D9)
+        missing-queues-fatal: false
+        # 4 attempts, backoff 1 s, 2 s, 4 s, then the dead-letter queue (spec D3, ADR-004 decision 3)
+        retry:
+          enabled: true
+          max-retries: 3
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 4s
 
 logging:
   structured:

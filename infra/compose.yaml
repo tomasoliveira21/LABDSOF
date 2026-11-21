@@ -142,7 +142,9 @@ services:
     image: farol-transports:${VERSION:-dev}
     build:
       context: ../backend/transports
-    # #193: its own database (Flyway at start-up, so it waits for PostgreSQL).
+    # #193: its own database (Flyway at start-up, so it waits for PostgreSQL) and RabbitMQ as the `transports` user
+    # (it waits for neither the broker nor its queues: the listeners keep retrying until rabbitmq-setup has run,
+    # ADR-011). It publishes nothing, so it has no outbox (spec D2).
     depends_on:
       postgres:
         condition: service_healthy
@@ -151,6 +153,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/transports
       SPRING_DATASOURCE_USERNAME: transports
       SPRING_DATASOURCE_PASSWORD: ${TRANSPORTS_DB_PASSWORD:?set TRANSPORTS_DB_PASSWORD in infra/.env}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: transports
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_TRANSPORTS_PASSWORD:?set RABBITMQ_TRANSPORTS_PASSWORD in infra/.env}
 
   badges:
     <<: *spring

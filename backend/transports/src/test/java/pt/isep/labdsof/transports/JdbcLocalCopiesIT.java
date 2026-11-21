@@ -8,7 +8,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import pt.isep.labdsof.transports.application.LocalCopies;
 import pt.isep.labdsof.transports.application.ProcessedMessages;
 import pt.isep.labdsof.transports.domain.EventCopy;
 import pt.isep.labdsof.transports.domain.EventStatus;
@@ -21,7 +20,6 @@ import pt.isep.labdsof.transports.domain.Team;
 /** The SQL of the copies keeps the rules of the in-memory ports the use case is unit-tested with. */
 class JdbcLocalCopiesIT extends IntegrationTest {
 
-  @Autowired LocalCopies copies;
   @Autowired ProcessedMessages processed;
 
   @Test

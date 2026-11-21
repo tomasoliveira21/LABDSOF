@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "team.changed.schema.json",
+  "title": "TeamChanged, as Transports reads it",
+  "description": "Published by Events (farol.events, routing key team.changed), consumed from transports.events-events into the team copy (spec #193 D3). Copied from the producer's contract (backend/events/contracts/events); Transports stores only the permission names, deleted and version, and ignores name, handledCategories and reportTypes.",
+  "allOf": [
+    {
+      "$ref": "../envelope.schema.json"
+    }
+  ],
+  "properties": {
+    "type": {
+      "const": "TeamChanged"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "producer": {
+      "const": "events"
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "teamId",
+        "name",
+        "permissions",
+        "handledCategories",
+        "deleted",
+        "version"
+      ],
+      "properties": {
+        "teamId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "\\S"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "permission",
+              "reportTypes"
+            ],
+            "properties": {
+              "permission": {
+                "enum": [
+                  "HelpRequests.Triage",
+                  "HelpRequests.Respond",
+                  "Reports.Review",
+                  "Reports.Respond",
+                  "Announcements.Publish",
+                  "Map.Edit",
+                  "Transport.Edit",
+                  "Entrances.Update"
+                ]
+              },
+              "reportTypes": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "QueueAtEntrance",
+                    "CrowdedArea",
+                    "WcProblem",
+                    "NoWater",
+                    "Hazard",
+                    "TransportProblem",
+                    "WrongInformation"
+                  ]
+                },
+                "uniqueItems": true,
+                "description": "Only Reports.Review carries any (proposed codes, spec D6)"
+              }
+            },
+            "if": {
+              "properties": {
+                "permission": {
+                  "const": "Reports.Review"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "reportTypes": {
+                  "maxItems": 0
+                }
+              }
+            }
+          }
+        },
+        "handledCategories": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "Health",
+              "Safety",
+              "LostPerson",
+              "Infrastructure",
+              "Other"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
