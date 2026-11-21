@@ -1,6 +1,5 @@
 package pt.isep.labdsof.transports.adapters.in.web;
 
-import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -13,21 +12,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * Problem Details for every error (spec D1, D10, API outline 1.7). The standard MVC exceptions come from the superclass;
- * the details added here are fixed texts, never an exception message that could hold a token or a path value.
+ * Problem Details for every error (spec D1, D10, API outline 1.7). The standard MVC exceptions, invalid bodies and path
+ * values included, come from the superclass; the details added here are fixed texts, never an exception message that
+ * could hold a token or a path value. No handler for {@code ConstraintViolationException}: the contract has no
+ * constrained path or query parameter, so nothing raises it (a story that adds one adds the handler and its test).
  */
 @RestControllerAdvice
 class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
 
   private static final Logger log = LoggerFactory.getLogger(ProblemDetailsAdvice.class);
   private static final int MAX_CAUSE_DEPTH = 10;
-
-  /** Never the violation text: it repeats the value sent. */
-  @ExceptionHandler(ConstraintViolationException.class)
-  ResponseEntity<ProblemDetail> invalidParameters(ConstraintViolationException e) {
-    return ResponseEntity.badRequest()
-        .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid request parameters."));
-  }
 
   /**
    * A denial is not an error of ours: rethrowing the same exception leaves it unresolved here, so it reaches Spring

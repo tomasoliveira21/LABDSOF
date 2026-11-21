@@ -4,11 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -146,6 +149,49 @@ class SecurityIT extends IntegrationTest {
     var token = JWKS.sign(claims.build());
 
     assertRefused(api().get(busObservations(), token), token);
+  }
+
+  private record TokenKind(String name, Function<String, String> token) {
+
+    @Override
+    public String toString() {
+      return name;
+    }
+  }
+
+  private static List<TokenKind> badTokens() {
+    return List.of(
+        new TokenKind("no token", subject -> null),
+        new TokenKind("expired", subject -> JWKS.expired(subject, Duration.ofSeconds(120))),
+        new TokenKind("same key id, other key", JWKS::wrongSignature),
+        new TokenKind("unknown key", JWKS::unknownKey),
+        new TokenKind("wrong issuer", JWKS::wrongIssuer),
+        new TokenKind("wrong audience", JWKS::wrongAudience),
+        new TokenKind("alg none", JWKS::unsigned),
+        new TokenKind("tampered", subject -> Jwks.tampered(JWKS.valid(subject))),
+        new TokenKind("sub not a uuid", subject -> JWKS.valid("not-a-uuid")));
+  }
+
+  private static Stream<Arguments> securedOperationsWithBadTokens() {
+    return ContractIT.contractOperations().stream()
+        .filter(operation -> !operation.equals("GET /api/v1/status"))
+        .sorted()
+        .flatMap(operation -> badTokens().stream().map(kind -> Arguments.of(operation, kind)));
+  }
+
+  @ParameterizedTest(name = "[{index}] {0} with {1}")
+  @MethodSource("securedOperationsWithBadTokens")
+  @DisplayName("193 AC-2 every secured operation of the contract refuses a missing or invalid token with 401 "
+      + "Problem Details")
+  void everySecuredOperationRefusesBadTokens(String operation, TokenKind kind) {
+    var sample = ContractIT.sampleRequest(operation);
+    var token = kind.token().apply(user());
+    var headers = sample.contentType() == null ? new String[0] : new String[] {"Content-Type", sample.contentType()};
+
+    var response = api().send(sample.method(), sample.path(), token == null ? null : "Bearer " + token,
+        sample.body(), headers);
+
+    assertRefused(response, token == null ? new String[0] : new String[] {token});
   }
 
   @Test

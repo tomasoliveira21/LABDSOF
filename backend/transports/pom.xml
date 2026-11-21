@@ -16,6 +16,7 @@
   <description>Transports, bus data and local copies (#193)</description>
   <properties>
     <java.version>21</java.version>
+    <openapi-generator.version>7.27.0</openapi-generator.version>
     <pitest.version>1.30.2</pitest.version>
     <pitest-junit5.version>1.2.3</pitest-junit5.version>
     <jacoco.version>0.8.16</jacoco.version>
@@ -100,7 +101,56 @@
   </dependencies>
   <build>
     <finalName>transports</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>contracts</directory>
+        <targetPath>static</targetPath>
+        <includes>
+          <include>openapi.yaml</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
+      <!-- Contract-first (C7): interfaces and DTOs generated from contracts/openapi.yaml, never edited or committed -->
+      <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>${openapi-generator.version}</version>
+        <executions>
+          <execution>
+            <id>generate-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/contracts/openapi.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <apiPackage>pt.isep.labdsof.transports.adapters.in.web.generated.api</apiPackage>
+              <modelPackage>pt.isep.labdsof.transports.adapters.in.web.generated.model</modelPackage>
+              <generateSupportingFiles>false</generateSupportingFiles>
+              <generateApiTests>false</generateApiTests>
+              <generateModelTests>false</generateModelTests>
+              <generateApiDocumentation>false</generateApiDocumentation>
+              <generateModelDocumentation>false</generateModelDocumentation>
+              <configOptions>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot4>true</useSpringBoot4>
+                <useJackson3>true</useJackson3>
+                <useTags>true</useTags>
+                <useRecords>true</useRecords>
+                <openApiNullable>false</openApiNullable>
+                <useBeanValidation>true</useBeanValidation>
+                <documentationProvider>none</documentationProvider>
+                <annotationLibrary>none</annotationLibrary>
+                <skipDefaultInterface>true</skipDefaultInterface>
+              </configOptions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Tests that need Docker (Testcontainers) are *IT and run here; the image build runs only `package` (spec D1, #214 D17). -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

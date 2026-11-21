@@ -1,6 +1,7 @@
 FROM maven:3.9.9-eclipse-temurin-21-alpine@sha256:5a8b906c4faa11d33f6c74758f67db8eac25441e14b0729f6d50ff78992be58a AS build
 WORKDIR /build
 COPY pom.xml ./
+COPY contracts ./contracts
 COPY src ./src
 # Unit tests only: the *IT tests need Docker (Testcontainers) and run in `mvn verify` locally and in CI (spec D1, #214 D17).
 # Maven dependencies stay in a cache kept between builds (#219), one per service so no two Maven processes write
