@@ -220,21 +220,56 @@ classDiagram
 - **Notation:** a filled diamond denotes composition; a plain association connects concepts; a dashed arrow expresses a dependency or contribution. Namespace boxes group concepts by service; ExternalSystems contains the external provider.
 - **Value sets:** `HelpCategory` is `Health`, `Safety`, `LostPerson`, `Infrastructure` or `Other` (`Theft` removed on 15 November 2026: a theft is a `Safety` case; `Infrastructure` is something broken or damaged on the site that needs a team now). `Priority` is `Low`, `Medium`, `High` or `Critical`, with the meanings and examples of the [meeting record of 15 November 2026](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md#priority-scale-decision-2) (AI-3, API outline O7).
 
-## States and transitions **[PROPOSED]**
+## States and transitions
 
-Proposed on 15 November 2026 ([meeting record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md) §4), to be confirmed by the team in #198. The help-request status set and the triage state were decided at that meeting (#177). The professor's feedback on the PL presentation asks for every entity a front-end story shows to have its states defined (DoR).
+The lifecycle proposals below come from the [15 November planning record](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md#4-proposed-states-of-the-domain-entities-decision-4) and are pending team confirmation in [#198](https://github.com/tomasoliveira21/LABDSOF/issues/198). The [Definition of Ready](../Process/definition-of-ready-and-done.md#definition-of-ready-backlog-item) requires the linked mockups to cover empty, loading, error and each status visible to the story's persona.
+
+### AccountStatus
 
 ```mermaid
 stateDiagram-v2
     direction LR
     state "UserAccount" as UA {
-        [*] --> Active
+        [*] --> Active : first authenticated GET /me (US-01, US-03)
         Active --> Disabled : disabled in Keycloak
-        Disabled --> Active : enabled again
+        Disabled --> Active : enabled again in Keycloak
         Active --> DeletionPending : user deletes account (US-05)
         DeletionPending --> [*] : Keycloak confirms, row deleted (D7)
     }
 ```
+
+| From | To | Trigger | Story or source |
+|---|---|---|---|
+| No account | `Active` | Auth & Users provisions the account on the first authenticated `GET /me` | [US-01](https://github.com/tomasoliveira21/LABDSOF/issues/59), [US-03](https://github.com/tomasoliveira21/LABDSOF/issues/86) |
+| `Active` | `Disabled` | Identity administrator disables the account in Keycloak | [ADR-006](adr/0006-identity-and-access.md), no MVP story |
+| `Disabled` | `Active` | Identity administrator re-enables the account in Keycloak | [ADR-006](adr/0006-identity-and-access.md), no MVP story |
+| `Active` | `DeletionPending` | Account owner requests deletion and passes the last-admin checks | [US-05](https://github.com/tomasoliveira21/LABDSOF/issues/88) |
+| `DeletionPending` | Account deleted | Auth & Users deletes the account and writes a tombstone after Keycloak confirms deletion | [US-05](https://github.com/tomasoliveira21/LABDSOF/issues/88), [API outline §2](api-outline.md#2-auth--users) |
+
+During deletion, the account is stored as `DeletionPending` and consumers receive `UserStatusChanged(Disabled)` until `UserDeleted`. An unavailable Keycloak leaves the account in `DeletionPending` for retry.
+
+### MembershipStatus
+
+The existing `MembershipChanged` contract carries `Active` and `Removed`. The MVP flow creates an active membership. Account deletion removes it through `UserDeleted`. The planning proposal to drop the status from the event and its consumers is a contract decision for [#198](https://github.com/tomasoliveira21/LABDSOF/issues/198).
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Active : join or first appointment
+    Active --> Active : role or team assignment changes
+    Active --> [*] : account deleted (US-05)
+    state "Removed (event contract)" as Removed
+    note right of Removed : No MVP story emits this value
+```
+
+| From | To | Trigger | Story or source |
+|---|---|---|---|
+| No membership | `Active` | Authenticated user joins a published event, or FarolAdmin appoints an EventAdmin who has no membership yet | [US-12](https://github.com/tomasoliveira21/LABDSOF/issues/63), [US-06](https://github.com/tomasoliveira21/LABDSOF/issues/61), [US-08](https://github.com/tomasoliveira21/LABDSOF/issues/90) |
+| `Active` | `Active` | Eligible admin changes the event role or team assignments | [US-08](https://github.com/tomasoliveira21/LABDSOF/issues/90), [US-15](https://github.com/tomasoliveira21/LABDSOF/issues/94), [US-18](https://github.com/tomasoliveira21/LABDSOF/issues/67) |
+| `Active` | Membership deleted | Auth & Users deletes memberships on account deletion. Consumers remove their copies on `UserDeleted` | [US-05](https://github.com/tomasoliveira21/LABDSOF/issues/88) |
+| — | `Removed` | The event contract supports this value. There is no MVP action that emits it | [API outline §7.4](api-outline.md#74-events) |
+
+### EventStatus
 
 ```mermaid
 stateDiagram-v2
@@ -250,6 +285,20 @@ stateDiagram-v2
         Closed --> [*]
     }
 ```
+
+| From | To | Trigger | Story or source |
+|---|---|---|---|
+| No event | `Draft` | FarolAdmin creates the event for an organisation | [US-06](https://github.com/tomasoliveira21/LABDSOF/issues/61) |
+| `Draft` | `Published` | EventAdmin publishes it. The join link and QR code become available | [US-11](https://github.com/tomasoliveira21/LABDSOF/issues/62) |
+| `Draft` or `Published` | `Suspended` | FarolAdmin suspends it. Events records the previous status | [US-09](https://github.com/tomasoliveira21/LABDSOF/issues/91) |
+| `Suspended` | `Draft` or `Published` | FarolAdmin reactivates it. Events restores the recorded status | [US-09](https://github.com/tomasoliveira21/LABDSOF/issues/91) |
+| `Published` | `Closed` | EventAdmin closes it. The event remains readable to members with access, and new joins, help requests and reports are refused | [US-13](https://github.com/tomasoliveira21/LABDSOF/issues/93), [US-12](https://github.com/tomasoliveira21/LABDSOF/issues/63) |
+
+`Closed` is terminal. Editing a `Draft` or `Published` event keeps its status ([US-10](https://github.com/tomasoliveira21/LABDSOF/issues/92)).
+
+### RequestStatus
+
+The request lifecycle was agreed in [#177](https://github.com/tomasoliveira21/LABDSOF/issues/177) and is reflected in the [Reports API](api-outline.md#4-reports) and [workflow W3](../Product/user-workflows.md#w3--control-room-handles-a-help-request). Routing creates a field task and keeps the request status (US-29).
 
 ```mermaid
 stateDiagram-v2
@@ -268,6 +317,17 @@ stateDiagram-v2
     }
 ```
 
+| From | To | Trigger | Story or source |
+|---|---|---|---|
+| No request | `Submitted` | Participant sends a help request | [US-23](https://github.com/tomasoliveira21/LABDSOF/issues/71) |
+| `Submitted` | `Seen` | Control room acknowledges the request | [US-28](https://github.com/tomasoliveira21/LABDSOF/issues/75) |
+| `Seen` | `OnTheWay` | Assigned field-team member accepts the Assist task | [US-32](https://github.com/tomasoliveira21/LABDSOF/issues/79) |
+| `OnTheWay` | `Resolved` | Field-team member who accepted the task resolves it | [US-33](https://github.com/tomasoliveira21/LABDSOF/issues/80) |
+| `OnTheWay` | `Seen` | Reports cancels the task after its team is deleted | [US-16](https://github.com/tomasoliveira21/LABDSOF/issues/65) |
+| `Submitted`, `Seen`, `OnTheWay` or `Resolved` | `Closed` | Control room closes the request | [US-30](https://github.com/tomasoliveira21/LABDSOF/issues/77) |
+
+The account deletion flow also closes the user's open requests as a system action ([US-05](https://github.com/tomasoliveira21/LABDSOF/issues/88), [API outline §7.4](api-outline.md#74-events)).
+
 ```mermaid
 stateDiagram-v2
     direction LR
@@ -280,6 +340,10 @@ stateDiagram-v2
         NotTriaged --> Changed : control room sets category and priority (US-35)
     }
 ```
+
+`NotTriaged` is not stored: a read derives it (API outline §4.1).
+
+### ReportStatus
 
 ```mermaid
 stateDiagram-v2
@@ -295,18 +359,40 @@ stateDiagram-v2
     }
 ```
 
+| From | To | Trigger | Story or source |
+|---|---|---|---|
+| No report | `Pending` | Event member submits a problem on the map | [US-47](https://github.com/tomasoliveira21/LABDSOF/issues/105) |
+| `Pending` | `Confirmed` | Reviewer with `Reports.Review` for the type, or EventAdmin, confirms it. It appears on the map and counts for badges | [US-50](https://github.com/tomasoliveira21/LABDSOF/issues/108) |
+| `Pending` | `Rejected` | The same authorised reviewer or EventAdmin rejects it | [US-50](https://github.com/tomasoliveira21/LABDSOF/issues/108) |
+| `Pending` | `Expired` | Reports expires it at the deadline configured for its type. The report earns no badge credit | [US-49](https://github.com/tomasoliveira21/LABDSOF/issues/107), [features §6.1](../Product/features.md#61-what-can-be-reported) |
+| `Confirmed` | `Expired` | Reports expires it at the deadline configured for its type. The report leaves the map and keeps its badge credit | [US-49](https://github.com/tomasoliveira21/LABDSOF/issues/107), [features §6.2](../Product/features.md#62-how-a-report-behaves) |
+| `Confirmed` | `Unconfirmed` | Reviewer with `Reports.Review` for the type withdraws confirmation. The report leaves the map and loses badge credit | [US-51](https://github.com/tomasoliveira21/LABDSOF/issues/109) |
+| `Confirmed` | `Resolved` | Field-team member who accepted the Fix task resolves it. The report leaves the map and keeps its badge credit | [US-53](https://github.com/tomasoliveira21/LABDSOF/issues/111) |
+
+Dispatching a Verify task and answering it leave the report `Pending` until the reviewer confirms or rejects it ([US-52](https://github.com/tomasoliveira21/LABDSOF/issues/110)). The event catalogue explains how Badges deduplicates repeat confirmations. Whether a reviewer can reconfirm an `Unconfirmed` report is pending team confirmation in #198.
+
+### FieldTaskStatus
+
 ```mermaid
 stateDiagram-v2
     direction LR
     state "FieldTask" as FT {
-        [*] --> Open : request routed or report dispatched (US-29, US-52)
-        Open --> Accepted : one team member (US-32, US-52)
+        [*] --> Open : request routed or report dispatched (US-29, US-52, US-53)
+        Open --> Accepted : one team member (US-32, US-52, US-53)
         Accepted --> Answered : Verify task (US-52)
         Accepted --> Resolved : Assist or Fix task (US-33, US-53)
-        Open --> Cancelled : team deleted (US-16)
+        Open --> Cancelled : team deleted or requester account deleted (US-16, US-05)
         Accepted --> Cancelled : team deleted (US-16)
     }
 ```
 
-- **EventMembership:** no MVP story ends a membership other than account deletion, which deletes it. Proposal: drop `MembershipStatus` (and the `status` of `MembershipChanged`, API outline §7.4); a membership exists or it does not.
-- Routing a help request (US-29) creates a field task and does not change the request's status. `NotTriaged` is not stored: a read derives it (API outline §4.1).
+| From | To | Trigger | Story or source |
+|---|---|---|---|
+| No task | `Open` | Control room routes a help request (Assist), or report reviewer dispatches a pending report (Verify) or a confirmed report (Fix) | [US-29](https://github.com/tomasoliveira21/LABDSOF/issues/76), [US-52](https://github.com/tomasoliveira21/LABDSOF/issues/110), [US-53](https://github.com/tomasoliveira21/LABDSOF/issues/111) |
+| `Open` | `Accepted` | One member of the assigned team accepts it. For Assist, the request becomes `OnTheWay` | [US-32](https://github.com/tomasoliveira21/LABDSOF/issues/79), US-52, US-53 |
+| `Accepted` | `Answered` | The member who accepted a Verify task reports whether the problem was found | US-52 |
+| `Accepted` | `Resolved` | The member who accepted an Assist or Fix task resolves it, and Reports resolves the target | [US-33](https://github.com/tomasoliveira21/LABDSOF/issues/80), US-53 |
+| `Open` or `Accepted` | `Cancelled` | Reports consumes the team deletion event. A help request routed to that team returns to the control-room queue | [US-16](https://github.com/tomasoliveira21/LABDSOF/issues/65), [#177](https://github.com/tomasoliveira21/LABDSOF/issues/177) |
+| `Open` | `Cancelled` | Reports consumes `UserDeleted` for the requester and cancels their open tasks | [US-05](https://github.com/tomasoliveira21/LABDSOF/issues/88), [API outline §7.4](api-outline.md#74-events) |
+
+`Answered`, `Resolved` and `Cancelled` end the task. A Verify answer supplies evidence to the reviewer, who decides the report's status.
