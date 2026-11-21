@@ -165,4 +165,29 @@ class HelpRequestTest {
         request.submittedAt(), request.updatedAt(), 2);
     assertThat(suggested.changedAfter(deadline.minus(micro), deadline)).isFalse();
   }
+
+  @Test
+  @DisplayName("229 AC-3 a request with a stored reason is not listed again at its deadline")
+  void storedReasonNotListedAgain() {
+    var request = submit("Friend fainted near the bar");
+    var failed = request.withTriage(TriageSuggestion.notTriaged(NotTriagedReason.ProviderError), NOW);
+    var deadline = NOW.plus(TriageSuggestion.TRIAGE_DEADLINE);
+    assertThat(failed.changedAfter(NOW, deadline)).isFalse();
+    assertThat(request.changedAfter(NOW, deadline)).isTrue();
+  }
+
+  @Test
+  @DisplayName("229 AC-1 a triage write keeps the request's own fields and moves updatedAt only")
+  void withTriage() {
+    var request = submit("Friend fainted near the bar");
+    var later = NOW.plusNanos(1_234_567_891);
+    var suggested = request.withTriage(TriageSuggestion.suggested(Category.Health, Priority.High, "r"), later);
+    assertThat(suggested.triage().state()).isEqualTo(TriageState.Suggested);
+    assertThat(suggested.category()).isNull();
+    assertThat(suggested.priority()).isNull();
+    assertThat(suggested.updatedAt()).isEqualTo(later.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+    assertThat(suggested.version()).isEqualTo(request.version());
+    assertThat(suggested.submittedAt()).isEqualTo(request.submittedAt());
+    assertThat(suggested).usingRecursiveComparison().ignoringFields("triage", "updatedAt").isEqualTo(request);
+  }
 }

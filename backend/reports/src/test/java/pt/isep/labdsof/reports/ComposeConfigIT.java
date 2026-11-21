@@ -61,4 +61,22 @@ class ComposeConfigIT {
         .contains("python3 -I infra/tests/reports_smoke.py infra/.env.example");
     assertThat(ROOT.resolve("infra/tests/reports_smoke.py")).exists();
   }
+
+  @Test
+  @DisplayName("229 AC-3 the ai service is opt-in, private and the evaluated image, and Reports has no AI by default")
+  void aiOptIn() throws Exception {
+    var compose = Files.readString(ROOT.resolve("infra/compose.yaml"));
+    var matcher = Pattern.compile("(?ms)^  ai:\\R(.*?)(?=^  \\S|^\\S)").matcher(compose);
+    assertThat(matcher.find()).isTrue();
+    var ai = matcher.group(1);
+    var manifest = Files.readString(ROOT.resolve(
+        "Docs/Research/architecture-investigation/evaluation/runs/2026-11-20-holdout-v8/manifest.json"));
+    var digest = Pattern.compile("\"image_digest\": \"(sha256:[0-9a-f]{64})\"").matcher(manifest);
+    assertThat(digest.find()).isTrue();
+    assertThat(ai).contains("profiles: [ai]").contains("image: ollama/ollama:0.40.16@" + digest.group(1))
+        .contains("OLLAMA_NUM_PARALLEL: \"1\"").contains("OLLAMA_MAX_QUEUE: \"1\"")
+        .contains("OLLAMA_NO_CLOUD: \"1\"").doesNotContain("ports:");
+    assertThat(reportsService()).contains("FAROL_AI_URL: ${FAROL_AI_URL:-}");
+    assertThat(Files.readString(ROOT.resolve("infra/.env.example"))).containsPattern("(?m)^FAROL_AI_URL=\\r?$");
+  }
 }
