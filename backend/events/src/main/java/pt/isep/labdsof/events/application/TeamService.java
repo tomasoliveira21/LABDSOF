@@ -11,6 +11,7 @@ import pt.isep.labdsof.events.domain.EventStatus;
 import pt.isep.labdsof.events.domain.HelpCategory;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Team;
+import pt.isep.labdsof.events.domain.TeamPermission;
 
 /**
  * The teams of an event (US-16): reading them needs EventAdmin or a team with HelpRequests.Triage or
@@ -29,15 +30,17 @@ public class TeamService {
   private final LocalCopies copies;
   private final Outbox outbox;
   private final AccessAudit audit;
+  private final TeamAudit teamAudit;
   private final Clock clock;
 
   public TeamService(Events events, Teams teams, LocalCopies copies, Outbox outbox, AccessAudit audit,
-      Clock clock) {
+      TeamAudit teamAudit, Clock clock) {
     this.events = events;
     this.teams = teams;
     this.copies = copies;
     this.outbox = outbox;
     this.audit = audit;
+    this.teamAudit = teamAudit;
     this.clock = clock;
   }
 
@@ -80,6 +83,21 @@ public class TeamService {
     var at = clock.instant();
     var deleted = live(userId, eventId, teamId).asDeleted();
     publish(teams.delete(deleted, userId, at), deleted, userId, at);
+  }
+
+  /**
+   * Replaces the team's permissions, from the fixed list of features.md §4.2 (US-17): the whole set at once, one
+   * version later, recorded with who made it and when (AC-4, D1, D6). The members of the team lose a removed
+   * permission on their next action, because nothing is cached here (D8).
+   */
+  @Transactional
+  public Team replacePermissions(UUID userId, UUID eventId, UUID teamId, List<TeamPermission> permissions) {
+    administrator(userId, eventId);
+    var at = clock.instant();
+    var team = live(userId, eventId, teamId).withPermissions(Team.permissionsOf(permissions));
+    publish(teams.replacePermissions(team, userId, at), team, userId, at);
+    teamAudit.permissionsReplaced(userId, eventId, teamId, at, team.permissions());
+    return team;
   }
 
   /**

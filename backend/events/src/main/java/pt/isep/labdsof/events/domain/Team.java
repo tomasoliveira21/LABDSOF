@@ -41,6 +41,11 @@ public record Team(UUID teamId, UUID eventId, String name, List<TeamPermission> 
     return new Team(teamId, eventId, newName, permissions, categories, deleted, version + 1);
   }
 
+  /** The same team with the permissions US-17 gave it, one version later; the categories are untouched. */
+  public Team withPermissions(List<TeamPermission> newPermissions) {
+    return new Team(teamId, eventId, name, newPermissions, handledCategories, deleted, version + 1);
+  }
+
   /** The same team deleted, keeping the permissions it had so the consumers see what it granted (D5). */
   public Team asDeleted() {
     return new Team(teamId, eventId, name, permissions, handledCategories, true, version + 1);
@@ -77,6 +82,25 @@ public record Team(UUID teamId, UUID eventId, String name, List<TeamPermission> 
       }
     }
     return set;
+  }
+
+  /**
+   * The permissions of a request body (US-17 D4): a repeated permission is the caller's mistake, never
+   * deduplicated, and so is a null item, which the contract's array does not forbid by itself. The report types
+   * of each one are checked by {@link TeamPermission}.
+   */
+  public static List<TeamPermission> permissionsOf(List<TeamPermission> permissions) {
+    Objects.requireNonNull(permissions, "permissions");
+    var seen = EnumSet.noneOf(Permission.class);
+    for (var permission : permissions) {
+      if (permission == null) {
+        throw new InvalidTeamException("a permission is missing");
+      }
+      if (!seen.add(permission.permission())) {
+        throw new InvalidTeamException("a permission is repeated");
+      }
+    }
+    return permissions;
   }
 
   private static String trimmedName(String name) {
