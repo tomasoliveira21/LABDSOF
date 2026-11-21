@@ -1,0 +1,2 @@
+{"t_s": 0.0, "http_status": 200, "available": true, "reason": null}
+{"t_s": 32.0, "http_status": 200, "available": false, "reason": "ProviderError"}
