@@ -2,7 +2,7 @@
   "issue": "#234, part of #149 (AC-5)",
   "date": "2026-11-21",
   "purpose": "SC3 and SC5 end to end on the local Compose stack: the 72 holdout texts submitted through the API gateway as participants, measured from submission to stored outcome in Reports (spec 234). Not an offline quality score: the offline gate of these cases is in runs/2026-11-20-holdout-v8.",
-  "status": "frozen part committed before the first measured submission (8188e0e); results added after the runs",
+  "status": "frozen part committed before the first measured submission; results added after the runs",
   "driver_commit": "1683fabd96b998a98f21a187aac6f6ae65b7a598",
   "commands": {
     "stack": "FAROL_AI_URL=http://ai:11434 docker compose -p farol-234 -f infra/compose.yaml --env-file infra/.env.example --profile ai up -d --wait --wait-timeout 600 (images built from this branch with docker build -t farol-<service>:dev backend/<service>, and frontend)",
@@ -65,7 +65,10 @@
     "backend/reports/src/main/resources/triage/system-prompt.txt (= prompts/v8.txt)": "4f29389301a9bd8d5fb2f5e6ab15eb9c64fef92e1c748b6a30faf56f47eafbc3",
     "backend/reports/src/main/resources/triage/output.schema.json (= output.schema.json)": "66e38f9fd4ad652c29eaa604eb4eb0929f404772f2d18dcd09a24ecfb4abd2ae"
   },
-  "deviations": [],
+  "deviations": [
+    "SC5 ran twice. The first run (13:40:14 to 14:16:57 UTC, driver 1683fab, results in commit 58de091301ac4885b94a794b84113f32d739424f: passed, 72 of 72 shown, NotTriaged within 4.0 s) timed the operator's view from the start of each poll, before the list had arrived, and counted NotTriaged without checking its reason; the independent review (G8) found both. The driver was fixed (commit 3445a2f6fbe623de210266f35e378111e4443909) and SC5 was run again on a fresh stack with the same profile and pass rule; the results below are the second run. sc5-requests.jsonl of the second run also records sent_s, the real send time.",
+    "SC3 was not run again: its pass rule reads only Reports' database. Its first_seen_ms and not_triaged_seen_ms columns come from the first driver, so they leave out the duration of the poll that saw the request (tens of milliseconds on this stack); no SC3 figure uses them."
+  ],
   "results": {
     "sc3": {
       "window_utc": "2026-11-21 13:03:02 to 13:39:41",
@@ -87,7 +90,7 @@
           },
           "worker_ms": {
             "n": 72,
-            "p50": 13591,
+            "p50": 13591.0,
             "p95_nearest_rank": 19997,
             "max": 20030
           },
@@ -107,7 +110,7 @@
           "pass": false,
           "first_seen_ms": {
             "n": 72,
-            "p50": 24,
+            "p50": 24.0,
             "p95_nearest_rank": 50,
             "max": 58
           },
@@ -132,16 +135,17 @@
       "memory_note": "cgroup memory.peak of the ai container after the SC3 run; it covers the whole life of the container (Reports warm-up, both trial runs and SC3), including the page cache of the mapped model file. docker stats after the run: 3.39 GiB."
     },
     "sc5": {
-      "window_utc": "2026-11-21 13:40:14 to 14:16:57",
+      "window_utc": "2026-11-21 14:26:38 to 15:03:19",
+      "driver_commit": "3445a2f6fbe623de210266f35e378111e4443909",
       "summary": {
         "requests": 72,
         "created": 72,
         "sc3": {
           "valid_on_time_non_abstention": 0,
           "non_abstention_cases": 66,
-          "valid_on_time_rate": 0,
+          "valid_on_time_rate": 0.0,
           "valid_on_time_all": 0,
-          "valid_on_time_rate_all": 0,
+          "valid_on_time_rate_all": 0.0,
           "pass": false,
           "suggestion_e2e_ms": {
             "n": 0,
@@ -151,16 +155,16 @@
           },
           "worker_ms": {
             "n": 72,
-            "p50": 1306.5,
-            "p95_nearest_rank": 1401,
-            "max": 1951
+            "p50": 1317.0,
+            "p95_nearest_rank": 1388,
+            "max": 1816
           },
           "expected_abstentions_abstained": 0,
           "expected_abstentions": 6
         },
         "outcomes": {
-          "ProviderError": 37,
-          "Unavailable": 35
+          "ProviderError": 38,
+          "Unavailable": 34
         },
         "sc5": {
           "shown": 72,
@@ -169,22 +173,26 @@
           "pass": true,
           "first_seen_ms": {
             "n": 72,
-            "p50": 23,
-            "p95_nearest_rank": 41,
-            "max": 86
+            "p50": 51.5,
+            "p95_nearest_rank": 96,
+            "max": 1266
           },
           "not_triaged_seen_ms": {
             "n": 72,
-            "p50": 2023,
-            "p95_nearest_rank": 2043,
-            "max": 4032
+            "p50": 2059.0,
+            "p95_nearest_rank": 2105,
+            "max": 4090
           }
         }
       },
-      "result": "PASSED: 72 of 72 shown in the operator list (first poll after the submission, at most 86 ms), 72 of 72 read NotTriaged with a reason at most 4.0 s after they were sent (37 ProviderError, the circuit then letting one probe through every 30 s, and 35 Unavailable without a call), no poll out of order of arrival.",
       "ai_container": "stopped with docker compose stop ai before the run; FAROL_AI_URL still http://ai:11434",
-      "status_note": "triage-status read available at the start (the circuit was closed and nothing had failed yet) and unavailable (ProviderError) from 32 s to the end (sc5-status.jsonl)."
+      "first_run_superseded": {
+        "window_utc": "2026-11-21 13:40:14 to 14:16:57",
+        "commit": "58de091301ac4885b94a794b84113f32d739424f",
+        "result": "PASSED: 72 of 72 shown in the operator list (first poll after the submission, at most 86 ms), 72 of 72 read NotTriaged with a reason at most 4.0 s after they were sent (37 ProviderError, the circuit then letting one probe through every 30 s, and 35 Unavailable without a call), no poll out of order of arrival."
+      }
     }
   },
-  "trial_note": "Before the freeze, two trial runs of three synthetic texts (not holdout cases, driver option --trial) checked the stack and the driver in other events; the first showed that a Keycloak login takes about 6 s and blocked the operator polls, so logins moved before the first submission and tokens are renewed with their refresh token (driver commit above)."
+  "trial_note": "Before the freeze, two trial runs of three synthetic texts (not holdout cases, driver option --trial) checked the stack and the driver in other events; the first showed that a Keycloak login takes about 6 s and blocked the operator polls, so logins moved before the first submission and tokens are renewed with their refresh token (driver commit above).",
+  "freeze_commit": "8188e0e6fd3cb81236f33ffaabc90b0c258676ef"
 }

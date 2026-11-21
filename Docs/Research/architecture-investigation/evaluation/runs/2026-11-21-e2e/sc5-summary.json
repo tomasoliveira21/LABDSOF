@@ -16,16 +16,16 @@
     },
     "worker_ms": {
       "n": 72,
-      "p50": 1306.5,
-      "p95_nearest_rank": 1401,
-      "max": 1951
+      "p50": 1317.0,
+      "p95_nearest_rank": 1388,
+      "max": 1816
     },
     "expected_abstentions_abstained": 0,
     "expected_abstentions": 6
   },
   "outcomes": {
-    "ProviderError": 37,
-    "Unavailable": 35
+    "ProviderError": 38,
+    "Unavailable": 34
   },
   "sc5": {
     "shown": 72,
@@ -34,15 +34,15 @@
     "pass": true,
     "first_seen_ms": {
       "n": 72,
-      "p50": 23.0,
-      "p95_nearest_rank": 41,
-      "max": 86
+      "p50": 51.5,
+      "p95_nearest_rank": 96,
+      "max": 1266
     },
     "not_triaged_seen_ms": {
       "n": 72,
-      "p50": 2023.0,
-      "p95_nearest_rank": 2043,
-      "max": 4032
+      "p50": 2059.0,
+      "p95_nearest_rank": 2105,
+      "max": 4090
     }
   }
 }
