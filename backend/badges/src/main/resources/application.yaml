@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: badges
+  mvc:
+    problemdetails:
+      enabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  datasource:
+    hikari:
+      maximum-pool-size: 5
+  rabbitmq:
+    # The broker provisions the Badges queues and grants read access (#212).
+    dynamic: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${FAROL_ISSUER_URI}
+          jwk-set-uri: ${FAROL_JWKS_URI}
+          audiences: farol-api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+
+logging:
+  structured:
+    format:
+      console: logstash

@@ -124,6 +124,21 @@ services:
     image: farol-badges:${VERSION:-dev}
     build:
       context: ../backend/badges
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/badges
+      SPRING_DATASOURCE_USERNAME: badges
+      SPRING_DATASOURCE_PASSWORD: ${BADGES_DB_PASSWORD:?set BADGES_DB_PASSWORD in infra/.env}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: badges
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_BADGES_PASSWORD:?set RABBITMQ_BADGES_PASSWORD in infra/.env}
+      FAROL_ISSUER_URI: http://${PUBLIC_HOST:-localhost}:${KEYCLOAK_PORT:-8180}/realms/farol
+      FAROL_JWKS_URI: http://keycloak:8080/realms/farol/protocol/openid-connect/certs
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/actuator/health/readiness"]
 
   frontend:
     <<: *hardening
