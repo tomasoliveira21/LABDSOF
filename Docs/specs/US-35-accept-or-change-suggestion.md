@@ -73,4 +73,18 @@ Decisions the documents leave open are marked **Proposed, for the team's review*
 
 ## 6. Handoff
 
-*(written at the end of the run)*
+**21 November 2026.**
+
+- Baseline on `feature/83-requests-without-ai` (`dbe589f`, PR #232): `mvn -B -ntp -f backend/reports/pom.xml verify` green: 106 unit tests, 143 integration tests, JaCoCo 97.5 % lines and 95.6 % branches, PIT 140 of 140 mutations killed.
+- Built test first, feature by feature (§4). Red before green: the domain and service tests did not compile before their code; `TriageDecisionIT` failed against the build without the endpoints (`404` for `accept-suggestion`, `405` for `PATCH`), and each G8 fix below failed first for its reason. The counter test of `MicrometerTriageMetricsTest` was written after its two-line adapter method.
+- **G1** `mvn -B -ntp -f backend/reports/pom.xml verify`: 120 unit tests, 161 integration tests, JaCoCo 97.7 % lines and 95.8 % branches (≥ 90 %), PIT 172 of 172 mutations killed on `domain` and `application` (≥ 80 %).
+- **G2** `TriageDecisionIT`: real PostgreSQL and RabbitMQ (the Compose images, production migrations including `V3`, `setup.sh`); the lock tests hold real row locks in two transactions. No database or broker mock.
+- **G3** `TriageDecisionIT`, both endpoints: every bad token → 401, a member without `HelpRequests.Triage` → 403, a non-member, a removed member, a member of another event, a request of another event or an unknown request → 404 with the same body as an unknown event; malformed IDs, malformed JSON, unknown fields (mass assignment), unknown values, injection text, an empty change or an explicit `null` → 400, nothing written.
+- **G4** `contracts/openapi.yaml`: `setHelpRequestCategoryAndPriority` and `acceptTriageSuggestion` implemented; `ContractIT` passes. No event schema changes.
+- **G5** smoke on a fresh stack (`down --volumes`, images built one by one, `up -d --wait`, every check step of the `ci` job, `down --volumes`): 10 of 10 steps pass, with three new checks through the gateway (`PATCH` without a token → 401, `PATCH` and `accept-suggestion` for a non-member → 404), so the gateway routes `PATCH`. Run before and again after the G8 fixes.
+- **G6** guard: no blocking finding, test census 355 → 382, no warning.
+- **G8 independent review** (`code-review` at `high` on `dbe589f...HEAD`), 6 findings, all fixed (the code ones test first):
+  - Important: (1) the member locked the request, then the triage, while the worker's save takes the triage, then the request, so the two could deadlock: the member now locks the triage first (D4; red: with a lock held on the triage, the member already held the request, `55P03` on a `NOWAIT` read); (2) a `PATCH` with the values an accepted request already has turned it `Changed` and wrote a history row: no write now (D2).
+  - Nits: (3) the contract does not allow a `null` that the server took as *not sent*: an explicit `null` is now refused (`400`), as the contract says; (4) the decision counter ran before the commit: it runs after it (D6); (5) the log line could read a state other than the history row's at the 30 s edge: one instant for both; (6) the javadoc of the metrics adapter missed the new counter.
+- Not done, and not claimed: the default team after an accept (#81 AC-2, after US-17 #66); the status changes, `/acknowledge` and the `GET …/history` endpoint (US-28, #75), which reads the rows written here; the backoffice page (what it needs is on #82); a dashboard panel for `farol.triage.decision` (the dashboard is PR #231, #148). The model's offline gate fails (#224, #227), so the suggestions are not release evidence.
+- Merge note: PR #231 (#148) adds a Reports Flyway `V2` as PR #230 does; this branch adds `V3`. Whichever merges after the other renumbers, and this `V3` moves with them.
