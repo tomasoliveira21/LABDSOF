@@ -2,6 +2,21 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Requests without AI (US-36, #83, Bruno de Abreu Lopes)
+
+**Why:** US-36 (#83, scenario D1): help requests must keep reaching the control room when the AI is down, slow or wrong, the back office must know when triage is unavailable, and each fallback must be logged and counted. Part of #149 (AC-5, SC5). Spec: [`Docs/specs/US-36-requests-without-ai.md`](Docs/specs/US-36-requests-without-ai.md). Stacked on PR #230.
+
+### Added
+- Circuit breaker in front of the AI with Resilience4j 2.4 (`resilience4j-spring-boot4`), instance `ai-provider`, with the J1 values of `architecture.md` §9.1 (last 10 calls, at least 4, 50 % failed or slow over 16 s, open 30 s, one probe). Timeouts, provider errors and invalid outputs count as failures; while it is open a request is `Unavailable` without a call.
+- `GET /api/v1/events/{eventId}/triage-status` (`HelpRequests.Triage`; 403 without it, 404 outside the event): `available` only when an AI is configured and the circuit is closed, otherwise the reason (`Unavailable` or the last failure). The banner is the web app's (hand-off on #83).
+- Counters `farol.triage.fallback{reason}` and `farol.triage.suggested` (Micrometer, through `spring-boot-starter-actuator`; no actuator endpoint added on the API port), and a `WARN` log line per fallback with the request ID and the reason.
+- `TriageFallbackIT` (SC5): with the AI stopped, slower than the timeout, answering 503, dropping the connection or answering invalid data, 20 requests each reach the control room at once, in order of arrival, without category or priority, `NotTriaged` with their reason; the circuit opens after 4 calls and the AI gets no more; the status reads unavailable and, after a successful probe, available again.
+- `infra/tests/reports_smoke.py`: the triage status through the gateway on the default stack (no `ai` service): 401 without a token, 404 for a non-member.
+
+### Changed
+- `contracts/openapi.yaml`: `getTriageStatus` is implemented; `reason` is always present and null when available.
+- SC5 note in `product-vision.md`, ADR-005 (*Acceptance evidence pending*), `responsible-ai.md` (K2 outage row) and the local AI decisions, with dated notes: SC5 has test evidence with a stub AI; the run on the deployed stack with the real model stays for #149.
+
 ## [Unreleased] · 2026-11-20 · AI triage suggestion (US-34 part, #229, Bruno de Abreu Lopes)
 
 **Why:** US-34 (#81): each new help request should arrive with a suggested category and priority, and only its description may reach the model. Part of #81; the default team (#81 AC-2) waits for US-17 (#66). Spec: [`Docs/specs/US-34-ai-triage-suggestion.md`](Docs/specs/US-34-ai-triage-suggestion.md). Stacked on PR #228.
