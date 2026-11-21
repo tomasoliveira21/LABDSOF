@@ -85,9 +85,7 @@ public class HelpRequestService {
    */
   @Transactional(readOnly = true)
   public Changes list(UUID eventId, String userId, Instant since) {
-    if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
-      throw new ForbiddenException();
-    }
+    requireTriage(eventId, userId);
     // To the microsecond, as the database keeps times, so the next updatedSince compares exactly
     var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
     var items = since == null ? helpRequests.open(eventId)
@@ -95,6 +93,14 @@ public class HelpRequestService {
     // Limit: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
     // cursor (snapshot xmin) if one ever is
     return new Changes(items.stream().map(r -> r.asSeenAt(now)).toList(), now.minus(POLL_OVERLAP));
+  }
+
+  /** The control room of the event only: HelpRequests.Triage (403); a non-member gets 404 (US-26, US-36 D5). */
+  @Transactional(readOnly = true)
+  public void requireTriage(UUID eventId, String userId) {
+    if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
+      throw new ForbiddenException();
+    }
   }
 
   private EventAccess access(UUID eventId, String userId) {

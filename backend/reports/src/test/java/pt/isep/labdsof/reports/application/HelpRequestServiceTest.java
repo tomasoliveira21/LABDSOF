@@ -274,6 +274,20 @@ class HelpRequestServiceTest {
   }
 
   @Test
+  @DisplayName("US-36 AC-2 only the control room reads the triage status")
+  void triageStatusAccess() {
+    controlRoomTeam();
+    member("ana", Role.RegularUser);
+    member("rui", Role.RegularUser, CONTROL_ROOM);
+    var service = service();
+    var otherEvent = UUID.randomUUID();
+    assertThatThrownBy(() -> service.requireTriage(EVENT, "ana")).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.requireTriage(EVENT, "nobody")).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.requireTriage(otherEvent, "rui")).isInstanceOf(NotFoundException.class);
+    service.requireTriage(EVENT, "rui");
+  }
+
+  @Test
   @DisplayName("US-26 AC-2 a team of another event or a deleted team does not grant the list")
   void teamsThatGrantNothing() {
     var elsewhere = UUID.randomUUID();

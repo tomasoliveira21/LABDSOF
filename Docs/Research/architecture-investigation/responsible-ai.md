@@ -62,7 +62,7 @@ This assessment uses the risk-identification/measurement/management approach of 
 | Bias in language/style | PT-PT slang/typos, English/mixed-language cases and paired paraphrases | Report per-slice failures/counts; small synthetic slices cannot establish fairness |
 | Harmful or diagnostic output | Category/priority/team only, short operator-facing reason; escape rendered text, no advice | Human review of reasons, not just JSON validation; reason may repeat sensitive text |
 | Automation bias | Explicit AI label, original input visible, easy correction; no fabricated confidence | Review accepted/changed suggestions and operator feedback |
-| Outage, slow model, quota/cost exhaustion | Immediate F7 visibility, 30 s end-to-end bound, fallback, monitoring and disable switch | AI-off/slow/malformed tests (SC5); runtime evidence still pending |
+| Outage, slow model, quota/cost exhaustion | Immediate F7 visibility, 30 s end-to-end bound, fallback, monitoring and disable switch | AI-off/slow/malformed tests (SC5); runtime evidence still pending. *21 November 2026 (#83): the SC5 test runs on every PR with a stub AI (stopped, slow, 503, dropped connection, invalid body; 100 % to the operator); circuit breaker, triage status and fallback counter built. The run with the real model on the local stack is still pending (#149)* |
 | Reproducibility/leakage | Versioned artefacts and documented label review for the academic demo; fresh blinded holdout as a future improvement | Record hashes and split use; public-in-repo test labels are not a blinded benchmark |
 | Drift or provider model replacement | Dated model ID where possible, canary re-evaluation on model/prompt changes | Re-run full quality and latency tests; provider availability may change |
 

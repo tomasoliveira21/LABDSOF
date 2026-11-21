@@ -49,6 +49,16 @@ class DocumentationIT {
     specNamesRealTests(ROOT.resolve("Docs/specs/US-34-ai-triage-suggestion.md"), "229", 20, 3);
   }
 
+  @Test
+  @DisplayName("US-36 AC-1 the changelog and the SC5 note have the story, and every test its spec names exists")
+  void us36SpecNamesRealTests() throws Exception {
+    assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
+        .contains("Requests without AI (US-36, #83, Bruno de Abreu Lopes)");
+    assertThat(Files.readString(ROOT.resolve("Docs/Product/product-vision.md")))
+        .contains("21 November 2026 (#83, US-36): SC5 has its automated test");
+    specNamesRealTests(ROOT.resolve("Docs/specs/US-36-requests-without-ai.md"), "US-36", 20, 3);
+  }
+
   static void specNamesRealTests(Path spec, String prefix, int atLeast, int criteria) throws Exception {
     String tests;
     try (var files = Files.walk(Path.of("src/test/java"))) {

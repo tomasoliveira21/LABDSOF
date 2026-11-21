@@ -1,7 +1,9 @@
 package pt.isep.labdsof.reports.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -11,6 +13,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -82,13 +85,68 @@ class TriageServiceTest {
     }
   }
 
+  /** A circuit double (US-36): open or closed as told; records what the service reported. */
+  static final class FakeCircuit implements TriageCircuit {
+    boolean open;
+    NotTriagedReason lastFailure;
+    final List<String> calls = new ArrayList<>();
+
+    @Override
+    public boolean tryCall() {
+      calls.add("try");
+      return !open;
+    }
+
+    @Override
+    public void succeeded(Duration took) {
+      calls.add("succeeded " + took.toSeconds());
+    }
+
+    @Override
+    public void failed(NotTriagedReason reason, Duration took) {
+      calls.add("failed " + reason + " " + took.toSeconds());
+    }
+
+    @Override
+    public void released() {
+      calls.add("released");
+    }
+
+    @Override
+    public boolean closed() {
+      return !open;
+    }
+
+    @Override
+    public NotTriagedReason lastFailure() {
+      return lastFailure;
+    }
+  }
+
+  /** The counters, as "suggested" or the fallback reason. */
+  static final class FakeMetrics implements TriageMetrics {
+    final List<String> counted = new ArrayList<>();
+
+    @Override
+    public void suggested() {
+      counted.add("suggested");
+    }
+
+    @Override
+    public void fallback(NotTriagedReason reason) {
+      counted.add(reason.name());
+    }
+  }
+
   final InMemoryPorts ports = new InMemoryPorts();
   final MovingClock clock = new MovingClock();
   final FakeModel model = new FakeModel();
+  final FakeCircuit circuit = new FakeCircuit();
+  final FakeMetrics metrics = new FakeMetrics();
 
   TriageService service() {
     model.clock = clock;
-    return new TriageService(ports, model, clock);
+    return new TriageService(ports, model, circuit, metrics, clock);
   }
 
   HelpRequest submitted() {
@@ -235,7 +293,7 @@ class TriageServiceTest {
         ports.saveTriage(stored(request).withTriage(TriageSuggestion.notTriaged(NotTriagedReason.Timeout), SUBMITTED));
         return VALID;
       }
-    }, clock);
+    }, circuit, metrics, clock);
     assertThat(service.triage(EVENT, request.id()).outcome()).isEqualTo(Outcome.ALREADY_TRIAGED);
     assertThat(stored(request).triage()).isEqualTo(TriageSuggestion.notTriaged(NotTriagedReason.Timeout));
   }
@@ -282,6 +340,196 @@ class TriageServiceTest {
       model.failure = null;
       service().triage(EVENT, lateSuggestion.id());
       assertThat(appender.list.get(4).getFormattedMessage()).contains("LATE Suggested");
+    } finally {
+      logger.detachAppender(appender);
+    }
+  }
+
+  static Map<String, Object> abstention() {
+    var output = new HashMap<String, Object>();
+    output.put("category", null);
+    output.put("priority", null);
+    output.put("reason", "Sem descrição útil.");
+    output.put("abstain", true);
+    return output;
+  }
+
+  @Test
+  @DisplayName("US-36 AC-2 while the circuit is open the AI is not called")
+  void circuitOpen() {
+    circuit.open = true;
+    var request = submitted();
+    var result = service().triage(EVENT, request.id());
+
+    assertThat(result.outcome()).isEqualTo(Outcome.SAVED);
+    assertThat(result.reason()).isEqualTo(NotTriagedReason.Unavailable);
+    assertThat(model.descriptions).isEmpty();
+    assertThat(circuit.calls).containsExactly("try");
+    assertThat(stored(request).triage()).isEqualTo(TriageSuggestion.notTriaged(NotTriagedReason.Unavailable));
+  }
+
+  @Test
+  @DisplayName("US-36 AC-2 the circuit records each call's outcome and duration")
+  void circuitRecords() {
+    service().triage(EVENT, submitted().id());
+    model.reply = Map.of("category", "Other", "reason", "x", "abstain", false);
+    clock.now = SUBMITTED;
+    service().triage(EVENT, submitted().id());
+    model.reply = abstention();
+    clock.now = SUBMITTED;
+    model.takes = Duration.ofSeconds(17);
+    service().triage(EVENT, submitted().id());
+    for (var failure : List.of(NotTriagedReason.Timeout, NotTriagedReason.ProviderError)) {
+      model.failure = failure;
+      model.takes = Duration.ofSeconds(3);
+      clock.now = SUBMITTED;
+      service().triage(EVENT, submitted().id());
+    }
+    // not sent: no AI configured, or too late to start
+    model.configured = false;
+    service().triage(EVENT, submitted().id());
+    model.configured = true;
+    clock.now = SUBMITTED.plusSeconds(8);
+    service().triage(EVENT, submitted().id());
+
+    assertThat(circuit.calls).containsExactly("try", "succeeded 10", "try", "failed InvalidOutput 10",
+        "try", "succeeded 17", "try", "failed Timeout 3", "try", "failed ProviderError 3");
+  }
+
+  @Test
+  @DisplayName("US-36 AC-2 an interrupted call releases the circuit")
+  void interrupted() {
+    var request = submitted();
+    var service = new TriageService(ports, new TriageModel() {
+      @Override
+      public boolean configured() {
+        return true;
+      }
+
+      @Override
+      public Object suggest(String description, Duration budget) {
+        throw new IllegalStateException("interrupted while waiting for the AI");
+      }
+    }, circuit, metrics, clock);
+
+    assertThatThrownBy(() -> service.triage(EVENT, request.id())).isInstanceOf(IllegalStateException.class);
+    assertThat(circuit.calls).containsExactly("try", "released");
+    assertThat(metrics.counted).isEmpty();
+    assertThat(stored(request).triage().awaitsModel()).isTrue();
+
+    // an Error (out of memory, stack overflow) gives the permission back too, or a half-open circuit would stay
+    // without its probe until a restart (G8 review)
+    circuit.calls.clear();
+    var broken = new TriageService(ports, new TriageModel() {
+      @Override
+      public boolean configured() {
+        return true;
+      }
+
+      @Override
+      public Object suggest(String description, Duration budget) {
+        throw new StackOverflowError();
+      }
+    }, circuit, metrics, clock);
+    assertThatThrownBy(() -> broken.triage(EVENT, request.id())).isInstanceOf(StackOverflowError.class);
+    assertThat(circuit.calls).containsExactly("try", "released");
+  }
+
+  @Test
+  @DisplayName("US-36 AC-2 the status says whether the AI can be called and why not")
+  void status() {
+    var now = SUBMITTED.plusSeconds(3);
+    clock.now = now;
+    assertThat(service().status()).isEqualTo(new TriageService.Status(true, null, now));
+    circuit.open = true;
+    circuit.lastFailure = NotTriagedReason.Timeout;
+    assertThat(service().status()).isEqualTo(new TriageService.Status(false, NotTriagedReason.Timeout, now));
+    model.configured = false;
+    circuit.open = false;
+    assertThat(service().status()).isEqualTo(new TriageService.Status(false, NotTriagedReason.Unavailable, now));
+    // closed again after a recovery: the old failure is not shown
+    model.configured = true;
+    assertThat(service().status()).isEqualTo(new TriageService.Status(true, null, now));
+    // opened by slow calls that all answered: no failure to tell, but never a null reason (G8 review)
+    circuit.open = true;
+    circuit.lastFailure = null;
+    assertThat(service().status()).isEqualTo(new TriageService.Status(false, NotTriagedReason.Unavailable, now));
+  }
+
+  @Test
+  @DisplayName("US-36 AC-3 every fallback is counted once with its reason")
+  void counted() {
+    service().triage(EVENT, submitted().id());
+    model.reply = Map.of("category", "Other");
+    clock.now = SUBMITTED;
+    service().triage(EVENT, submitted().id());
+    model.reply = abstention();
+    clock.now = SUBMITTED;
+    service().triage(EVENT, submitted().id());
+    model.failure = NotTriagedReason.ProviderError;
+    clock.now = SUBMITTED;
+    service().triage(EVENT, submitted().id());
+    model.configured = false;
+    service().triage(EVENT, submitted().id());
+    model.configured = true;
+    // a late suggestion and a late failure both read Timeout
+    model.failure = null;
+    model.reply = VALID;
+    model.takes = Duration.ofSeconds(31);
+    clock.now = SUBMITTED;
+    service().triage(EVENT, submitted().id());
+    model.failure = NotTriagedReason.ProviderError;
+    clock.now = SUBMITTED;
+    service().triage(EVENT, submitted().id());
+    // a redelivered or unknown request counts nothing
+    var request = submitted();
+    model.failure = null;
+    model.takes = Duration.ofSeconds(1);
+    clock.now = SUBMITTED;
+    service().triage(EVENT, request.id());
+    service().triage(EVENT, request.id());
+    service().triage(EVENT, UUID.randomUUID());
+    // a message handled only after the deadline, delivered twice: nothing can be saved and the AI is not called,
+    // so it counts nothing, as a message that never arrived (spec US-36 D7; G8 review)
+    var backlog = submitted();
+    clock.now = SUBMITTED.plusSeconds(31);
+    service().triage(EVENT, backlog.id());
+    service().triage(EVENT, backlog.id());
+
+    assertThat(metrics.counted).containsExactly("suggested", "InvalidOutput", "Abstained", "ProviderError",
+        "Unavailable", "Timeout", "Timeout", "suggested");
+  }
+
+  @Test
+  @DisplayName("US-36 AC-3 each fallback is logged with its reason and without the description")
+  void fallbackLogged() {
+    var logger = (Logger) LoggerFactory.getLogger(TriageService.class);
+    var appender = new ListAppender<ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      service().triage(EVENT, submitted().id());
+      model.failure = NotTriagedReason.Timeout;
+      var failed = submitted();
+      clock.now = SUBMITTED;
+      service().triage(EVENT, failed.id());
+      model.failure = null;
+      model.takes = Duration.ofSeconds(31);
+      var late = submitted();
+      clock.now = SUBMITTED;
+      service().triage(EVENT, late.id());
+      service().triage(EVENT, UUID.randomUUID());
+
+      assertThat(appender.list).hasSize(4);
+      assertThat(appender.list).extracting(ILoggingEvent::getLevel)
+          .containsExactly(Level.INFO, Level.WARN, Level.WARN, Level.INFO);
+      assertThat(appender.list.get(0).getFormattedMessage()).doesNotContain("fallback");
+      assertThat(appender.list.get(1).getFormattedMessage()).contains(failed.id().toString())
+          .contains("fallback Timeout").contains("in 10000 ms");
+      assertThat(appender.list.get(2).getFormattedMessage()).contains(late.id().toString())
+          .contains("fallback Timeout");
+      assertThat(appender.list.get(3).getFormattedMessage()).doesNotContain("fallback");
+      assertThat(appender.list).allSatisfy(e -> assertThat(e.getFormattedMessage()).doesNotContain(DESCRIPTION));
     } finally {
       logger.detachAppender(appender);
     }

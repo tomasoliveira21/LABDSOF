@@ -27,6 +27,7 @@ import pt.isep.labdsof.reports.application.ClientRequestConflictException;
 import pt.isep.labdsof.reports.application.ForbiddenException;
 import pt.isep.labdsof.reports.application.HelpRequestService;
 import pt.isep.labdsof.reports.application.NotFoundException;
+import pt.isep.labdsof.reports.application.TriageService;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
@@ -36,15 +37,20 @@ import pt.isep.labdsof.reports.domain.NotTriagedReason;
 import pt.isep.labdsof.reports.domain.Priority;
 import pt.isep.labdsof.reports.domain.TriageState;
 
-/** Help requests (API outline §4, contracts/openapi.yaml). The caller is always the token's sub. */
+/**
+ * Help requests and the triage status (API outline §4, contracts/openapi.yaml). The caller is always the token's
+ * sub.
+ */
 @RestController
-@RequestMapping("/api/v1/events/{eventId}/help-requests")
+@RequestMapping("/api/v1/events/{eventId}")
 class HelpRequestController {
 
   private final HelpRequestService service;
+  private final TriageService triage;
 
-  HelpRequestController(HelpRequestService service) {
+  HelpRequestController(HelpRequestService service, TriageService triage) {
     this.service = service;
+    this.triage = triage;
   }
 
   record SubmitBody(
@@ -68,7 +74,7 @@ class HelpRequestController {
   record TriageView(TriageState state, Category suggestedCategory, Priority suggestedPriority,
       String suggestedReason, NotTriagedReason notTriagedReason) {}
 
-  @PostMapping(consumes = "application/json", produces = "application/json")
+  @PostMapping(value = "/help-requests", consumes = "application/json", produces = "application/json")
   ResponseEntity<ParticipantView> submit(@PathVariable UUID eventId, @AuthenticationPrincipal Jwt jwt,
       @Valid @RequestBody SubmitBody body) {
     var location = new Location(body.location().mapVersion(), body.location().x(), body.location().y());
@@ -83,7 +89,7 @@ class HelpRequestController {
   /** One poll of the live list (US-26): the items, and the serverTime to send as updatedSince next time. */
   record ListView(List<ControlRoomView> items, Instant serverTime) {}
 
-  @GetMapping(produces = "application/json")
+  @GetMapping(value = "/help-requests", produces = "application/json")
   ListView list(@PathVariable UUID eventId, @RequestParam(required = false) Instant updatedSince,
       @AuthenticationPrincipal Jwt jwt) {
     var changes = service.list(eventId, jwt.getSubject(), updatedSince);
@@ -91,10 +97,17 @@ class HelpRequestController {
         changes.serverTime());
   }
 
-  @GetMapping(value = "/{requestId}", produces = "application/json")
+  @GetMapping(value = "/help-requests/{requestId}", produces = "application/json")
   Object get(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt) {
     var read = service.get(eventId, jwt.getSubject(), requestId);
     return read.controlRoom() ? controlRoom(read.request()) : participant(read.request());
+  }
+
+  /** Whether a new request would be sent to the AI, for the web app's banner (US-36 AC-2, spec D4, D5). */
+  @GetMapping(value = "/triage-status", produces = "application/json")
+  TriageService.Status triageStatus(@PathVariable UUID eventId, @AuthenticationPrincipal Jwt jwt) {
+    service.requireTriage(eventId, jwt.getSubject());
+    return triage.status();
   }
 
   /** Input the domain refuses that bean validation let through, such as a description of Unicode spaces. */
