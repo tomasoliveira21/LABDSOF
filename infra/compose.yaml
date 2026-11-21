@@ -145,6 +145,9 @@ services:
     image: farol-web:${VERSION:-dev}
     build:
       context: ../frontend
+      args:
+        VITE_KEYCLOAK_URL: http://${PUBLIC_HOST:-localhost}:${KEYCLOAK_PORT:-8180}
+        VITE_GATEWAY_URL: http://${PUBLIC_HOST:-localhost}:${GATEWAY_PORT:-8080}
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:8080"
     # The web app never talks to the broker: this is only for `up --wait` (#220). `--wait` fails on any container
