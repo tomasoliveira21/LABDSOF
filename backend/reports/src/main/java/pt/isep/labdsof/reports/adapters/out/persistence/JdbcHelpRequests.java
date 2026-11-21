@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import pt.isep.labdsof.reports.application.HelpRequests;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
@@ -159,6 +160,62 @@ class JdbcHelpRequests implements HelpRequests {
         // A result written after the deadline would turn a NotTriaged/Timeout the operator saw into a suggestion
         .param("deadline", Timestamp.from(r.submittedAt().plus(TriageSuggestion.TRIAGE_DEADLINE)))
         .update() == 1;
+  }
+
+  @Override
+  public Optional<HelpRequest> findForUpdate(UUID eventId, UUID requestId) {
+    // Locks both rows: the worker's conditional UPDATE of triage_suggestion waits, then re-reads (spec US-35 D4)
+    return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.id = :id FOR UPDATE")
+        .param(EVENT_ID, eventId)
+        .param("id", requestId)
+        .query(JdbcHelpRequests::map)
+        .optional();
+  }
+
+  @Override
+  public void saveDecision(HelpRequest r, String actorUserId, List<HelpRequestChange> changes) {
+    var at = Timestamp.from(r.updatedAt());
+    int updated = jdbc.sql("""
+        UPDATE help_request SET category = :category, priority = :priority, updated_at = :updatedAt,
+            version = :version
+        WHERE id = :id AND event_id = :eventId AND version = :version - 1
+        """)
+        .param("id", r.id())
+        .param(EVENT_ID, r.eventId())
+        .param(CATEGORY, name(r.category()))
+        .param(PRIORITY, name(r.priority()))
+        .param("updatedAt", at)
+        .param("version", r.version())
+        .update();
+    if (updated != 1) {
+      // The row is locked by findForUpdate, so this is a caller that skipped it
+      throw new IllegalStateException("help request changed without its lock");
+    }
+    jdbc.sql("""
+        UPDATE triage_suggestion SET state = :state, not_triaged_reason = :notTriagedReason, updated_at = :updatedAt
+        WHERE request_id = :id AND event_id = :eventId
+        """)
+        .param("id", r.id())
+        .param(EVENT_ID, r.eventId())
+        .param("state", r.triage().state().name())
+        .param("notTriagedReason", name(r.triage().notTriagedReason()))
+        .param("updatedAt", at)
+        .update();
+    for (var change : changes) {
+      jdbc.sql("""
+          INSERT INTO help_request_change (request_id, event_id, actor_user_id, changed_at, field, old_value,
+              new_value)
+          VALUES (:id, :eventId, :actor, :changedAt, :field, :oldValue, :newValue)
+          """)
+          .param("id", r.id())
+          .param(EVENT_ID, r.eventId())
+          .param("actor", actorUserId)
+          .param("changedAt", at)
+          .param("field", change.field())
+          .param("oldValue", change.oldValue())
+          .param("newValue", change.newValue())
+          .update();
+    }
   }
 
   private static HelpRequest map(ResultSet rs, int row) throws SQLException {
