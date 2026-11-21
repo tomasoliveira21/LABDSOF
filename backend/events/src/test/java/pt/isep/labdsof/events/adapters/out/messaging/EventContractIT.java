@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -39,10 +40,17 @@ import pt.isep.labdsof.events.IntegrationTest;
 import pt.isep.labdsof.events.adapters.out.persistence.JdbcOutbox;
 import pt.isep.labdsof.events.application.Events;
 import pt.isep.labdsof.events.application.OutgoingEvent;
+import pt.isep.labdsof.events.application.TeamEvents;
+import pt.isep.labdsof.events.application.Teams;
 import pt.isep.labdsof.events.domain.DateRange;
 import pt.isep.labdsof.events.domain.Event;
 import pt.isep.labdsof.events.domain.EventStatus;
+import pt.isep.labdsof.events.domain.HelpCategory;
 import pt.isep.labdsof.events.domain.Membership;
+import pt.isep.labdsof.events.domain.Permission;
+import pt.isep.labdsof.events.domain.ReportType;
+import pt.isep.labdsof.events.domain.Team;
+import pt.isep.labdsof.events.domain.TeamPermission;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
@@ -68,6 +76,7 @@ class EventContractIT extends IntegrationTest {
   @Autowired TransactionTemplate tx;
   @Autowired JsonMapper json;
   @Autowired Events events;
+  @Autowired Teams teamsPort;
 
   @BeforeEach
   void cleanSlate() {
@@ -97,31 +106,24 @@ class EventContractIT extends IntegrationTest {
         "status", e.status().name(), "version", e.version());
   }
 
-  /** As {@link #eventChanged(Event)}: the payload of a team row with its permissions (US-16, US-17). */
-  Map<String, Object> teamChanged(UUID teamId) {
-    var permissions = jdbc.sql("SELECT permission, report_types FROM team_permission WHERE team_id = :id "
-        + "ORDER BY permission").param("id", teamId).query((rs, n) -> Map.<String, Object>of(
-            "permission", rs.getString("permission"),
-            "reportTypes", List.of((String[]) rs.getArray("report_types").getArray()))).list();
-    return jdbc.sql("SELECT name, handled_categories, deleted_at IS NOT NULL AS deleted, version FROM team "
-        + "WHERE team_id = :id").param("id", teamId).query((rs, n) -> Map.<String, Object>of(
-            "teamId", teamId.toString(),
-            "name", rs.getString("name"),
-            "permissions", permissions,
-            "handledCategories", List.of((String[]) rs.getArray("handled_categories").getArray()),
-            "deleted", rs.getBoolean("deleted"),
-            "version", rs.getLong("version"))).single();
+  /**
+   * The payload of a team row, now from the service's own factory (US-16 D6), which is what #192 asked of
+   * US-16: {@code TeamEvents.changed} must keep this test green. {@code deleted} asks for the deleted version of
+   * the team, as DELETE .../teams/{teamId} publishes it.
+   */
+  Map<String, Object> teamChanged(UUID eventId, UUID teamId, boolean deleted) {
+    var team = teamsPort.liveOfEvent(eventId, teamId).orElseThrow();
+    return TeamEvents.changed(deleted ? team.asDeleted() : team, UUID.randomUUID(), Instant.now()).payload();
   }
 
-  UUID insertTeam(UUID eventId, String name, String categories, boolean deleted) {
+  UUID insertTeam(UUID eventId, String name, String categories) {
     var id = UUID.randomUUID();
     jdbc.sql("""
         INSERT INTO team (team_id, event_id, name, handled_categories, deleted_at, version, created_at, created_by,
                           updated_at, updated_by)
-        VALUES (:id, :event, :name, CAST(:categories AS text[]), CASE WHEN :deleted THEN now() END, :version,
-                now(), :by, now(), :by)
+        VALUES (:id, :event, :name, CAST(:categories AS text[]), NULL, 1, now(), :by, now(), :by)
         """).param("id", id).param("event", eventId).param("name", name).param("categories", categories)
-        .param("deleted", deleted).param("version", deleted ? 2 : 1).param("by", UUID.randomUUID()).update();
+        .param("by", UUID.randomUUID()).update();
     return id;
   }
 
@@ -135,7 +137,7 @@ class EventContractIT extends IntegrationTest {
 
   /** The team A of the spec: live, two categories, two permissions. */
   UUID liveTeam(UUID eventId) {
-    var team = insertTeam(eventId, "Equipa de Saude", "{Health,Safety}", false);
+    var team = insertTeam(eventId, "Equipa de Saude", "{Health,Safety}");
     insertPermission(eventId, team, "Reports.Review", "{QueueAtEntrance,Hazard}");
     insertPermission(eventId, team, "HelpRequests.Triage", "{}");
     return team;
@@ -214,11 +216,11 @@ class EventContractIT extends IntegrationTest {
   void storedTeamChangedMatchesTheSchema() {
     var eventId = insertEvent("Published", null, "contract-" + UUID.randomUUID());
     var teamA = liveTeam(eventId);
-    var teamB = insertTeam(eventId, "Equipa antiga", "{}", true);
+    var teamB = insertTeam(eventId, "Equipa antiga", "{}");
 
     for (var team : List.of(teamA, teamB)) {
       var body = storedBody(add("team.changed", "TeamChanged", eventId, updatedBy("team", "team_id", team),
-          teamChanged(team)));
+          teamChanged(eventId, team, team.equals(teamB))));
       assertThat(schema(TEAM).validate(body, InputFormat.JSON)).isEmpty();
       assertThat(schema(ENVELOPE).validate(body, InputFormat.JSON)).as("envelope").isEmpty();
       if (team.equals(teamB)) {
@@ -236,7 +238,7 @@ class EventContractIT extends IntegrationTest {
     var team = liveTeam(eventId);
     var actor = updatedBy("event", "event_id", eventId);
     add("event.changed", "EventChanged", eventId, actor, eventChanged(events.findById(eventId).orElseThrow()));
-    add("team.changed", "TeamChanged", eventId, actor, teamChanged(team));
+    add("team.changed", "TeamChanged", eventId, actor, teamChanged(eventId, team, false));
 
     var published = new OutboxPublisher(outbox, rabbit, tx, Clock.systemUTC(), 50, Duration.ofSeconds(2))
         .publishDue();
@@ -323,10 +325,12 @@ class EventContractIT extends IntegrationTest {
         broken("TeamChanged without payload.deleted", "team", TEAM, tree -> payload(tree).remove("deleted")),
         broken("TeamChanged with an unknown permission", "team", TEAM,
             tree -> permission(tree, 0).put("permission", "Map.Delete")),
+        // The factory lists the permissions in the order of features.md §4.2: HelpRequests.Triage, then
+        // Reports.Review (US-16 D6)
         broken("TeamChanged with report types on a permission other than Reports.Review", "team", TEAM,
-            tree -> permission(tree, 1).putArray("reportTypes").add("Hazard")),
+            tree -> permission(tree, 0).putArray("reportTypes").add("Hazard")),
         broken("TeamChanged with an unknown report type", "team", TEAM,
-            tree -> permission(tree, 0).putArray("reportTypes").add("Fire")),
+            tree -> permission(tree, 1).putArray("reportTypes").add("Fire")),
         broken("TeamChanged without reportTypes on a permission", "team", TEAM,
             tree -> permission(tree, 1).remove("reportTypes")),
         broken("TeamChanged with an unknown handled category", "team", TEAM,
@@ -357,13 +361,12 @@ class EventContractIT extends IntegrationTest {
             "EventChanged", 1, Instant.now(), eventId, actor, eventChanged(event)).envelope());
       }
       case "team" -> {
-        var payload = Map.<String, Object>of("teamId", UUID.randomUUID().toString(), "name", "Equipa de Saude",
-            "permissions", List.of(
-                Map.of("permission", "Reports.Review", "reportTypes", List.of("QueueAtEntrance")),
-                Map.of("permission", "HelpRequests.Triage", "reportTypes", List.of())),
-            "handledCategories", List.of("Health"), "deleted", false, "version", 1);
+        var team = new Team(UUID.randomUUID(), eventId, "Equipa de Saude", List.of(
+            new TeamPermission(Permission.REPORTS_REVIEW, Set.of(ReportType.QueueAtEntrance)),
+            TeamPermission.of(Permission.HELP_REQUESTS_TRIAGE)), Set.of(HelpCategory.Health), false, 1);
         return json.writeValueAsString(new OutgoingEvent(UUID.randomUUID(), OutgoingEvent.EXCHANGE, "team.changed",
-            "TeamChanged", 1, Instant.now(), eventId, actor, payload).envelope());
+            "TeamChanged", 1, Instant.now(), eventId, actor,
+            TeamEvents.changed(team, UUID.randomUUID(), Instant.now()).payload()).envelope());
       }
       default -> {
         return membershipChanged(UUID.randomUUID(), eventId,

@@ -1,0 +1,146 @@
+package pt.isep.labdsof.events.application;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import pt.isep.labdsof.events.application.AccessAudit.Refusal;
+import pt.isep.labdsof.events.domain.EventStatus;
+import pt.isep.labdsof.events.domain.HelpCategory;
+import pt.isep.labdsof.events.domain.Membership;
+import pt.isep.labdsof.events.domain.Team;
+
+/**
+ * The teams of an event (US-16): reading them needs EventAdmin or a team with HelpRequests.Triage or
+ * Reports.Review (D4); changing them needs EventAdmin and an event that is still Draft or Published (D2). Every
+ * change writes TeamChanged to the outbox in the same transaction (D6), and every refusal that hides an event or
+ * a team is recorded (spec #192 D8).
+ */
+@Service
+public class TeamService {
+
+  /** What the event and the membership copy say about the caller, read once per operation. */
+  private record Reader(Membership membership, EventStatus status) {}
+
+  private final Events events;
+  private final Teams teams;
+  private final LocalCopies copies;
+  private final Outbox outbox;
+  private final AccessAudit audit;
+  private final Clock clock;
+
+  public TeamService(Events events, Teams teams, LocalCopies copies, Outbox outbox, AccessAudit audit,
+      Clock clock) {
+    this.events = events;
+    this.teams = teams;
+    this.copies = copies;
+    this.outbox = outbox;
+    this.audit = audit;
+    this.clock = clock;
+  }
+
+  @Transactional(readOnly = true)
+  public List<Team> list(UUID userId, UUID eventId) {
+    var membership = reader(userId, eventId).membership();
+    var live = teams.liveOfEvent(eventId);
+    if (!membership.isEventAdmin() && live.stream().noneMatch(team -> reads(membership, team))) {
+      throw new ForbiddenException();
+    }
+    return live;
+  }
+
+  @Transactional
+  public Team create(UUID userId, UUID eventId, String name) {
+    administrator(userId, eventId);
+    var at = clock.instant();
+    var team = Team.created(UUID.randomUUID(), eventId, name);
+    publish(teams.add(team, userId, at), team, userId, at);
+    return team;
+  }
+
+  /** Rename and set the help categories: one operation, as the contract and the team form have it (D1). */
+  @Transactional
+  public Team update(UUID userId, UUID eventId, UUID teamId, String name, List<HelpCategory> categories) {
+    administrator(userId, eventId);
+    var at = clock.instant();
+    var renamed = live(userId, eventId, teamId).renamed(name, Team.categoriesOf(categories));
+    publish(teams.replace(renamed, userId, at), renamed, userId, at);
+    return renamed;
+  }
+
+  /**
+   * Soft deletes the team (D5). Its members lose its permissions, and Reports returns the help requests routed to
+   * it to the control-room queue and cancels its field tasks when it consumes TeamChanged (AC-3).
+   */
+  @Transactional
+  public void delete(UUID userId, UUID eventId, UUID teamId) {
+    administrator(userId, eventId);
+    var at = clock.instant();
+    var deleted = live(userId, eventId, teamId).asDeleted();
+    publish(teams.delete(deleted, userId, at), deleted, userId, at);
+  }
+
+  /**
+   * One TeamChanged for a write that happened, in the same transaction (D6). A write that found no live row any
+   * more lost a race with a delete, and is the same 404 as an unknown team.
+   */
+  private void publish(Teams.Write outcome, Team team, UUID userId, Instant at) {
+    if (outcome == Teams.Write.NAME_TAKEN) {
+      throw new TeamNameTakenException();
+    }
+    if (outcome == Teams.Write.GONE) {
+      throw teamNotFound(userId, team.eventId(), at);
+    }
+    outbox.add(TeamEvents.changed(team, userId, at));
+  }
+
+  private static boolean reads(Membership membership, Team team) {
+    return membership.teamIds().contains(team.teamId()) && team.grantsTeamReading();
+  }
+
+  /**
+   * An active member who may see the event (spec #192 D5): anything else is the same 404 as an unknown event.
+   * The caller then checks the permission, which is never read from the token (ADR-006).
+   */
+  private Reader reader(UUID userId, UUID eventId) {
+    var event = events.findById(eventId).orElseThrow(() -> refused(userId, eventId, Refusal.NO_SUCH_EVENT));
+    var membership = copies.membership(eventId, userId).filter(Membership::isActive)
+        .orElseThrow(() -> refused(userId, eventId, Refusal.NOT_A_MEMBER));
+    if (!membership.canSee(event.status())) {
+      throw refused(userId, eventId, Refusal.NOT_VISIBLE);
+    }
+    return new Reader(membership, event.status());
+  }
+
+  /** An EventAdmin of an event that still accepts changes (D2). */
+  private void administrator(UUID userId, UUID eventId) {
+    var reader = reader(userId, eventId);
+    if (!reader.membership().isEventAdmin()) {
+      throw new ForbiddenException();
+    }
+    if (!open(reader.status())) {
+      throw new EventNotOpenException();
+    }
+  }
+
+  private static boolean open(EventStatus status) {
+    return status == EventStatus.Draft || status == EventStatus.Published;
+  }
+
+  private Team live(UUID userId, UUID eventId, UUID teamId) {
+    return teams.liveOfEvent(eventId, teamId)
+        .orElseThrow(() -> teamNotFound(userId, eventId, clock.instant()));
+  }
+
+  private TeamNotFoundException teamNotFound(UUID userId, UUID eventId, Instant at) {
+    audit.refused(userId, eventId, at, Refusal.NO_SUCH_TEAM);
+    return new TeamNotFoundException();
+  }
+
+  private EventNotFoundException refused(UUID userId, UUID eventId, Refusal refusal) {
+    audit.refused(userId, eventId, clock.instant(), refusal);
+    return new EventNotFoundException();
+  }
+}

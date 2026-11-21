@@ -2,6 +2,25 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Teams of an event (US-16, #65, Tiago Teixeira)
+
+**Why:** #192 created the `team` and `team_permission` tables, the `TeamChanged` contract and the four team paths, but every one of them answered `501`. US-16 is the first story an EventAdmin needs before giving a team its permissions (US-17, #66, stacked on this branch) or putting members in it (US-18). Spec, decisions and edge-case matrix: [`Docs/specs/US-16-teams.md`](Docs/specs/US-16-teams.md).
+
+### Added
+- `GET`, `POST`, `PATCH` and `DELETE` on `/api/v1/events/{eventId}/teams[/{teamId}]` in Events: an EventAdmin creates a team (`201`, no members, no permissions, no categories), renames it and sets the help categories it handles, and deletes it (`204`, soft delete). A name repeated in the event, ignoring case and blanks, is `409`; the name of a deleted team is free again.
+- Reading the list is open to an EventAdmin or a member of a team with `HelpRequests.Triage` or `Reports.Review` (API outline §3); a member without one gets `403`, and a non-member, a removed member, a member of another event and a team of another event get the same `404` as an unknown event, recorded with the user, the event and the time (US-14).
+- `TeamChanged` through the outbox on every change, with the team's full state and a higher version, as `contracts/events/team.changed.schema.json` requires: the consumers only apply a copy whose version is strictly newer. A deleted team is published with `deleted: true` and the permissions it had, which is what lets Reports return its routed help requests to the control-room queue and cancel its field tasks (AC-3).
+- Domain: `Team`, `TeamPermission`, `Permission` (the fixed list of `features.md` §4.2), `HelpCategory` and `ReportType`, with the name bounds of the `team_name` check, the handled categories as a set in a stable order, and a deleted team granting nothing.
+
+### Changed
+- `backend/events/contracts/openapi.yaml`: `DELETE …/teams/{teamId}` declares `409` (a suspended or closed event does not change its teams, spec D2), the `Conflict` response says so, `TeamChange.handledCategories` documents that a repeated category is `400`, and the description no longer lists US-16 among the stories still to come.
+- `EventContractIT` now builds `TeamChanged` with the service's own factory instead of its hand-written payload, which is what #192 asked of this story.
+
+### Notes
+- **No document says whether a suspended or closed event may still have its teams changed.** This PR refuses it with `409`, reading US-09 (*cannot be used*) and US-10 (edits on *a draft or published event*); reading the teams is unchanged. For the Product Owner to confirm.
+- `uniqueItems: true` on `handledCategories` was tried and dropped: openapi-generator 7.27 then reads the array into a `Set` and deduplicates a repeated category silently instead of refusing it (spec D7).
+- The CI smoke test is not extended: nothing can create an event until US-06 (#61), so no team can be created through the gateway yet.
+
 ## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
 
 - Badges starts in Compose with its own PostgreSQL database, Flyway migrations, Keycloak JWT validation,
