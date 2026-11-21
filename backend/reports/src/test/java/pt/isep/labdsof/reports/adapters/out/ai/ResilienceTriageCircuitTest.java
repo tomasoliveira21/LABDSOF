@@ -91,6 +91,17 @@ class ResilienceTriageCircuitTest {
   }
 
   @Test
+  @DisplayName("US-36 AC-2 a successful call clears the last failure")
+  void successClears() {
+    circuit.tryCall();
+    circuit.failed(NotTriagedReason.ProviderError, FAST);
+    assertThat(circuit.lastFailure()).isEqualTo(NotTriagedReason.ProviderError);
+    circuit.tryCall();
+    circuit.succeeded(FAST);
+    assertThat(circuit.lastFailure()).isNull();
+  }
+
+  @Test
   @DisplayName("US-36 AC-2 an interrupted call releases the circuit")
   void released() {
     circuit.breaker().transitionToOpenState();

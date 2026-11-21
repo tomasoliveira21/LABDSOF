@@ -378,7 +378,8 @@ paths:
       description: >-
         Requires HelpRequests.Triage. One AI serves every event, so the answer is the same for every event.
         `available` is true only when an AI is configured and its circuit breaker is closed; otherwise `reason` is
-        `Unavailable` (no AI configured) or the reason of the last failed call (spec US-36 D4). The web app polls it
+        `Unavailable` (no AI configured, or no failure to tell) or the reason of the last failed call (spec US-36 D4).
+        After the circuit's open time it stays unavailable until the next request's trial call succeeds. The web app polls it
         with the live list, every 2 s while the page is visible (spec US-36 D6).
       x-farol-status: implemented
       responses:

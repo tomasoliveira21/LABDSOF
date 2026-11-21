@@ -416,6 +416,23 @@ class TriageServiceTest {
     assertThat(circuit.calls).containsExactly("try", "released");
     assertThat(metrics.counted).isEmpty();
     assertThat(stored(request).triage().awaitsModel()).isTrue();
+
+    // an Error (out of memory, stack overflow) gives the permission back too, or a half-open circuit would stay
+    // without its probe until a restart (G8 review)
+    circuit.calls.clear();
+    var broken = new TriageService(ports, new TriageModel() {
+      @Override
+      public boolean configured() {
+        return true;
+      }
+
+      @Override
+      public Object suggest(String description, Duration budget) {
+        throw new StackOverflowError();
+      }
+    }, circuit, metrics, clock);
+    assertThatThrownBy(() -> broken.triage(EVENT, request.id())).isInstanceOf(StackOverflowError.class);
+    assertThat(circuit.calls).containsExactly("try", "released");
   }
 
   @Test
@@ -433,6 +450,10 @@ class TriageServiceTest {
     // closed again after a recovery: the old failure is not shown
     model.configured = true;
     assertThat(service().status()).isEqualTo(new TriageService.Status(true, null, now));
+    // opened by slow calls that all answered: no failure to tell, but never a null reason (G8 review)
+    circuit.open = true;
+    circuit.lastFailure = null;
+    assertThat(service().status()).isEqualTo(new TriageService.Status(false, NotTriagedReason.Unavailable, now));
   }
 
   @Test
@@ -468,6 +489,12 @@ class TriageServiceTest {
     service().triage(EVENT, request.id());
     service().triage(EVENT, request.id());
     service().triage(EVENT, UUID.randomUUID());
+    // a message handled only after the deadline, delivered twice: nothing can be saved and the AI is not called,
+    // so it counts nothing, as a message that never arrived (spec US-36 D7; G8 review)
+    var backlog = submitted();
+    clock.now = SUBMITTED.plusSeconds(31);
+    service().triage(EVENT, backlog.id());
+    service().triage(EVENT, backlog.id());
 
     assertThat(metrics.counted).containsExactly("suggested", "InvalidOutput", "Abstained", "ProviderError",
         "Unavailable", "Timeout", "Timeout", "suggested");

@@ -43,6 +43,7 @@ public class ResilienceTriageCircuit implements TriageCircuit {
 
   @Override
   public void succeeded(Duration took) {
+    lastFailure = null; // the AI answers again: an older failure no longer explains the state
     breaker.onSuccess(took.toNanos(), TimeUnit.NANOSECONDS);
   }
 

@@ -52,7 +52,12 @@ public class TriageService {
     if (!model.configured()) {
       return new Status(false, NotTriagedReason.Unavailable, now);
     }
-    return circuit.closed() ? new Status(true, null, now) : new Status(false, circuit.lastFailure(), now);
+    if (circuit.closed()) {
+      return new Status(true, null, now);
+    }
+    // Opened by slow calls that all answered: no failure to tell, but the reason is never null when unavailable
+    var failure = circuit.lastFailure();
+    return new Status(false, failure == null ? NotTriagedReason.Unavailable : failure, now);
   }
 
   public Result triage(UUID eventId, UUID requestId) {
@@ -68,17 +73,22 @@ public class TriageService {
     var deadline = request.submittedAt().plus(TriageSuggestion.TRIAGE_DEADLINE);
     var left = Duration.between(start, deadline);
     TriageSuggestion triage;
-    if (!model.configured() || left.compareTo(MIN_TIME_LEFT) < 0 || !circuit.tryCall()) {
-      triage = TriageSuggestion.notTriaged(NotTriagedReason.Unavailable);
-    } else {
+    var called = model.configured() && left.compareTo(MIN_TIME_LEFT) >= 0 && circuit.tryCall();
+    if (called) {
       triage = called(request.description(), left);
       record(triage.notTriagedReason(), Duration.between(start, clock.instant()));
+    } else {
+      triage = TriageSuggestion.notTriaged(NotTriagedReason.Unavailable);
     }
     var done = clock.instant();
     var providerMs = Duration.between(start, done).toMillis();
     if (done.isAfter(deadline)) {
-      // Completion: a late result is discarded; the request reads NotTriaged/Timeout (runtime contract)
-      metrics.fallback(NotTriagedReason.Timeout);
+      // Completion: a late result is discarded; the request reads NotTriaged/Timeout (runtime contract). Counted
+      // only when the AI was called: that happens once per request (admission), whereas a message handled after
+      // its deadline may come again and counts nothing, like a message that never arrived (spec US-36 D7)
+      if (called) {
+        metrics.fallback(NotTriagedReason.Timeout);
+      }
       return logged(requestId, new Result(Outcome.LATE, triage.notTriagedReason(), providerMs));
     }
     var saved = helpRequests.saveTriage(request.withTriage(triage, done));
@@ -94,7 +104,8 @@ public class TriageService {
       return TriageSuggestion.fromModel(model.suggest(description, left));
     } catch (TriageModelException e) {
       return TriageSuggestion.notTriaged(e.reason());
-    } catch (RuntimeException e) {
+    } catch (RuntimeException | Error e) {
+      // Shutdown or a JVM error: give the permission back, or a half-open circuit would keep no probe
       circuit.released();
       throw e;
     }
