@@ -2,6 +2,12 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Domain entity lifecycles (#198)
+
+- Documented state transitions, triggers and story references for the account, membership, event, help request,
+  community report and field task. Aligned the API outline and recorded status coverage for the mockups.
+- Marked the lifecycle proposals and the membership contract and report reconfirmation decisions for team review.
+
 ## [Unreleased] · 2026-11-21 · API gateway security and rate limits (#190)
 
 - The gateway validates Keycloak JWTs and keeps the existing routing and diagnostic endpoints. The web container
