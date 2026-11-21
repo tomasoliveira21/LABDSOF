@@ -17,7 +17,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `EventContractIT` now builds `TeamChanged` with the service's own factory instead of its hand-written payload, which is what #192 asked of this story.
 
 ### Notes
-- **No document says whether a suspended or closed event may still have its teams changed.** This PR refuses it with `409`, reading US-09 (*cannot be used*) and US-10 (edits on *a draft or published event*); reading the teams is unchanged. For the Product Owner to confirm.
+- **No product document said whether a suspended or closed event may still have its teams changed.** This PR refuses it with `409`, reading US-09 (*cannot be used*) and US-10 (edits on *a draft or published event*); reading the teams is unchanged. **Confirmed on 21 November 2026** by the owner of the story; to be noted in the next meeting record.
 - `uniqueItems: true` on `handledCategories` was tried and dropped: openapi-generator 7.27 then reads the array into a `Set` and deduplicates a repeated category silently instead of refusing it (spec D7).
 - The CI smoke test is not extended: nothing can create an event until US-06 (#61), so no team can be created through the gateway yet.
 
