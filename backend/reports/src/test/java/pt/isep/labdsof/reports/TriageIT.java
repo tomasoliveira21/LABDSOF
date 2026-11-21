@@ -21,11 +21,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import pt.isep.labdsof.reports.adapters.out.ai.ResilienceTriageCircuit;
 import pt.isep.labdsof.reports.application.HelpRequests;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.Location;
@@ -111,6 +113,8 @@ class TriageIT extends IntegrationTest {
   @BeforeEach
   void controlRoom() {
     port = Integer.parseInt(reports.getEnvironment().getProperty("local.server.port"));
+    // Each test starts with a closed circuit, so the failures of one test never make another's request Unavailable
+    reports.getBean(CircuitBreakerRegistry.class).circuitBreaker(ResilienceTriageCircuit.NAME).reset();
     var team = UUID.randomUUID();
     copies.upsertIfNewer(new Team(team, event, "Control room",
         List.of(new Team.TeamPermission(Permission.HELP_REQUESTS_TRIAGE, Set.of())), Set.of(Category.Health),
