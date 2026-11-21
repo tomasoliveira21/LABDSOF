@@ -58,6 +58,10 @@ paths:
       tags: [Me]
       operationId: getMyMemberships
       summary: The events I am a member of, with my role, my teams and each event's name and status (US-01)
+      description: >-
+        Lists memberships for the token subject from Auth & Users and its local Events copy.
+        Returns an empty array for callers without any memberships. Disabled accounts get 403.
+        Deleted accounts and accounts pending deletion get 401.
       responses:
         '200':
           description: My memberships
@@ -69,6 +73,8 @@ paths:
                   $ref: '#/components/schemas/Membership'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/v1/accounts:
     get:
       tags: [Accounts]
