@@ -73,3 +73,28 @@ The first four are the issue's. AC-5 to AC-7 make its scope boxes "RabbitMQ wiri
 ## 5. Handoff and changelog
 
 - **21 Nov 2026 · research.** Issue #193 (no comments), API outline §1, §5 and §7, ADR-008 and J1, domain model, US-40 and US-41, `infra/wiremock/`, `topology.json` and `setup.sh` (the `transports` user writes only to `farol.dead-letters`), the gateway routes (already in place), the specs of #191, #192 and #194, and the open pull requests that touch the same files: #231 (observability: Transports' `pom.xml`, Compose, CI) and #230 (Compose). The owner decided D2, D3 and D5 and the scope of the first use case.
+- **21 Nov 2026 · implementation.** Built in eight steps, each with `mvn verify` green and the gates met from the third on (with three lines and the never-covered `main`, the module could not meet the coverage gate before it had code to measure):
+  - (1) this spec;
+  - (2) module, Flyway `V1` (D4) and Compose database wiring · `MigrationIT`, `StatusEndpointIT`;
+  - (3) copies in the domain, `LocalCopyService` and the JDBC adapter, with PIT and the coverage gate · `MembershipTest`, `EventCopyTest`, `TeamTest`, `LocalCopyServiceTest`, `JdbcLocalCopiesIT`;
+  - (4) consumers of both queues, dead letters, consumed schemas (D3) · `LocalCopiesIT`, `ConsumedContractIT`, `DeadLettersTest`;
+  - (5) security, Problem Details, correlation id (D9, D10) · `SecurityIT`, `LoggingIT` and the unit tests of the web adapters;
+  - (6) the contract and its `501` operations (D6) · `ContractIT`;
+  - (7) the scheduled read and WireMock in Compose (D5, D7, D8) · `SourceImportTest`, `SourceImportServiceTest`, `PortoDigitalSourceTest`, `PortoDigitalSourceIT`, `SourceImportJobTest`, `SourceImportIT`;
+  - (8) the CI smoke `infra/tests/transports_smoke.py`, its CI step and the documents.
+
+  Final `mvn clean verify` (JDK 21), rebased on `main` (`a5c6ccc`): 109 unit and 198 integration tests, JaCoCo 99.6 % lines (465/467; the two missed are `TransportsApplication.main`) and 100 % branches (158/158), generated code included, PIT 48/48 killed. The other five modules `verify` green on the same branch. Every check step of `ci.yml` run locally on a fresh `farol-ci` stack: all green, the seven checks of the Transports smoke included; with WireMock stopped, the job records `Unavailable` and the smoke fails (exit 1), as it should.
+
+  Deviations from this spec and from the plan, each with its reason:
+  - the web adapters `ProblemDetailsAdvice` and `CorrelationIdFilter` are those of Auth & Users, with the fixes of the review of PR 215 (denials rethrown, client aborts, looping cause chains, the `500` an escaped exception becomes in the access log, health check at DEBUG); Events' copies predate those fixes;
+  - no `ConstraintViolationException` handler: the contract has no constrained path or query parameter, and invalid bodies, nested ones included, are `400` through the standard handler (`ContractIT`); a story that adds such a parameter adds the handler and its test;
+  - the contract is OpenAPI 3.0.3, as Events', and `stopPoiIds` has no `uniqueItems` (unique stops are a rule of US-37 and US-41);
+  - the HTTP outcomes of the source are tested on the adapter itself against the simulator (`PortoDigitalSourceIT`); `SourceImportIT` tests the job and its record;
+  - the job, not the use case, logs each read (outcome, count, duration, reason).
+- **For US-40 (#84):** `source_import` is where the reads are; the job, the adapter and its timeouts exist. US-40 adds storing `bus_vehicle` and `bus_observation`, the validation rules (rejecting an import as a whole), the freshness limit and the retry and circuit breaker of J1, and may turn `Invalid` into the validation outcome. The WireMock stubs and `WireMockAdmin` (tests) cause each failure.
+- **For US-41 (#85):** the membership, event and team copies are filled; `Membership.isActive()`, `EventCopy.isSuspended()` and `Team.grants(Permission.TRANSPORT_EDIT)` are what the endpoints decide with. The `501` of `getBusObservations` and `createTransportOption` names this story.
+- **Open points for the team:**
+  - (1) PR #231 (#148) was still open: when it is merged, Transports takes its management-port security chain and the `*spring-env` anchor in Compose (D12).
+  - (2) A reason whose exception has no message is recorded as `Class: null` (seen with `UnresolvedAddressException` when WireMock is stopped).
+  - (3) Events still has the `ProblemDetailsAdvice` and `CorrelationIdFilter` from before the review of PR 215 (see the deviations).
+  - (4) WireMock's proxy mode to the real Porto Digital API (guide J4) is not configured.
