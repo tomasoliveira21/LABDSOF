@@ -6,26 +6,39 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.EventAccess;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.Permission;
+import pt.isep.labdsof.reports.domain.Priority;
+import pt.isep.labdsof.reports.domain.TriageState;
 
-/** Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26). */
+/**
+ * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), and the
+ * control room's triage decisions (US-35).
+ */
 @Service
 public class HelpRequestService {
+
+  private static final Logger log = LoggerFactory.getLogger(HelpRequestService.class);
 
   private final HelpRequests helpRequests;
   private final LocalCopies copies;
   private final Outbox outbox;
+  private final TriageMetrics metrics;
   private final Clock clock;
 
-  public HelpRequestService(HelpRequests helpRequests, LocalCopies copies, Outbox outbox, Clock clock) {
+  public HelpRequestService(HelpRequests helpRequests, LocalCopies copies, Outbox outbox, TriageMetrics metrics,
+      Clock clock) {
     this.helpRequests = helpRequests;
     this.copies = copies;
     this.outbox = outbox;
+    this.metrics = metrics;
     this.clock = clock;
   }
 
@@ -101,6 +114,36 @@ public class HelpRequestService {
     if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
       throw new ForbiddenException();
     }
+  }
+
+  /** The control room takes the AI's suggestion as the request's values (US-35 AC-1, spec D1). */
+  @Transactional
+  public HelpRequest acceptSuggestion(UUID eventId, String userId, UUID requestId) {
+    requireTriage(eventId, userId);
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
+    return decided(request, request.acceptSuggestion(clock.instant()), userId);
+  }
+
+  /** The control room sets the category, the priority or both (US-35 AC-2, spec D2). */
+  @Transactional
+  public HelpRequest change(UUID eventId, String userId, UUID requestId, Category category, Priority priority) {
+    requireTriage(eventId, userId);
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
+    return decided(request, request.change(category, priority, clock.instant()), userId);
+  }
+
+  /** Saves and records the decision, counts the first one on a suggestion, logs metadata only (D3, D6, D8). */
+  private HelpRequest decided(HelpRequest before, HelpRequest.Decision decision, String userId) {
+    var after = decision.request();
+    if (!decision.changes().isEmpty()) {
+      helpRequests.saveDecision(after, userId, decision.changes());
+      if (before.triage().state() == TriageState.Suggested) {
+        metrics.decided(after.triage().state());
+      }
+      log.info("Triage decision on request {}: {} -> {}", before.id(), before.asSeenAt(after.updatedAt()).triage()
+          .state(), after.triage().state());
+    }
+    return after.asSeenAt(clock.instant());
   }
 
   private EventAccess access(UUID eventId, String userId) {

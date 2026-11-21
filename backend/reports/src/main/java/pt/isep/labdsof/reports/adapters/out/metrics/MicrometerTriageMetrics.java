@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 import pt.isep.labdsof.reports.application.TriageMetrics;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
+import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
  * The triage counters (spec US-36 D7): {@code farol.triage.fallback{reason}} (architecture.md §9.2) and
@@ -26,5 +27,10 @@ public class MicrometerTriageMetrics implements TriageMetrics {
   @Override
   public void fallback(NotTriagedReason reason) {
     registry.counter("farol.triage.fallback", "reason", reason.name()).increment();
+  }
+
+  @Override
+  public void decided(TriageState decision) {
+    registry.counter("farol.triage.decision", "decision", decision.name()).increment();
   }
 }
