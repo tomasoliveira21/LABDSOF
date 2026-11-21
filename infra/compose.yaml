@@ -169,6 +169,9 @@ services:
     <<: *hardening
     image: wiremock/wiremock:3.13.2@sha256:0d4ecb3e4dc8213fd7a4d37d6a78f6e6b553a6d2e15bd51b0999781282ac61b3
     user: "10001:10001"
+    # WireMock keeps every request it serves, response body included, and by default never drops one: at one read
+    # every 30 s that is about 30 MB a day against mem_limit. 1000 entries keep the last 8 hours for the presenter.
+    command: ["--max-request-journal-entries=1000"]
     volumes:
       - ./wiremock:/home/wiremock:ro
     ports:

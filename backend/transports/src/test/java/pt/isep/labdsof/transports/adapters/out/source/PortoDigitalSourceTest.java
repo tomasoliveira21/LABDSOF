@@ -70,6 +70,25 @@ class PortoDigitalSourceTest {
     assertThat(PortoDigitalSource.parse(new byte[0], JSON)).isEqualTo(SourceReading.invalid("empty body"));
   }
 
+  @ParameterizedTest(name = "{0}")
+  @CsvSource({"wiremock:8080", "ftp://wiremock:8080", "http://", "not a url", "/v2/entities", "http//wiremock:8080",
+      "http:/v2/entities"})
+  @DisplayName("193 D5 the job cannot be switched on with a source URL that is not an absolute http or https URL")
+  void malformedUrlIsRefused(String url) {
+    assertThatThrownBy(() -> new TransportSourceProperties(true, url, "41.1724,-8.6841", 2000,
+        Duration.ofSeconds(30), Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("farol.transport.source.url must be an absolute http or https URL");
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @CsvSource({"http://wiremock:8080", "https://broker.fiware.urbanplatform.portodigital.pt", "HTTP://127.0.0.1:8090/"})
+  @DisplayName("193 D5 an absolute http or https source URL is accepted")
+  void httpUrlIsAccepted(String url) {
+    assertThat(new TransportSourceProperties(true, url, "41.1724,-8.6841", 2000, Duration.ofSeconds(30),
+        Duration.ofSeconds(3), Duration.ofSeconds(5)).url()).isEqualTo(url);
+  }
+
   @Test
   @DisplayName("193 D5 the job cannot be switched on without a source URL")
   void urlIsRequiredWhenEnabled() {
