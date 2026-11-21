@@ -3,6 +3,7 @@ package pt.isep.labdsof.events.adapters.out.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -86,6 +87,40 @@ class JdbcTeamsIT extends IntegrationTest {
         TeamPermission.of(Permission.HELP_REQUESTS_TRIAGE),
         new TeamPermission(Permission.REPORTS_REVIEW, Set.of(ReportType.NoWater, ReportType.Hazard)));
     assertThat(read.grants(Permission.HELP_REQUESTS_TRIAGE)).isTrue();
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 replacing the permissions writes the new set and nothing of the old one")
+  void permissionsAreReplaced() {
+    var eventId = event();
+    var team = stored(eventId, "Control room");
+    assertThat(teams.replacePermissions(team.withPermissions(List.of(
+        TeamPermission.of(Permission.MAP_EDIT),
+        new TeamPermission(Permission.REPORTS_REVIEW, Set.of(ReportType.Hazard)))),
+        UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+
+    var replaced = team.withPermissions(List.of(TeamPermission.of(Permission.ENTRANCES_UPDATE)));
+    assertThat(teams.replacePermissions(replaced, UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+
+    var read = teams.liveOfEvent(eventId, team.teamId()).orElseThrow();
+    assertThat(read.permissions()).containsExactly(TeamPermission.of(Permission.ENTRANCES_UPDATE));
+    assertThat(read.version()).isEqualTo(2);
+    assertThat(teams.replacePermissions(replaced.withPermissions(List.of()), UUID.randomUUID(), AT))
+        .isEqualTo(Write.STORED);
+    assertThat(teams.liveOfEvent(eventId, team.teamId()).orElseThrow().permissions()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 replacing the permissions of a team another request deleted reports it gone")
+  void permissionsOfADeletedRowAreGone() {
+    var eventId = event();
+    var team = stored(eventId, "Control room");
+    teams.delete(team.asDeleted(), UUID.randomUUID(), AT);
+
+    assertThat(teams.replacePermissions(team.withPermissions(List.of(TeamPermission.of(Permission.MAP_EDIT))),
+        UUID.randomUUID(), AT)).isEqualTo(Write.GONE);
+    assertThat(jdbc.sql("SELECT count(*) FROM team_permission WHERE team_id = :id").param("id", team.teamId())
+        .query(Integer.class).single()).isZero();
   }
 
   @Test
