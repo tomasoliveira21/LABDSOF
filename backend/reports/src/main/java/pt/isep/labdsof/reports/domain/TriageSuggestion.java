@@ -42,6 +42,11 @@ public record TriageSuggestion(
     return new TriageSuggestion(TriageState.Pending, null, null, null, Objects.requireNonNull(reason, "reason"));
   }
 
+  /** A member's decision on this triage (US-35): the new state, keeping the suggestion and the reason. */
+  TriageSuggestion decided(TriageState decision) {
+    return new TriageSuggestion(decision, suggestedCategory, suggestedPriority, suggestedReason, notTriagedReason);
+  }
+
   /** Still waiting for the model: Pending and no reason stored. */
   public boolean awaitsModel() {
     return state == TriageState.Pending && notTriagedReason == null;

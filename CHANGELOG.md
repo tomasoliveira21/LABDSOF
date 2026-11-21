@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Accept or change the AI suggestion (US-35, #82, Bruno de Abreu Lopes)
+
+**Why:** US-35 (#82): the control room must stay in control of the AI triage: accept the suggestion as its own decision, or set its own values, which a later suggestion never overwrites (NFR-22). Spec: [`Docs/specs/US-35-accept-or-change-suggestion.md`](Docs/specs/US-35-accept-or-change-suggestion.md). Stacked on PR #232.
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/accept-suggestion` (`HelpRequests.Triage`): the suggested category and priority become the request's values and the triage becomes `Accepted`; `409` when the triage is not `Suggested`.
+- `PATCH /api/v1/events/{eventId}/help-requests/{requestId}` for the category and the priority (the operation planned for US-28; US-28 adds the status): the member's values make the triage `Changed`, from any triage state; the suggestion and the `NotTriaged` reason stay visible.
+- Flyway `V3`: table `help_request_change`, one row per changed field with who, when, the old and the new value, in the fields of the planned history entry (`GET …/history`, US-28 #75). The member's write locks the request, so the triage worker's save waits and then writes nothing.
+- Counter `farol.triage.decision{decision}` (`Accepted`, `Changed`): the first member decision on each stored suggestion.
+- `TriageDecisionIT`: both endpoints with the security matrix, the history rows, two accepts at once, and the worker's save refused after a member's values; `infra/tests/reports_smoke.py`: both endpoints through the gateway (401 without a token, 404 for a non-member).
+
+### Changed
+- `contracts/openapi.yaml`: `setHelpRequestCategoryAndPriority` and `acceptTriageSuggestion` are implemented; the default team after an accept stays planned (#81 AC-2).
+- Dated notes in the domain model (proposed transitions `Pending → Changed` and `Accepted → Changed`), the API outline §4.1, ADR-005 and `responsible-ai.md`. Decisions D2, D3 and D6 of the spec are proposed for the team's review.
+- Spec US-35 D6 (review of PR #233): `farol.triage.decision` counts only decisions on a `Suggested` request, so it measures the AI suggestions, not manual triage; most requests of a burst never get a suggestion (US-36 capacity limit).
+
 ## [Unreleased] · 2026-11-21 · Requests without AI (US-36, #83, Bruno de Abreu Lopes)
 
 **Why:** US-36 (#83, scenario D1): help requests must keep reaching the control room when the AI is down, slow or wrong, the back office must know when triage is unavailable, and each fallback must be logged and counted. Part of #149 (AC-5, SC5). Spec: [`Docs/specs/US-36-requests-without-ai.md`](Docs/specs/US-36-requests-without-ai.md). Stacked on PR #230.

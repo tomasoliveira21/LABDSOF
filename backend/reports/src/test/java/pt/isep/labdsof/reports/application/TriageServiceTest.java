@@ -136,6 +136,11 @@ class TriageServiceTest {
     public void fallback(NotTriagedReason reason) {
       counted.add(reason.name());
     }
+
+    @Override
+    public void decided(TriageState decision) {
+      counted.add("decided " + decision);
+    }
   }
 
   final InMemoryPorts ports = new InMemoryPorts();

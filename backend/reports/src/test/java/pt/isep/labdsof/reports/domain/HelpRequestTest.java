@@ -190,4 +190,122 @@ class HelpRequestTest {
     assertThat(suggested.submittedAt()).isEqualTo(request.submittedAt());
     assertThat(suggested).usingRecursiveComparison().ignoringFields("triage", "updatedAt").isEqualTo(request);
   }
+
+  static HelpRequest withTriage(TriageSuggestion triage) {
+    return submit("Friend fainted near the bar").withTriage(triage, NOW.plusSeconds(4));
+  }
+
+  static final TriageSuggestion SUGGESTED = TriageSuggestion.suggested(Category.Health, Priority.High, "fainted");
+  static final Instant LATER = NOW.plusSeconds(60).plusNanos(1_234_567_891);
+
+  @Test
+  @DisplayName("US-35 AC-1 accepting takes the suggested values and records each change")
+  void accept() {
+    var request = withTriage(SUGGESTED);
+    var decision = request.acceptSuggestion(LATER);
+    var accepted = decision.request();
+
+    assertThat(accepted.category()).isEqualTo(Category.Health);
+    assertThat(accepted.priority()).isEqualTo(Priority.High);
+    assertThat(accepted.triage()).isEqualTo(
+        new TriageSuggestion(TriageState.Accepted, Category.Health, Priority.High, "fainted", null));
+    assertThat(accepted.version()).isEqualTo(request.version() + 1);
+    assertThat(accepted.updatedAt()).isEqualTo(LATER.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+    assertThat(accepted).usingRecursiveComparison()
+        .ignoringFields("category", "priority", "triage", "updatedAt", "version").isEqualTo(request);
+    assertThat(decision.changes()).containsExactly(
+        new HelpRequestChange("category", null, "Health"),
+        new HelpRequestChange("priority", null, "High"),
+        new HelpRequestChange("triage", "Suggested", "Accepted"));
+  }
+
+  @Test
+  @DisplayName("US-35 AC-1 only a suggestion can be accepted")
+  void acceptNeedsASuggestion() {
+    var pending = submit("help");
+    var stored = withTriage(TriageSuggestion.notTriaged(NotTriagedReason.Abstained));
+    var accepted = withTriage(SUGGESTED).acceptSuggestion(LATER).request();
+    var changed = withTriage(SUGGESTED).change(Category.Safety, null, LATER).request();
+    for (var request : java.util.List.of(pending, stored, accepted, changed)) {
+      assertThatThrownBy(() -> request.acceptSuggestion(LATER)).as(request.triage().toString())
+          .isInstanceOf(TriageConflictException.class);
+    }
+    // Pending past its deadline reads NotTriaged/Timeout: nothing to accept either
+    assertThatThrownBy(() -> pending.acceptSuggestion(NOW.plusSeconds(31)))
+        .isInstanceOf(TriageConflictException.class);
+  }
+
+  @Test
+  @DisplayName("US-35 AC-2 changing records Changed and only the fields that changed")
+  void change() {
+    var request = withTriage(SUGGESTED);
+    var decision = request.change(null, Priority.Critical, LATER);
+    var changed = decision.request();
+
+    assertThat(changed.category()).isNull();
+    assertThat(changed.priority()).isEqualTo(Priority.Critical);
+    // The suggestion stays visible next to the member's values
+    assertThat(changed.triage()).isEqualTo(
+        new TriageSuggestion(TriageState.Changed, Category.Health, Priority.High, "fainted", null));
+    assertThat(changed.version()).isEqualTo(request.version() + 1);
+    assertThat(changed.updatedAt()).isEqualTo(LATER.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+    assertThat(decision.changes()).containsExactly(
+        new HelpRequestChange("priority", null, "Critical"),
+        new HelpRequestChange("triage", "Suggested", "Changed"));
+
+    var again = changed.change(Category.Safety, Priority.Critical, LATER.plusSeconds(1));
+    assertThat(again.changes()).containsExactly(new HelpRequestChange("category", null, "Safety"));
+    assertThat(again.request().triage().state()).isEqualTo(TriageState.Changed);
+    assertThat(again.request().version()).isEqualTo(changed.version() + 1);
+  }
+
+  @Test
+  @DisplayName("US-35 AC-2 a member can set the values from any triage state")
+  void changeFromAnyState() {
+    var pending = submit("help").change(Category.Other, Priority.Low, NOW.plusSeconds(1));
+    assertThat(pending.request().triage()).isEqualTo(
+        new TriageSuggestion(TriageState.Changed, null, null, null, null));
+    assertThat(pending.changes()).contains(new HelpRequestChange("triage", "Pending", "Changed"));
+
+    // A derived NotTriaged keeps its reason, so the read still says why there was no suggestion
+    var timedOut = submit("help").change(Category.Other, null, NOW.plusSeconds(30));
+    assertThat(timedOut.request().triage()).isEqualTo(
+        new TriageSuggestion(TriageState.Changed, null, null, null, NotTriagedReason.Timeout));
+    assertThat(timedOut.changes()).contains(new HelpRequestChange("triage", "NotTriaged", "Changed"));
+
+    var stored = withTriage(TriageSuggestion.notTriaged(NotTriagedReason.ProviderError))
+        .change(null, Priority.Medium, LATER);
+    assertThat(stored.request().triage()).isEqualTo(
+        new TriageSuggestion(TriageState.Changed, null, null, null, NotTriagedReason.ProviderError));
+    assertThat(stored.request().asSeenAt(LATER).triage().state()).isEqualTo(TriageState.Changed);
+
+    var accepted = withTriage(SUGGESTED).acceptSuggestion(LATER).request();
+    var corrected = accepted.change(null, Priority.Critical, LATER);
+    assertThat(corrected.request().triage().state()).isEqualTo(TriageState.Changed);
+    assertThat(corrected.changes()).containsExactly(
+        new HelpRequestChange("priority", "High", "Critical"),
+        new HelpRequestChange("triage", "Accepted", "Changed"));
+  }
+
+  @Test
+  @DisplayName("US-35 AC-2 a change to the same values writes nothing")
+  void changeToTheSameValues() {
+    var changed = withTriage(SUGGESTED).change(Category.Health, Priority.High, LATER).request();
+    var same = changed.change(Category.Health, null, LATER.plusSeconds(1));
+    assertThat(same.changes()).isEmpty();
+    assertThat(same.request()).isEqualTo(changed);
+
+    // An accepted request sent its own values again stays Accepted (G8 review)
+    var accepted = withTriage(SUGGESTED).acceptSuggestion(LATER).request();
+    var resent = accepted.change(Category.Health, Priority.High, LATER.plusSeconds(1));
+    assertThat(resent.changes()).isEmpty();
+    assertThat(resent.request()).isEqualTo(accepted);
+  }
+
+  @Test
+  @DisplayName("US-35 AC-2 a change needs a category or a priority")
+  void changeNeedsAValue() {
+    var request = withTriage(SUGGESTED);
+    assertThatThrownBy(() -> request.change(null, null, LATER)).isInstanceOf(InvalidHelpRequestException.class);
+  }
 }

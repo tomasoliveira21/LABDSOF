@@ -281,6 +281,8 @@ stateDiagram-v2
     }
 ```
 
+*21 November 2026 (#82, US-35): also `Pending → Changed` (a member sets a value before the AI answers; the late suggestion is then discarded, NFR-22) and `Accepted → Changed` (a member corrects an accepted value), proposed for the team's review in [spec US-35](../specs/US-35-accept-or-change-suggestion.md) D2. Every decision is recorded per field with who and when (D3).*
+
 ```mermaid
 stateDiagram-v2
     direction LR

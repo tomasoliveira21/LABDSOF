@@ -59,6 +59,16 @@ class DocumentationIT {
     specNamesRealTests(ROOT.resolve("Docs/specs/US-36-requests-without-ai.md"), "US-36", 20, 3);
   }
 
+  @Test
+  @DisplayName("US-35 AC-1 the changelog and the domain model have the story, and every test its spec names exists")
+  void us35SpecNamesRealTests() throws Exception {
+    assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
+        .contains("Accept or change the AI suggestion (US-35, #82, Bruno de Abreu Lopes)");
+    assertThat(Files.readString(ROOT.resolve("Docs/Technical/domain-model.md")))
+        .contains("21 November 2026 (#82, US-35)");
+    specNamesRealTests(ROOT.resolve("Docs/specs/US-35-accept-or-change-suggestion.md"), "US-35", 20, 2);
+  }
+
   static void specNamesRealTests(Path spec, String prefix, int atLeast, int criteria) throws Exception {
     String tests;
     try (var files = Files.walk(Path.of("src/test/java"))) {
