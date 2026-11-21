@@ -80,9 +80,9 @@ class TriageSuggestionTest {
         Arguments.of("newline", output("Health", "High", "a\nb", false)),
         Arguments.of("delete character", output("Health", "High", "a\u007fb", false)),
         Arguments.of("C1 control (NEL)", output("Health", "High", "a\u0085b", false)),
-        Arguments.of("bidi override", output("Health", "High", "a‮b", false)),
-        Arguments.of("line separator", output("Health", "High", "a b", false)),
-        Arguments.of("paragraph separator", output("Health", "High", "a b", false)),
+        Arguments.of("bidi override", output("Health", "High", "a\u202eb", false)),
+        Arguments.of("line separator", output("Health", "High", "a\u2028b", false)),
+        Arguments.of("paragraph separator", output("Health", "High", "a\u2029b", false)),
         Arguments.of("241 code points", output("Health", "High", "🚑".repeat(241), false)),
         Arguments.of("abstain as a string", output("Health", "High", "r", "false")),
         Arguments.of("abstain null", output("Health", "High", "r", null)),
