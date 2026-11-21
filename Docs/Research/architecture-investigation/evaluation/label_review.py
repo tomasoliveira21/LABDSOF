@@ -44,9 +44,11 @@ def group(case: dict) -> str:
 
 
 def cell(value: object) -> str:
-    """One table cell on one line: a pipe is escaped, a line break is shown as ↵."""
+    """One table cell on one line, shown as written: Markdown and HTML punctuation is escaped (G8), a line break is ↵."""
     text = "" if value is None else str(value)
-    return text.replace("\\", "\\\\").replace("|", "\\|").replace("\r\n", " ↵ ").replace("\n", " ↵ ").replace("\r", " ↵ ")
+    for char in "\\|<>*_`[]":
+        text = text.replace(char, "\\" + char)
+    return text.replace("\r\n", " ↵ ").replace("\n", " ↵ ").replace("\r", " ↵ ")
 
 
 def render(cases: list[dict]) -> str:
@@ -82,6 +84,10 @@ def self_check(cases: list[dict]) -> None:
     tricky_rows = [line for line in render([tricky]).splitlines() if line.startswith("| Z001")]
     check(len(tricky_rows) == 1 and tricky_rows[0].count(" | ") == 6 and "a \\| b ↵ c ↵ d \\\\\\| e" in tricky_rows[0],
           "234 AC-3 a pipe or newline in a text cannot break a line")
+    markup = {**tricky, "id": "Z002", "input": {"text": "<<fim>> *x* _y_ `z` [w]"}}
+    markup_row = next(line for line in render([markup]).splitlines() if line.startswith("| Z002"))
+    check("\\<\\<fim\\>\\> \\*x\\* \\_y\\_ \\`z\\` \\[w\\]" in markup_row,
+          "234 AC-3 markup in a text is shown as written")
 
 
 def main() -> int:

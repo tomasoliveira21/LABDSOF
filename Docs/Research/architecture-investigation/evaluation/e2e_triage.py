@@ -16,10 +16,12 @@ from __future__ import annotations
 import argparse
 import contextlib
 import hashlib
+import http.server
 import io
 import json
 import math
 import re
+import socket
 import statistics
 import subprocess
 import sys
@@ -64,6 +66,8 @@ def outcome(row: dict) -> str:
     """Spec 234 D3: what the request reads after its deadline."""
     if row["http_status"] != 201:
         return "NotCreated"
+    if row["state"] is None:
+        return "Missing"  # created, but no triage row in the snapshot
     if row["state"] == "Pending" and row["not_triaged_reason"] is None:
         return "Timeout"  # derived on read 30 s after submission (decision 6 of 15 November 2026)
     return row["not_triaged_reason"] or row["state"]
@@ -113,6 +117,45 @@ def summarise(rows: list[dict], profile: dict = PROFILE) -> dict:
                                            if r["not_triaged_seen_ms"] is not None]),
         },
     }
+
+
+def record_poll(sent: dict[str, dict], order: list[str], items: list[dict], seen_at: float) -> None:
+    """One poll of the control room's list, timed when the list arrived (G8); NotTriaged counts with its reason."""
+    highest = -1
+    for item in (i for i in items if i["id"] in sent):
+        row, index = sent[item["id"]], order.index(item["id"])
+        row["out_of_order_polls"] += index < highest
+        highest = max(highest, index)
+        elapsed = round((seen_at - row["_sent"]) * 1000)
+        if row["first_seen_ms"] is None:
+            row["first_seen_ms"] = elapsed
+        triage = item["triage"] or {}
+        if triage.get("state") == "NotTriaged" and triage.get("notTriagedReason") and row["not_triaged_seen_ms"] is None:
+            row["not_triaged_seen_ms"] = elapsed
+
+
+def http_json(url: str, headers: dict, body: dict | None = None) -> tuple[int, dict | None]:
+    """(status, JSON body); a network failure or a body that is not JSON is status 0, so the run records it (G8)."""
+    req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None,
+                                 method="POST" if body is not None else "GET",
+                                 headers={**headers, "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as response:
+            return response.status, json.loads(response.read() or b"null")
+    except urllib.error.HTTPError as error:
+        return error.code, None
+    except (OSError, ValueError):  # URLError, timeouts and resets are OSError; a bad body is a ValueError
+        return 0, None
+
+
+def renew_due(tokens: dict[str, dict], token_call, now: float) -> None:
+    """Renews each token older than TOKEN_RENEW_S; a failure is printed and retried at the next tick (G8)."""
+    for email, held in list(tokens.items()):
+        if now - held["at"] > TOKEN_RENEW_S:
+            try:
+                tokens[email] = token_call({"grant_type": "refresh_token", "refresh_token": held["refresh_token"]})
+            except (OSError, ValueError, RuntimeError) as error:
+                print(f"token renewal for {email} failed, retrying: {error}", flush=True)
 
 
 def load_cases() -> list[dict]:
@@ -165,10 +208,7 @@ class Stack:
         """Renews each access token with its refresh token (no password hashing) well before its 300 s end."""
         def renew() -> None:
             while True:
-                for email, held in list(self.tokens.items()):
-                    if time.monotonic() - held["at"] > TOKEN_RENEW_S:
-                        self.tokens[email] = self._token_call({"grant_type": "refresh_token",
-                                                               "refresh_token": held["refresh_token"]})
+                renew_due(self.tokens, self._token_call, time.monotonic())
                 time.sleep(5)
         threading.Thread(target=renew, daemon=True).start()
 
@@ -188,15 +228,7 @@ class Stack:
         return [line.split("\t") for line in out.splitlines() if line.strip()]
 
     def call(self, path: str, email: str, body: dict | None = None) -> tuple[int, dict | None]:
-        data = json.dumps(body).encode() if body is not None else None
-        req = urllib.request.Request(self.gateway + path, data=data, method="POST" if body is not None else "GET",
-                                     headers={"Authorization": f"Bearer {self.token(email)}",
-                                              "Content-Type": "application/json"})
-        try:
-            with urllib.request.urlopen(req, timeout=15) as response:
-                return response.status, json.loads(response.read() or b"null")
-        except urllib.error.HTTPError as error:
-            return error.code, None
+        return http_json(self.gateway + path, {"Authorization": f"Bearer {self.token(email)}"}, body)
 
 
 def seed(stack: Stack, event: uuid.UUID, team: uuid.UUID) -> None:
@@ -233,19 +265,8 @@ def run(phase: str, out: Path, env_path: str, project: str, trial: bool = False)
             status_log.append({"t_s": round(now - t0, 1), "http_status": code, "available": state[0],
                                "reason": state[1]})
         code, listed = stack.call(f"{base}/help-requests", OPERATOR)
-        if code != 200 or not listed:
-            return
-        seen = [item for item in listed["items"] if item["id"] in sent]
-        highest = -1
-        for item in seen:
-            row, index = sent[item["id"]], order.index(item["id"])
-            row["out_of_order_polls"] += index < highest
-            highest = max(highest, index)
-            elapsed = round((now - row["_sent"]) * 1000)
-            if row["first_seen_ms"] is None:
-                row["first_seen_ms"] = elapsed
-            if (item["triage"] or {}).get("state") == "NotTriaged" and row["not_triaged_seen_ms"] is None:
-                row["not_triaged_seen_ms"] = elapsed
+        if code == 200 and listed:
+            record_poll(sent, order, listed["items"], time.monotonic())
 
     def wait_until(moment: float) -> None:
         while time.monotonic() < moment:
@@ -261,7 +282,7 @@ def run(phase: str, out: Path, env_path: str, project: str, trial: bool = False)
             "clientRequestId": str(uuid.uuid4()), "description": case["input"]["text"],
             "location": {"mapVersion": 1, "x": 0.5, "y": 0.5}})
         row = {"case": case["id"], "abstain_expected": case["expected"]["abstain"], "account": account.split("@")[0],
-               "slot_s": i * PROFILE["interval_s"], "http_status": code, "submit_ms": round((time.monotonic() - start) * 1000),
+               "slot_s": i * PROFILE["interval_s"], "sent_s": round(start - t0, 1), "http_status": code, "submit_ms": round((time.monotonic() - start) * 1000),
                "request_id": (body or {}).get("id"), "submitted_at": None, "stored_at": None, "state": None,
                "not_triaged_reason": None, "suggested_category": None, "suggested_priority": None, "e2e_ms": None,
                "worker_ms": None, "first_seen_ms": None, "not_triaged_seen_ms": None, "out_of_order_polls": 0,
@@ -313,6 +334,8 @@ def verify(run_dir: Path) -> None:
           and re.fullmatch(r"[0-9a-f]{40}", manifest.get("driver_commit", "")) is not None,
           "234 AC-1 the manifest hashes the case file and names the driver commit")
     ids = [c["id"] for c in load_cases()]
+    in_folder = {path.name.removesuffix("-requests.jsonl") for path in run_dir.glob("*-requests.jsonl")}
+    check(in_folder <= set(manifest.get("results", {})), "234 AC-2 every run in the folder is in the manifest")
     for phase, recorded in manifest.get("results", {}).items():
         rows = read_jsonl(run_dir / f"{phase}-requests.jsonl")
         check([r["case"] for r in rows] == ids, f"234 AC-2 the rows hold one line per holdout case ({phase})")
@@ -357,6 +380,44 @@ def self_test() -> None:
           and not summarise([*ok, row("z", **{**fallback, "out_of_order_polls": 1})])["sc5"]["pass"]
           and not summarise([*ok, row("w", **{**fallback, "not_triaged_seen_ms": None})])["sc5"]["pass"],
           "234 AC-2 SC5 passes only when every request is shown and NotTriaged in time")
+    check(outcome(row("M", state=None, e2e_ms=None)) == "Missing"
+          and summarise([row("A"), row("M", state=None, e2e_ms=None)])["outcomes"] == {"Missing": 1, "Suggested": 1},
+          "234 AC-2 a created request with no triage row counts as Missing")
+    # G8: the view time is taken after the list arrived, and NotTriaged counts only with its reason
+    polled = {"r1": {**row("A", first_seen_ms=None), "_sent": 10.0},
+              "r2": {**row("B", first_seen_ms=None), "_sent": 11.0}}
+    items = [{"id": "r1", "triage": {"state": "NotTriaged", "notTriagedReason": None}},
+             {"id": "r2", "triage": {"state": "NotTriaged", "notTriagedReason": "ProviderError"}}]
+    record_poll(polled, ["r1", "r2"], items, 12.5)
+    record_poll(polled, ["r1", "r2"], list(reversed(items)), 13.0)
+    check(polled["r1"]["first_seen_ms"] == 2500 and polled["r2"]["first_seen_ms"] == 1500
+          and polled["r1"]["not_triaged_seen_ms"] is None and polled["r2"]["not_triaged_seen_ms"] == 1500
+          and polled["r1"]["out_of_order_polls"] == 1 and polled["r2"]["out_of_order_polls"] == 0,
+          "234 AC-2 the operator's view is timed when the list arrives, NotTriaged only with a reason")
+    # G8: a network failure or a body that is not JSON is a result (status 0), never the end of a 36-minute run
+    stub = http.server.HTTPServer(("127.0.0.1", 0), type("Stub", (http.server.BaseHTTPRequestHandler,), {
+        "log_message": lambda self, *_: None,
+        "do_GET": lambda self: (self.send_response(200), self.send_header("Content-Length", "3"), self.end_headers(),
+                                self.wfile.write(b"no!"))}))
+    threading.Thread(target=stub.handle_request, daemon=True).start()
+    closed = socket.socket()
+    closed.bind(("127.0.0.1", 0))
+    refused_port = closed.getsockname()[1]
+    closed.close()
+    check(http_json(f"http://127.0.0.1:{refused_port}/", {}) == (0, None)
+          and http_json(f"http://127.0.0.1:{stub.server_address[1]}/", {}) == (0, None),
+          "234 AC-2 a network error or a body that is not JSON is recorded, not raised")
+    stub.server_close()
+    tokens = {"a": {"at": 0.0, "access_token": "old", "refresh_token": "r"}}
+
+    def refused(_form: dict) -> dict:
+        raise RuntimeError("token endpoint answered 503")
+
+    with contextlib.redirect_stdout(io.StringIO()):
+        renew_due(tokens, refused, 1000.0)
+    renew_due(tokens, lambda form: {"at": 1000.0, "access_token": "new", "refresh_token": form["refresh_token"]},
+              1000.0)
+    check(tokens["a"]["access_token"] == "new", "234 AC-2 a failed token renewal is retried, not fatal")
     # --verify on a temporary run directory, complete and then with one thing changed at a time
     rows = [row(c["id"]) for c in load_cases()]
     summary = summarise(rows)
@@ -386,6 +447,8 @@ def self_test() -> None:
     check(failed({**manifest, "profile": {**PROFILE, "interval_s": 1}}, rows, summary)
           == {"234 AC-1 the manifest pre-registers the profile and the pass rules"},
           "234 AC-1 the manifest pre-registers the profile and the pass rules")
+    check(failed({**manifest, "results": {}}, rows, summary) == {"234 AC-2 every run in the folder is in the manifest"},
+          "234 AC-2 every run in the folder is in the manifest")
     hashes = "234 AC-1 the manifest hashes the case file and names the driver commit"
     check(failed({**manifest, "package_sha256": {CASES: "0" * 64}}, rows, summary) == {hashes}
           and failed({**manifest, "driver_commit": ""}, rows, summary) == {hashes}, hashes)
