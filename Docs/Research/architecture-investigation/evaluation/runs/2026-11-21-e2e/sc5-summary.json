@@ -1,0 +1,48 @@
+{
+  "requests": 72,
+  "created": 72,
+  "sc3": {
+    "valid_on_time_non_abstention": 0,
+    "non_abstention_cases": 66,
+    "valid_on_time_rate": 0.0,
+    "valid_on_time_all": 0,
+    "valid_on_time_rate_all": 0.0,
+    "pass": false,
+    "suggestion_e2e_ms": {
+      "n": 0,
+      "p50": null,
+      "p95_nearest_rank": null,
+      "max": null
+    },
+    "worker_ms": {
+      "n": 72,
+      "p50": 1317.0,
+      "p95_nearest_rank": 1388,
+      "max": 1816
+    },
+    "expected_abstentions_abstained": 0,
+    "expected_abstentions": 6
+  },
+  "outcomes": {
+    "ProviderError": 38,
+    "Unavailable": 34
+  },
+  "sc5": {
+    "shown": 72,
+    "not_triaged_in_time": 72,
+    "out_of_order_polls": 0,
+    "pass": true,
+    "first_seen_ms": {
+      "n": 72,
+      "p50": 51.5,
+      "p95_nearest_rank": 96,
+      "max": 1266
+    },
+    "not_triaged_seen_ms": {
+      "n": 72,
+      "p50": 2059.0,
+      "p95_nearest_rank": 2105,
+      "max": 4090
+    }
+  }
+}
