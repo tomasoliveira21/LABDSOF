@@ -28,6 +28,8 @@ public abstract class IntegrationTest {
   @Autowired protected JdbcClient jdbc;
   @Autowired protected LocalCopies copies;
 
+  protected static final Jwks JWKS = Infrastructure.JWKS;
+
   /** The JSON log lines written so far (other lines, such as the banner, are skipped). */
   @SuppressWarnings("unchecked")
   protected static List<Map<String, Object>> logLines(CapturedOutput output) {

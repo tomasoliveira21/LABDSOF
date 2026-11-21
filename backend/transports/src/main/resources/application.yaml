@@ -44,6 +44,14 @@ spring:
           initial-interval: 1s
           multiplier: 2
           max-interval: 4s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # ADR-006: public issuer checked against iss, keys from Keycloak's internal address, audience farol-api
+          issuer-uri: ${FAROL_ISSUER_URI}
+          jwk-set-uri: ${FAROL_JWKS_URI}
+          audiences: farol-api
 
 logging:
   structured:

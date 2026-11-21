@@ -42,6 +42,8 @@ public final class Infrastructure {
           MountableFile.forHostPath(REPOSITORY.resolve("infra/rabbitmq/topology.json")),
           "/etc/farol/topology.json");
 
+  public static final Jwks JWKS = new Jwks();
+
   static {
     POSTGRES.start();
     RABBIT.start();
@@ -60,6 +62,8 @@ public final class Infrastructure {
     properties.put("spring.rabbitmq.port", RABBIT.getAmqpPort());
     properties.put("spring.rabbitmq.username", "transports");
     properties.put("spring.rabbitmq.password", TRANSPORTS_AMQP_PASSWORD);
+    properties.put("spring.security.oauth2.resourceserver.jwt.issuer-uri", Jwks.ISSUER);
+    properties.put("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", JWKS.uri());
     // Short backoff keeps the retry tests fast; production values are in application.yaml
     properties.put("spring.rabbitmq.listener.simple.retry.initial-interval", "50ms");
     properties.put("spring.rabbitmq.listener.simple.retry.max-interval", "200ms");
