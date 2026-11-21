@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "../farol/icon";
+import MembershipList from "./MembershipList";
 import { apiFetch, initializeSession, login, logout, onSessionEnd } from "./client";
 import type { Account } from "./client";
 import "./session.css";
@@ -75,6 +76,7 @@ export default function WebApp() {
         <section className="member-card">
           <h1>{staff ? "Área da equipa" : "Área do participante"}</h1>
           <p>Sessão iniciada como <strong>{account.displayName}</strong>.</p>
+          <MembershipList key={account.userId}/>
           {error && <p role="alert">{error}</p>}
         </section>
       </> : <section className="member-card">

@@ -10,3 +10,8 @@
 .member-app button { padding: .6rem 1rem; border-radius: .5rem; min-height: 44px; cursor: pointer; }
 .member-primary { background: #122d49; color: white; border: 0; }
 .member-card [role="alert"] { color: #96292b; }
+.member-events { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #cfdae4; }
+.member-events h2 { font-size: 1.25rem; }
+.member-event-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.member-event-list li { background: #f0f4f7; border-radius: .5rem; padding: .8rem; overflow-wrap: anywhere; }
+.member-event-list span { display: block; font-size: .9rem; margin-top: .25rem; color: #35546f; }
