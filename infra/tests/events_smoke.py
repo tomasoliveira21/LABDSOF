@@ -3,12 +3,13 @@
 Checks, through the API gateway, that Events validates real Keycloak tokens (ADR-006) and hides events from users
 who are not members: no token and a tampered token get 401 Problem Details; Rita's real token is accepted and gets
 404 for an event she is not a member of, and so does the bootstrap FarolAdmin, who is not a member either (same
-problem); a malformed id gets 400; an operation of a later story gets 501; the X-Correlation-Id comes back. Then it
+problem), including on the teams of US-16; a malformed id gets 400; an operation of a later story gets 501; the
+X-Correlation-Id comes back. Then it
 checks inside the stack that the `events` schema comes from Flyway and that Events consumes its queue as the
 `events` broker user.
 
-The smoke writes nothing: no use case creates an event or a membership before US-06 and #191, so every event id is
-unknown and a rerun gives the same result.
+The smoke writes nothing: no use case creates an event before US-06, so every event id is unknown, the team
+operations of US-16 and US-17 cannot be reached past that 404, and a rerun gives the same result.
 
 Standard library only; reuses the PKCE login of identity_smoke.py and `docker compose exec` for psql and
 rabbitmqctl. Values come from the Compose env file; the compose project is optional:
@@ -178,10 +179,16 @@ def main(env_path: str, project: str | None = None) -> int:
               "GET /api/v1/events/not-a-uuid with a valid token gets 400 Problem Details"
               + ("" if status == 400 else f" (got {status})"))
 
+    # US-16 and US-17 serve the teams of an event, so this path now hides an event Rita is not a member of
     status, headers, body = call(gateway, f"/api/v1/events/{uuid.uuid4()}/teams", rita)
-    idp.check(is_problem(status, headers, body, 501) and "US-16" in str(problem(body).get("detail", "")),
-              "an operation of a later story (GET /api/v1/events/{id}/teams) gets 501 Problem Details naming US-16"
-              + ("" if status == 501 else f" (got {status})"))
+    idp.check(is_problem(status, headers, body, 404) and problem(body).get("detail") == NOT_FOUND,
+              "GET /api/v1/events/{id}/teams of an event Rita is not a member of gets the same 404 (US-16)"
+              + ("" if status == 404 else f" (got {status})"))
+
+    status, headers, body = call(gateway, f"/api/v1/events/{uuid.uuid4()}/map-versions/current", rita)
+    idp.check(is_problem(status, headers, body, 501) and "US-21" in str(problem(body).get("detail", "")),
+              "an operation of a later story (GET /api/v1/events/{id}/map-versions/current) gets 501 Problem "
+              "Details naming its story" + ("" if status == 501 else f" (got {status})"))
 
     ok, out = psql(env_path, env, project,
                    "SELECT count(*) FROM flyway_schema_history WHERE version = '1' AND success")
