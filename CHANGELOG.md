@@ -17,9 +17,10 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `infra/tests/events_smoke.py` takes its `501` check to `GET …/map-versions/current`, because the team paths now answer.
 
 ### Notes
-- **Several teams may handle the same help category, and several may review the same report type: this PR does not refuse it.** *Which team is the default when two teams handle the same category* is an open product decision (domain model); Reports picks the default team from `TeamChanged` and answers `defaultTeamId: null` when no team handles the category. For the Product Owner.
+- **Several teams may handle the same help category, and several may review the same report type: this PR does not refuse it** (**confirmed on 21 November 2026**). *Which team is the default when two teams handle the same category* stays an open product decision (domain model), where it belongs: Reports picks the default team from `TeamChanged` and answers `defaultTeamId: null` when no team handles the category.
+- **The seven report type codes are confirmed** (`QueueAtEntrance`, `CrowdedArea`, `WcProblem`, `NoWater`, `Hazard`, `TransportProblem`, `WrongInformation`) and written into [`features.md` §6.1](Docs/Product/features.md#61-what-can-be-reported), which had labels only; they were Events' proposal since #192 D6. `openapi.yaml` and `team.changed.schema.json` no longer call them a proposal, and the report stories (US-47 onwards) use the same list. Decided on 21 November 2026, to be noted in the next meeting record.
 - AC-3 (*the team becomes the default for the categories it handles*) is met in Events by storing and publishing the categories; the routing itself is US-29 (#76) in Reports.
-- Sending the same set twice is recorded twice, each with a new version: every call is an EventAdmin's decision and AC-4 asks for it to be recorded.
+- Sending the same set twice is recorded twice, each with a new version: every call is an EventAdmin's decision and AC-4 asks for it to be recorded (confirmed on 21 November 2026, over skipping a no-op).
 
 ## [Unreleased] · 2026-11-21 · Teams of an event (US-16, #65, Tiago Teixeira)
 

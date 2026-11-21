@@ -9,9 +9,8 @@ info:
     and US-17 their permissions, the other operations answer 501 until their stories (US-06, US-11,
     US-19, US-20, US-21, US-27). The members of an event are served by Auth & Users (ADR-013). Every /api/v1 call needs
     a valid access token issued by Keycloak to the web app (audience farol-api); /api/v1/status is
-    the only diagnostic exception. The point type codes are proposed until US-20, and the report type
-    codes, which US-17 now stores and publishes, are still Events' proposal (#192 D6): the report
-    stories (US-47 onwards, Reports) have to use the same list.
+    the only diagnostic exception. The point type codes are proposed until US-20; the report type codes
+    are confirmed (features.md §6.1, 21 November 2026) and the report stories use the same list.
 servers:
   - url: /
 tags:
