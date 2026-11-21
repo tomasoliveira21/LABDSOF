@@ -14,8 +14,8 @@ The first four are the issue's. AC-5 to AC-7 make its scope boxes "RabbitMQ wiri
 | AC-3 | Given the CI pipeline, when it runs, then the service is built, tested (gates of the [README](README.md)) and started in the Compose smoke test | CI *Build and test every module*, smoke steps |
 | AC-4 | Given `contracts/openapi.yaml`, then it holds the Sprint B endpoints of API outline §5 (D6), the service serves exactly those paths, and each operation of a later story answers `501` naming it | `193 AC-4 …` in `ContractIT`; smoke (`501` naming US-41) |
 | AC-5 | Given `MembershipChanged`, `EventChanged` or `TeamChanged` in `transports.auth-users-events` or `transports.events-events`, then the copy is upserted by version; duplicates (`messageId`) and older versions change nothing; an invalid message goes to its dead-letter queue with the reason; `PointOfInterestChanged`, `UserStatusChanged` and `UserDeleted` are acknowledged and logged | `193 AC-5 …` in `MembershipTest`, `EventCopyTest`, `TeamTest`, `LocalCopyServiceTest`, `LocalCopiesIT`, `ConsumedContractIT`; smoke (both queues consumed as `transports`) |
-| AC-6 | Given the source URL (WireMock in Compose), when the scheduled job runs, then it sends the geo-query of ADR-008 with the J1 timeouts and records one attempt: `Succeeded` with the vehicle count, `Unavailable` (timeout, connection error, HTTP error) or `Invalid` (the answer is not a list of NGSI entities) | `193 AC-6 …` in `SourceImportTest`, `SourceImportServiceTest`, `PortoDigitalSourceTest`, `SourceImportJobTest`, `SourceImportIT`; smoke (a `Succeeded` import) |
-| AC-7 | Every request, consumed message and import run carries a correlation id in the structured logs; no token, e-mail or name is logged (M-10) | `193 AC-7 …` in `CorrelationIdFilterTest`, `LoggingIT`, `LocalCopiesIT`, `SourceImportJobTest` |
+| AC-6 | Given the source URL (WireMock in Compose), when the scheduled job runs, then it sends the geo-query of ADR-008 with the J1 timeouts and records one attempt: `Succeeded` with the vehicle count, `Unavailable` (timeout, connection error, HTTP error) or `Invalid` (the answer is not a list of NGSI entities) | `193 AC-6 …` in `SourceImportTest`, `SourceImportServiceTest`, `PortoDigitalSourceTest`, `PortoDigitalSourceIT`, `SourceImportJobTest`, `SourceImportIT`; smoke (a `Succeeded` import) |
+| AC-7 | Every request and import run carries a correlation id in the structured logs, and a consumed message the one it was sent with (its AMQP `correlationId`, D9); no token, e-mail or name is logged (M-10) | `193 AC-7 …` in `CorrelationIdFilterTest`, `LoggingIT`, `LocalCopiesIT`, `SourceImportJobTest` |
 
 ## 2. Decisions
 
@@ -61,15 +61,16 @@ The first four are the issue's. AC-5 to AC-7 make its scope boxes "RabbitMQ wiri
 | Token cases (as #191 §4) | `401` Problem Details | `SecurityIT` |
 | Operations of later stories | `501` naming the story with a token, `401` without | `ContractIT`, `SecurityIT` |
 | Malformed event id | `400` before the `501` | `ContractIT` |
-| The coordinates written differently, a `404` from the source | `Unavailable` with `HTTP 404`, never `Succeeded` | `PortoDigitalSourceTest`, `SourceImportIT` |
-| No bus near the venue (`[]`) | `Succeeded` with 0 vehicles | `SourceImportIT` |
-| `503`, a dropped connection, an answer slower than the timeout | `Unavailable` | `SourceImportIT` |
-| `200` with `{}`, HTML, `[1]`, an entity without `id`, truncated JSON | `Invalid` with the reason | `SourceImportIT` |
+| The coordinates written differently, a `404` from the source | `Unavailable` with `HTTP 404`, never `Succeeded` | `PortoDigitalSourceTest`, `PortoDigitalSourceIT` |
+| No bus near the venue (`[]`) | `Succeeded` with 0 vehicles | `PortoDigitalSourceTest`, `PortoDigitalSourceIT` |
+| `503`, a dropped connection, an answer slower than the timeout, nothing listening | `Unavailable` | `PortoDigitalSourceIT`; a `503` recorded in the database: `SourceImportIT` |
+| An unresolved host (WireMock stopped) | `Unavailable` with the exception's name alone, never `Class: null` | `PortoDigitalSourceTest` |
+| `200` with `{}`, HTML, `[1]`, an entity without `id`, truncated JSON | `Invalid` with the reason | `PortoDigitalSourceTest`, `PortoDigitalSourceIT` |
 | An error with NUL or longer than 500 characters | Stored without NUL, cut to 500 | `SourceImportTest` |
 | A run that throws (database down) | Logged; the next run still happens | `SourceImportJobTest` |
 | Job switched on without a source URL | Start-up fails, naming the property | `SourceImportIT`, `PortoDigitalSourceTest` |
 | Job switched on with a URL that is not an absolute http or https URL (`wiremock:8080`, `ftp://…`, `http://`) | Start-up fails, naming the property | `PortoDigitalSourceTest` |
-| Stack left running for days | WireMock's journal stays at 1000 requests | `ComposeConfigTest` |
+| Stack left running for days | WireMock's journal stays at 1000 requests | `ComposeConfigIT` |
 | Token, e-mail or name in the logs | Never | `LoggingIT` |
 
 ## 5. Handoff and changelog
@@ -93,11 +94,10 @@ The first four are the issue's. AC-5 to AC-7 make its scope boxes "RabbitMQ wiri
   - the contract is OpenAPI 3.0.3, as Events', and `stopPoiIds` has no `uniqueItems` (unique stops are a rule of US-37 and US-41);
   - the HTTP outcomes of the source are tested on the adapter itself against the simulator (`PortoDigitalSourceIT`); `SourceImportIT` tests the job and its record;
   - the job, not the use case, logs each read (outcome, count, duration, reason).
-- **21 Nov 2026 · final whole-branch review** (fresh reviewer, Opus): no critical finding; verdict "with fixes". Fixed, each with a test written first: WireMock's request journal is capped at 1000 entries in Compose (it kept every request, about 30 MB a day against its 256 MB); a source URL that is not an absolute http or https URL now fails start-up (`wiremock:8080` used to start, then log an error every 30 s and record nothing). The reviewer's minor points are listed in the pull request.
+- **21 Nov 2026 · final whole-branch review** (fresh reviewer, Opus): no critical finding; verdict "with fixes". Fixed, each with a test written first: WireMock's request journal is capped at 1000 entries in Compose (it kept every request, about 30 MB a day against its 256 MB); a source URL that is not an absolute http or https URL now fails start-up (`wiremock:8080` used to start, then log an error every 30 s and record nothing). Before the pull request, the reviewer's minor points were fixed too: the test names in §1 and §4, the AC-7 wording (a consumed message keeps the correlation id it was sent with), a reason without `: null`, the accepted-token check now requiring the `501`, `SourceImportIT` waiting for the read at start-up before any test (it relied on the test order), the job's log level tested, `WIREMOCK_PORT` in `infra/.env.example`, CI checking that WireMock is hardened and unprivileged and that Transports does not wait for it, the consumed schemas copied with the producers' formatting, and the unused `interval` property field removed. Left for later: a redirect is recorded as `Invalid` (US-40 redefines the outcomes) and the HTTP client is not built with Boot's builder (with #231, open point 1). Final `mvn clean verify` after these fixes (JDK 21): 121 unit and 199 integration tests, JaCoCo 99.6 % lines (473/475) and 100 % branches (170/170), PIT 48/48 killed; every check step of `ci.yml` green on a fresh local stack, the new WireMock checks included. The Compose check is an `*IT` (`ComposeConfigIT`): the image build has only this module, so a unit test that reads `infra/compose.yaml` broke it, which the local run caught.
 - **For US-40 (#84):** `source_import` is where the reads are; the job, the adapter and its timeouts exist. US-40 adds storing `bus_vehicle` and `bus_observation`, the validation rules (rejecting an import as a whole), the freshness limit and the retry and circuit breaker of J1, and may turn `Invalid` into the validation outcome. The WireMock stubs and `WireMockAdmin` (tests) cause each failure.
 - **For US-41 (#85):** the membership, event and team copies are filled; `Membership.isActive()`, `EventCopy.isSuspended()` and `Team.grants(Permission.TRANSPORT_EDIT)` are what the endpoints decide with. The `501` of `getBusObservations` and `createTransportOption` names this story.
 - **Open points for the team:**
-  - (1) PR #231 (#148) was still open: when it is merged, Transports takes its management-port security chain and the `*spring-env` anchor in Compose (D12).
-  - (2) A reason whose exception has no message is recorded as `Class: null` (seen with `UnresolvedAddressException` when WireMock is stopped).
-  - (3) Events still has the `ProblemDetailsAdvice` and `CorrelationIdFilter` from before the review of PR 215 (see the deviations).
-  - (4) WireMock's proxy mode to the real Porto Digital API (guide J4) is not configured.
+  - (1) PR #231 (#148) was still open: when it is merged, Transports takes its management-port security chain and the `*spring-env` anchor in Compose (D12), and builds its HTTP client with Boot's `RestClient.Builder` so its calls are measured.
+  - (2) Events still has the `ProblemDetailsAdvice` and `CorrelationIdFilter` from before the review of PR 215 (see the deviations).
+  - (3) WireMock's proxy mode to the real Porto Digital API (guide J4) is not configured.

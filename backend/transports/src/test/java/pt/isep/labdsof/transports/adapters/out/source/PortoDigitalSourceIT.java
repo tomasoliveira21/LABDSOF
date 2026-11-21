@@ -26,8 +26,7 @@ class PortoDigitalSourceIT {
   private final List<String> stubs = new ArrayList<>();
 
   private static PortoDigitalSource source(String url, String coords, Duration readTimeout) {
-    return new PortoDigitalSource(new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(30),
-        Duration.ofSeconds(3), readTimeout), JsonMapper.builder().build());
+    return new PortoDigitalSource(new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(3), readTimeout), JsonMapper.builder().build());
   }
 
   private static PortoDigitalSource source() {

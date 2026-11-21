@@ -55,7 +55,7 @@ public class DeadLetters implements MessageRecoverer {
     }
   }
 
-  /** The root cause as "Class: message", at most 500 characters (dead letters and outbox last_error). */
+  /** The root cause as "Class: message", at most 500 characters (the x-farol-error header). */
   public static String describe(Throwable e) {
     var cause = NestedExceptionUtils.getMostSpecificCause(e);
     var text = cause.getClass().getSimpleName() + ": " + cause.getMessage();

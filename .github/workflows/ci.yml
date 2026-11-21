@@ -47,7 +47,8 @@ jobs:
           waiting = sorted(name for name in ("gateway", "auth-users", "events", "reports", "transports", "badges")
                            if {"rabbitmq", "rabbitmq-setup"} & set(services[name].get("depends_on", {})))
           assert not waiting, f"these services wait for the broker: {waiting}"
-          print("frontend waits for rabbitmq-setup; no backend service waits for the broker")'
+          assert "wiremock" not in services["transports"].get("depends_on", {}), "transports must not wait for wiremock (#193 D8)"
+          print("frontend waits for rabbitmq-setup; no backend service waits for the broker; transports does not wait for wiremock")'
       # Each service image reads its dependencies from its own Maven cache, `farol-maven-<service>` (#219). Fill them
       # with the repository the step above has just filled, so the images download nothing from Maven Central: all
       # at once, they were refused with 429 Too Many Requests (16 and 17 Nov 2026). The cache ids are read from the
@@ -154,10 +155,11 @@ jobs:
           done
           test "$(docker port "$($compose ps -q keycloak)")" = "8080/tcp -> 127.0.0.1:8180" || { echo "::error::Keycloak must publish only 127.0.0.1:8180"; exit 1; }
           test -z "$(docker port "$($compose ps -q postgres)")" || { echo "::error::PostgreSQL is published"; exit 1; }
-          for service in postgres keycloak; do
+          for service in postgres keycloak wiremock; do
             settings=$(docker inspect "$($compose ps -q "$service")" --format '{{.HostConfig.ReadonlyRootfs}} {{.HostConfig.CapDrop}} {{.HostConfig.SecurityOpt}}')
             test "$settings" = "true [ALL] [no-new-privileges:true]" || { echo "::error::$service hardening: $settings"; exit 1; }
           done
+          test "$(docker inspect "$($compose ps -q wiremock)" --format '{{.Config.User}}')" = "10001:10001" || { echo "::error::WireMock must run as 10001:10001, not root (#193)"; exit 1; }
       - name: Check each service status through the gateway
         shell: bash
         run: |

@@ -33,9 +33,9 @@ class SecurityIT extends IntegrationTest {
         challenge -> assertThat(challenge).startsWith("Bearer"));
   }
 
-  /** The token passed the security layer: whatever the operation answers, it is not a refusal of the token. */
+  /** The token passed the security layer and reached the operation, which answers the 501 of its story (D6). */
   static void assertAccepted(HttpResponse<String> response) {
-    assertThat(response.statusCode()).isNotIn(401, 403);
+    ApiClient.assertProblem(response, 501);
   }
 
   private static String busObservations() {

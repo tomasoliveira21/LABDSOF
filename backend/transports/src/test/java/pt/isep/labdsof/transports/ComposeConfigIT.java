@@ -9,8 +9,11 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** What infra/compose.yaml must keep for Transports and its simulator (spec D8); reads the file, starts nothing. */
-class ComposeConfigTest {
+/**
+ * What infra/compose.yaml must keep for Transports and its simulator (spec D8). Reads the file and starts nothing; an *IT
+ * because the image build has only this module, not infra/ (#214 D17).
+ */
+class ComposeConfigIT {
 
   private static final Path COMPOSE = Path.of("../../infra/compose.yaml");
 

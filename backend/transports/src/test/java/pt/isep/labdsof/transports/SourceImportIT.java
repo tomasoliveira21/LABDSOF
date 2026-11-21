@@ -32,6 +32,15 @@ class SourceImportIT {
         "farol.transport.source.enabled", "true",
         "farol.transport.source.url", Infrastructure.wiremockUrl(),
         "farol.transport.source.interval", "1h"));
+    // The read at start-up runs on the scheduler's thread: wait for it here, so no test's stub can reach it
+    await().atMost(Duration.ofSeconds(20)).until(() -> startUpReads() >= 1);
+  }
+
+  private static long startUpReads() {
+    return jdbc().sql("""
+        SELECT count(*) FROM source_import
+        WHERE started_at >= :started AND outcome = 'Succeeded' AND vehicle_count BETWEEN 2 AND 13
+        """).param("started", java.sql.Timestamp.from(started)).query(Long.class).single();
   }
 
   @AfterAll
@@ -46,11 +55,7 @@ class SourceImportIT {
   @Test
   @DisplayName("193 AC-6 the job reads the recorded buses through WireMock at start-up and records Succeeded")
   void theJobRunsAtStartUp() {
-    await().atMost(Duration.ofSeconds(20)).until(() -> jdbc().sql("""
-        SELECT count(*) FROM source_import
-        WHERE started_at >= :started AND outcome = 'Succeeded' AND vehicle_count BETWEEN 2 AND 13
-        """).param("started", java.sql.Timestamp.from(started)).query(Long.class).single() >= 1);
-
+    assertThat(startUpReads()).isOne();
     assertThat(WIREMOCK.requestedUrls()).contains(WireMockAdmin.GEO_QUERY);
   }
 

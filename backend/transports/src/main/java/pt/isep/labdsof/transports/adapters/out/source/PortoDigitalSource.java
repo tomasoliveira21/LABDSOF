@@ -86,9 +86,13 @@ class PortoDigitalSource implements TransportSource {
     }
   }
 
-  /** The root cause as "Class: message" (the reason is cut to 500 characters when it is recorded). */
-  private static String describe(Exception e) {
+  /**
+   * The root cause as "Class: message", or "Class" alone when it has no message (an unresolved host has none); the
+   * reason is cut to 500 characters when it is recorded.
+   */
+  static String describe(Exception e) {
     var cause = NestedExceptionUtils.getMostSpecificCause(e);
-    return cause.getClass().getSimpleName() + ": " + cause.getMessage();
+    var name = cause.getClass().getSimpleName();
+    return cause.getMessage() == null ? name : name + ": " + cause.getMessage();
   }
 }

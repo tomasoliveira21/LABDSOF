@@ -3,80 +3,31 @@
   "$id": "event.changed.schema.json",
   "title": "EventChanged, as Transports reads it",
   "description": "Published by Events (farol.events, routing key event.changed), consumed from transports.events-events into the event copy (spec #193 D3). Copied from the producer's contract (backend/events/contracts/events); Transports stores only status and version and ignores the other fields.",
-  "allOf": [
-    {
-      "$ref": "../envelope.schema.json"
-    }
-  ],
+  "allOf": [{ "$ref": "../envelope.schema.json" }],
   "properties": {
-    "type": {
-      "const": "EventChanged"
-    },
-    "schemaVersion": {
-      "const": 1
-    },
-    "producer": {
-      "const": "events"
-    },
-    "eventId": {
-      "type": "string",
-      "format": "uuid",
-      "description": "Every Events event belongs to a Farol event (ADR-003)"
-    },
+    "type": { "const": "EventChanged" },
+    "schemaVersion": { "const": 1 },
+    "producer": { "const": "events" },
+    "eventId": { "type": "string", "format": "uuid", "description": "Every Events event belongs to a Farol event (ADR-003)" },
     "payload": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "name",
-        "organiserName",
-        "dates",
-        "status",
-        "version"
-      ],
+      "required": ["name", "organiserName", "dates", "status", "version"],
       "properties": {
-        "name": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 100,
-          "pattern": "\\S"
-        },
-        "organiserName": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 100,
-          "pattern": "\\S"
-        },
+        "name": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "\\S" },
+        "organiserName": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "\\S" },
         "dates": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "start",
-            "end"
-          ],
+          "required": ["start", "end"],
           "description": "Local dates in Europe/Lisbon; end is never before start (spec D4)",
           "properties": {
-            "start": {
-              "type": "string",
-              "format": "date"
-            },
-            "end": {
-              "type": "string",
-              "format": "date"
-            }
+            "start": { "type": "string", "format": "date" },
+            "end": { "type": "string", "format": "date" }
           }
         },
-        "status": {
-          "enum": [
-            "Draft",
-            "Published",
-            "Suspended",
-            "Closed"
-          ]
-        },
-        "version": {
-          "type": "integer",
-          "minimum": 1
-        }
+        "status": { "enum": ["Draft", "Published", "Suspended", "Closed"] },
+        "version": { "type": "integer", "minimum": 1 }
       }
     }
   }

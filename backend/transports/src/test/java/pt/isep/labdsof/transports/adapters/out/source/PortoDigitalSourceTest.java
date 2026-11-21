@@ -64,6 +64,15 @@ class PortoDigitalSourceTest {
   }
 
   @Test
+  @DisplayName("193 AC-6 a reason names the root cause and its message, and leaves out a message it does not have")
+  void reasonNamesTheRootCause() {
+    assertThat(PortoDigitalSource.describe(new IllegalStateException("outer",
+        new java.nio.channels.UnresolvedAddressException()))).isEqualTo("UnresolvedAddressException");
+    assertThat(PortoDigitalSource.describe(new IllegalStateException("outer",
+        new java.io.IOException("Connection refused")))).isEqualTo("IOException: Connection refused");
+  }
+
+  @Test
   @DisplayName("193 AC-6 an empty body is an invalid reading")
   void emptyBodyIsInvalid() {
     assertThat(PortoDigitalSource.parse(null, JSON)).isEqualTo(SourceReading.invalid("empty body"));
@@ -76,7 +85,7 @@ class PortoDigitalSourceTest {
   @DisplayName("193 D5 the job cannot be switched on with a source URL that is not an absolute http or https URL")
   void malformedUrlIsRefused(String url) {
     assertThatThrownBy(() -> new TransportSourceProperties(true, url, "41.1724,-8.6841", 2000,
-        Duration.ofSeconds(30), Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        Duration.ofSeconds(3), Duration.ofSeconds(5)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("farol.transport.source.url must be an absolute http or https URL");
   }
@@ -85,20 +94,18 @@ class PortoDigitalSourceTest {
   @CsvSource({"http://wiremock:8080", "https://broker.fiware.urbanplatform.portodigital.pt", "HTTP://127.0.0.1:8090/"})
   @DisplayName("193 D5 an absolute http or https source URL is accepted")
   void httpUrlIsAccepted(String url) {
-    assertThat(new TransportSourceProperties(true, url, "41.1724,-8.6841", 2000, Duration.ofSeconds(30),
-        Duration.ofSeconds(3), Duration.ofSeconds(5)).url()).isEqualTo(url);
+    assertThat(new TransportSourceProperties(true, url, "41.1724,-8.6841", 2000, Duration.ofSeconds(3), Duration.ofSeconds(5)).url()).isEqualTo(url);
   }
 
   @Test
   @DisplayName("193 D5 the job cannot be switched on without a source URL")
   void urlIsRequiredWhenEnabled() {
     assertThatThrownBy(() -> new TransportSourceProperties(true, " ", "41.1724,-8.6841", 2000,
-        Duration.ofSeconds(30), Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        Duration.ofSeconds(3), Duration.ofSeconds(5)))
         .isInstanceOf(IllegalArgumentException.class).hasMessage("farol.transport.source.url is required");
     assertThatThrownBy(() -> new TransportSourceProperties(true, null, "41.1724,-8.6841", 2000,
-        Duration.ofSeconds(30), Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        Duration.ofSeconds(3), Duration.ofSeconds(5)))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThat(new TransportSourceProperties(false, null, "41.1724,-8.6841", 2000, Duration.ofSeconds(30),
-        Duration.ofSeconds(3), Duration.ofSeconds(5)).enabled()).isFalse();
+    assertThat(new TransportSourceProperties(false, null, "41.1724,-8.6841", 2000, Duration.ofSeconds(3), Duration.ofSeconds(5)).enabled()).isFalse();
   }
 }

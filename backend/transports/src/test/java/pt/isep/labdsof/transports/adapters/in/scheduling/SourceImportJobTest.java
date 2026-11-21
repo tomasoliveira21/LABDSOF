@@ -56,6 +56,18 @@ class SourceImportJobTest {
   }
 
   @Test
+  @DisplayName("193 AC-6 a successful read is logged at INFO, a failed one at WARN")
+  void theLevelFollowsTheOutcome(CapturedOutput output) {
+    job(() -> SourceReading.succeeded(4)).run();
+    job(() -> SourceReading.invalid("not a JSON array")).run();
+
+    var lines = output.getAll().lines().filter(line -> line.contains("Transport source read")).toList();
+    assertThat(lines).anySatisfy(line -> assertThat(line).contains("INFO").contains("Succeeded"));
+    assertThat(lines).anySatisfy(line -> assertThat(line).contains("WARN").contains("Invalid"));
+    assertThat(lines).noneSatisfy(line -> assertThat(line).contains("WARN").contains("Succeeded"));
+  }
+
+  @Test
   @DisplayName("193 AC-6 each run is logged with its outcome")
   void eachRunIsLogged(CapturedOutput output) {
     job(() -> SourceReading.succeeded(4)).run();
