@@ -187,9 +187,14 @@ paths:
     patch:
       tags: [Help requests]
       operationId: setHelpRequestCategoryAndPriority
-      summary: Set the category and the priority, either or both (US-28)
-      description: Recorded with who, when, the old and the new value. Requires HelpRequests.Triage.
-      x-farol-status: planned
+      summary: Set the category and the priority, either or both (US-28, US-35)
+      description: >-
+        Requires HelpRequests.Triage. The member's values make the triage Changed, from any triage state; the
+        suggestion and the NotTriaged reason stay visible, and a suggestion that arrives later is discarded
+        (NFR-22). Each changed field is recorded with who, when, the old and the new value (the history entries
+        of US-28); a change to the values the request already has records nothing. A null counts as not sent;
+        at least one of the two is required. Implemented by US-35 (#82, spec D2, D3); US-28 adds the status.
+      x-farol-status: implemented
       requestBody:
         required: true
         content:
@@ -282,9 +287,12 @@ paths:
       operationId: acceptTriageSuggestion
       summary: Take the AI's category and priority as the request's values (US-35)
       description: >-
-        Requires HelpRequests.Triage. The default team follows from the category; recorded as the member's
-        decision. 409 when there is no suggestion or a member already set the values (NFR-22).
-      x-farol-status: planned
+        Requires HelpRequests.Triage. The request's category and priority become the suggested ones and the
+        triage becomes Accepted, recorded as the member's decision (category, priority and triage history
+        entries). 409 when the triage is not Suggested: no suggestion yet, NotTriaged, or a member already
+        accepted or set the values (NFR-22). Planned: the default team follows from the category (US-34 #81
+        AC-2); until then defaultTeamId stays null.
+      x-farol-status: implemented
       responses:
         '200':
           $ref: '#/components/responses/ControlRoomView'
