@@ -12,6 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -85,7 +86,7 @@ class CorrelationIdTest {
     var response = get(id);
     assertThat(response.body()).isEqualTo(id);
     assertThat(response.headers().allValues("X-Correlation-Id")).containsExactly(id);
-    assertThat(output.getOut()).containsPattern("(?m)^" + id + " GET " + PATH + " -> 200 in ");
+    assertLogged(output, id + " GET " + PATH + " -> 200 in ");
   }
 
   @Test
@@ -115,6 +116,19 @@ class CorrelationIdTest {
     var response = get("/api/v1/events/e1/help-requests", id);
     assertThat(response.statusCode()).isEqualTo(401);
     assertThat(response.headers().allValues("X-Correlation-Id")).containsExactly(id);
-    assertThat(output.getOut()).containsPattern("(?m)^" + id + " GET /api/v1/events/e1/help-requests -> 401 in ");
+    assertLogged(output, id + " GET /api/v1/events/e1/help-requests -> 401 in ");
+  }
+
+  /**
+   * The filter logs after the chain returns, and the caller can already have the response by then (the 401 body
+   * closes the stream), so the line is awaited for up to 5 s rather than read once.
+   */
+  static void assertLogged(CapturedOutput output, String lineStart) throws InterruptedException {
+    var line = Pattern.compile("(?m)^" + Pattern.quote(lineStart));
+    var deadline = System.nanoTime() + 5_000_000_000L;
+    while (!line.matcher(output.getOut()).find() && System.nanoTime() < deadline) {
+      Thread.sleep(50);
+    }
+    assertThat(output.getOut()).containsPattern(line);
   }
 }
