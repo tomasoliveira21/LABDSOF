@@ -2,6 +2,26 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Teams of an event (US-16, #65, Tiago Teixeira)
+
+**Why:** #192 created the `team` and `team_permission` tables, the `TeamChanged` contract and the four team paths, but every one of them answered `501`. US-16 is the first story an EventAdmin needs before giving a team its permissions (US-17, #66, stacked on this branch) or putting members in it (US-18). Spec, decisions and edge-case matrix: [`Docs/specs/US-16-teams.md`](Docs/specs/US-16-teams.md).
+
+### Added
+- `GET`, `POST`, `PATCH` and `DELETE` on `/api/v1/events/{eventId}/teams[/{teamId}]` in Events: an EventAdmin creates a team (`201`, no members, no permissions, no categories), renames it and sets the help categories it handles, and deletes it (`204`, soft delete). A name repeated in the event, ignoring case and blanks, is `409`; the name of a deleted team is free again.
+- Reading the list is open to an EventAdmin or a member of a team with `HelpRequests.Triage` or `Reports.Review` (API outline §3); a member without one gets `403`, and a non-member, a removed member, a member of another event and a team of another event get the same `404` as an unknown event, recorded with the user, the event and the time (US-14).
+- `TeamChanged` through the outbox on every change, with the team's full state and a higher version, as `contracts/events/team.changed.schema.json` requires: the consumers only apply a copy whose version is strictly newer. A deleted team is published with `deleted: true` and the permissions it had, which is what lets Reports return its routed help requests to the control-room queue and cancel its field tasks (AC-3).
+- Domain: `Team`, `TeamPermission`, `Permission` (the fixed list of `features.md` §4.2), `HelpCategory` and `ReportType`, with the name bounds of the `team_name` check, the handled categories as a set in a stable order, and a deleted team granting nothing.
+
+### Changed
+- **Every team write matches the version it read** (`… AND version = :version - 1`), so two requests that start from the same read cannot both store a version: the second is `409` (*This team changed meanwhile; read it again.*), or `404` if the team was deleted in between, and it publishes nothing. Without it, a rename and a delete arriving together both committed and published **two `TeamChanged` carrying one version**; a consumer that applies only a strictly newer version kept the first and dropped the second for good, so a lost `DELETE` left the team active in Reports' copy for ever and AC-3 failed in the consumer. Found in the review of this PR on 22 November 2026.
+- `backend/events/contracts/openapi.yaml`: `DELETE …/teams/{teamId}` declares `409` (a suspended or closed event does not change its teams, spec D2), the `Conflict` response says so — now including a team another request changed between a read and a write — `TeamChange.handledCategories` documents that a repeated category is `400`, and the description no longer lists US-16 among the stories still to come.
+- `EventContractIT` now builds `TeamChanged` with the service's own factory instead of its hand-written payload, which is what #192 asked of this story.
+
+### Notes
+- **No product document said whether a suspended or closed event may still have its teams changed.** This PR refuses it with `409`, reading US-09 (*cannot be used*) and US-10 (edits on *a draft or published event*); reading the teams is unchanged. **Confirmed on 21 November 2026** by the owner of the story; to be noted in the next meeting record.
+- `uniqueItems: true` on `handledCategories` was tried and dropped: openapi-generator 7.27 then reads the array into a `Set` and deduplicates a repeated category silently instead of refusing it (spec D7).
+- The CI smoke test is not extended: nothing can create an event until US-06 (#61), so no team can be created through the gateway yet.
+
 ## [Unreleased] · 2026-11-22 · Set priority and status, with history (US-28, #75, Bruno de Abreu Lopes)
 
 **Why:** US-28 (#75): every change the control room makes to a request is recorded with who, when, the old and the new value (SC9, NFR-16), and the control room can read that history and mark a request as seen. Spec: [`Docs/specs/US-28-priority-status-history.md`](Docs/specs/US-28-priority-status-history.md).
