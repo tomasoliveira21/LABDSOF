@@ -127,6 +127,20 @@ class PortoDigitalSourceTest {
   }
 
   @Test
+  @DisplayName("US-40 AC-2 a coordinate beyond the range of a double is read as not a number, for the rules to reject "
+      + "that bus by name, and the answer is still read")
+  void coordinateBeyondADouble() {
+    var huge = "1" + "0".repeat(400);
+    var beyond = RECORDED.replace("[-8.688138962,41.168491364]", "[" + huge + ",-" + huge + "]");
+    var parsed = PortoDigitalSource.parse(("[" + RECORDED + "," + beyond + "]").getBytes(UTF_8), JSON);
+
+    assertThat(parsed).isInstanceOf(SourceReading.Answered.class);
+    var second = ((SourceReading.Answered) parsed).buses().get(1);
+    assertThat(second.longitude()).isNaN();
+    assertThat(second.latitude()).isNaN();
+  }
+
+  @Test
   @DisplayName("US-40 D7 a GeoJSON point with an altitude keeps its longitude and latitude")
   void pointWithAltitude() {
     var read = reading(recordedWith("location",

@@ -155,8 +155,9 @@ class PortoDigitalSource implements TransportSource {
     if (location != null && "Point".equals(text(location.get("type"))) && coordinates != null
         && coordinates.isArray() && coordinates.size() >= 2 && coordinates.get(0).isNumber()
         && coordinates.get(1).isNumber()) {
-      longitude = coordinates.get(0).doubleValue();
-      latitude = coordinates.get(1).doubleValue();
+      // Beyond a double's range is not a number, which the rules reject as out of range (not the whole answer)
+      longitude = coordinates.get(0).doubleValue(Double.NaN);
+      latitude = coordinates.get(1).doubleValue(Double.NaN);
     }
     return new BusReading(position, text(entity.get("id")), text(value(entity, "dataProvider")),
         text(value(entity, "fleetVehicleId")), route(value(entity, "annotations")), longitude, latitude,

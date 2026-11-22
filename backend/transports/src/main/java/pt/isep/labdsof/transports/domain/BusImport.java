@@ -73,7 +73,8 @@ public sealed interface BusImport permits BusImport.Accepted, BusImport.Rejected
     if (r.longitude() == null || r.latitude() == null) {
       return "no position";
     }
-    if (Math.abs(r.longitude()) > 180 || Math.abs(r.latitude()) > 90) {
+    if (!Double.isFinite(r.longitude()) || !Double.isFinite(r.latitude()) || Math.abs(r.longitude()) > 180
+        || Math.abs(r.latitude()) > 90) {
       return "position out of range";
     }
     if (r.longitude() == 0 && r.latitude() == 0) {
