@@ -2,6 +2,27 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
+
+- Badges starts in Compose with its own PostgreSQL database, Flyway migrations, Keycloak JWT validation,
+  health checks and the existing least-privilege RabbitMQ user.
+- The OpenAPI contract defines the badge list and preference routes. The list reads the authenticated
+  account's progress and returns an empty array for new accounts. Preference behavior follows in US-56.
+- CI exercises the request through the gateway with a real Keycloak token.
+
+## [Unreleased] · 2026-11-21 · Domain entity lifecycles (#198)
+
+- Documented state transitions, triggers and story references for the account, membership, event, help request,
+  community report and field task. Aligned the API outline and recorded status coverage for the mockups.
+- Marked the lifecycle proposals and the membership contract and report reconfirmation decisions for team review.
+
+## [Unreleased] · 2026-11-21 · API gateway security and rate limits (#190)
+
+- The gateway validates Keycloak JWTs and keeps the existing routing and diagnostic endpoints. The web container
+  and Vite development origins are allowed by default; Compose can override the origin list.
+- The gateway limits API traffic to 120 requests per minute per account by default and returns a Problem Details
+  response with `Retry-After` when the quota is exhausted.
+
 ## [Unreleased] · 2026-11-21 · Measure the AI triage end to end (#234, Bruno de Abreu Lopes)
 
 **Why:** #149 AC-5 asks for SC3 and SC5 measured on the running system, not by direct model calls, and its AC-2 needs an independent label review. Spec: [`Docs/specs/234-ai-triage-end-to-end.md`](Docs/specs/234-ai-triage-end-to-end.md). Part of #149. Stacked on PR #233.
@@ -28,6 +49,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `contracts/openapi.yaml`: `setHelpRequestCategoryAndPriority` and `acceptTriageSuggestion` are implemented; the default team after an accept stays planned (#81 AC-2).
 - Dated notes in the domain model (proposed transitions `Pending → Changed` and `Accepted → Changed`), the API outline §4.1, ADR-005 and `responsible-ai.md`. Decisions D2, D3 and D6 of the spec are proposed for the team's review.
+- Spec US-35 D6 (review of PR #233): `farol.triage.decision` counts only decisions on a `Suggested` request, so it measures the AI suggestions, not manual triage; most requests of a burst never get a suggestion (US-36 capacity limit).
 
 ## [Unreleased] · 2026-11-21 · Requests without AI (US-36, #83, Bruno de Abreu Lopes)
 
@@ -36,17 +58,18 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Added
 - Circuit breaker in front of the AI with Resilience4j 2.4 (`resilience4j-spring-boot4`), instance `ai-provider`, with the J1 values of `architecture.md` §9.1 (last 10 calls, at least 4, 50 % failed or slow over 16 s, open 30 s, one probe). Timeouts, provider errors and invalid outputs count as failures; while it is open a request is `Unavailable` without a call.
 - `GET /api/v1/events/{eventId}/triage-status` (`HelpRequests.Triage`; 403 without it, 404 outside the event): `available` only when an AI is configured and the circuit is closed, otherwise the reason (`Unavailable` or the last failure). The banner is the web app's (hand-off on #83).
-- Counters `farol.triage.fallback{reason}` and `farol.triage.suggested` (Micrometer, through `spring-boot-starter-actuator`; no actuator endpoint added on the API port), and a `WARN` log line per fallback with the request ID and the reason.
+- Counters `farol.triage.fallback{reason}` and `farol.triage.suggested` (Micrometer, through `spring-boot-starter-actuator`; only Boot's default `/actuator/health` on the API port, behind the API chain's token), and a `WARN` log line per fallback with the request ID and the reason.
 - `TriageFallbackIT` (SC5): with the AI stopped, slower than the timeout, answering 503, dropping the connection or answering invalid data, 20 requests each reach the control room at once, in order of arrival, without category or priority, `NotTriaged` with their reason; the circuit opens after 4 calls and the AI gets no more; the status reads unavailable and, after a successful probe, available again.
 - `infra/tests/reports_smoke.py`: the triage status through the gateway on the default stack (no `ai` service): 401 without a token, 404 for a non-member.
 
 ### Changed
 - `contracts/openapi.yaml`: `getTriageStatus` is implemented; `reason` is always present and null when available.
+- Spec US-36 (review of PR #232): the capacity limit (one consumer, about one triage every 12 s, 7 s of queue wait before `Unavailable`), and that the banner covers provider failures, not saturation; D8 says which actuator endpoint the API port has.
 - SC5 note in `product-vision.md`, ADR-005 (*Acceptance evidence pending*), `responsible-ai.md` (K2 outage row) and the local AI decisions, with dated notes: SC5 has test evidence with a stub AI; the run on the deployed stack with the real model stays for #149.
 
 ## [Unreleased] · 2026-11-20 · AI triage suggestion (US-34 part, #229, Bruno de Abreu Lopes)
 
-**Why:** US-34 (#81): each new help request should arrive with a suggested category and priority, and only its description may reach the model. Part of #81; the default team (#81 AC-2) waits for US-17 (#66). Spec: [`Docs/specs/US-34-ai-triage-suggestion.md`](Docs/specs/US-34-ai-triage-suggestion.md). Stacked on PR #228.
+**Why:** US-34 (#81): each new help request should arrive with a suggested category and priority, and only its description may reach the model. Part of #81; the default team (#81 AC-2) waits for US-17 (#66). Spec: [`Docs/specs/US-34-ai-triage-suggestion.md`](Docs/specs/US-34-ai-triage-suggestion.md).
 
 ### Added
 - Reports' triage consumer of its own `HelpRequestSubmitted` (queue `reports.reports-events`): one request at a time, the local Ollama through the JDK HTTP client with the runtime contract (connect 2 s, one attempt, the call capped at 20 s and by the time left, admission with at least 23 s of the 30 s left, late results discarded), and the model's output validated in the domain, never repaired.
@@ -132,7 +155,6 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `ci.yml`: before building the stack, the new step "Give the image builds the Maven dependencies" fills those caches with the repository the module builds of the same run already downloaded, so the image builds download nothing. The cache ids are read from `backend/*/Dockerfile`, and a backend Dockerfile without a Maven cache fails the step.
 - [`local-delivery.md`](Docs/Technical/local-delivery.md) §0: the caches, and how to empty them.
 
-
 ## [Unreleased] · 2026-11-18 · Review of PR #217: over-prioritisation and scale-example cases (#197, Bruno de Abreu Lopes)
 
 **Why:** the review of PR #217 found that a model answering `Critical` for everything passed the priority gates, and that most `Infrastructure` test cases restate the scale examples the prompt quotes.
@@ -141,6 +163,31 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - [Evaluation package](Docs/Research/architecture-investigation/evaluation/README.md): new gate 3, no `Low` or `Medium` reference rated `Critical`; the report adds exact-priority agreement and an over-prioritisation count. The prompt says to choose `Critical` only when its meaning applies. Cases that restate a scale example are tagged `scale-example` and reported as a slice; 6 `Infrastructure` cases not derived from the examples added (121 cases, 24 development / 97 test); T082 is now a question for the staff; `vedac` removed from the baseline keywords (it came from a test case).
 - Keyword baseline on the test split: 22 of 39 urgent cases missed, 0 `Low`/`Medium` rated `Critical`, category accuracy 0.573, coverage 0.596, 8 of 8 abstentions.
 - ADR-005, the local AI decisions, `responsible-ai.md` (superseded note, baseline table), the K2 and A7 case counts and the [spec](Docs/specs/197-ai-evaluation-priority.md) (D3, D9 to D11, handoff).
+
+## [Unreleased] · 2026-11-17 · Events service (#192, Tiago Teixeira)
+
+**Why:** the Sprint B stories about events, teams and venue maps (US-06, US-09, US-11, US-14, US-16 to US-21) need a service that owns them and knows who may see each event; Events was an empty skeleton. Spec, decisions and edge-case matrix: [`Docs/specs/192-events-service.md`](Docs/specs/192-events-service.md).
+
+### Added
+- `backend/events`: events, teams, team permissions, venue map versions and points of interest in PostgreSQL (Flyway `V1`: `event`, `team`, `team_permission`, `venue_map_version`, `point_of_interest`, `membership_copy`, `processed_message`, `outbox`) with Spring JDBC, as Auth & Users (#191) and Reports (#214).
+- `GET /api/v1/events/{eventId}`: an EventAdmin sees the event in any status, a RegularUser only while it is `Published` or `Closed` (the join link only while it is published); anyone else, an unknown event and a FarolAdmin who is not a member get the same `404`, and the refused attempt is logged at `WARN` with user, event and time (US-14). A malformed id gets `400`. The other operations of the contract answer `501` with the story that brings them.
+- The consumer of `events.auth-users-events`: `MembershipChanged` upserted by version into the membership copy (removed rows kept, a missing `status` read as `Active`), duplicates ignored by `messageId`, invalid messages dead-lettered with the reason, other failures tried 4 times in all; the other Auth & Users types acknowledged and logged until their stories.
+- The outbox and its publisher to `farol.events` as the `events` user, as in #191 (`FOR UPDATE SKIP LOCKED`, publisher confirms, mandatory routing, backoff up to 60 s, paused while the broker is down); nothing writes to it before US-06.
+- JWT validation against Keycloak (issuer, keys, audience `farol-api`, `sub` a UUID); Problem Details for every error, `WWW-Authenticate: Bearer` on `401`; `X-Correlation-Id` kept or created, logged, stored with the outbox row and sent as the AMQP `correlationId`; no name, e-mail or token in the logs (M-10).
+- Contracts: `contracts/openapi.yaml` with the Sprint B endpoints of API outline §3, interfaces and records generated at build time; JSON Schemas in `contracts/events/`: the envelope (the same file as Auth & Users' and Reports'), `EventChanged`, `TeamChanged` (compatible with what Reports reads) and, in `consumed/`, `MembershipChanged` as Events reads it, checked by `EventContractIT`.
+- Quality gates of [`Docs/specs/README.md`](Docs/specs/README.md): JaCoCo 99.6 % of lines and 100 % of branches with the generated code included, PIT 100 % killed, integration tests with Testcontainers on the Compose images and the production `infra/rabbitmq/setup.sh`.
+- `infra/tests/events_smoke.py` and its CI step: through the gateway, a missing or tampered token gets `401`, a real Keycloak token of a user who is not a member gets `404` (and so does the FarolAdmin), a malformed id `400`; the schema comes from Flyway and Events consumes its queue.
+
+### Changed
+- `infra/compose.yaml`: Events connects to its database (and waits for it), to RabbitMQ as the `events` user and to Keycloak; no new variable in `infra/.env.example`.
+- The Events image runs `mvn package` (unit tests); the integration tests need Docker and run in `mvn verify` in CI.
+- `local-delivery.md` §0: what Events does in the stack, its settings and its checks.
+
+### Proposed (for the team's review in the PR)
+- The event states of §4 of the meeting of 15 November 2026 (`Draft`, `Published`, `Suspended`, `Closed`), while #198 is open.
+- Report type codes and point types (spec D6), until US-17 and US-20.
+- The join link `/join/{eventId}?code={code}` (relative), until US-11 and US-12.
+- `EventChanged` without the description or the join code, and `TeamChanged` with `reportTypes` on every permission (spec D7).
 
 ## [Unreleased] · 2026-11-17 · AI triage evaluation focused on priority (#197, Bruno de Abreu Lopes)
 

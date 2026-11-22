@@ -1,8 +1,15 @@
-# ADR-013: the only public entry point. Route table only; JWT, CORS and rate limits come in #190.
+# ADR-013: the only public entry point. JWT, CORS, routing and per-account limits.
 spring:
   threads:
     virtual:
       enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${FAROL_ISSUER_URI:http://localhost:8180/realms/farol}
+          jwk-set-uri: ${FAROL_JWKS_URI:http://localhost:8180/realms/farol/protocol/openid-connect/certs}
+          audiences: farol-api
   cloud:
     gateway:
       server:
@@ -60,3 +67,9 @@ spring:
                 - Path=/status/badges
               filters:
                 - SetPath=/api/v1/status
+
+
+farol:
+  gateway:
+    allowed-origins: ${FAROL_GATEWAY_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    requests-per-minute: ${FAROL_GATEWAY_REQUESTS_PER_MINUTE:120}

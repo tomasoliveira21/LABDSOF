@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "membership.changed.schema.json",
+  "title": "MembershipChanged, as Events reads it",
+  "description": "Published by Auth & Users (farol.auth-users, routing key membership.changed), consumed from events.auth-users-events into the membership copy (spec D2, D3). This is what Events relies on; the producer's own contract (#191) wins where they differ. Full state with a version: Events upserts its copy, ignores a version not newer than the one it has and keeps Removed rows (API outline §7.3). status is optional and read as Active when it is missing, in case #198 drops MembershipStatus (spec §4). A message without what this schema requires is dead-lettered with the reason (spec D2). Unknown fields are ignored.",
+  "allOf": [{ "$ref": "../envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "MembershipChanged" },
+    "schemaVersion": { "const": 1 },
+    "eventId": { "type": "string", "format": "uuid" },
+    "payload": {
+      "type": "object",
+      "required": ["userId", "role", "teamIds", "version"],
+      "properties": {
+        "userId": { "type": "string", "format": "uuid", "description": "The user's sub (#191 D4)" },
+        "role": { "enum": ["EventAdmin", "RegularUser"] },
+        "status": { "enum": ["Active", "Removed"], "default": "Active", "description": "Optional: read as Active when missing" },
+        "teamIds": { "type": "array", "items": { "type": "string", "format": "uuid" }, "uniqueItems": true },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
