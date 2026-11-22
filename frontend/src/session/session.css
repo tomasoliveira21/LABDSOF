@@ -1,0 +1,12 @@
+.member-app { min-height: 100vh; background: #f0f4f7; color: #12243b; }
+.member-header { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: 1rem max(1rem, calc((100% - 65rem) / 2)); background: #0c1627; color: white; }
+.member-header button { color: white; border: 1px solid #8594a6; background: transparent; }
+.member-main { max-width: 65rem; padding: clamp(1rem, 4vw, 3rem); margin: 0 auto; }
+.member-nav { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.member-nav a { color: #234664; text-decoration: none; padding: .5rem .85rem; border-radius: .5rem; }
+.member-nav [aria-current] { background: #dbe8f1; font-weight: 700; }
+.member-card { background: white; border: 1px solid #cfdae4; border-radius: 1rem; padding: clamp(1rem, 4vw, 2.5rem); }
+.member-card h1 { margin: 0 0 .75rem; font-size: clamp(1.65rem, 4vw, 2.5rem); }
+.member-app button { padding: .6rem 1rem; border-radius: .5rem; min-height: 44px; cursor: pointer; }
+.member-primary { background: #122d49; color: white; border: 0; }
+.member-card [role="alert"] { color: #96292b; }

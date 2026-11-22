@@ -35,12 +35,12 @@ class JdbcUserAccounts implements UserAccounts {
 
   @Override
   public boolean insertIfAbsent(UserAccount account) {
-    // ON CONFLICT waits for a concurrent insert of the same sub to commit, then does nothing (D5)
+    // Concurrent calls for the same sub can collide on both the primary key and the verified-email index (D5).
     return jdbc.sql("""
         INSERT INTO user_account (user_id, email, email_verified, display_name, status, version, created_at,
             updated_at)
         VALUES (:userId, :email, :emailVerified, :displayName, :status, :version, :createdAt, :updatedAt)
-        ON CONFLICT (user_id) DO NOTHING
+        ON CONFLICT DO NOTHING
         """)
         .param("userId", account.userId())
         .param("email", account.email())

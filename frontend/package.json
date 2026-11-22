@@ -7,9 +7,11 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
+    "keycloak-js": "26.2.5",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

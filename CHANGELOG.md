@@ -2,6 +2,27 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
+
+- Badges starts in Compose with its own PostgreSQL database, Flyway migrations, Keycloak JWT validation,
+  health checks and the existing least-privilege RabbitMQ user.
+- The OpenAPI contract defines the badge list and preference routes. The list reads the authenticated
+  account's progress and returns an empty array for new accounts. Preference behavior follows in US-56.
+- CI exercises the request through the gateway with a real Keycloak token.
+
+## [Unreleased] · 2026-11-21 · Domain entity lifecycles (#198)
+
+- Documented state transitions, triggers and story references for the account, membership, event, help request,
+  community report and field task. Aligned the API outline and recorded status coverage for the mockups.
+- Marked the lifecycle proposals and the membership contract and report reconfirmation decisions for team review.
+
+## [Unreleased] · 2026-11-21 · API gateway security and rate limits (#190)
+
+- The gateway validates Keycloak JWTs and keeps the existing routing and diagnostic endpoints. The web container
+  and Vite development origins are allowed by default; Compose can override the origin list.
+- The gateway limits API traffic to 120 requests per minute per account by default and returns a Problem Details
+  response with `Retry-After` when the quota is exhausted.
+
 ## [Unreleased] · 2026-11-21 · Requests without AI (US-36, #83, Bruno de Abreu Lopes)
 
 **Why:** US-36 (#83, scenario D1): help requests must keep reaching the control room when the AI is down, slow or wrong, the back office must know when triage is unavailable, and each fallback must be logged and counted. Part of #149 (AC-5, SC5). Spec: [`Docs/specs/US-36-requests-without-ai.md`](Docs/specs/US-36-requests-without-ai.md). Stacked on PR #230.
