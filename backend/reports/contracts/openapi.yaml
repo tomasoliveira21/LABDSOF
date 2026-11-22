@@ -375,8 +375,13 @@ paths:
       tags: [Help requests]
       operationId: getTriageStatus
       summary: Whether the AI triage is available, for the banner of scenario D1 (US-36)
-      description: Requires HelpRequests.Triage.
-      x-farol-status: planned
+      description: >-
+        Requires HelpRequests.Triage. One AI serves every event, so the answer is the same for every event.
+        `available` is true only when an AI is configured and its circuit breaker is closed; otherwise `reason` is
+        `Unavailable` (no AI configured, or no failure to tell) or the reason of the last failed call (spec US-36 D4).
+        After the circuit's open time it stays unavailable until the next request's trial call succeeds. The web app polls it
+        with the live list, every 2 s while the page is visible (spec US-36 D6).
+      x-farol-status: implemented
       responses:
         '200':
           description: The triage availability.
@@ -385,12 +390,14 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [available, checkedAt]
+                required: [available, reason, checkedAt]
                 properties:
                   available:
                     type: boolean
                   reason:
-                    $ref: '#/components/schemas/NotTriagedReason'
+                    description: Null when available.
+                    allOf: [{$ref: '#/components/schemas/NotTriagedReason'}]
+                    nullable: true
                   checkedAt:
                     type: string
                     format: date-time
