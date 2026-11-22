@@ -1,6 +1,8 @@
 package pt.isep.labdsof.transports.adapters.out.persistence;
 
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Optional;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import pt.isep.labdsof.transports.application.SourceImports;
@@ -28,5 +30,12 @@ class JdbcSourceImports implements SourceImports {
         .param("vehicleCount", i.vehicleCount())
         .param("error", i.error())
         .update();
+  }
+
+  @Override
+  public Optional<Instant> lastSucceededAt() {
+    return jdbc.sql("""
+        SELECT finished_at FROM source_import WHERE outcome = 'Succeeded' ORDER BY finished_at DESC LIMIT 1
+        """).query(Timestamp.class).optional().map(Timestamp::toInstant);
   }
 }

@@ -1,5 +1,6 @@
 package pt.isep.labdsof.transports.adapters.in.scheduling;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -26,20 +27,28 @@ class SourceImportJob {
   private static final Logger log = LoggerFactory.getLogger(SourceImportJob.class);
 
   private final SourceImportService imports;
+  private final Clock clock;
 
-  SourceImportJob(SourceImportService imports) {
+  SourceImportJob(SourceImportService imports, Clock clock) {
     this.imports = imports;
+    this.clock = clock;
   }
 
   @Scheduled(fixedDelayString = "${farol.transport.source.interval}")
   void run() {
     MDC.put(Correlation.MDC_KEY, UUID.randomUUID().toString());
     try {
-      var result = imports.runOnce();
+      var started = clock.instant();
+      var run = imports.runOnce();
+      // The whole run: the calls, the rules and storing the buses
+      var duration = Duration.between(started, clock.instant());
+      var result = run.sourceImport();
       log.atLevel(result.outcome() == ImportOutcome.Succeeded ? Level.INFO : Level.WARN)
           .addKeyValue("outcome", result.outcome().name())
           .addKeyValue("vehicleCount", result.vehicleCount())
-          .addKeyValue("durationMs", Duration.between(result.startedAt(), result.finishedAt()).toMillis())
+          .addKeyValue("late", run.late())
+          .addKeyValue("attempts", run.attempts())
+          .addKeyValue("durationMs", duration.toMillis())
           .addKeyValue("error", result.error())
           .log("Transport source read");
     } catch (RuntimeException e) {

@@ -1,21 +1,36 @@
 package pt.isep.labdsof.transports.application;
 
-import pt.isep.labdsof.transports.domain.ImportOutcome;
+import java.util.List;
+import pt.isep.labdsof.transports.domain.BusReading;
 
-/** What the source answered to one read (spec D5); {@link SourceImportService} records it with its times. */
-public record SourceReading(ImportOutcome outcome, Integer vehicleCount, String error) {
+/**
+ * What the source answered to one run (spec US-40 D5, D7), and after how many calls: the buses it sent, the reason it
+ * could not be read (timeout, connection error, HTTP error, circuit open), or why its answer is not a list of NGSI
+ * entities.
+ */
+public sealed interface SourceReading {
 
-  public static SourceReading succeeded(int vehicleCount) {
-    return new SourceReading(ImportOutcome.Succeeded, vehicleCount, null);
+  int attempts();
+
+  record Answered(List<BusReading> buses, int attempts) implements SourceReading {
+    public Answered {
+      buses = List.copyOf(buses);
+    }
   }
 
-  /** Timeout, connection error or HTTP error. */
-  public static SourceReading unavailable(String reason) {
-    return new SourceReading(ImportOutcome.Unavailable, null, reason);
+  record Unavailable(String reason, int attempts) implements SourceReading {}
+
+  record Invalid(String reason, int attempts) implements SourceReading {}
+
+  static SourceReading answered(List<BusReading> buses, int attempts) {
+    return new Answered(buses, attempts);
   }
 
-  /** An answer that is not a list of NGSI entities. */
-  public static SourceReading invalid(String reason) {
-    return new SourceReading(ImportOutcome.Invalid, null, reason);
+  static SourceReading unavailable(String reason, int attempts) {
+    return new Unavailable(reason, attempts);
+  }
+
+  static SourceReading invalid(String reason, int attempts) {
+    return new Invalid(reason, attempts);
   }
 }

@@ -4,8 +4,8 @@ Checks, through the API gateway, that Transports validates real Keycloak tokens 
 token get 401 Problem Details; Rita's real token is accepted and the Sprint B operation answers 501 naming US-41
 (spec D6); a malformed event id gets 400; the X-Correlation-Id comes back. Then it checks inside the stack that the
 `transports` schema comes from Flyway, that the scheduled job has read the recorded buses through WireMock and
-recorded a successful import (spec D5, D8), and that Transports consumes both of its queues as the `transports`
-broker user (spec D3).
+recorded a successful import (spec D5, D8), that the buses of that import are stored (US-40), and that
+Transports consumes both of its queues as the `transports` broker user (spec D3).
 
 The smoke writes nothing itself: the only rows are the job's own import records, so a rerun gives the same result.
 
@@ -49,6 +49,14 @@ def latest_import(env_path: str, env: dict[str, str], project: str | None) -> tu
     outcome, _, rest = out.partition("|")
     count, _, error = rest.partition("|")
     return outcome == "Succeeded" and count.isdigit() and int(count) > 0, out or "no import yet"
+
+
+def buses_in_use(env_path: str, env: dict[str, str], project: str | None) -> tuple[bool, str]:
+    """True when the last valid import stored its buses (US-40): positions in use, from that import."""
+    ok, out = psql(env_path, env, project,
+                   "SELECT count(*) FROM bus_observation WHERE retrieved_at = "
+                   "(SELECT max(finished_at) FROM source_import WHERE outcome = 'Succeeded')")
+    return ok and out.isdigit() and int(out) > 0, out
 
 
 def consuming(env_path: str, project: str | None) -> tuple[bool, str]:
@@ -120,6 +128,10 @@ def main(env_path: str, project: str | None = None) -> int:
     ok, detail = wait_for(lambda: latest_import(env_path, env, project))
     idp.check(ok, "the scheduled job read the recorded buses through WireMock and recorded Succeeded"
               + ("" if ok else f" (latest: {detail})"))
+
+    ok, detail = wait_for(lambda: buses_in_use(env_path, env, project))
+    idp.check(ok, "the buses of the last import are stored and in use (US-40)"
+              + ("" if ok else f" (got {detail})"))
 
     ok, detail = wait_for(lambda: consuming(env_path, project))
     idp.check(ok, "Transports consumes both of its queues as the transports broker user"

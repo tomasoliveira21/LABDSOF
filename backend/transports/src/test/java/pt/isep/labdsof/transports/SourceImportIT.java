@@ -39,7 +39,7 @@ class SourceImportIT {
   private static long startUpReads() {
     return jdbc().sql("""
         SELECT count(*) FROM source_import
-        WHERE started_at >= :started AND outcome = 'Succeeded' AND vehicle_count BETWEEN 2 AND 13
+        WHERE started_at BETWEEN :started AND now() AND outcome = 'Succeeded' AND vehicle_count BETWEEN 2 AND 13
         """).param("started", java.sql.Timestamp.from(started)).query(Long.class).single();
   }
 
@@ -71,7 +71,7 @@ class SourceImportIT {
           """).query().singleRow();
       assertThat(row).containsEntry("outcome", "Unavailable").containsEntry("error", "HTTP 503");
       assertThat(row.get("vehicle_count")).isNull();
-      assertThat(result.error()).isEqualTo("HTTP 503");
+      assertThat(result.sourceImport().error()).isEqualTo("HTTP 503");
     } finally {
       WIREMOCK.remove(stub);
     }

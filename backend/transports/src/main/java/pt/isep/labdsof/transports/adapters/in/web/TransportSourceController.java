@@ -11,6 +11,6 @@ class TransportSourceController implements TransportSourceApi {
 
   @Override
   public ResponseEntity<TransportSourceStatus> getTransportSourceStatus(UUID eventId) {
-    throw new NotYetImplementedException("US-40");
+    throw new NotYetImplementedException("US-43");
   }
 }

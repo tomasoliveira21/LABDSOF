@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-22 · Import of the external transport source (US-40, #84, António Guerra)
+
+**Why:** participants need the buses near the venue from the Porto Digital source, imported regularly and validated (assignment §6.5, ADR-008). Spec: [`Docs/specs/US-40-import-transport-source.md`](Docs/specs/US-40-import-transport-source.md). Built on #193.
+
+### Added
+- The import stores the buses within 2 km of the venue and each one's latest position; a valid import replaces the buses in use, and positions older than 5 minutes are left out.
+- Validation: one broken bus (no id or a duplicate one, no provider, no position or one out of range or at 0,0, no route, no or a future observation time) rejects the whole import, recorded `Invalid` with the bus and the reason; the previous buses stay in use. So does an answer whose buses are all late, so the data in use shows its real age (decided by the owner on 22 November 2026).
+- Retry (3 attempts, 1 s and 2 s apart) and circuit breaker (last 6 calls, opens at 50 % failed, 60 s) of J1 with Resilience4j 2.4.0's Spring Boot 4 starter, as architecture §9.1 agreed, set under `resilience4j.*` in `application.yaml`; a failure is retried only while the circuit lets calls through; while open, runs record `circuit open` and call nothing. The circuit breaker is in the health check and never makes Transports unhealthy.
+- Metrics: `farol.transport.import{result}` (each result from 0), `farol.transport.data.age` (kept in memory, so a scrape never waits for the database and the age keeps growing while it is down), and Resilience4j's `transport-source` circuit breaker and retry.
+- The CI smoke checks that the last import's buses are stored.
+
+### Changed
+- The query asks for up to 1000 buses (`limit=1000`); the real API sends 20 without it.
+- `GET …/transport-source-status` answers `501` naming US-43, which will build it (US-40 D9).
+- The *Transport data age* panel of #148 now has data: [`local-observability.md`](Docs/Technical/plans/local-observability.md) and the #148 entry below say so.
+
 ## [Unreleased] · 2026-11-21 · Transports service (#193, António Guerra)
 
 **Why:** Transports was a skeleton; its Sprint B stories (US-40 #84, US-41 #85) need its own database, token validation, the copies it decides with, its contract and a first read of the bus source (ADR-008). Spec: [`Docs/specs/193-transports-service.md`](Docs/specs/193-transports-service.md).
@@ -177,7 +193,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Added
 - `infra/compose.yaml`, profile `observability`: Prometheus `v3.5.0` and Grafana `12.2.1`, pinned by digest, published on `127.0.0.1` only (`9090`, `3001`), hardened like the other containers, Prometheus kept 1 day or 512 MB. Without `--profile observability` the stack is unchanged.
-- `infra/observability/`: the Prometheus scrape list (every 15 s), the Grafana data source, the dashboard *Farol local operations* (the four groups of plan §4) and the three core alert rules: service or telemetry down (2 min), outbox oldest pending row > 60 s (2 min), useful triage < 95 % of the mature one-hour cohort with at least 20 eligible (5 min). No code emits `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`, so the triage rule shows *No data*, still none after #81–#83 (PRs #230, #232, #233) merge: they emit `farol.triage.fallback`, `farol.triage.suggested` and `farol.triage.decision`, not these gauges, which come with SC3 (#149). The *Transport data age* panel (`farol_transport_data_age_seconds`) has no data either: no code emits it.
+- `infra/observability/`: the Prometheus scrape list (every 15 s), the Grafana data source, the dashboard *Farol local operations* (the four groups of plan §4) and the three core alert rules: service or telemetry down (2 min), outbox oldest pending row > 60 s (2 min), useful triage < 95 % of the mature one-hour cohort with at least 20 eligible (5 min). No code emits `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`, so the triage rule shows *No data*, still none after #81–#83 (PRs #230, #232, #233) merge: they emit `farol.triage.fallback`, `farol.triage.suggested` and `farol.triage.decision`, not these gauges, which come with SC3 (#149). The *Transport data age* panel (`farol_transport_data_age_seconds`) has data since US-40 (#84): Transports emits the seconds since its last valid import (`NaN` before the first one).
 - Health and metrics on a private management port, `8081`, never published (`/actuator/health`, `/actuator/prometheus`), and JSON console logs (`logstash`) for every Spring service, through `infra/compose.yaml`. Actuator and the Prometheus registry in Reports, the gateway, Events, Transports and Badges; the registry in Auth & Users (which had actuator). Every Spring service is scraped. Each owner agreed to the change in their module and reviews it.
 - Reports and Auth & Users: a `SecurityFilterChain` that serves only `health` and `prometheus` without a token, and only when the management port is separate (`@ConditionalOnManagementPort(DIFFERENT)`); on the API port the actuator still needs a token. The Auth & Users change was agreed with its owner, who reviews it. Events and Badges, which got Spring Security on `main` while this was open (#192, #201), have the same chain and a `ManagementPortIT` since 22 November 2026, for their owners to review.
 - Gateway: `X-Correlation-Id` kept when it is 8 to 64 letters, digits or hyphens, otherwise a new UUID; forwarded to the service, returned to the caller and logged with one line per request, as Auth & Users already does. Events keeps its own `CorrelationIdFilter` (#192), registered once in `WebConfiguration`, with two additions: an exception that escapes the chain is logged as `500`, not the response's default `200`, and the health check's status request is not logged.

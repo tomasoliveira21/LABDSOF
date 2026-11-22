@@ -12,9 +12,10 @@ import tools.jackson.databind.json.JsonMapper;
 /** WireMock's admin API, as the presenter uses it in the D2 demo: failure stubs, scenario reset, the journal. */
 public final class WireMockAdmin {
 
-  /** The exact query the recorded stubs answer (infra/wiremock/README.md). */
+  /** The exact query Transports sends; the recorded stubs answer it and ignore the limit (US-40 D6). */
   public static final String GEO_QUERY =
-      "/v2/entities?q=vehicleType==bus&georel=near;maxDistance:2000&geometry=point&coords=41.1724,-8.6841";
+      "/v2/entities?q=vehicleType==bus&georel=near;maxDistance:2000&geometry=point&coords=41.1724,-8.6841"
+          + "&limit=1000";
 
   private static final HttpClient CLIENT = HttpClient.newHttpClient();
   private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -43,6 +44,11 @@ public final class WireMockAdmin {
     var created = send("POST", "/__admin/mappings", """
         {"priority":1,"request":{"method":"GET","urlPath":"/v2/entities"},"response":%s}""".formatted(responseJson));
     return String.valueOf(JSON.readValue(created, Map.class).get("id"));
+  }
+
+  /** Any stub mapping, as WireMock's admin API takes it; returns its id, for {@link #remove}. */
+  public String stub(String mappingJson) {
+    return String.valueOf(JSON.readValue(send("POST", "/__admin/mappings", mappingJson), Map.class).get("id"));
   }
 
   public void remove(String stubId) {

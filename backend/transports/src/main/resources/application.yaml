@@ -66,6 +66,40 @@ farol:
       interval: 30s
       connect-timeout: 3s
       read-timeout: 5s
+      # US-40 D3: a bus observed longer ago than this is late and left out (ADR-008, the y of P4)
+      freshness: 5m
+
+# US-40 D5: the retry and the circuit breaker of the bus source, with the values of J1 (architecture 9.1), through
+# Resilience4j's Spring Boot 4 starter. The retry wraps the circuit breaker (PortoDigitalSource), so every attempt
+# counts for the circuit and nothing is tried while it is open. ResilienceSettingsIT reads the values back: the
+# starter ignores a key it does not know.
+resilience4j:
+  retry:
+    instances:
+      transport-source:
+        # 3 attempts in all, 1 s then 2 s apart. Only after I/O errors, timeouts, 5xx and 429, and only while the
+        # circuit is not open: set in code, as it reads the circuit's state (SourceResilienceConfiguration)
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+  circuitbreaker:
+    instances:
+      transport-source:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 6
+        minimum-number-of-calls: 3
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 1
+        # Its state is in the health check, but the source being down never makes Transports unhealthy
+        register-health-indicator: true
+        allow-health-indicator-to-fail: false
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
 
 logging:
   structured:
