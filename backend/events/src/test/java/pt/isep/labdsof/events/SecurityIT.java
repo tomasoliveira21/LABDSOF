@@ -243,7 +243,7 @@ class SecurityIT extends IntegrationTest {
 
   @ParameterizedTest(name = "[{index}] {0} {1}")
   @MethodSource("unknownFields")
-  @DisplayName("192 D6 an unknown JSON field gets 400 before the 501 (mass assignment)")
+  @DisplayName("192 D6 an unknown JSON field gets 400 before the use case (mass assignment)")
   void unknownJsonFieldIsRefused(String method, String path, String body) {
     ApiClient.assertProblem(send(method, path, body, JSON_TYPE), 400);
   }
@@ -280,7 +280,7 @@ class SecurityIT extends IntegrationTest {
 
   @ParameterizedTest(name = "[{index}] {0} {1}")
   @MethodSource("malformedPaths")
-  @DisplayName("192 D6 a malformed UUID in a path gets 400 before the 501")
+  @DisplayName("192 D6 a malformed UUID in a path gets 400 before the use case")
   void malformedPathUuidIsRefused(String method, String path, String body, String contentType) {
     ApiClient.assertProblem(send(method, path, body, contentType), 400);
   }
@@ -299,7 +299,7 @@ class SecurityIT extends IntegrationTest {
 
   @ParameterizedTest(name = "[{index}] {0} {1}")
   @MethodSource("malformedVersions")
-  @DisplayName("192 D6 a malformed or non-positive map version gets 400 before the 501")
+  @DisplayName("192 D6 a malformed or non-positive map version gets 400 before the use case")
   void malformedVersionIsRefused(String method, String path, String body) {
     ApiClient.assertProblem(send(method, path, body, body == null ? null : JSON_TYPE), 400);
   }
@@ -338,7 +338,7 @@ class SecurityIT extends IntegrationTest {
 
   @ParameterizedTest(name = "[{index}] {0} {1}")
   @MethodSource("malformedBodies")
-  @DisplayName("192 D6 a malformed or out-of-range body gets 400 before the 501")
+  @DisplayName("192 D6 a malformed or out-of-range body gets 400 before the use case")
   void malformedBodyIsRefused(String method, String path, String body) {
     ApiClient.assertProblem(send(method, path, body, JSON_TYPE), 400);
   }
@@ -358,7 +358,7 @@ class SecurityIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("192 D6 a map upload without its file part gets 400 before the 501")
+  @DisplayName("192 D6 a map upload without its file part gets 400 before the use case")
   void uploadWithoutFileIsRefused() {
     var body = "--farol-boundary\r\nContent-Disposition: form-data; name=\"other\"\r\n\r\nx\r\n--farol-boundary--\r\n";
 

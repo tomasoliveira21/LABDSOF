@@ -29,8 +29,13 @@ public record Membership(UUID eventId, UUID userId, Role role, Status status, Se
     return status == Status.Active;
   }
 
+  /** An EventAdmin has every permission in their event without being in a team (features.md §4.2). */
+  public boolean isEventAdmin() {
+    return role == Role.EventAdmin;
+  }
+
   /** Spec D5 (US-06, US-09, US-13): an EventAdmin sees every status, a RegularUser what participants see. */
   public boolean canSee(EventStatus eventStatus) {
-    return role == Role.EventAdmin || eventStatus.visibleToParticipants();
+    return isEventAdmin() || eventStatus.visibleToParticipants();
   }
 }

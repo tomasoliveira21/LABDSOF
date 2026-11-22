@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public interface AccessAudit {
 
-  enum Refusal { NO_SUCH_EVENT, NOT_A_MEMBER, NOT_VISIBLE }
+  enum Refusal { NO_SUCH_EVENT, NOT_A_MEMBER, NOT_VISIBLE, NO_SUCH_TEAM }
 
   void refused(UUID userId, UUID eventId, Instant at, Refusal refusal);
 }
