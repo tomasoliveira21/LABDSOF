@@ -2,6 +2,24 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · Transports service (#193, António Guerra)
+
+**Why:** Transports was a skeleton; its Sprint B stories (US-40 #84, US-41 #85) need its own database, token validation, the copies it decides with, its contract and a first read of the bus source (ADR-008). Spec: [`Docs/specs/193-transports-service.md`](Docs/specs/193-transports-service.md).
+
+### Added
+- `backend/transports`: Flyway `V1` with TransportOption, TransportDeparture, BusVehicle, BusObservation, one `source_import` row per read of the source, and copies of memberships, event statuses and teams; Keycloak JWT validation (`401` Problem Details, a `sub` that is not a UUID refused), Problem Details, correlation id on requests, messages and import runs.
+- Consumers of `transports.auth-users-events` and `transports.events-events` as the `transports` broker user: `MembershipChanged`, `EventChanged` and `TeamChanged` upserted by version and applied once per `messageId`; invalid messages to their dead-letter queue with the reason; `PointOfInterestChanged`, `UserStatusChanged` and `UserDeleted` acknowledged and logged until their stories. The schemas it reads are in `backend/transports/contracts/events/`.
+- [`contracts/openapi.yaml`](backend/transports/contracts/openapi.yaml), contract-first with `openapi-generator`: the Sprint B operations of API outline §5 (bus observations, source status, adding a transport option), each answering `501` with its story (US-40, US-41).
+- A scheduled job that reads the bus source every 30 s with the 2 km geo-query and the J1 timeouts and records `Succeeded` (with the number of buses), `Unavailable` or `Invalid`. Storing the buses, validation, freshness, retry and the circuit breaker stay in US-40.
+- `wiremock` in `infra/compose.yaml` (`wiremock/wiremock:3.13.2`, pinned, unprivileged, admin API on `127.0.0.1:8090`) with the recorded Porto Digital stubs; Transports reads it through `TRANSPORT_SOURCE_URL`.
+- Health and metrics on the private management port of #148 (`/actuator/health` and `/actuator/prometheus` without a token, never published), as for the other services; the calls to the bus source are measured (`http.client.requests`).
+- [`infra/tests/transports_smoke.py`](infra/tests/transports_smoke.py) and its CI step: tokens through the gateway, `501` naming US-41, Flyway, a successful read through WireMock, both queues consumed.
+- Quality gates of the [specs README](Docs/specs/README.md) adopted for `backend/transports`: JaCoCo 90 % lines and branches, generated code included; PIT 80 % on domain and application; Testcontainers with the Compose images.
+
+### Changed
+- No outbox, although the issue listed one: Transports publishes nothing (API outline §5, §7.4) and its broker user may write only dead letters (spec D2).
+- `local-delivery.md` §0 and `infra/wiremock/README.md` describe Transports and WireMock in the stack; `Docs/README.md` lists the Transports spec.
+
 ## [Unreleased] · 2026-11-21 · A team's permissions (US-17, #66, Tiago Teixeira)
 
 **Why:** US-16 (#65) gives an event its teams; until each team has permissions, no member can do anything beyond the participant features (`features.md` §4.2). This completes the *Teams* tag of the Events contract: every one of its five operations is now served. Spec, decisions and edge-case matrix: [`Docs/specs/US-17-team-permissions.md`](Docs/specs/US-17-team-permissions.md). **Stacked on #65 (PR #242).**
