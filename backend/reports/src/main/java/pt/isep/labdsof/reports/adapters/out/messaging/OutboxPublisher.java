@@ -11,6 +11,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
@@ -77,10 +78,14 @@ public class OutboxPublisher {
 
   /** Sends one row; false when the batch must stop (shutting down, or the broker is most likely down). */
   private boolean publish(Pending row, AtomicInteger sent) {
+    if (row.correlationId() != null) {
+      MDC.put("correlationId", row.correlationId()); // #148: the request that wrote the row
+    }
     try {
       send(row);
       outbox.markPublished(row.id(), clock.instant());
       sent.incrementAndGet();
+      log.info("Outbox message {} ({}) published", row.messageId(), row.type());
       return true;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt(); // shutting down: not a failed attempt
@@ -97,6 +102,8 @@ public class OutboxPublisher {
       }
       pausedUntil = clock.instant().plus(backoff); // the broker is most likely down: the rest waits, in order
       return false;
+    } finally {
+      MDC.remove("correlationId");
     }
   }
 
@@ -112,6 +119,7 @@ public class OutboxPublisher {
     properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
     properties.setContentEncoding(UTF_8.name());
     properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+    properties.setCorrelationId(row.correlationId()); // #148: AMQP correlation_id, null when the row has none
     var correlation = new CorrelationData(row.messageId().toString());
     rabbit.send(row.exchange(), row.routingKey(), new Message(row.body().getBytes(UTF_8), properties),
         correlation);

@@ -1,0 +1,136 @@
+{
+  "capturedAt": "2026-11-20T10:35:27Z",
+  "why": "prometheus started; normal=True",
+  "alertRules": {
+    "Service or telemetry down": {
+      "state": "inactive",
+      "health": "ok",
+      "instances": [
+        [
+          "events",
+          "Normal"
+        ],
+        [
+          "gateway",
+          "Normal"
+        ],
+        [
+          "rabbitmq",
+          "Normal"
+        ],
+        [
+          "reports",
+          "Normal"
+        ]
+      ]
+    },
+    "Outbox stalled": {
+      "state": "inactive",
+      "health": "ok",
+      "instances": [
+        [
+          "reports",
+          "Normal"
+        ]
+      ]
+    },
+    "Useful triage below 95 %": {
+      "state": "inactive",
+      "health": "nodata",
+      "instances": [
+        [
+          "Useful triage below 95 %",
+          "NoData"
+        ]
+      ]
+    }
+  },
+  "dashboard": {
+    "up": [
+      {
+        "labels": {
+          "__name__": "up",
+          "instance": "auth-users:8081",
+          "job": "farol-handoff",
+          "service": "auth-users"
+        },
+        "value": 0
+      },
+      {
+        "labels": {
+          "__name__": "up",
+          "instance": "gateway:8081",
+          "job": "farol-services",
+          "service": "gateway"
+        },
+        "value": 1
+      },
+      {
+        "labels": {
+          "__name__": "up",
+          "instance": "reports:8081",
+          "job": "farol-services",
+          "service": "reports"
+        },
+        "value": 1
+      },
+      {
+        "labels": {
+          "__name__": "up",
+          "instance": "events:8081",
+          "job": "farol-services",
+          "service": "events"
+        },
+        "value": 1
+      },
+      {
+        "labels": {
+          "__name__": "up",
+          "instance": "badges:8081",
+          "job": "farol-handoff",
+          "service": "badges"
+        },
+        "value": 0
+      },
+      {
+        "labels": {
+          "__name__": "up",
+          "instance": "rabbitmq:15692",
+          "job": "rabbitmq-queues",
+          "service": "rabbitmq"
+        },
+        "value": 1
+      },
+      {
+        "labels": {
+          "__name__": "up",
+          "instance": "transports:8081",
+          "job": "farol-handoff",
+          "service": "transports"
+        },
+        "value": 0
+      },
+      {
+        "labels": {
+          "__name__": "up",
+          "instance": "rabbitmq:15692",
+          "job": "rabbitmq",
+          "service": "rabbitmq"
+        },
+        "value": 1
+      }
+    ],
+    "farol_outbox_oldest_pending_seconds": [
+      {
+        "labels": {
+          "__name__": "farol_outbox_oldest_pending_seconds",
+          "instance": "reports:8081",
+          "job": "farol-services",
+          "service": "reports"
+        },
+        "value": 0
+      }
+    ],
+    "farol_triage_window_eligible": []
+  }
+}

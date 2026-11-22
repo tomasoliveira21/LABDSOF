@@ -1,7 +1,11 @@
 package pt.isep.labdsof.reports.adapters.in.web;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.actuate.autoconfigure.web.server.ConditionalOnManagementPort;
+import org.springframework.boot.actuate.autoconfigure.web.server.ManagementPortType;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,7 +19,25 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 class SecurityConfiguration {
 
+  /**
+   * #148: health and metrics for Prometheus, without a token. In Compose they are only on the management port 8081,
+   * which is never published (EndpointRequest then matches that port only); exposure is limited to these two.
+   * Without a separate management port the chain does not exist, so the actuator on the API port needs a token.
+   */
   @Bean
+  @Order(1)
+  @ConditionalOnManagementPort(ManagementPortType.DIFFERENT)
+  SecurityFilterChain management(HttpSecurity http) {
+    return http
+        .securityMatcher(EndpointRequest.to("health", "prometheus"))
+        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .csrf(csrf -> csrf.disable()) // NOSONAR java:S4502 - read-only GET endpoints, no session
+        .build();
+  }
+
+  @Bean
+  @Order(2)
   SecurityFilterChain api(HttpSecurity http) {
     return http
         .authorizeHttpRequests(auth -> auth

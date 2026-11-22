@@ -241,4 +241,10 @@ class SecurityIT extends IntegrationTest {
   void statusIsPublic() throws Exception {
     assertThat(get("/api/v1/status", null).statusCode()).isEqualTo(200);
   }
+
+  @Test
+  @DisplayName("148 with the actuator on the API port (no separate management port) it needs a token")
+  void actuatorOnApiPortNeedsAToken() throws Exception {
+    assertThat(get("/actuator/health", null).statusCode()).isEqualTo(401);
+  }
 }

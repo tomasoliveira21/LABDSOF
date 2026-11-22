@@ -237,7 +237,8 @@ class LoggingIT extends IntegrationTest {
   void rejectedCorrelationIdIsNotLogged(CapturedOutput output) {
     var rejected = "reject me " + UUID.randomUUID();
 
-    var response = get("/api/v1/status", null, rejected);
+    // Not the status request: the filter does not log it (#148)
+    var response = get("/openapi.yaml", null, rejected);
 
     var replaced = response.headers().firstValue(HEADER).orElseThrow();
     awaitAccessLine(output, replaced, 200);

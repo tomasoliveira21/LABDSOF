@@ -113,6 +113,30 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `--resume` never retries a case already written, even as `output: null` (a failure stays a failure): now said in the flag's help, the runner's docstring and the evaluation README.
 - The manifest and `--verify` show integrity, not bit-for-bit reproducibility: seed 42 and temperature 0 do not fix the output across batch size, threads or backend (spec 224 §1, evaluation README). A prompt change for the five ceiling failures must be tuned on the development split or new cases, never on the test split (spec 224 §6).
 
+## [Unreleased] · 2026-11-20 · Local observability with Prometheus and Grafana (#148)
+
+**Why:** ADR-012 and the [local observability plan](Docs/Technical/plans/local-observability.md) were accepted as architecture, but no telemetry had ever run (#148 was reopened on 31 October). This adds the runtime part: an optional Compose profile, metrics, correlated JSON logs, one dashboard and the three core alerts, with a trigger/resolve drill. Evidence: [`Docs/Technical/evidence/148/`](Docs/Technical/evidence/148/README.md).
+
+### Added
+- `infra/compose.yaml`, profile `observability`: Prometheus `v3.5.0` and Grafana `12.2.1`, pinned by digest, published on `127.0.0.1` only (`9090`, `3001`), hardened like the other containers, Prometheus kept 1 day or 512 MB. Without `--profile observability` the stack is unchanged.
+- `infra/observability/`: the Prometheus scrape list (every 15 s), the Grafana data source, the dashboard *Farol local operations* (the four groups of plan §4) and the three core alert rules: service or telemetry down (2 min), outbox oldest pending row > 60 s (2 min), useful triage < 95 % of the mature one-hour cohort with at least 20 eligible (5 min). No code emits `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`, so the triage rule shows *No data*, still none after #81–#83 (PRs #230, #232, #233) merge: they emit `farol.triage.fallback`, `farol.triage.suggested` and `farol.triage.decision`, not these gauges, which come with SC3 (#149). The *Transport data age* panel (`farol_transport_data_age_seconds`) has no data either: no code emits it.
+- Health and metrics on a private management port, `8081`, never published (`/actuator/health`, `/actuator/prometheus`), and JSON console logs (`logstash`) for every Spring service, through `infra/compose.yaml`. Actuator and the Prometheus registry in Reports, the gateway, Events, Transports and Badges; the registry in Auth & Users (which had actuator). Every Spring service is scraped. Each owner agreed to the change in their module and reviews it.
+- Reports and Auth & Users: a `SecurityFilterChain` that serves only `health` and `prometheus` without a token, and only when the management port is separate (`@ConditionalOnManagementPort(DIFFERENT)`); on the API port the actuator still needs a token. The Auth & Users change was agreed with its owner, who reviews it. Events and Badges, which got Spring Security on `main` while this was open (#192, #201), have the same chain and a `ManagementPortIT` since 22 November 2026, for their owners to review.
+- Gateway: `X-Correlation-Id` kept when it is 8 to 64 letters, digits or hyphens, otherwise a new UUID; forwarded to the service, returned to the caller and logged with one line per request, as Auth & Users already does. Events keeps its own `CorrelationIdFilter` (#192), registered once in `WebConfiguration`, with two additions: an exception that escapes the chain is logged as `500`, not the response's default `200`, and the health check's status request is not logged.
+- Reports: the same correlation id in its logs, stored with the outbox row (Flyway `V4`: `V2` and `V3` are taken by PRs #230 and #233) and sent as the AMQP `correlation_id`; a consumed message's correlation id is in the log context while it is handled; gauge `farol_outbox_oldest_pending_seconds`; the management port answers health and metrics without a token, nothing else.
+- `infra/tests/observability_smoke.py` and a CI step that starts the profile on the CI stack, runs it and checks that Prometheus and Grafana are on `127.0.0.1` and hardened.
+- README: *Run with observability*.
+
+### Changed
+- The CI stack is stopped with `--profile observability`, or `down` leaves Prometheus and Grafana running.
+- The gateway, Events and Badges, which replace the anchor's `environment`, repeat the management port and log settings; Badges' Compose health check reads readiness on the management port `8081`.
+- `infra/.env.example`: `PROMETHEUS_PORT`, `GRAFANA_PORT`, `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD` (example value only). Grafana refuses to start with an empty password, only when the profile is used.
+- ADR-012 status and the plan: what is implemented and measured and the limitations, in dated notes.
+
+### Not done here
+- PostgreSQL: no exporter (it would be a third container); the outbox age comes from Reports itself.
+- SC3/SC5 measurement moved to #149.
+
 ## [Unreleased] · 2026-11-19 · Auth & Users service (#191, Tiago Teixeira)
 
 **Why:** every Sprint B service needs to know who calls it: the Farol account of a Keycloak user, the first FarolAdmin (#179) and, from US-06, the members of each event. Auth & Users was an empty skeleton. Spec, decisions and edge-case matrix: [`Docs/specs/191-auth-users-service.md`](Docs/specs/191-auth-users-service.md).

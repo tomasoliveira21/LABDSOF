@@ -1,0 +1,15 @@
+2026-11-20T10:28:46Z drill start
+2026-11-20T10:28:46Z snapshot 01-all-up.json: stack healthy with --profile observability
+2026-11-20T10:28:55Z A3 POST help request with X-Correlation-Id 0e37a838-8a83-414e-bad5-a18b4d4770f2: 201, response header 0e37a838-8a83-414e-bad5-a18b4d4770f2
+2026-11-20T10:28:59Z A5 stop reports
+2026-11-20T10:31:31Z Service or telemetry down: firing after 150 s -> {'state': 'firing', 'health': 'ok', 'instances': [('events', 'Normal'), ('gateway', 'Normal'), ('rabbitmq', 'Normal'), ('reports', 'Alerting')]}
+2026-11-20T10:31:31Z snapshot 02-reports-stopped-firing.json: reports stopped; firing=True
+2026-11-20T10:31:31Z A5 start reports
+2026-11-20T10:32:23Z Service or telemetry down: normal again after 50 s -> {'state': 'inactive', 'health': 'ok', 'instances': [('events', 'Normal'), ('gateway', 'Normal'), ('rabbitmq', 'Normal'), ('reports', 'Normal')]}
+2026-11-20T10:32:23Z snapshot 03-reports-started-normal.json: reports started; normal=True
+2026-11-20T10:32:23Z missing telemetry: stop prometheus
+2026-11-20T10:35:04Z Service or telemetry down: firing (query error) after 160 s -> {'state': 'firing', 'health': 'error', 'instances': [('events', 'Alerting (Error)'), ('gateway', 'Alerting (Error)'), ('rabbitmq', 'Alerting (Error)'), ('reports', 'Alerting (Error)')]}
+2026-11-20T10:35:04Z snapshot 04-prometheus-stopped.json: prometheus stopped; firing=True
+2026-11-20T10:35:27Z Service or telemetry down: normal again after 10 s -> {'state': 'inactive', 'health': 'ok', 'instances': [('events', 'Normal'), ('gateway', 'Normal'), ('rabbitmq', 'Normal'), ('reports', 'Normal')]}
+2026-11-20T10:35:27Z snapshot 05-prometheus-started.json: prometheus started; normal=True
+2026-11-20T10:35:31Z docker stats captured
