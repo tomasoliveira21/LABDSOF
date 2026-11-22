@@ -36,6 +36,7 @@ class JdbcHelpRequests implements HelpRequests {
   private static final String EVENT_ID = "eventId";
   private static final String CATEGORY = "category";
   private static final String PRIORITY = "priority";
+  private static final String TRIAGE = "triage";
 
   private final JdbcClient jdbc;
 
@@ -200,16 +201,19 @@ class JdbcHelpRequests implements HelpRequests {
       // The row is locked by findForUpdate, so this is a caller that skipped it
       throw new IllegalStateException("help request changed without its lock");
     }
-    jdbc.sql("""
-        UPDATE triage_suggestion SET state = :state, not_triaged_reason = :notTriagedReason, updated_at = :updatedAt
-        WHERE request_id = :id AND event_id = :eventId
-        """)
-        .param("id", r.id())
-        .param(EVENT_ID, r.eventId())
-        .param("state", r.triage().state().name())
-        .param("notTriagedReason", name(r.triage().notTriagedReason()))
-        .param("updatedAt", at)
-        .update();
+    // A status change (acknowledge) leaves the triage row and its time alone (G8 review of US-28)
+    if (changes.stream().anyMatch(change -> TRIAGE.equals(change.field()))) {
+      jdbc.sql("""
+          UPDATE triage_suggestion SET state = :state, not_triaged_reason = :notTriagedReason, updated_at = :updatedAt
+          WHERE request_id = :id AND event_id = :eventId
+          """)
+          .param("id", r.id())
+          .param(EVENT_ID, r.eventId())
+          .param("state", r.triage().state().name())
+          .param("notTriagedReason", name(r.triage().notTriagedReason()))
+          .param("updatedAt", at)
+          .update();
+    }
     for (var change : changes) {
       jdbc.sql("""
           INSERT INTO help_request_change (request_id, event_id, actor_user_id, actor_name, changed_at, field,

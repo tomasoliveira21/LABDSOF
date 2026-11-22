@@ -319,8 +319,9 @@ class HelpRequestTest {
   @Test
   @DisplayName("US-28 AC-1 acknowledging moves Submitted to Seen and records the status")
   void acknowledge() {
-    var pendingPastDeadline = submit("help");
-    var requests = java.util.List.of(submit("help"), withTriage(SUGGESTED), pendingPastDeadline,
+    // LATER is past the triage deadline, so the first request reads NotTriaged when it is acknowledged
+    assertThat(LATER).isAfter(NOW.plus(TriageSuggestion.TRIAGE_DEADLINE));
+    var requests = java.util.List.of(submit("help"), withTriage(SUGGESTED),
         withTriage(SUGGESTED).acceptSuggestion(LATER).request(),
         withTriage(SUGGESTED).change(Category.Safety, null, LATER).request());
     for (var request : requests) {
@@ -334,6 +335,10 @@ class HelpRequestTest {
       assertThat(seen).usingRecursiveComparison().ignoringFields("status", "updatedAt", "version").isEqualTo(request);
       assertThat(decision.changes()).containsExactly(new HelpRequestChange("status", "Submitted", "Seen"));
     }
+    // Within the deadline: still Pending, and it stays Pending
+    var pending = submit("help").acknowledge(NOW.plusSeconds(1)).request();
+    assertThat(pending.status()).isEqualTo(HelpRequestStatus.Seen);
+    assertThat(pending.triage()).isEqualTo(TriageSuggestion.pending());
   }
 
   @ParameterizedTest
@@ -350,6 +355,10 @@ class HelpRequestTest {
   void actor() {
     assertThat(new Actor("operator", null).name()).isNull();
     assertThat(new Actor("operator", "Ana").userId()).isEqualTo("operator");
+    // A blank name is no name; a long one is cut at 200 characters, code points, not UTF-16 units (G8 review)
+    assertThat(new Actor("operator", " \t").name()).isNull();
+    assertThat(new Actor("operator", "a".repeat(201)).name()).isEqualTo("a".repeat(200));
+    assertThat(new Actor("operator", "😀".repeat(201)).name()).isEqualTo("😀".repeat(200));
     for (var userId : new String[] {null, "", " "}) {
       assertThatThrownBy(() -> new Actor(userId, "Ana")).isInstanceOf(IllegalArgumentException.class);
     }

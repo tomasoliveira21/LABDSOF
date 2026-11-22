@@ -157,9 +157,16 @@ class HelpRequestController {
     return new HistoryView(service.history(eventId, jwt.getSubject(), requestId));
   }
 
-  /** Who acts: the token's sub, and its name claim copied into the history (spec US-28 D5). */
+  /**
+   * Who acts: the token's sub, and its name claim copied into the history (spec US-28 D5). A valid token without a sub
+   * names nobody, so it gets the 404 of a non-member, not a server error (G8 review).
+   */
   private static Actor actor(Jwt jwt) {
-    return new Actor(jwt.getSubject(), jwt.getClaimAsString("name"));
+    var subject = jwt.getSubject();
+    if (subject == null || subject.isBlank()) {
+      throw new NotFoundException();
+    }
+    return new Actor(subject, jwt.getClaimAsString("name"));
   }
 
   /** Whether a new request would be sent to the AI, for the web app's banner (US-36 AC-2, spec D4, D5). */

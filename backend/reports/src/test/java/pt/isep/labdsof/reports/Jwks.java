@@ -62,6 +62,13 @@ public final class Jwks {
     return sign(key, claims);
   }
 
+  /** A valid token without a sub, as a client without the basic scope may issue it. */
+  public String withoutSubject() {
+    var claims = new JWTClaimsSet.Builder(claims("ignored", ISSUER, AUDIENCE, Instant.now().plusSeconds(300)))
+        .subject(null).build();
+    return sign(key, claims);
+  }
+
   public String expired(String subject) {
     // Past Spring's default clock skew of 60 s
     return sign(key, claims(subject, ISSUER, AUDIENCE, Instant.now().minusSeconds(120)));

@@ -49,21 +49,22 @@ Decisions the documents leave open are marked **Proposed, for the team's review*
 
 | Case | Expected | Test |
 |---|---|---|
-| Acknowledge a `Submitted` request | Status `Seen`, `version` + 1, `updatedAt` moves, the triage unchanged; one `status` entry `Submitted → Seen` with the member, their name and the time | `HelpRequestTest` · `US-28 AC-1 acknowledging moves Submitted to Seen and records the status`; `HelpRequestServiceTest` · `US-28 AC-1 an acknowledge is saved as the member's change with their name`; `ChangeHistoryIT` · `US-28 AC-1 the control room acknowledges a request and it reads Seen` |
+| Acknowledge a `Submitted` request | Status `Seen`, `version` + 1, `updatedAt` moves, the triage row unchanged (its time too); one `status` entry `Submitted → Seen` with the member, their name and the time | `HelpRequestTest` · `US-28 AC-1 acknowledging moves Submitted to Seen and records the status`; `HelpRequestServiceTest` · `US-28 AC-1 an acknowledge is saved as the member's change with their name`; `ChangeHistoryIT` · `US-28 AC-1 the control room acknowledges a request and it reads Seen` |
 | Acknowledge `Seen`, `OnTheWay`, `Resolved`, `Closed` | `409`, nothing written | `HelpRequestTest` · `US-28 AC-1 only a Submitted request can be acknowledged`; `ChangeHistoryIT` · `US-28 AC-1 acknowledging a request that is not Submitted is a conflict` |
 | Acknowledge with any triage state (`Pending`, `Suggested`, derived `NotTriaged`, `Accepted`, `Changed`) | Allowed; the triage keeps its state | `HelpRequestTest` · `US-28 AC-1 acknowledging moves Submitted to Seen and records the status` |
 | Two acknowledges at the same time | One `200`, one `409`; one entry | `ChangeHistoryIT` · `US-28 AC-1 two acknowledges at the same time record one change` |
+| An acknowledge and a `PATCH` at the same time | Both `200`, one after the other: `Seen` with the new priority, `version` + 2 | `ChangeHistoryIT` · `US-28 AC-1 an acknowledge and a change at the same time both apply` |
 | Participant and live list after an acknowledge | The participant view reads `Seen`; the next poll of the live list lists it | `ChangeHistoryIT` · `US-28 AC-1 the control room acknowledges a request and it reads Seen` |
 | History after a `PATCH`, an accept and an acknowledge | Every entry, oldest first, each with field, old and new value, user ID, name and time; nothing else in an entry | `ChangeHistoryIT` · `US-28 AC-2 the history lists every change oldest first with who and when` |
 | History of a request nobody changed | `200` with `items: []` | `ChangeHistoryIT` · `US-28 AC-2 a request nobody changed has an empty history` |
-| Token without a `name` | The change is recorded, `actorName` null | `ChangeHistoryIT` · `US-28 AC-1 a token without a name records the change without one` |
+| Token without a `name`, or a blank one | The change is recorded, `actorName` null | `ChangeHistoryIT` · `US-28 AC-1 a token without a name records the change without one` |
 | History read through the port | Only the request's entries, of its event, in order; `404` for a request not in the event | `HelpRequestServiceTest` · `US-28 AC-2 the history is read only for a request of the event` |
 | Log | `INFO` with the request ID and the statuses; no description or user | `HelpRequestServiceTest` · `US-28 AC-1 an acknowledge is logged without the description or the user` |
 | Member without `HelpRequests.Triage` | `403` on both, nothing written | `HelpRequestServiceTest` · `US-28 AC-1 only the control room acknowledges or reads the history`; `ChangeHistoryIT` · `US-28 AC-1 a member without HelpRequests.Triage gets 403` |
-| Non-member, removed member, member of another event, request of another event, unknown request | `404`, same body, nothing written | `ChangeHistoryIT` · `US-28 AC-1 another event's member or request gets 404 without revealing it` |
+| Non-member, removed member, member of another event, a valid token without `sub`, request of another event, unknown request | `404`, same body, nothing written (also on the `PATCH` and `accept-suggestion`) | `ChangeHistoryIT` · `US-28 AC-1 another event's member or request gets 404 without revealing it` |
 | No, expired, wrong-signature, wrong-issuer, wrong-audience, malformed token | `401` on both | `ChangeHistoryIT` · `US-28 AC-1 every bad token gets 401` |
 | Malformed event or request ID | `400` on both | `ChangeHistoryIT` · `US-28 AC-1 a malformed ID is rejected` |
-| Change without a user ID | Refused before anything is written; the name may be missing | `HelpRequestTest` · `US-28 AC-1 a change is made by a member with a user ID, the name may be missing` |
+| Change without a user ID; a name over 200 characters | Refused before anything is written; the name is cut at 200 characters (code points) | `HelpRequestTest` · `US-28 AC-1 a change is made by a member with a user ID, the name may be missing` |
 | Name with injection text or markup | Stored and returned as text | `ChangeHistoryIT` · `US-28 AC-2 the history lists every change oldest first with who and when` |
 
 ## 6. Handoff

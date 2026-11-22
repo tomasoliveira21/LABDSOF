@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -84,6 +85,11 @@ class ChangeHistoryIT extends IntegrationTest {
         .query(Long.class).single();
   }
 
+  Instant triageUpdatedAt(String id) {
+    return jdbc.sql("SELECT updated_at FROM triage_suggestion WHERE request_id = :id")
+        .param("id", UUID.fromString(id)).query(java.sql.Timestamp.class).single().toInstant();
+  }
+
   void status(String id, String status) {
     jdbc.sql("UPDATE help_request SET status = :status WHERE id = :id").param("status", status)
         .param("id", UUID.fromString(id)).update();
@@ -94,6 +100,7 @@ class ChangeHistoryIT extends IntegrationTest {
   void acknowledge() throws Exception {
     var id = submit();
     String cursor = JsonPath.read(get(requests(), JWKS.valid(operator)).body(), "$.serverTime");
+    var triageWritten = triageUpdatedAt(id);
 
     var response = acknowledge(id, JWKS.named(operator, "Miguel Sousa"));
 
@@ -101,6 +108,8 @@ class ChangeHistoryIT extends IntegrationTest {
     assertThat(JsonPath.<String>read(response.body(), "$.status")).isEqualTo("Seen");
     assertThat(JsonPath.<String>read(response.body(), "$.triage.state")).isEqualTo("Pending");
     assertThat(version(id)).isEqualTo(2);
+    // A status change leaves the triage row alone, its time included (G8 review)
+    assertThat(triageUpdatedAt(id)).isEqualTo(triageWritten);
     assertThat(rows(id)).containsExactly(Map.of("field", "status", "old_value", "Submitted", "new_value", "Seen",
         "actor_user_id", operator, "actor_name", "Miguel Sousa"));
     // The next poll of the live list shows it, and the participant reads Seen
@@ -126,21 +135,23 @@ class ChangeHistoryIT extends IntegrationTest {
   }
 
   long waitingOnLocks() {
-    return jdbc.sql("SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock'").query(Long.class)
-        .single();
+    // Only the members' row locks on this table: another session waiting on a lock must not count (G8 review)
+    return jdbc.sql("""
+        SELECT count(*) FROM pg_stat_activity
+        WHERE wait_event_type = 'Lock' AND query LIKE 'SELECT 1 FROM triage_suggestion%FOR UPDATE'
+        """).query(Long.class).single();
   }
 
-  @Test
-  @DisplayName("US-28 AC-1 two acknowledges at the same time record one change")
-  void concurrentAcknowledges() throws Exception {
-    var id = submit();
-    var request = UUID.fromString(id);
+  /**
+   * Runs the calls while a transaction holds the request's locks, releases them once every call waits on them, so
+   * the calls are in flight together; the status codes, in the order of the calls.
+   */
+  List<Integer> together(String id, List<Callable<HttpResponse<String>>> calls) throws Exception {
     var locked = new CountDownLatch(1);
     var release = new CountDownLatch(1);
-    try (var pool = Executors.newFixedThreadPool(3)) {
-      // Hold the request's locks, so both acknowledges are in flight together and wait on them
+    try (var pool = Executors.newFixedThreadPool(calls.size() + 1)) {
       var holder = pool.submit(() -> transactions.executeWithoutResult(status -> {
-        helpRequests.findForUpdate(event, request);
+        helpRequests.findForUpdate(event, UUID.fromString(id));
         locked.countDown();
         try {
           release.await(10, TimeUnit.SECONDS);
@@ -149,25 +160,48 @@ class ChangeHistoryIT extends IntegrationTest {
         }
       }));
       assertThat(locked.await(10, TimeUnit.SECONDS)).isTrue();
-      var calls = new ArrayList<Future<HttpResponse<String>>>();
-      for (var user : List.of(operator, colleague)) {
-        calls.add(pool.submit(() -> acknowledge(id, JWKS.valid(user))));
+      var running = new ArrayList<Future<HttpResponse<String>>>();
+      for (var call : calls) {
+        running.add(pool.submit(call));
       }
       var deadline = Instant.now().plusSeconds(10);
-      while (waitingOnLocks() < 2 && Instant.now().isBefore(deadline)) {
+      while (waitingOnLocks() < calls.size() && Instant.now().isBefore(deadline)) {
         Thread.onSpinWait();
       }
-      assertThat(waitingOnLocks()).isGreaterThanOrEqualTo(2);
+      assertThat(waitingOnLocks()).isEqualTo(calls.size());
       release.countDown();
       holder.get(10, TimeUnit.SECONDS);
       var codes = new ArrayList<Integer>();
-      for (var call : calls) {
+      for (var call : running) {
         codes.add(call.get(10, TimeUnit.SECONDS).statusCode());
       }
-      assertThat(codes).containsExactlyInAnyOrder(200, 409);
+      return codes;
     }
+  }
+
+  @Test
+  @DisplayName("US-28 AC-1 two acknowledges at the same time record one change")
+  void concurrentAcknowledges() throws Exception {
+    var id = submit();
+    var codes = together(id, List.of(() -> acknowledge(id, JWKS.valid(operator)),
+        () -> acknowledge(id, JWKS.valid(colleague))));
+    assertThat(codes).containsExactlyInAnyOrder(200, 409);
     assertThat(rows(id)).hasSize(1);
     assertThat(version(id)).isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("US-28 AC-1 an acknowledge and a change at the same time both apply")
+  void acknowledgeAndChangeTogether() throws Exception {
+    var id = submit();
+    var codes = together(id, List.of(() -> acknowledge(id, JWKS.valid(operator)),
+        () -> patch(requests() + "/" + id, JWKS.valid(colleague), "{\"priority\":\"High\"}")));
+    assertThat(codes).containsExactly(200, 200);
+    assertThat(version(id)).isEqualTo(3);
+    assertThat(rows(id)).extracting(r -> r.get("field")).containsExactlyInAnyOrder("status", "priority", "triage");
+    var read = get(requests() + "/" + id, JWKS.valid(operator)).body();
+    assertThat(JsonPath.<String>read(read, "$.status")).isEqualTo("Seen");
+    assertThat(JsonPath.<String>read(read, "$.priority")).isEqualTo("High");
   }
 
   @Test
@@ -249,9 +283,13 @@ class ChangeHistoryIT extends IntegrationTest {
     assertThat(reference.statusCode()).isEqualTo(404);
     var expected = reference.body().replaceAll(INSTANCE, "");
 
-    for (var user : List.of("nobody-" + UUID.randomUUID(), removed, elsewhere)) {
-      for (var response : List.of(acknowledge(id, JWKS.valid(user)), history(id, JWKS.valid(user)))) {
-        assertThat(response.statusCode()).as(user).isEqualTo(404);
+    // A valid token without a sub names nobody: a non-member, not a server error (G8 review)
+    for (var token : List.of(JWKS.valid("nobody-" + UUID.randomUUID()), JWKS.valid(removed), JWKS.valid(elsewhere),
+        JWKS.withoutSubject())) {
+      for (var response : List.of(acknowledge(id, token), history(id, token),
+          post(requests() + "/" + id + "/accept-suggestion", token, ""),
+          patch(requests() + "/" + id, token, "{\"priority\":\"High\"}"))) {
+        assertThat(response.statusCode()).isEqualTo(404);
         assertThat(response.body().replaceAll(INSTANCE, "")).isEqualTo(expected);
       }
     }
