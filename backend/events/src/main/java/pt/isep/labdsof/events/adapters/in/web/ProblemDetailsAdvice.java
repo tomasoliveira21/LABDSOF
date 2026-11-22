@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import pt.isep.labdsof.events.application.EventNotFoundException;
 import pt.isep.labdsof.events.application.EventNotOpenException;
 import pt.isep.labdsof.events.application.ForbiddenException;
+import pt.isep.labdsof.events.application.TeamChangedConcurrentlyException;
 import pt.isep.labdsof.events.application.TeamNameTakenException;
 import pt.isep.labdsof.events.application.TeamNotFoundException;
 import pt.isep.labdsof.events.domain.InvalidTeamException;
@@ -51,6 +52,13 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
   ResponseEntity<ProblemDetail> teamNameTaken(TeamNameTakenException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "A team with this name already exists."));
+  }
+
+  /** US-16 D3: another request changed the team between this one's read and its write; nothing was published. */
+  @ExceptionHandler(TeamChangedConcurrentlyException.class)
+  ResponseEntity<ProblemDetail> teamChangedConcurrently(TeamChangedConcurrentlyException e) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "This team changed meanwhile; read it again."));
   }
 
   /** US-16 D2: a suspended or closed event does not change. */

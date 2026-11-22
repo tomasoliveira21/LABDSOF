@@ -33,7 +33,8 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Domain: `Team`, `TeamPermission`, `Permission` (the fixed list of `features.md` §4.2), `HelpCategory` and `ReportType`, with the name bounds of the `team_name` check, the handled categories as a set in a stable order, and a deleted team granting nothing.
 
 ### Changed
-- `backend/events/contracts/openapi.yaml`: `DELETE …/teams/{teamId}` declares `409` (a suspended or closed event does not change its teams, spec D2), the `Conflict` response says so, `TeamChange.handledCategories` documents that a repeated category is `400`, and the description no longer lists US-16 among the stories still to come.
+- **Every team write matches the version it read** (`… AND version = :version - 1`), so two requests that start from the same read cannot both store a version: the second is `409` (*This team changed meanwhile; read it again.*), or `404` if the team was deleted in between, and it publishes nothing. Without it, a rename and a delete arriving together both committed and published **two `TeamChanged` carrying one version**; a consumer that applies only a strictly newer version kept the first and dropped the second for good, so a lost `DELETE` left the team active in Reports' copy for ever and AC-3 failed in the consumer. Found in the review of this PR on 22 November 2026.
+- `backend/events/contracts/openapi.yaml`: `DELETE …/teams/{teamId}` declares `409` (a suspended or closed event does not change its teams, spec D2), the `Conflict` response says so — now including a team another request changed between a read and a write — `TeamChange.handledCategories` documents that a repeated category is `400`, and the description no longer lists US-16 among the stories still to come.
 - `EventContractIT` now builds `TeamChanged` with the service's own factory instead of its hand-written payload, which is what #192 asked of this story.
 
 ### Notes

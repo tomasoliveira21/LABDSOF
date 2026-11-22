@@ -102,7 +102,9 @@ public class TeamService {
 
   /**
    * One TeamChanged for a write that happened, in the same transaction (D6). A write that found no live row any
-   * more lost a race with a delete, and is the same 404 as an unknown team.
+   * more lost a race with a delete, and is the same 404 as an unknown team; one that found the team at another
+   * version lost a race with a change that is still live, and is a 409. Neither publishes anything, so no two
+   * TeamChanged can carry the same version (D3).
    */
   private void publish(Teams.Write outcome, Team team, UUID userId, Instant at) {
     if (outcome == Teams.Write.NAME_TAKEN) {
@@ -110,6 +112,9 @@ public class TeamService {
     }
     if (outcome == Teams.Write.GONE) {
       throw teamNotFound(userId, team.eventId(), at);
+    }
+    if (outcome == Teams.Write.CONFLICT) {
+      throw new TeamChangedConcurrentlyException();
     }
     outbox.add(TeamEvents.changed(team, userId, at));
   }

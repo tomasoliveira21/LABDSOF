@@ -26,6 +26,11 @@ import pt.isep.labdsof.events.domain.TeamPermission;
  * The team and team_permission tables (spec #192 D4). A team is read with its permissions in one query; the
  * partial unique index team_name_per_event decides a repeated name, here turned into {@link Write#NAME_TAKEN}
  * (US-16 D3), and a write that finds no live row any more into {@link Write#GONE}.
+ *
+ * <p>Every write also matches the version it read, so the row it changes is the row the use case saw. Without
+ * that, two requests starting from the same read both succeed and publish the same version with different states
+ * (a rename and a delete, say), and a consumer that applies only a strictly newer version keeps the first and
+ * drops the second for good: a deleted team would stay active in Reports' copy for ever (AC-3).
  */
 @Repository
 class JdbcTeams implements Teams {
@@ -100,7 +105,7 @@ class JdbcTeams implements Teams {
       return jdbc.sql("""
           UPDATE team SET name = :name, handled_categories = :categories, version = :version, updated_at = :at,
                           updated_by = :actor
-          WHERE event_id = :eventId AND team_id = :teamId AND deleted_at IS NULL
+          WHERE event_id = :eventId AND team_id = :teamId AND deleted_at IS NULL AND version = :version - 1
           """)
           .param(NAME, team.name())
           .param(CATEGORIES, codes(team))
@@ -109,7 +114,7 @@ class JdbcTeams implements Teams {
           .param(ACTOR, actor)
           .param(EVENT_ID, team.eventId())
           .param(TEAM_ID, team.teamId())
-          .update() == 1 ? Write.STORED : Write.GONE;
+          .update() == 1 ? Write.STORED : missed(team);
     } catch (DuplicateKeyException e) {
       return Write.NAME_TAKEN;
     }
@@ -119,14 +124,28 @@ class JdbcTeams implements Teams {
   public Write delete(Team team, UUID actor, Instant at) {
     return jdbc.sql("""
         UPDATE team SET deleted_at = :at, version = :version, updated_at = :at, updated_by = :actor
-        WHERE event_id = :eventId AND team_id = :teamId AND deleted_at IS NULL
+        WHERE event_id = :eventId AND team_id = :teamId AND deleted_at IS NULL AND version = :version - 1
         """)
         .param(AT, Timestamp.from(at))
         .param(VERSION, team.version())
         .param(ACTOR, actor)
         .param(EVENT_ID, team.eventId())
         .param(TEAM_ID, team.teamId())
-        .update() == 1 ? Write.STORED : Write.GONE;
+        .update() == 1 ? Write.STORED : missed(team);
+  }
+
+  /**
+   * Why a write changed no row: the team is gone (deleted in between, or never existed in this event) or it is
+   * still live at another version, which is a lost race against a change this one never saw (US-16 D3). Read in
+   * the same transaction as the UPDATE that missed, so it sees the row that blocked it.
+   */
+  private Write missed(Team team) {
+    return jdbc.sql("SELECT deleted_at IS NULL FROM team WHERE event_id = :eventId AND team_id = :teamId")
+        .param(EVENT_ID, team.eventId())
+        .param(TEAM_ID, team.teamId())
+        .query(Boolean.class)
+        .optional()
+        .orElse(false) ? Write.CONFLICT : Write.GONE;
   }
 
   @Override

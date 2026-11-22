@@ -41,6 +41,9 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
   /** Set to simulate another request deleting the team between the read and the write (US-16 D3). */
   boolean teamVanishesOnWrite;
 
+  /** Set to simulate another request changing the team, which is still live, between the read and the write. */
+  boolean teamChangesOnWrite;
+
   @Override
   public Optional<Event> findById(UUID eventId) {
     return Optional.ofNullable(events.get(eventId));
@@ -100,6 +103,9 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
     if (teamVanishesOnWrite) {
       return Teams.Write.GONE;
     }
+    if (teamChangesOnWrite || stale(team)) {
+      return Teams.Write.CONFLICT;
+    }
     teams.put(team.teamId(), team);
     writes.add(new Write(team.teamId(), actor, at, team.version()));
     return Teams.Write.STORED;
@@ -131,8 +137,20 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
     if (teamVanishesOnWrite) {
       return Teams.Write.GONE;
     }
+    if (teamChangesOnWrite || stale(team)) {
+      return Teams.Write.CONFLICT;
+    }
     teams.put(team.teamId(), team);
     writes.add(new Write(team.teamId(), actor, at, team.version()));
     return Teams.Write.STORED;
+  }
+
+  /**
+   * The version guard of the real adapter: a write only lands on the row it read, so a second write from the same
+   * read is refused instead of publishing a version twice (US-16 D3).
+   */
+  private boolean stale(Team team) {
+    var current = teams.get(team.teamId());
+    return current != null && current.version() != team.version() - 1;
   }
 }

@@ -520,6 +520,28 @@ class TeamsIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-16 AC-3 deleting the team takes its permission away from its members on their next call")
+  void deletingTheTeamTakesItsPermissionsFromItsMembers() {
+    var event = openEvent();
+    var admin = admin(event);
+    var team = teamId(create(event, admin, "Control room"));
+    jdbc.sql("INSERT INTO team_permission (event_id, team_id, permission) "
+        + "VALUES (:event, :team, 'HelpRequests.Triage')").param("event", event).param("team", team).update();
+    var user = memberOfTeams(event, Set.of(team));
+
+    // The permission is the team's, so while the team is live the member reads the list.
+    assertThat(list(event, user).statusCode()).isEqualTo(200);
+
+    assertThat(delete(event, team, admin).statusCode()).isEqualTo(204);
+
+    // AC-3 against the real SQL: nothing changed about the membership, only the team, and the member loses it.
+    var refused = list(event, user);
+    ApiClient.assertProblem(refused, 403);
+    assertThat(ApiClient.json(refused).get("detail")).isEqualTo("No permission in this event.");
+    assertThat(teams(list(event, admin))).isEmpty();
+  }
+
+  @Test
   @DisplayName("US-16 AC-1 only an EventAdmin changes teams")
   void onlyAnEventAdminChangesTeams() {
     var event = openEvent();

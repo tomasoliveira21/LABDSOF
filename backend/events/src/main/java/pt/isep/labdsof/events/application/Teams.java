@@ -10,10 +10,12 @@ import pt.isep.labdsof.events.domain.Team;
 public interface Teams {
 
   /**
-   * What a write did. {@code GONE} means the live row the use case had just read was not there any more, so
-   * another request deleted it in between: nothing is written and nothing is published (US-16 D3).
+   * What a write did. Every write carries the version it read and only changes the row that still holds it, so two
+   * requests that start from the same read cannot both store a version (US-16 D3): {@code GONE} means the row was
+   * deleted in between, and {@code CONFLICT} that it is still live but has moved on. Neither writes anything, and
+   * neither publishes a TeamChanged.
    */
-  enum Write { STORED, NAME_TAKEN, GONE }
+  enum Write { STORED, NAME_TAKEN, GONE, CONFLICT }
 
   /** The teams that are not deleted, with their permissions, ordered by name ignoring case. */
   List<Team> liveOfEvent(UUID eventId);
@@ -27,12 +29,12 @@ public interface Teams {
    */
   Write add(Team team, UUID actor, Instant at);
 
-  /** Stores the next version of a team (rename and categories). */
+  /** Stores the next version of a team (rename and categories), only if it still holds the version read. */
   Write replace(Team team, UUID actor, Instant at);
 
   /**
-   * Soft deletes the team, keeping its permission rows (D5). The name it held becomes free, so this never meets
-   * the unique index.
+   * Soft deletes the team, keeping its permission rows (D5), only if it still holds the version read. The name it
+   * held becomes free, so this never meets the unique index.
    */
   Write delete(Team team, UUID actor, Instant at);
 
