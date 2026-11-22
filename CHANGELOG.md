@@ -12,6 +12,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - [`contracts/openapi.yaml`](backend/transports/contracts/openapi.yaml), contract-first with `openapi-generator`: the Sprint B operations of API outline §5 (bus observations, source status, adding a transport option), each answering `501` with its story (US-40, US-41).
 - A scheduled job that reads the bus source every 30 s with the 2 km geo-query and the J1 timeouts and records `Succeeded` (with the number of buses), `Unavailable` or `Invalid`. Storing the buses, validation, freshness, retry and the circuit breaker stay in US-40.
 - `wiremock` in `infra/compose.yaml` (`wiremock/wiremock:3.13.2`, pinned, unprivileged, admin API on `127.0.0.1:8090`) with the recorded Porto Digital stubs; Transports reads it through `TRANSPORT_SOURCE_URL`.
+- Health and metrics on the private management port of #148 (`/actuator/health` and `/actuator/prometheus` without a token, never published), as for the other services; the calls to the bus source are measured (`http.client.requests`).
 - [`infra/tests/transports_smoke.py`](infra/tests/transports_smoke.py) and its CI step: tokens through the gateway, `501` naming US-41, Flyway, a successful read through WireMock, both queues consumed.
 - Quality gates of the [specs README](Docs/specs/README.md) adopted for `backend/transports`: JaCoCo 90 % lines and branches, generated code included; PIT 80 % on domain and application; Testcontainers with the Compose images.
 

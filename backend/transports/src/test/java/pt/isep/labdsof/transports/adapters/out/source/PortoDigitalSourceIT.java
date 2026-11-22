@@ -15,6 +15,7 @@ import pt.isep.labdsof.transports.Infrastructure;
 import pt.isep.labdsof.transports.WireMockAdmin;
 import pt.isep.labdsof.transports.application.SourceReading;
 import pt.isep.labdsof.transports.domain.ImportOutcome;
+import org.springframework.web.client.RestClient;
 import tools.jackson.databind.json.JsonMapper;
 
 /** The adapter against the real simulator with the recorded stubs (spec D5, ADR-008, J1 timeouts). */
@@ -26,7 +27,8 @@ class PortoDigitalSourceIT {
   private final List<String> stubs = new ArrayList<>();
 
   private static PortoDigitalSource source(String url, String coords, Duration readTimeout) {
-    return new PortoDigitalSource(new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(3), readTimeout), JsonMapper.builder().build());
+    var properties = new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(3), readTimeout);
+    return new PortoDigitalSource(properties, JsonMapper.builder().build(), RestClient.builder());
   }
 
   private static PortoDigitalSource source() {

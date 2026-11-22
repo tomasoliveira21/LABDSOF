@@ -71,9 +71,10 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-amqp</artifactId>
     </dependency>
+    <!-- Spec D12: Boot's RestClient.Builder, so the calls to the bus source are measured (http.client.requests) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-actuator</artifactId>
+      <artifactId>spring-boot-starter-restclient</artifactId>
     </dependency>
 
     <dependency>

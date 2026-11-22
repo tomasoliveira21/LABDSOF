@@ -25,11 +25,12 @@ class PortoDigitalSource implements TransportSource {
   private final URI uri;
   private final JsonMapper json;
 
-  PortoDigitalSource(TransportSourceProperties properties, JsonMapper json) {
+  /** {@code client} is Boot's builder, which measures every call ({@code http.client.requests}, spec D12). */
+  PortoDigitalSource(TransportSourceProperties properties, JsonMapper json, RestClient.Builder client) {
     var http = HttpClient.newBuilder().connectTimeout(properties.connectTimeout()).build();
     var factory = new JdkClientHttpRequestFactory(http);
     factory.setReadTimeout(properties.readTimeout());
-    this.client = RestClient.builder().requestFactory(factory).build();
+    this.client = client.requestFactory(factory).build();
     // Switched off, there may be no URL (the properties refuse an empty one only when the job is on)
     this.uri = properties.enabled() ? uri(properties.url(), properties.coords(), properties.maxDistance()) : null;
     this.json = json;

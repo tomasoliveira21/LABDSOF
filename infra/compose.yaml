@@ -149,7 +149,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75.0" # repeated: `environment` replaces the anchor's
+      <<: *spring-env # repeated: `environment` replaces the anchor's
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/transports
       SPRING_DATASOURCE_USERNAME: transports
       SPRING_DATASOURCE_PASSWORD: ${TRANSPORTS_DB_PASSWORD:?set TRANSPORTS_DB_PASSWORD in infra/.env}
