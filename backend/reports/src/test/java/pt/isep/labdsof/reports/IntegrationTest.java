@@ -44,6 +44,11 @@ public abstract class IntegrationTest {
         .POST(HttpRequest.BodyPublishers.ofString(json)));
   }
 
+  protected HttpResponse<String> patch(String path, String token, String json) throws Exception {
+    return send(builder(path, token).header("Content-Type", "application/json")
+        .method("PATCH", HttpRequest.BodyPublishers.ofString(json)));
+  }
+
   protected static String submitBody(UUID clientRequestId, String description) {
     return """
         {"clientRequestId":"%s","location":{"mapVersion":3,"x":0.42,"y":0.77},"description":"%s"}
