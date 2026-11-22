@@ -400,16 +400,19 @@ class HelpRequestServiceTest {
     var id = request.id();
     var elsewhere = UUID.randomUUID();
     ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var ana = actor("ana");
+    var nobody = actor("nobody");
+    var miguel = actor("miguel");
 
-    assertThatThrownBy(() -> service.acceptSuggestion(EVENT, actor("ana"), id)).isInstanceOf(ForbiddenException.class);
-    assertThatThrownBy(() -> service.change(EVENT, actor("ana"), id, Category.Safety, null))
+    assertThatThrownBy(() -> service.acceptSuggestion(EVENT, ana, id)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.change(EVENT, ana, id, Category.Safety, null))
         .isInstanceOf(ForbiddenException.class);
-    assertThatThrownBy(() -> service.acceptSuggestion(EVENT, actor("nobody"), id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.acceptSuggestion(EVENT, nobody, id)).isInstanceOf(NotFoundException.class);
     // A control-room member of another event, or a request of another event, is not found
-    assertThatThrownBy(() -> service.acceptSuggestion(elsewhere, actor("miguel"), id))
+    assertThatThrownBy(() -> service.acceptSuggestion(elsewhere, miguel, id))
         .isInstanceOf(NotFoundException.class);
     var unknown = UUID.randomUUID();
-    assertThatThrownBy(() -> service.change(EVENT, actor("miguel"), unknown, Category.Safety, null))
+    assertThatThrownBy(() -> service.change(EVENT, miguel, unknown, Category.Safety, null))
         .isInstanceOf(NotFoundException.class);
     assertThat(ports.find(EVENT, id).orElseThrow()).isEqualTo(request);
     assertThat(ports.decisions).isEmpty();
@@ -543,15 +546,18 @@ class HelpRequestServiceTest {
     var id = stored(SUGGESTED).id();
     var elsewhere = UUID.randomUUID();
     ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var ana = actor("ana");
+    var nobody = actor("nobody");
+    var miguel = actor("miguel");
 
-    assertThatThrownBy(() -> service.acknowledge(EVENT, actor("ana"), id)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.acknowledge(EVENT, ana, id)).isInstanceOf(ForbiddenException.class);
     assertThatThrownBy(() -> service.history(EVENT, "ana", id)).isInstanceOf(ForbiddenException.class);
-    assertThatThrownBy(() -> service.acknowledge(EVENT, actor("nobody"), id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.acknowledge(EVENT, nobody, id)).isInstanceOf(NotFoundException.class);
     assertThatThrownBy(() -> service.history(EVENT, "nobody", id)).isInstanceOf(NotFoundException.class);
-    assertThatThrownBy(() -> service.acknowledge(elsewhere, actor("miguel"), id))
+    assertThatThrownBy(() -> service.acknowledge(elsewhere, miguel, id))
         .isInstanceOf(NotFoundException.class);
     var unknown = UUID.randomUUID();
-    assertThatThrownBy(() -> service.acknowledge(EVENT, actor("miguel"), unknown))
+    assertThatThrownBy(() -> service.acknowledge(EVENT, miguel, unknown))
         .isInstanceOf(NotFoundException.class);
     assertThat(ports.find(EVENT, id).orElseThrow().status()).isEqualTo(HelpRequestStatus.Submitted);
     assertThat(ports.decisions).isEmpty();

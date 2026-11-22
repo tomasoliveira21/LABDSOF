@@ -296,7 +296,7 @@ class ChangeHistoryIT extends IntegrationTest {
     // The other event's EventAdmin, asking through their own event, and an unknown request
     var otherPath = "/api/v1/events/" + otherEvent + "/help-requests/";
     for (var path : List.of(otherPath + id, requests() + "/" + UUID.randomUUID())) {
-      var token = path.startsWith(otherPath) ? JWKS.valid(elsewhere) : JWKS.valid(operator);
+      var token = JWKS.valid(path.startsWith(otherPath) ? elsewhere : operator);
       for (var response : List.of(post(path + "/acknowledge", token, ""), get(path + "/history", token))) {
         assertThat(response.statusCode()).as(path).isEqualTo(404);
         assertThat(response.body().replaceAll(INSTANCE, "")).isEqualTo(expected);

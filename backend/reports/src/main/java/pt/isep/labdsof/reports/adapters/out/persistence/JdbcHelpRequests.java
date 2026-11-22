@@ -37,6 +37,7 @@ class JdbcHelpRequests implements HelpRequests {
   private static final String CATEGORY = "category";
   private static final String PRIORITY = "priority";
   private static final String TRIAGE = "triage";
+  private static final String STATUS = "status";
 
   private final JdbcClient jdbc;
 
@@ -64,7 +65,7 @@ class JdbcHelpRequests implements HelpRequests {
         .param("y", r.location().y())
         .param(CATEGORY, name(r.category()))
         .param(PRIORITY, name(r.priority()))
-        .param("status", r.status().name())
+        .param(STATUS, r.status().name())
         .param("defaultTeamId", r.defaultTeamId())
         .param("routedTeamId", r.routedTeamId())
         .param("submittedAt", Timestamp.from(r.submittedAt()))
@@ -193,7 +194,7 @@ class JdbcHelpRequests implements HelpRequests {
         .param(EVENT_ID, r.eventId())
         .param(CATEGORY, name(r.category()))
         .param(PRIORITY, name(r.priority()))
-        .param("status", r.status().name())
+        .param(STATUS, r.status().name())
         .param("updatedAt", at)
         .param("version", r.version())
         .update();
@@ -262,7 +263,7 @@ class JdbcHelpRequests implements HelpRequests {
         new Location(rs.getInt("map_version"), rs.getDouble("x"), rs.getDouble("y")),
         value(Category.class, rs.getString(CATEGORY)),
         value(Priority.class, rs.getString(PRIORITY)),
-        HelpRequestStatus.valueOf(rs.getString("status")),
+        HelpRequestStatus.valueOf(rs.getString(STATUS)),
         rs.getObject("default_team_id", UUID.class),
         rs.getObject("routed_team_id", UUID.class),
         triage,

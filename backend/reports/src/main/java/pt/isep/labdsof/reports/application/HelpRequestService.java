@@ -102,7 +102,7 @@ public class HelpRequestService {
    */
   @Transactional(readOnly = true)
   public Changes list(UUID eventId, String userId, Instant since) {
-    requireTriage(eventId, userId);
+    triageAccess(eventId, userId);
     // To the microsecond, as the database keeps times, so the next updatedSince compares exactly
     var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
     var items = since == null ? helpRequests.open(eventId)
@@ -115,6 +115,11 @@ public class HelpRequestService {
   /** The control room of the event only: HelpRequests.Triage (403); a non-member gets 404 (US-26, US-36 D5). */
   @Transactional(readOnly = true)
   public void requireTriage(UUID eventId, String userId) {
+    triageAccess(eventId, userId);
+  }
+
+  /** The check of {@link #requireTriage}, for the use cases here, which already run in their own transaction. */
+  private void triageAccess(UUID eventId, String userId) {
     if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
       throw new ForbiddenException();
     }
@@ -123,7 +128,7 @@ public class HelpRequestService {
   /** The control room takes the AI's suggestion as the request's values (US-35 AC-1, spec D1). */
   @Transactional
   public HelpRequest acceptSuggestion(UUID eventId, Actor actor, UUID requestId) {
-    requireTriage(eventId, actor.userId());
+    triageAccess(eventId, actor.userId());
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
     return decided(request, request.acceptSuggestion(now), actor, now);
@@ -132,7 +137,7 @@ public class HelpRequestService {
   /** The control room sets the category, the priority or both (US-35 AC-2, spec D2). */
   @Transactional
   public HelpRequest change(UUID eventId, Actor actor, UUID requestId, Category category, Priority priority) {
-    requireTriage(eventId, actor.userId());
+    triageAccess(eventId, actor.userId());
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
     return decided(request, request.change(category, priority, now), actor, now);
@@ -141,7 +146,7 @@ public class HelpRequestService {
   /** The control room has seen the request: Submitted becomes Seen, recorded as the member's change (US-28 D2, D8). */
   @Transactional
   public HelpRequest acknowledge(UUID eventId, Actor actor, UUID requestId) {
-    requireTriage(eventId, actor.userId());
+    triageAccess(eventId, actor.userId());
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
     var decision = request.acknowledge(now);
@@ -153,7 +158,7 @@ public class HelpRequestService {
   /** Every recorded change of a request of the event, oldest first; only HelpRequests.Triage (US-28 D4, D7). */
   @Transactional(readOnly = true)
   public List<HistoryEntry> history(UUID eventId, String userId, UUID requestId) {
-    requireTriage(eventId, userId);
+    triageAccess(eventId, userId);
     helpRequests.find(eventId, requestId).orElseThrow(NotFoundException::new);
     return helpRequests.history(eventId, requestId);
   }

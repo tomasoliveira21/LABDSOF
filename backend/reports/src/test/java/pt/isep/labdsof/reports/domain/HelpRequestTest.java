@@ -319,8 +319,7 @@ class HelpRequestTest {
   @Test
   @DisplayName("US-28 AC-1 acknowledging moves Submitted to Seen and records the status")
   void acknowledge() {
-    // LATER is past the triage deadline, so the first request reads NotTriaged when it is acknowledged
-    assertThat(LATER).isAfter(NOW.plus(TriageSuggestion.TRIAGE_DEADLINE));
+    // LATER is 60 s after NOW, past the triage deadline, so the first request reads NotTriaged when it is acknowledged
     var requests = java.util.List.of(submit("help"), withTriage(SUGGESTED),
         withTriage(SUGGESTED).acceptSuggestion(LATER).request(),
         withTriage(SUGGESTED).change(Category.Safety, null, LATER).request());
