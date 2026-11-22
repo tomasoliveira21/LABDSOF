@@ -2,6 +2,20 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-22 · Set priority and status, with history (US-28, #75, Bruno de Abreu Lopes)
+
+**Why:** US-28 (#75): every change the control room makes to a request is recorded with who, when, the old and the new value (SC9, NFR-16), and the control room can read that history and mark a request as seen. Spec: [`Docs/specs/US-28-priority-status-history.md`](Docs/specs/US-28-priority-status-history.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/acknowledge` (`HelpRequests.Triage`): `Submitted → Seen` (decision 6 of 15 November 2026), recorded as a `status` history entry; `409` when the request is no longer `Submitted`.
+- `GET /api/v1/events/{eventId}/help-requests/{requestId}/history` (`HelpRequests.Triage`): every recorded change, oldest first, with `actorUserId`, `actorName` and `changedAt`.
+- Flyway `V5`: column `help_request_change.actor_name`, the token's `name` claim copied when the change is recorded (also for the `PATCH` and `accept-suggestion` of US-35).
+- `ChangeHistoryIT`: both endpoints with the security matrix, two acknowledges at once, and the full history after an accept, a change and an acknowledge; `infra/tests/reports_smoke.py`: both endpoints through the gateway.
+
+### Changed
+- `contracts/openapi.yaml`: `acknowledgeHelpRequest` and `getHelpRequestHistory` are implemented; the history entry has `actorName`. The `PATCH` keeps the category and the priority only: the status changes through `acknowledge` and `close` (spec D1), which corrects *US-28 adds the status* written by US-35.
+- The 409 of a triage or status conflict is one `RequestConflictException`. Decisions D5 (the copied name) and D6 (only member changes are history entries) are proposed for the team's review.
+
 ## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
 
 - Badges starts in Compose with its own PostgreSQL database, Flyway migrations, Keycloak JWT validation,

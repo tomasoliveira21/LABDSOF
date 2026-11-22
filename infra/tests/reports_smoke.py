@@ -77,6 +77,12 @@ def main(env_path: str) -> int:
               "setting the category or priority answers 404 to a user who is not a member of the event")
     idp.check(call(gateway, f"{request}/accept-suggestion", token, {}) == 404,
               "accepting a suggestion answers 404 to a user who is not a member of the event")
+    # US-28 (#75): the acknowledge and the change history go through the gateway
+    idp.check(call(gateway, f"{request}/acknowledge", None, {}) == 401, "acknowledging needs a token (401)")
+    idp.check(call(gateway, f"{request}/acknowledge", token, {}) == 404,
+              "acknowledging answers 404 to a user who is not a member of the event")
+    idp.check(call(gateway, f"{request}/history", token) == 404,
+              "the change history answers 404 to a user who is not a member of the event")
 
     for failure in idp.failures:
         print(f"::error::{failure}")

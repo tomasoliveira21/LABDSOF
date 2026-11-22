@@ -63,6 +63,7 @@ Decisions the documents leave open are marked **Proposed, for the team's review*
 | Non-member, removed member, member of another event, request of another event, unknown request | `404`, same body, nothing written | `ChangeHistoryIT` · `US-28 AC-1 another event's member or request gets 404 without revealing it` |
 | No, expired, wrong-signature, wrong-issuer, wrong-audience, malformed token | `401` on both | `ChangeHistoryIT` · `US-28 AC-1 every bad token gets 401` |
 | Malformed event or request ID | `400` on both | `ChangeHistoryIT` · `US-28 AC-1 a malformed ID is rejected` |
+| Change without a user ID | Refused before anything is written; the name may be missing | `HelpRequestTest` · `US-28 AC-1 a change is made by a member with a user ID, the name may be missing` |
 | Name with injection text or markup | Stored and returned as text | `ChangeHistoryIT` · `US-28 AC-2 the history lists every change oldest first with who and when` |
 
 ## 6. Handoff
