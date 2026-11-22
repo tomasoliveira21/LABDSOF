@@ -63,6 +63,8 @@ public final class Infrastructure {
     properties.put("spring.security.oauth2.resourceserver.jwt.issuer-uri", Jwks.ISSUER);
     properties.put("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", JWKS.uri());
     properties.put("farol.outbox.enabled", "false");
+    // OutboxIT reads reports.reports-events: the triage consumer runs only in TriageIT's own process (spec US-34 D1)
+    properties.put("farol.triage.enabled", "false");
     properties.put("farol.outbox.confirm-timeout", "2s");
     // Short backoff keeps the retry tests fast; the production values are in application.properties.
     properties.put("spring.rabbitmq.listener.simple.retry.initial-interval", "50ms");

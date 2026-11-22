@@ -6,26 +6,41 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.EventAccess;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.Permission;
+import pt.isep.labdsof.reports.domain.Priority;
+import pt.isep.labdsof.reports.domain.TriageState;
 
-/** Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26). */
+/**
+ * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), and the
+ * control room's triage decisions (US-35).
+ */
 @Service
 public class HelpRequestService {
+
+  private static final Logger log = LoggerFactory.getLogger(HelpRequestService.class);
 
   private final HelpRequests helpRequests;
   private final LocalCopies copies;
   private final Outbox outbox;
+  private final TriageMetrics metrics;
   private final Clock clock;
 
-  public HelpRequestService(HelpRequests helpRequests, LocalCopies copies, Outbox outbox, Clock clock) {
+  public HelpRequestService(HelpRequests helpRequests, LocalCopies copies, Outbox outbox, TriageMetrics metrics,
+      Clock clock) {
     this.helpRequests = helpRequests;
     this.copies = copies;
     this.outbox = outbox;
+    this.metrics = metrics;
     this.clock = clock;
   }
 
@@ -85,9 +100,7 @@ public class HelpRequestService {
    */
   @Transactional(readOnly = true)
   public Changes list(UUID eventId, String userId, Instant since) {
-    if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
-      throw new ForbiddenException();
-    }
+    requireTriage(eventId, userId);
     // To the microsecond, as the database keeps times, so the next updatedSince compares exactly
     var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
     var items = since == null ? helpRequests.open(eventId)
@@ -95,6 +108,63 @@ public class HelpRequestService {
     // Limit: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
     // cursor (snapshot xmin) if one ever is
     return new Changes(items.stream().map(r -> r.asSeenAt(now)).toList(), now.minus(POLL_OVERLAP));
+  }
+
+  /** The control room of the event only: HelpRequests.Triage (403); a non-member gets 404 (US-26, US-36 D5). */
+  @Transactional(readOnly = true)
+  public void requireTriage(UUID eventId, String userId) {
+    if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
+      throw new ForbiddenException();
+    }
+  }
+
+  /** The control room takes the AI's suggestion as the request's values (US-35 AC-1, spec D1). */
+  @Transactional
+  public HelpRequest acceptSuggestion(UUID eventId, String userId, UUID requestId) {
+    requireTriage(eventId, userId);
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
+    var now = clock.instant();
+    return decided(request, request.acceptSuggestion(now), userId, now);
+  }
+
+  /** The control room sets the category, the priority or both (US-35 AC-2, spec D2). */
+  @Transactional
+  public HelpRequest change(UUID eventId, String userId, UUID requestId, Category category, Priority priority) {
+    requireTriage(eventId, userId);
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
+    var now = clock.instant();
+    return decided(request, request.change(category, priority, now), userId, now);
+  }
+
+  /**
+   * Saves and records the decision taken at {@code now}, counts the first one on a suggestion once it is committed,
+   * logs metadata only (D3, D6, D8).
+   */
+  private HelpRequest decided(HelpRequest before, HelpRequest.Decision decision, String userId, Instant now) {
+    var after = decision.request();
+    if (!decision.changes().isEmpty()) {
+      helpRequests.saveDecision(after, userId, decision.changes());
+      var state = after.triage().state();
+      if (before.triage().state() == TriageState.Suggested) {
+        afterCommit(() -> metrics.decided(state));
+      }
+      log.info("Triage decision on request {}: {} -> {}", before.id(), before.asSeenAt(now).triage().state(), state);
+    }
+    return after.asSeenAt(now);
+  }
+
+  /** After the commit, so a decision rolled back is never counted (G8 review); at once outside a transaction. */
+  private static void afterCommit(Runnable action) {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override
+        public void afterCommit() {
+          action.run();
+        }
+      });
+    } else {
+      action.run();
+    }
   }
 
   private EventAccess access(UUID eventId, String userId) {

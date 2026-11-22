@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
 import pt.isep.labdsof.reports.domain.Membership;
 import pt.isep.labdsof.reports.domain.Team;
@@ -26,6 +27,10 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   final Map<UUID, Team> teams = new HashMap<>();
   final List<OutgoingEvent> outbox = new ArrayList<>();
   final Set<UUID> processed = new HashSet<>();
+  final List<Decision> decisions = new ArrayList<>();
+
+  /** One member decision saved through {@link #saveDecision}. */
+  record Decision(UUID requestId, String actorUserId, Instant changedAt, List<HelpRequestChange> changes) {}
 
   @Override
   public boolean insertIfNew(HelpRequest request) {
@@ -58,6 +63,31 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
     var submittedAfter = since.minus(TriageSuggestion.TRIAGE_DEADLINE);
     return inArrivalOrder(eventId,
         r -> r.updatedAt().isAfter(since) || r.submittedAt().isAfter(submittedAfter));
+  }
+
+  @Override
+  public boolean saveTriage(HelpRequest triaged) {
+    var current = requests.get(triaged.id());
+    if (current == null || !current.eventId().equals(triaged.eventId()) || !current.triage().awaitsModel()) {
+      return false;
+    }
+    requests.put(triaged.id(), current.withTriage(triaged.triage(), triaged.updatedAt()));
+    return true;
+  }
+
+  @Override
+  public Optional<HelpRequest> findForUpdate(UUID eventId, UUID requestId) {
+    return find(eventId, requestId);
+  }
+
+  @Override
+  public void saveDecision(HelpRequest decided, String actorUserId, List<HelpRequestChange> changes) {
+    var current = find(decided.eventId(), decided.id()).orElseThrow();
+    if (current.version() + 1 != decided.version()) {
+      throw new IllegalStateException("lost update");
+    }
+    requests.put(decided.id(), decided);
+    decisions.add(new Decision(decided.id(), actorUserId, decided.updatedAt(), changes));
   }
 
   private List<HelpRequest> inArrivalOrder(UUID eventId, Predicate<HelpRequest> filter) {

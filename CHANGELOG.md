@@ -63,6 +63,66 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The gateway limits API traffic to 120 requests per minute per account by default and returns a Problem Details
   response with `Retry-After` when the quota is exhausted.
 
+## [Unreleased] · 2026-11-21 · Measure the AI triage end to end (#234, Bruno de Abreu Lopes)
+
+**Why:** #149 AC-5 asks for SC3 and SC5 measured on the running system, not by direct model calls, and its AC-2 needs an independent label review. Spec: [`Docs/specs/234-ai-triage-end-to-end.md`](Docs/specs/234-ai-triage-end-to-end.md). Part of #149. Stacked on PR #233.
+
+### Added
+- `Docs/Research/architecture-investigation/evaluation/e2e_triage.py`: submits the 72 holdout texts through the gateway as participants, one every 30 s (an arrival profile proposed for the team's review), polls the control room's list as an operator every 2 s, and reads Reports' database once every deadline has passed; `--verify` and `--self-test`.
+- `runs/2026-11-21-e2e/`: the manifest, with the profile and the pass rules committed before the first measured submission, plus per-request rows (no text), summaries and triage-status changes. **SC3 failed:** 61 of 66 non-abstention cases valid within 30 s (0.924 against 0.95). Stored suggestions took 14.0 s at p50, 18.3 s at p95 and 20.1 s at most. 4 model calls were cut at 20 s, and 1 request was refused while the circuit was open. The rest of the system added 0.3 s. **SC5 passed:** with the model stopped, 72 of 72 requests were shown in order and read `NotTriaged` within 4.1 s. How to read it (review of PR #235): this profile measures the serial path, with at most one model call in flight, so 0.924 is an optimistic bound, not a worst case. Under concurrent arrivals the runtime (OLLAMA_NUM_PARALLEL=1, OLLAMA_MAX_QUEUE=1, admission only with 23 s left) queues a second request behind a 14 s call or refuses it, turning latency misses into Unavailable ones: the gap to 0.95 is not three points, and 0.924 is not the number to close.
+- `label_review.py` and `label-review/labels.md`: one line per case of the three case files (217), urgent and abstention cases first, without model output; `label-review/README.md` is the reviewer's guide (rubric, how to comment per line, the sentence that makes a review count).
+
+### Changed
+- Dated notes in `product-vision.md` (SC3, SC5), ADR-005 (status unchanged), `responsible-ai.md`, the local AI decisions (release gate step 7), the evaluation README, guide K2 and `Docs/README.md`.
+
+## [Unreleased] · 2026-11-21 · Accept or change the AI suggestion (US-35, #82, Bruno de Abreu Lopes)
+
+**Why:** US-35 (#82): the control room must stay in control of the AI triage: accept the suggestion as its own decision, or set its own values, which a later suggestion never overwrites (NFR-22). Spec: [`Docs/specs/US-35-accept-or-change-suggestion.md`](Docs/specs/US-35-accept-or-change-suggestion.md). Stacked on PR #232.
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/accept-suggestion` (`HelpRequests.Triage`): the suggested category and priority become the request's values and the triage becomes `Accepted`; `409` when the triage is not `Suggested`.
+- `PATCH /api/v1/events/{eventId}/help-requests/{requestId}` for the category and the priority (the operation planned for US-28; US-28 adds the status): the member's values make the triage `Changed`, from any triage state; the suggestion and the `NotTriaged` reason stay visible.
+- Flyway `V3`: table `help_request_change`, one row per changed field with who, when, the old and the new value, in the fields of the planned history entry (`GET …/history`, US-28 #75). The member's write locks the request, so the triage worker's save waits and then writes nothing.
+- Counter `farol.triage.decision{decision}` (`Accepted`, `Changed`): the first member decision on each stored suggestion.
+- `TriageDecisionIT`: both endpoints with the security matrix, the history rows, two accepts at once, and the worker's save refused after a member's values; `infra/tests/reports_smoke.py`: both endpoints through the gateway (401 without a token, 404 for a non-member).
+
+### Changed
+- `contracts/openapi.yaml`: `setHelpRequestCategoryAndPriority` and `acceptTriageSuggestion` are implemented; the default team after an accept stays planned (#81 AC-2).
+- Dated notes in the domain model (proposed transitions `Pending → Changed` and `Accepted → Changed`), the API outline §4.1, ADR-005 and `responsible-ai.md`. Decisions D2, D3 and D6 of the spec are proposed for the team's review.
+- Spec US-35 D6 (review of PR #233): `farol.triage.decision` counts only decisions on a `Suggested` request, so it measures the AI suggestions, not manual triage; most requests of a burst never get a suggestion (US-36 capacity limit).
+
+## [Unreleased] · 2026-11-21 · Requests without AI (US-36, #83, Bruno de Abreu Lopes)
+
+**Why:** US-36 (#83, scenario D1): help requests must keep reaching the control room when the AI is down, slow or wrong, the back office must know when triage is unavailable, and each fallback must be logged and counted. Part of #149 (AC-5, SC5). Spec: [`Docs/specs/US-36-requests-without-ai.md`](Docs/specs/US-36-requests-without-ai.md). Stacked on PR #230.
+
+### Added
+- Circuit breaker in front of the AI with Resilience4j 2.4 (`resilience4j-spring-boot4`), instance `ai-provider`, with the J1 values of `architecture.md` §9.1 (last 10 calls, at least 4, 50 % failed or slow over 16 s, open 30 s, one probe). Timeouts, provider errors and invalid outputs count as failures; while it is open a request is `Unavailable` without a call.
+- `GET /api/v1/events/{eventId}/triage-status` (`HelpRequests.Triage`; 403 without it, 404 outside the event): `available` only when an AI is configured and the circuit is closed, otherwise the reason (`Unavailable` or the last failure). The banner is the web app's (hand-off on #83).
+- Counters `farol.triage.fallback{reason}` and `farol.triage.suggested` (Micrometer, through `spring-boot-starter-actuator`; only Boot's default `/actuator/health` on the API port, behind the API chain's token), and a `WARN` log line per fallback with the request ID and the reason.
+- `TriageFallbackIT` (SC5): with the AI stopped, slower than the timeout, answering 503, dropping the connection or answering invalid data, 20 requests each reach the control room at once, in order of arrival, without category or priority, `NotTriaged` with their reason; the circuit opens after 4 calls and the AI gets no more; the status reads unavailable and, after a successful probe, available again.
+- `infra/tests/reports_smoke.py`: the triage status through the gateway on the default stack (no `ai` service): 401 without a token, 404 for a non-member.
+
+### Changed
+- `contracts/openapi.yaml`: `getTriageStatus` is implemented; `reason` is always present and null when available.
+- Spec US-36 (review of PR #232): the capacity limit (one consumer, about one triage every 12 s, 7 s of queue wait before `Unavailable`), and that the banner covers provider failures, not saturation; D8 says which actuator endpoint the API port has.
+- SC5 note in `product-vision.md`, ADR-005 (*Acceptance evidence pending*), `responsible-ai.md` (K2 outage row) and the local AI decisions, with dated notes: SC5 has test evidence with a stub AI; the run on the deployed stack with the real model stays for #149.
+
+## [Unreleased] · 2026-11-20 · AI triage suggestion (US-34 part, #229, Bruno de Abreu Lopes)
+
+**Why:** US-34 (#81): each new help request should arrive with a suggested category and priority, and only its description may reach the model. Part of #81; the default team (#81 AC-2) waits for US-17 (#66). Spec: [`Docs/specs/US-34-ai-triage-suggestion.md`](Docs/specs/US-34-ai-triage-suggestion.md).
+
+### Added
+- Reports' triage consumer of its own `HelpRequestSubmitted` (queue `reports.reports-events`): one request at a time, the local Ollama through the JDK HTTP client with the runtime contract (connect 2 s, one attempt, the call capped at 20 s and by the time left, admission with at least 23 s of the 30 s left, late results discarded), and the model's output validated in the domain, never repaired.
+- The prompt (`prompts/v8.txt`, frozen by #227) and the output schema of the evaluation package, copied to `backend/reports/src/main/resources/triage/` and checked by SHA-256 against the package; kept in LF by `.gitattributes`.
+- A suggestion is stored as `triage.state: Suggested` with the category, priority and reason, and never written to the request's own category or priority (NFR-22). A timeout, provider error, invalid output, abstention or missing AI reads `NotTriaged` with its reason at once (stored as `Pending` with the reason: `NotTriaged` is never stored, decision 6), and the request stays in the control room's list.
+- `infra/compose.yaml`: the opt-in `ai` service (`--profile ai`, `ollama/ollama:0.40.16` by digest, model volume, no published port); Reports gets `FAROL_AI_URL`, empty by default (`infra/.env.example`).
+- Tests: domain and service tests, the adapter against a local stub HTTP server, and `TriageIT` end to end (HTTP submit, outbox, RabbitMQ, stub model, PostgreSQL).
+
+### Changed
+- Flyway `V2`: `triage_suggestion.suggested_reason` holds 240 characters, as the output schema and the production contract say (#194 had 200); `suggestedReason` in `contracts/openapi.yaml` too.
+- The envelope check of the local-copy listener is shared with the triage consumer.
+- `local-delivery.md` (`ai` row) and the local AI decisions record the consumer with dated notes. The model's offline gate fails (#224, #227): its suggestions are an operator aid, not release evidence; SC3 and SC5 are not claimed.
+
 ## [Unreleased] · 2026-11-20 · Critical over-rating on a fresh holdout (#227, Bruno de Abreu Lopes)
 
 **Why:** the #224 run failed the gate on the `Critical` ceiling, and the review of PR #225 said a fix must be tuned on the development split or on new cases, never on the test split; #149 AC-4 also asks for repeated runs. Spec: [`Docs/specs/227-critical-ceiling-holdout.md`](Docs/specs/227-critical-ceiling-holdout.md).
@@ -92,6 +152,30 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Spec 224 §6 said *six* `--verify` checks: there are eight.
 - `--resume` never retries a case already written, even as `output: null` (a failure stays a failure): now said in the flag's help, the runner's docstring and the evaluation README.
 - The manifest and `--verify` show integrity, not bit-for-bit reproducibility: seed 42 and temperature 0 do not fix the output across batch size, threads or backend (spec 224 §1, evaluation README). A prompt change for the five ceiling failures must be tuned on the development split or new cases, never on the test split (spec 224 §6).
+
+## [Unreleased] · 2026-11-20 · Local observability with Prometheus and Grafana (#148)
+
+**Why:** ADR-012 and the [local observability plan](Docs/Technical/plans/local-observability.md) were accepted as architecture, but no telemetry had ever run (#148 was reopened on 31 October). This adds the runtime part: an optional Compose profile, metrics, correlated JSON logs, one dashboard and the three core alerts, with a trigger/resolve drill. Evidence: [`Docs/Technical/evidence/148/`](Docs/Technical/evidence/148/README.md).
+
+### Added
+- `infra/compose.yaml`, profile `observability`: Prometheus `v3.5.0` and Grafana `12.2.1`, pinned by digest, published on `127.0.0.1` only (`9090`, `3001`), hardened like the other containers, Prometheus kept 1 day or 512 MB. Without `--profile observability` the stack is unchanged.
+- `infra/observability/`: the Prometheus scrape list (every 15 s), the Grafana data source, the dashboard *Farol local operations* (the four groups of plan §4) and the three core alert rules: service or telemetry down (2 min), outbox oldest pending row > 60 s (2 min), useful triage < 95 % of the mature one-hour cohort with at least 20 eligible (5 min). No code emits `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`, so the triage rule shows *No data*, still none after #81–#83 (PRs #230, #232, #233) merge: they emit `farol.triage.fallback`, `farol.triage.suggested` and `farol.triage.decision`, not these gauges, which come with SC3 (#149). The *Transport data age* panel (`farol_transport_data_age_seconds`) has no data either: no code emits it.
+- Health and metrics on a private management port, `8081`, never published (`/actuator/health`, `/actuator/prometheus`), and JSON console logs (`logstash`) for every Spring service, through `infra/compose.yaml`. Actuator and the Prometheus registry in Reports, the gateway, Events, Transports and Badges; the registry in Auth & Users (which had actuator). Every Spring service is scraped. Each owner agreed to the change in their module and reviews it.
+- Reports and Auth & Users: a `SecurityFilterChain` that serves only `health` and `prometheus` without a token, and only when the management port is separate (`@ConditionalOnManagementPort(DIFFERENT)`); on the API port the actuator still needs a token. The Auth & Users change was agreed with its owner, who reviews it. Events and Badges, which got Spring Security on `main` while this was open (#192, #201), have the same chain and a `ManagementPortIT` since 22 November 2026, for their owners to review.
+- Gateway: `X-Correlation-Id` kept when it is 8 to 64 letters, digits or hyphens, otherwise a new UUID; forwarded to the service, returned to the caller and logged with one line per request, as Auth & Users already does. Events keeps its own `CorrelationIdFilter` (#192), registered once in `WebConfiguration`, with two additions: an exception that escapes the chain is logged as `500`, not the response's default `200`, and the health check's status request is not logged.
+- Reports: the same correlation id in its logs, stored with the outbox row (Flyway `V4`: `V2` and `V3` are taken by PRs #230 and #233) and sent as the AMQP `correlation_id`; a consumed message's correlation id is in the log context while it is handled; gauge `farol_outbox_oldest_pending_seconds`; the management port answers health and metrics without a token, nothing else.
+- `infra/tests/observability_smoke.py` and a CI step that starts the profile on the CI stack, runs it and checks that Prometheus and Grafana are on `127.0.0.1` and hardened.
+- README: *Run with observability*.
+
+### Changed
+- The CI stack is stopped with `--profile observability`, or `down` leaves Prometheus and Grafana running.
+- The gateway, Events and Badges, which replace the anchor's `environment`, repeat the management port and log settings; Badges' Compose health check reads readiness on the management port `8081`.
+- `infra/.env.example`: `PROMETHEUS_PORT`, `GRAFANA_PORT`, `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD` (example value only). Grafana refuses to start with an empty password, only when the profile is used.
+- ADR-012 status and the plan: what is implemented and measured and the limitations, in dated notes.
+
+### Not done here
+- PostgreSQL: no exporter (it would be a third container); the outbox age comes from Reports itself.
+- SC3/SC5 measurement moved to #149.
 
 ## [Unreleased] · 2026-11-19 · Auth & Users service (#191, Tiago Teixeira)
 

@@ -187,9 +187,15 @@ paths:
     patch:
       tags: [Help requests]
       operationId: setHelpRequestCategoryAndPriority
-      summary: Set the category and the priority, either or both (US-28)
-      description: Recorded with who, when, the old and the new value. Requires HelpRequests.Triage.
-      x-farol-status: planned
+      summary: Set the category and the priority, either or both (US-28, US-35)
+      description: >-
+        Requires HelpRequests.Triage. The member's values make the triage Changed, from any triage state; the
+        suggestion and the NotTriaged reason stay visible, and a suggestion that arrives later is discarded
+        (NFR-22). Each changed field is recorded with who, when, the old and the new value (the history entries
+        of US-28); a change to the values the request already has records nothing, whatever the triage state.
+        At least one of the two is required, and neither may be null. Implemented by US-35 (#82, spec D2, D3);
+        US-28 adds the status.
+      x-farol-status: implemented
       requestBody:
         required: true
         content:
@@ -282,9 +288,12 @@ paths:
       operationId: acceptTriageSuggestion
       summary: Take the AI's category and priority as the request's values (US-35)
       description: >-
-        Requires HelpRequests.Triage. The default team follows from the category; recorded as the member's
-        decision. 409 when there is no suggestion or a member already set the values (NFR-22).
-      x-farol-status: planned
+        Requires HelpRequests.Triage. The request's category and priority become the suggested ones and the
+        triage becomes Accepted, recorded as the member's decision (category, priority and triage history
+        entries). 409 when the triage is not Suggested: no suggestion yet, NotTriaged, or a member already
+        accepted or set the values (NFR-22). Planned: the default team follows from the category (US-34 #81
+        AC-2); until then defaultTeamId stays null.
+      x-farol-status: implemented
       responses:
         '200':
           $ref: '#/components/responses/ControlRoomView'
@@ -375,8 +384,13 @@ paths:
       tags: [Help requests]
       operationId: getTriageStatus
       summary: Whether the AI triage is available, for the banner of scenario D1 (US-36)
-      description: Requires HelpRequests.Triage.
-      x-farol-status: planned
+      description: >-
+        Requires HelpRequests.Triage. One AI serves every event, so the answer is the same for every event.
+        `available` is true only when an AI is configured and its circuit breaker is closed; otherwise `reason` is
+        `Unavailable` (no AI configured, or no failure to tell) or the reason of the last failed call (spec US-36 D4).
+        After the circuit's open time it stays unavailable until the next request's trial call succeeds. The web app polls it
+        with the live list, every 2 s while the page is visible (spec US-36 D6).
+      x-farol-status: implemented
       responses:
         '200':
           description: The triage availability.
@@ -385,12 +399,14 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [available, checkedAt]
+                required: [available, reason, checkedAt]
                 properties:
                   available:
                     type: boolean
                   reason:
-                    $ref: '#/components/schemas/NotTriagedReason'
+                    description: Null when available.
+                    allOf: [{$ref: '#/components/schemas/NotTriagedReason'}]
+                    nullable: true
                   checkedAt:
                     type: string
                     format: date-time
@@ -702,8 +718,8 @@ components:
             suggestedReason:
               type: string
               nullable: true
-              maxLength: 200
-              description: Short plain text from the AI; escape it when shown (ADR-005, assessment T10).
+              maxLength: 240
+              description: Short plain text from the AI (1 to 240 characters, US-34 D9); escape it when shown (ADR-005, assessment T10). A suggestion is shown as a suggestion, never as the request's own category or priority (NFR-22).
             notTriagedReason:
               allOf: [{$ref: '#/components/schemas/NotTriagedReason'}]
               nullable: true
