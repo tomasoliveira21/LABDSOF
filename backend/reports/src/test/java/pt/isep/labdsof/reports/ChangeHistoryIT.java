@@ -135,8 +135,8 @@ class ChangeHistoryIT extends IntegrationTest {
   }
 
   long waitingOnLocks() {
-    // Only the members' row locks on this table: another session waiting on a lock must not count (G8 review);
-    // loose on the text, so a reformatted statement still matches (review of #245)
+    // Only the members' row locks on this table, as another session waiting on a lock must not count (G8 review).
+    // The match is loose on the text, so a reformatted statement still matches (review of #245).
     return jdbc.sql("""
         SELECT count(*) FROM pg_stat_activity
         WHERE wait_event_type = 'Lock' AND query LIKE '%triage_suggestion%FOR UPDATE%'
