@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.HelpRequestChange;
 
 /** Port: the help requests of Reports' own database. Every read is filtered by event (ADR-003 decision 3). */
 public interface HelpRequests {
@@ -33,4 +34,17 @@ public interface HelpRequests {
    * still awaits the model (Pending without a reason); false otherwise, so nothing is overwritten (US-34 D6).
    */
   boolean saveTriage(HelpRequest triaged);
+
+  /**
+   * The request, locked with its triage until the transaction ends (SELECT ... FOR UPDATE), so a member's decision
+   * and the triage worker's save never interleave (spec US-35 D4).
+   */
+  Optional<HelpRequest> findForUpdate(UUID eventId, UUID requestId);
+
+  /**
+   * Saves a member's decision read with {@link #findForUpdate}: the request's category, priority, triage state,
+   * updated_at and version, and one history row per change, by {@code actorUserId} at the request's updatedAt
+   * (spec US-35 D3).
+   */
+  void saveDecision(HelpRequest decided, String actorUserId, List<HelpRequestChange> changes);
 }

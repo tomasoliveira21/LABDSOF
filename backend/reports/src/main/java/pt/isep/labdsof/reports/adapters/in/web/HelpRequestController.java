@@ -1,5 +1,7 @@
 package pt.isep.labdsof.reports.adapters.in.web;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -17,6 +19,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,11 +38,12 @@ import pt.isep.labdsof.reports.domain.InvalidHelpRequestException;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
 import pt.isep.labdsof.reports.domain.Priority;
+import pt.isep.labdsof.reports.domain.TriageConflictException;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
- * Help requests and the triage status (API outline §4, contracts/openapi.yaml). The caller is always the token's
- * sub.
+ * Help requests, the control room's triage decisions and the triage status (API outline §4,
+ * contracts/openapi.yaml). The caller is always the token's sub.
  */
 @RestController
 @RequestMapping("/api/v1/events/{eventId}")
@@ -103,6 +107,39 @@ class HelpRequestController {
     return read.controlRoom() ? controlRoom(read.request()) : participant(read.request());
   }
 
+  /**
+   * What a member sets (US-35 AC-2, spec D2): either or both. A field left out keeps its setter uncalled; an explicit
+   * null is refused (400), as the contract says. Setters, not a record: a record's missing field also reads as null.
+   */
+  static final class ChangeBody {
+    private Category category;
+    private Priority priority;
+
+    @JsonSetter(nulls = Nulls.FAIL)
+    void setCategory(Category category) {
+      this.category = category;
+    }
+
+    @JsonSetter(nulls = Nulls.FAIL)
+    void setPriority(Priority priority) {
+      this.priority = priority;
+    }
+  }
+
+  /** The control room takes the AI's suggestion as the request's values (US-35 AC-1, spec D1). */
+  @PostMapping(value = "/help-requests/{requestId}/accept-suggestion", produces = "application/json")
+  ControlRoomView acceptSuggestion(@PathVariable UUID eventId, @PathVariable UUID requestId,
+      @AuthenticationPrincipal Jwt jwt) {
+    return controlRoom(service.acceptSuggestion(eventId, jwt.getSubject(), requestId));
+  }
+
+  /** The control room sets the category, the priority or both (US-35 AC-2, spec D2). */
+  @PatchMapping(value = "/help-requests/{requestId}", consumes = "application/json", produces = "application/json")
+  ControlRoomView change(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt,
+      @RequestBody ChangeBody body) {
+    return controlRoom(service.change(eventId, jwt.getSubject(), requestId, body.category, body.priority));
+  }
+
   /** Whether a new request would be sent to the AI, for the web app's banner (US-36 AC-2, spec D4, D5). */
   @GetMapping(value = "/triage-status", produces = "application/json")
   TriageService.Status triageStatus(@PathVariable UUID eventId, @AuthenticationPrincipal Jwt jwt) {
@@ -119,6 +156,12 @@ class HelpRequestController {
 
   @ExceptionHandler(ClientRequestConflictException.class)
   ResponseEntity<ProblemDetail> conflict(ClientRequestConflictException e) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
+  }
+
+  @ExceptionHandler(TriageConflictException.class)
+  ResponseEntity<ProblemDetail> triageConflict(TriageConflictException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
   }
