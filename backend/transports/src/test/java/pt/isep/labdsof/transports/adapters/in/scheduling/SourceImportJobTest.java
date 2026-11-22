@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -23,15 +25,40 @@ import pt.isep.labdsof.transports.application.SourceImportService;
 import pt.isep.labdsof.transports.application.SourceReading;
 import pt.isep.labdsof.transports.application.TransportSource;
 import pt.isep.labdsof.transports.domain.BusReading;
+import pt.isep.labdsof.transports.domain.ObservedBus;
 
 @ExtendWith(OutputCaptureExtension.class)
 class SourceImportJobTest {
 
   private final List<String> seen = new ArrayList<>();
 
-  private static SourceImportJob job(TransportSource source, BusData buses) {
+  private static SourceImportJob job(TransportSource source, BusData buses, Clock clock) {
     return new SourceImportJob(new SourceImportService(source, new RecordedImports(), buses, run -> { },
-        TransactionOperations.withoutTransaction(), Clock.systemUTC(), Duration.ofMinutes(5)));
+        TransactionOperations.withoutTransaction(), clock, Duration.ofMinutes(5)), clock);
+  }
+
+  private static SourceImportJob job(TransportSource source, BusData buses) {
+    return job(source, buses, Clock.systemUTC());
+  }
+
+  /** A clock that stands still until the test moves it. */
+  private static final class MovingClock extends Clock {
+    private Instant now = Instant.now();
+
+    @Override
+    public ZoneId getZone() {
+      return ZoneOffset.UTC;
+    }
+
+    @Override
+    public Clock withZone(ZoneId zone) {
+      return this;
+    }
+
+    @Override
+    public Instant instant() {
+      return now;
+    }
   }
 
   private static SourceImportJob job(TransportSource source) {
@@ -104,5 +131,27 @@ class SourceImportJobTest {
     assertThat(output.getAll().lines().filter(line -> line.contains("Transport source read")))
         .anySatisfy(line -> assertThat(line).contains("vehicleCount=\"3\"").contains("late=\"2\"")
             .contains("attempts=\"2\""));
+  }
+
+  @Test
+  @DisplayName("US-40 AC-6 the run's duration covers the whole run, storing the buses included")
+  void durationIncludesStoring(CapturedOutput output) {
+    var clock = new MovingClock();
+    var slowStore = new BusData() {
+      @Override
+      public void replace(List<ObservedBus> buses, Instant retrievedAt) {
+        clock.now = clock.now.plusSeconds(2);
+      }
+
+      @Override
+      public List<ObservedBus> inUse() {
+        return List.of();
+      }
+    };
+
+    job(() -> buses(1, 0, 1), slowStore, clock).run();
+
+    assertThat(output.getAll().lines().filter(line -> line.contains("Transport source read")))
+        .anySatisfy(line -> assertThat(line).contains("durationMs=\"2000\""));
   }
 }
