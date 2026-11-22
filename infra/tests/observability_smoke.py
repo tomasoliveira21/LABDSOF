@@ -58,6 +58,13 @@ def get(url: str, headers: dict[str, str] | None = None) -> tuple[int, dict[str,
         return 0, {}, str(e)
 
 
+def is_uuid(value: str) -> bool:
+    try:
+        return str(uuid.UUID(value)) == value
+    except ValueError:
+        return False
+
+
 def scraped_up(prometheus: str) -> set[str]:
     status, _, body = get(prometheus + "/api/v1/query?query=up")
     if status != 200:
@@ -112,9 +119,11 @@ def main(env_path: str, project: str | None = None) -> int:
     status, headers, _ = get(gateway + path, {"X-Correlation-Id": correlation_id})
     echoed = {k.lower(): v for k, v in headers.items()}.get("x-correlation-id")
     check(status == 401 and echoed == correlation_id, f"the gateway returns the caller's X-Correlation-Id ({echoed})")
-    status, headers, _ = get(gateway + path,{"X-Correlation-Id": "bad id\twith tab" + "x" * 80})
+    invalid = "bad id\twith tab" + "x" * 80
+    status, headers, _ = get(gateway + path, {"X-Correlation-Id": invalid})
     replaced = {k.lower(): v for k, v in headers.items()}.get("x-correlation-id", "")
-    check(len(replaced) == 36 and "bad" not in replaced, f"the gateway replaces an invalid X-Correlation-Id ({replaced})")
+    # A new UUID, not the sent value (a random UUID can contain the letters "bad", so do not look for them)
+    check(replaced != invalid and is_uuid(replaced), f"the gateway replaces an invalid X-Correlation-Id ({replaced})")
     # With a real token the request reaches the service: an event the account is not a member of is refused there
     # (404), and Reports and Events still log the request with the gateway's id (their status check is not logged)
     token = ev.token_for(env, ev.RITA)
