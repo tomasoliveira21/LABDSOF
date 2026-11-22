@@ -1,0 +1,27 @@
+{
+  "requests": 72,
+  "created": 72,
+  "sc3": "not_applicable",
+  "outcomes": {
+    "ProviderError": 38,
+    "Unavailable": 34
+  },
+  "sc5": {
+    "shown": 72,
+    "not_triaged_in_time": 72,
+    "out_of_order_polls": 0,
+    "pass": true,
+    "first_seen_ms": {
+      "n": 72,
+      "p50": 51.5,
+      "p95_nearest_rank": 96,
+      "max": 1266
+    },
+    "not_triaged_seen_ms": {
+      "n": 72,
+      "p50": 2059.0,
+      "p95_nearest_rank": 2105,
+      "max": 4090
+    }
+  }
+}

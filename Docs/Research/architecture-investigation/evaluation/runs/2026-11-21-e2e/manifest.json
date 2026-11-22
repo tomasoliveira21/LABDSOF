@@ -1,0 +1,163 @@
+{
+  "issue": "#234, part of #149 (AC-5)",
+  "date": "2026-11-21",
+  "purpose": "SC3 and SC5 end to end on the local Compose stack: the 72 holdout texts submitted through the API gateway as participants, measured from submission to stored outcome in Reports (spec 234). Not an offline quality score: the offline gate of these cases is in runs/2026-11-20-holdout-v8.",
+  "status": "frozen part committed before the first measured submission; results added after the runs",
+  "driver_commit": "1683fabd96b998a98f21a187aac6f6ae65b7a598",
+  "commands": {
+    "stack": "FAROL_AI_URL=http://ai:11434 docker compose -p farol-234 -f infra/compose.yaml --env-file infra/.env.example --profile ai up -d --wait --wait-timeout 600 (images built from this branch with docker build -t farol-<service>:dev backend/<service>, and frontend)",
+    "model": "the farol-234_ai-models volume is a copy of the #224 model volume (qwen3:4b); ollama list shows the digest below; Reports' warm-up loads it at start-up, and the run starts once ollama ps shows it loaded",
+    "sc3": "python -I Docs/Research/architecture-investigation/evaluation/e2e_triage.py --run sc3 --out Docs/Research/architecture-investigation/evaluation/runs/2026-11-21-e2e",
+    "sc5": "docker compose -p farol-234 ... stop ai, then python -I Docs/Research/architecture-investigation/evaluation/e2e_triage.py --run sc5 --out Docs/Research/architecture-investigation/evaluation/runs/2026-11-21-e2e (FAROL_AI_URL still set)",
+    "memory": "docker compose -p farol-234 ... exec ai cat /sys/fs/cgroup/memory.peak after the SC3 run (cgroup v2; the container started fresh with the stack)",
+    "verify": "python -I Docs/Research/architecture-investigation/evaluation/e2e_triage.py --verify Docs/Research/architecture-investigation/evaluation/runs/2026-11-21-e2e"
+  },
+  "profile": {
+    "interval_s": 30,
+    "poll_s": 2,
+    "deadline_s": 30,
+    "sc5_grace_s": 2,
+    "cases": "holdout.jsonl",
+    "order": "file"
+  },
+  "profile_note": "Proposed, for the team's review (spec 234 D1): NFR-03 and the runtime contract state no arrival rate. One request every 30 s on a fixed schedule (open model), 72 requests, 36 minutes per run. Participants Rita, Sofia, Inês and Nuno in turn (each every 2 minutes); Miguel, in a Control room team with HelpRequests.Triage, polls the list and the triage status every 2 s. Logins happen before the first submission; access tokens are renewed with their refresh token.",
+  "pass_rules": {
+    "sc3": "Pass when the valid suggestions stored within 30 s are at least 95 % of the 66 non-abstention cases (ADR-005 offline definition). Valid: state Suggested with a category and a priority stored at most 30 000 ms after submission, both times Reports' own (help_request.submitted_at, triage_suggestion.updated_at). A request still Pending with no reason after its deadline is a Timeout; abstentions, errors, invalid and late outputs are misses. Reported beside it, not part of the pass: the NFR-03 count over all 72 (expected abstentions are misses there), p50, p95 (nearest rank) and max of the end-to-end time of the stored suggestions, fallbacks by reason, the worker's model time.",
+    "sc5": "Pass when every one of the 72 requests appears in the operator's list and reads NotTriaged with a reason at a poll no later than 32 000 ms after it was sent (30 s deadline plus one 2 s poll), and no poll shows them out of order of arrival."
+  },
+  "fixture": "Reports' local copies hold one new event per run: a team 'Control room' (HelpRequests.Triage) and five RegularUser memberships, written with SQL as MembershipChanged and TeamChanged would write them (US-12 and US-18 answer 501 in Auth & Users; Events publishes no TeamChanged yet). Spec 234 D2.",
+  "stack": {
+    "docker": "Docker Desktop, engine 28.4.0, VM with 12 CPUs and 8 167 571 456 bytes of memory, on the 16 GiB laptop of #224",
+    "branch_head_at_freeze": "1683fabd96b998a98f21a187aac6f6ae65b7a598 (docs/234-measure-ai-triage-end-to-end, stacked on PR #233)",
+    "image_ids": {
+      "farol-reports:dev": "sha256:4047d6214528ce487af12a8e403adc171f86d0379991ffb92e57f461e550ec55",
+      "farol-auth-users:dev": "sha256:05a1ab8f49602a952bdf938712048d398af2f7bc6e04262c2270a91875e667d7",
+      "farol-events:dev": "sha256:ad5a5b5330ba7524e738496401598fa8cf32da5cf09871b3fd5cbdff3b22169d",
+      "farol-gateway:dev": "sha256:d98723e8860771a6f8f3fb4eaa967990d06452ce7cc498bf38f120dab03534e5",
+      "farol-transports:dev": "sha256:8da7977ba00f132e5224ea11a98ce7f4b458ae48d1d0014dd410b958296ada0a",
+      "farol-badges:dev": "sha256:ef744cb0e425186ffcd404d29e7ecb55cd4e21827956c285f57c903e2afefe02",
+      "farol-web:dev": "sha256:f59e8c30c59e955931807165fc1036242b1cf739a4001233bb1a5f2754d383b8",
+      "farol-keycloak:dev": "sha256:8b181278002f9a7c7b27a9ab95b15543ecd934e49a1b50752505697165bc230a"
+    }
+  },
+  "runtime": {
+    "name": "Ollama, Compose service ai (profile ai)",
+    "image": "ollama/ollama:0.40.16",
+    "image_digest": "sha256:910d0d8107b538fb0894e63163eb195de0cc7aefcbc666dc62d3b18f71124592",
+    "environment": {
+      "OLLAMA_NUM_PARALLEL": "1",
+      "OLLAMA_MAX_LOADED_MODELS": "1",
+      "OLLAMA_MAX_QUEUE": "1",
+      "OLLAMA_NO_CLOUD": "1"
+    },
+    "port": "none published; Reports reaches http://ai:11434",
+    "inference": "CPU only (no GPU passed to the container)"
+  },
+  "model": {
+    "name": "qwen3:4b",
+    "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "quantization": "Q4_K_M",
+    "source": "ollama list in the container (ID 359d7dd4bcda) and the #224 manifest"
+  },
+  "settings": "Reports' OllamaTriageModel, spec US-34 D2: POST /api/chat, stream false, think false, schema in format, temperature 0, seed 42, num_ctx 4096, num_predict 256, keep_alive 10m; connect 2 s, one attempt, at most 20 s and the time left before the 30 s deadline; admission only with at least 23 s left; circuit J1 (spec US-36 D1)",
+  "package_sha256": {
+    "holdout.jsonl": "f52f52e1af26a641e70d94fadbaac00dd754e6cce87d5e628a6c62bf9f6eb9f1",
+    "backend/reports/src/main/resources/triage/system-prompt.txt (= prompts/v8.txt)": "4f29389301a9bd8d5fb2f5e6ab15eb9c64fef92e1c748b6a30faf56f47eafbc3",
+    "backend/reports/src/main/resources/triage/output.schema.json (= output.schema.json)": "66e38f9fd4ad652c29eaa604eb4eb0929f404772f2d18dcd09a24ecfb4abd2ae"
+  },
+  "deviations": [
+    "SC5 ran twice. The first run (13:40:14 to 14:16:57 UTC, driver 1683fab, results in commit 58de091301ac4885b94a794b84113f32d739424f: passed, 72 of 72 shown, NotTriaged within 4.0 s) timed the operator's view from the start of each poll, before the list had arrived, and counted NotTriaged without checking its reason; the independent review (G8) found both. The driver was fixed (commit 3445a2f6fbe623de210266f35e378111e4443909) and SC5 was run again on a fresh stack with the same profile and pass rule; the results below are the second run. sc5-requests.jsonl of the second run also records sent_s, the real send time.",
+    "SC3 was not run again: its pass rule reads only Reports' database. Its first_seen_ms and not_triaged_seen_ms columns come from the first driver, so they leave out the duration of the poll that saw the request (tens of milliseconds on this stack); no SC3 figure uses them.",
+    "Review of PR #235: the fixture of spec 234 D2 is asserted to match what LocalCopyListener writes for MembershipChanged and TeamChanged; nothing in this folder checks it. When US-12 and US-18 publish real memberships and teams, repeat the run through those producers before any figure here is cited as release evidence.",
+    "Review of PR #235: each summary first carried a pass block for the scenario that run did not measure (sc3-summary.json had sc5 pass false, sc5-summary.json had sc3 pass false), an artefact of summarising every block over one scenario's rows. On 22 November 2026 the driver marks the other block not_applicable and both summaries were recomputed from the unchanged rows; every figure of the scenario each run measured is unchanged."
+  ],
+  "results": {
+    "sc3": {
+      "window_utc": "2026-11-21 13:03:02 to 13:39:41",
+      "summary": {
+        "requests": 72,
+        "created": 72,
+        "sc3": {
+          "valid_on_time_non_abstention": 61,
+          "non_abstention_cases": 66,
+          "valid_on_time_rate": 0.9242,
+          "valid_on_time_all": 61,
+          "valid_on_time_rate_all": 0.8472,
+          "pass": false,
+          "suggestion_e2e_ms": {
+            "n": 61,
+            "p50": 13984,
+            "p95_nearest_rank": 18334,
+            "max": 20143
+          },
+          "worker_ms": {
+            "n": 72,
+            "p50": 13591.0,
+            "p95_nearest_rank": 19997,
+            "max": 20030
+          },
+          "expected_abstentions_abstained": 6,
+          "expected_abstentions": 6
+        },
+        "outcomes": {
+          "Abstained": 6,
+          "Suggested": 61,
+          "Timeout": 4,
+          "Unavailable": 1
+        },
+        "sc5": "not_applicable"
+      },
+      "result": "FAILED: 61 of 66 non-abstention cases valid within 30 s (0.924, target 0.95); 61 of 72 under the NFR-03 count (0.847). Misses: 4 Timeout (H020, H035, H066, H067: the model call reached its 20 s cap) and 1 Unavailable (H069: the circuit opened after H066 and H067 timed out and H068 was slow, and closed 56 s later); the 6 expected abstentions abstained.",
+      "result_reading": "How to read it (review of PR #235): this profile measures the serial path, with at most one model call in flight, so 0.924 is an optimistic bound, not a worst case. Under concurrent arrivals the runtime (OLLAMA_NUM_PARALLEL=1, OLLAMA_MAX_QUEUE=1, admission only with 23 s left) queues a second request behind a 14 s call or refuses it, turning latency misses into Unavailable ones: the gap to 0.95 is not three points, and 0.924 is not the number to close.",
+      "system_overhead_ms": {
+        "definition": "e2e_ms minus worker_ms of the 61 stored suggestions: outbox, broker, worker queue and storage",
+        "median": 286,
+        "max": 520
+      },
+      "model_time_note": "worker_ms median 13.6 s on the stack against a provider_ms median of 11.7 s for the same 72 cases in runs/2026-11-20-holdout-v8 run 1 (direct calls, no other container busy); 18 of 72 calls over the 16 s slow threshold (1 in the offline run).",
+      "agreement_with_offline": "each of the 61 stored suggestions has the category and priority of runs/2026-11-20-holdout-v8 run 1 for the same case (same model, prompt v8, settings and seed)",
+      "circuit": "triage-status read unavailable from 2028 s to 2084 s after the start (sc3-status.jsonl)",
+      "container_memory_peak_bytes": 4127137792,
+      "memory_note": "cgroup memory.peak of the ai container after the SC3 run; it covers the whole life of the container (Reports warm-up, both trial runs and SC3), including the page cache of the mapped model file. docker stats after the run: 3.39 GiB."
+    },
+    "sc5": {
+      "window_utc": "2026-11-21 14:26:38 to 15:03:19",
+      "driver_commit": "3445a2f6fbe623de210266f35e378111e4443909",
+      "summary": {
+        "requests": 72,
+        "created": 72,
+        "sc3": "not_applicable",
+        "outcomes": {
+          "ProviderError": 38,
+          "Unavailable": 34
+        },
+        "sc5": {
+          "shown": 72,
+          "not_triaged_in_time": 72,
+          "out_of_order_polls": 0,
+          "pass": true,
+          "first_seen_ms": {
+            "n": 72,
+            "p50": 51.5,
+            "p95_nearest_rank": 96,
+            "max": 1266
+          },
+          "not_triaged_seen_ms": {
+            "n": 72,
+            "p50": 2059.0,
+            "p95_nearest_rank": 2105,
+            "max": 4090
+          }
+        }
+      },
+      "ai_container": "stopped with docker compose stop ai before the run; FAROL_AI_URL still http://ai:11434",
+      "first_run_superseded": {
+        "window_utc": "2026-11-21 13:40:14 to 14:16:57",
+        "commit": "58de091301ac4885b94a794b84113f32d739424f",
+        "result": "PASSED: 72 of 72 shown in the operator list (first poll after the submission, at most 86 ms), 72 of 72 read NotTriaged with a reason at most 4.0 s after they were sent (37 ProviderError, the circuit then letting one probe through every 30 s, and 35 Unavailable without a call), no poll out of order of arrival."
+      }
+    }
+  },
+  "trial_note": "Before the freeze, two trial runs of three synthetic texts (not holdout cases, driver option --trial) checked the stack and the driver in other events; the first showed that a Keycloak login takes about 6 s and blocked the operator polls, so logins moved before the first submission and tokens are renewed with their refresh token (driver commit above).",
+  "freeze_commit": "8188e0e6fd3cb81236f33ffaabc90b0c258676ef"
+}
