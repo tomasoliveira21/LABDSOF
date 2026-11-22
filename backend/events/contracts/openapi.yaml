@@ -5,12 +5,12 @@ info:
   description: >-
     Events, teams with their permissions and help categories, venue map versions and points of
     interest (API outline §3). Contract-first (C7): the server interfaces and DTOs are generated
-    from this file. Sprint B endpoints only; #192 implements GET /events/{eventId} and US-16 the
-    teams, the other operations answer 501 until their stories (US-06, US-11, US-17, US-19, US-20,
-    US-21, US-27). The members of an event are served by Auth & Users (ADR-013). Every /api/v1 call needs
+    from this file. Sprint B endpoints only; #192 implements GET /events/{eventId}, US-16 the teams
+    and US-17 their permissions, the other operations answer 501 until their stories (US-06, US-11,
+    US-19, US-20, US-21, US-27). The members of an event are served by Auth & Users (ADR-013). Every /api/v1 call needs
     a valid access token issued by Keycloak to the web app (audience farol-api); /api/v1/status is
-    the only diagnostic exception. The report type and point type codes are proposed until US-17
-    and US-20 (spec D6).
+    the only diagnostic exception. The point type codes are proposed until US-20; the report type codes
+    are confirmed (features.md §6.1, 21 November 2026) and the report stories use the same list.
 servers:
   - url: /
 tags:
@@ -218,7 +218,12 @@ paths:
       tags: [Teams]
       operationId: replaceTeamPermissions
       summary: Replace the team's permissions, from the fixed list of features §4.2 (US-17); EventAdmin only
-      description: Recorded with who and when. reportTypes is given only with Reports.Review.
+      description: >-
+        The whole set at once: an empty array takes every permission away. Recorded with who and when
+        (the team's updated_by and updated_at, and one log line). reportTypes is given only with
+        Reports.Review, which may also carry none and then reviews nothing; a repeated permission or
+        report type is refused with 400 (US-17 D3, D4). 409 when another request changed the team
+        meanwhile: nothing is stored or published, so read it again and decide.
       requestBody:
         required: true
         content:
@@ -243,6 +248,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /api/v1/events/{eventId}/map-versions:
     parameters:
       - $ref: '#/components/parameters/EventId'
@@ -511,7 +518,9 @@ components:
       enum: [HelpRequests.Triage, HelpRequests.Respond, Reports.Review, Reports.Respond, Announcements.Publish, Map.Edit, Transport.Edit, Entrances.Update]
     ReportType:
       type: string
-      description: Proposed in spec D6 until US-17 (features §6.1 gives labels only)
+      description: >-
+        Confirmed on 21 November 2026 (features §6.1, which gave labels only); the report stories (US-47
+        onwards) use this same list
       enum: [QueueAtEntrance, CrowdedArea, WcProblem, NoWater, Hazard, TransportProblem, WrongInformation]
     PoiType:
       type: string

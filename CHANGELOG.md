@@ -2,6 +2,26 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-21 · A team's permissions (US-17, #66, Tiago Teixeira)
+
+**Why:** US-16 (#65) gives an event its teams; until each team has permissions, no member can do anything beyond the participant features (`features.md` §4.2). This completes the *Teams* tag of the Events contract: every one of its five operations is now served. Spec, decisions and edge-case matrix: [`Docs/specs/US-17-team-permissions.md`](Docs/specs/US-17-team-permissions.md). **Stacked on #65 (PR #242).**
+
+### Added
+- `PUT /api/v1/events/{eventId}/teams/{teamId}/permissions` in Events: the EventAdmin of a `Draft` or `Published` event replaces the team's whole permission set from the fixed list of `features.md` §4.2. An empty array takes every permission away, which is how a permission is removed; the answer and `GET …/teams` show the new set at once.
+- `Reports.Review` carries the report types the team reviews, and only it: another permission with report types, a repeated permission, a repeated or null report type, an unknown code and more than eight permissions are all `400`. A `Reports.Review` with no type is accepted and reviews nothing (`features.md` §4.2 chooses the types per team; API outline §4 gives `Reports.Review` *for its type*).
+- The change is recorded with who made it and when: the team's `updated_by` and `updated_at`, one `TeamChanged` with the new set and a higher version, and one `INFO` log line with the correlation id, the pseudonymous `userId`, the team and the permissions — never a name or an e-mail (M-10).
+- Domain: `Team.withPermissions`, `Team.permissionsOf` and `TeamPermission.reportTypesOf` keep the rules where the tests can see them, and a deleted team still grants nothing.
+
+### Changed
+- `backend/events/contracts/openapi.yaml`: the `PUT` declares `409` (a suspended or closed event does not change its teams, as every other team write) and says what the body refuses; US-17 is no longer listed among the stories still to come, and the report type codes are stored, published and **described as confirmed** — `ReportType` and `team.changed.schema.json` no longer call them a proposal, which the header of the contract already stated.
+- **The permission write matches the version it read** (`… AND version = :version - 1`), as the three team writes of #65 now do: two `PUT`s that start from the same read cannot both store a version, so the second is `409` and publishes nothing. Without it both committed and published **two `TeamChanged` carrying one version**, and a consumer that applies only a strictly newer version kept the first — a permission taken away stayed in force in Reports' copy, which is AC-4 failing in the consumer. Found in the review of this PR on 22 November 2026.
+
+### Notes
+- **Several teams may handle the same help category, and several may review the same report type: this PR does not refuse it** (**confirmed on 21 November 2026**). *Which team is the default when two teams handle the same category* stays an open product decision (domain model), where it belongs: Reports picks the default team from `TeamChanged` and answers `defaultTeamId: null` when no team handles the category.
+- **The seven report type codes are confirmed** (`QueueAtEntrance`, `CrowdedArea`, `WcProblem`, `NoWater`, `Hazard`, `TransportProblem`, `WrongInformation`) and written into [`features.md` §6.1](Docs/Product/features.md#61-what-can-be-reported), which had labels only; they were Events' proposal since #192 D6. `openapi.yaml` and `team.changed.schema.json` no longer call them a proposal, and the report stories (US-47 onwards) use the same list. Decided on 21 November 2026 and recorded in [the meeting record of 21 November 2026](Docs/Meetings/2026-11-21-report-type-codes-and-team-writes.md), agreed by the owner of the Reports stories, who consumes them.
+- AC-3 (*the team becomes the default for the categories it handles*) is met in Events by storing and publishing the categories; the routing itself is US-29 (#76) in Reports.
+- Sending the same set twice is recorded twice, each with a new version: every call is an EventAdmin's decision and AC-4 asks for it to be recorded (confirmed on 21 November 2026, over skipping a no-op).
+
 ## [Unreleased] · 2026-11-21 · Teams of an event (US-16, #65, Tiago Teixeira)
 
 **Why:** #192 created the `team` and `team_permission` tables, the `TeamChanged` contract and the four team paths, but every one of them answered `501`. US-16 is the first story an EventAdmin needs before giving a team its permissions (US-17, #66, stacked on this branch) or putting members in it (US-18). Spec, decisions and edge-case matrix: [`Docs/specs/US-16-teams.md`](Docs/specs/US-16-teams.md).

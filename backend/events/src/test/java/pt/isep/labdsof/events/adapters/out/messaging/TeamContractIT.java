@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,9 @@ import pt.isep.labdsof.events.IntegrationTest;
 import pt.isep.labdsof.events.adapters.out.persistence.JdbcOutbox;
 import pt.isep.labdsof.events.application.TeamService;
 import pt.isep.labdsof.events.domain.HelpCategory;
+import pt.isep.labdsof.events.domain.Permission;
+import pt.isep.labdsof.events.domain.ReportType;
+import pt.isep.labdsof.events.domain.TeamPermission;
 import pt.isep.labdsof.events.domain.Membership.Role;
 import pt.isep.labdsof.events.domain.Membership.Status;
 import tools.jackson.databind.json.JsonMapper;
@@ -140,6 +144,54 @@ class TeamContractIT extends IntegrationTest {
     assertThat(List.of(categories.get(0).asString(), categories.get(1).asString(), categories.get(2).asString()))
         .containsExactly("Health", "Infrastructure", "Other");
     assertThat(categories.size()).isEqualTo(3);
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 a permission change publishes a TeamChanged that matches its JSON Schema, in every "
+      + "queue bound to team.changed")
+  void permissionChangePublishesValidTeamChanged() {
+    var eventId = event();
+    var user = admin(eventId);
+    var team = service.create(user, eventId, "Control room");
+
+    service.replacePermissions(user, eventId, team.teamId(), List.of(
+        new TeamPermission(Permission.REPORTS_REVIEW, Set.of(ReportType.Hazard, ReportType.WcProblem)),
+        TeamPermission.of(Permission.HELP_REQUESTS_TRIAGE)));
+
+    assertThat(publishDue()).isEqualTo(2);
+    var schema = EventContractIT.schema(EventContractIT.TEAM);
+    for (var queue : QUEUES) {
+      var messages = drain(queue);
+      assertThat(messages).as(queue).hasSize(2);
+      var last = new String(messages.get(1).getBody(), UTF_8);
+      assertThat(schema.validate(last, InputFormat.JSON)).as(last).isEmpty();
+      var payload = json.readTree(last).get("payload");
+      assertThat(payload.get("version").asLong()).isEqualTo(2);
+      assertThat(payload.get("permissions").get(0).get("permission").asString())
+          .isEqualTo("HelpRequests.Triage");
+      assertThat(payload.get("permissions").get(0).get("reportTypes").size()).isZero();
+      assertThat(payload.get("permissions").get(1).get("permission").asString()).isEqualTo("Reports.Review");
+      assertThat(payload.get("permissions").get(1).get("reportTypes").size()).isEqualTo(2);
+    }
+  }
+
+  @Test
+  @DisplayName("US-17 AC-4 taking every permission away publishes an empty permissions list, never null")
+  void emptyPermissionsArePublished() {
+    var eventId = event();
+    var user = admin(eventId);
+    var team = service.create(user, eventId, "Control room");
+    service.replacePermissions(user, eventId, team.teamId(), List.of(TeamPermission.of(Permission.MAP_EDIT)));
+
+    service.replacePermissions(user, eventId, team.teamId(), List.of());
+
+    var body = jdbc.sql("SELECT body::text FROM outbox WHERE type = 'TeamChanged' AND body->>'eventId' = :event "
+        + "ORDER BY id DESC LIMIT 1").param("event", eventId.toString()).query(String.class).single();
+    assertThat(EventContractIT.schema(EventContractIT.TEAM).validate(body, InputFormat.JSON)).as(body).isEmpty();
+    var payload = json.readTree(body).get("payload");
+    assertThat(payload.get("permissions").isArray()).isTrue();
+    assertThat(payload.get("permissions").size()).isZero();
+    assertThat(payload.get("version").asLong()).isEqualTo(3);
   }
 
   @Test

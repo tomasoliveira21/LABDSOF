@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -21,10 +22,12 @@ import pt.isep.labdsof.events.domain.DateRange;
 import pt.isep.labdsof.events.domain.Event;
 import pt.isep.labdsof.events.domain.EventStatus;
 import pt.isep.labdsof.events.domain.HelpCategory;
+import pt.isep.labdsof.events.domain.InvalidTeamException;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Membership.Role;
 import pt.isep.labdsof.events.domain.Membership.Status;
 import pt.isep.labdsof.events.domain.Permission;
+import pt.isep.labdsof.events.domain.ReportType;
 import pt.isep.labdsof.events.domain.Team;
 import pt.isep.labdsof.events.domain.TeamPermission;
 
@@ -33,7 +36,7 @@ class TeamServiceTest {
   private static final Instant NOW = Instant.parse("2027-05-08T23:14:05Z");
 
   private final InMemoryPorts ports = new InMemoryPorts();
-  private final TeamService service = new TeamService(ports, ports, ports, ports, ports,
+  private final TeamService service = new TeamService(ports, ports, ports, ports, ports, ports,
       Clock.fixed(NOW, ZoneOffset.UTC));
   private final UUID user = UUID.randomUUID();
   private final UUID eventId = UUID.randomUUID();
@@ -425,5 +428,135 @@ class TeamServiceTest {
         .allMatch(refused -> refused.refusal() == refusal && refused.at().equals(NOW)
             && refused.userId().equals(user) && refused.eventId().equals(event));
     assertThat(ports.published).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 an EventAdmin replaces the whole permission set, published with the next version")
+  void replacePermissions() {
+    event(EventStatus.Published);
+    member(Role.EventAdmin, Status.Active);
+    var created = service.create(user, eventId, "Control room");
+    ports.published.clear();
+
+    var given = service.replacePermissions(user, eventId, created.teamId(),
+        List.of(TeamPermission.of(Permission.MAP_EDIT),
+            new TeamPermission(Permission.REPORTS_REVIEW, Set.of(ReportType.Hazard))));
+
+    assertThat(given.version()).isEqualTo(2);
+    assertThat(given.permissions()).extracting(TeamPermission::permission)
+        .containsExactly(Permission.REPORTS_REVIEW, Permission.MAP_EDIT);
+    assertThat(service.list(user, eventId)).containsExactly(given);
+    assertThat(ports.published).hasSize(1);
+    assertThat(ports.published.getFirst().payload()).containsEntry("version", 2L)
+        .containsEntry("permissions", List.of(
+            Map.of("permission", "Reports.Review", "reportTypes", List.of("Hazard")),
+            Map.of("permission", "Map.Edit", "reportTypes", List.of())));
+  }
+
+  @Test
+  @DisplayName("US-17 AC-4 a removed permission stops granting at once, and the change is recorded with who and "
+      + "when")
+  void removedPermissionStopsGranting() {
+    event(EventStatus.Published);
+    member(Role.EventAdmin, Status.Active);
+    var created = service.create(user, eventId, "Control room");
+    service.replacePermissions(user, eventId, created.teamId(),
+        List.of(TeamPermission.of(Permission.HELP_REQUESTS_TRIAGE)));
+    var reader = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(eventId, reader, Role.RegularUser, Status.Active,
+        Set.of(created.teamId()), 1));
+    assertThat(service.list(reader, eventId)).hasSize(1);
+    ports.published.clear();
+
+    var taken = service.replacePermissions(user, eventId, created.teamId(), List.of());
+
+    assertThat(taken.permissions()).isEmpty();
+    assertThat(taken.version()).isEqualTo(3);
+    assertThatThrownBy(() -> service.list(reader, eventId)).isInstanceOf(ForbiddenException.class);
+    assertThat(ports.published).hasSize(1);
+    assertThat(ports.published.getFirst().payload()).containsEntry("permissions", List.of());
+    assertThat(ports.published.getFirst().actorUserId()).isEqualTo(user.toString());
+    assertThat(ports.audited).last().isEqualTo(
+        new InMemoryPorts.Audited(user, eventId, created.teamId(), NOW, List.of()));
+    assertThat(ports.writes).contains(new Write(created.teamId(), user, NOW, 3));
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 the same set sent twice is recorded twice, with a new version each time")
+  void sameSetTwice() {
+    event(EventStatus.Published);
+    member(Role.EventAdmin, Status.Active);
+    var created = service.create(user, eventId, "Control room");
+    var set = List.of(TeamPermission.of(Permission.ENTRANCES_UPDATE));
+    ports.published.clear();
+
+    var first = service.replacePermissions(user, eventId, created.teamId(), set);
+    var second = service.replacePermissions(user, eventId, created.teamId(), set);
+
+    assertThat(first.version()).isEqualTo(2);
+    assertThat(second.version()).isEqualTo(3);
+    assertThat(ports.published).hasSize(2);
+    assertThat(ports.audited).hasSize(2);
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 a repeated permission is refused, and nothing is published or recorded")
+  void repeatedPermissionIsRefused() {
+    event(EventStatus.Published);
+    member(Role.EventAdmin, Status.Active);
+    var created = service.create(user, eventId, "Control room");
+    ports.published.clear();
+
+    assertThatThrownBy(() -> service.replacePermissions(user, eventId, created.teamId(),
+        List.of(TeamPermission.of(Permission.MAP_EDIT), TeamPermission.of(Permission.MAP_EDIT))))
+        .isInstanceOf(InvalidTeamException.class);
+
+    assertThat(ports.published).isEmpty();
+    assertThat(ports.audited).isEmpty();
+    assertThat(service.list(user, eventId)).containsExactly(created);
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 only an EventAdmin of an open event replaces permissions, and never on another event")
+  void onlyAnAdminOfAnOpenEventReplacesPermissions() {
+    event(EventStatus.Published);
+    member(Role.EventAdmin, Status.Active);
+    var created = service.create(user, eventId, "Control room");
+    var set = List.of(TeamPermission.of(Permission.MAP_EDIT));
+    ports.published.clear();
+
+    member(Role.RegularUser, Status.Active, created.teamId());
+    assertThatThrownBy(() -> service.replacePermissions(user, eventId, created.teamId(), set))
+        .isInstanceOf(ForbiddenException.class);
+
+    member(Role.EventAdmin, Status.Active);
+    event(EventStatus.Closed);
+    assertThatThrownBy(() -> service.replacePermissions(user, eventId, created.teamId(), set))
+        .isInstanceOf(EventNotOpenException.class);
+
+    event(EventStatus.Published);
+    assertThatThrownBy(() -> service.replacePermissions(user, eventId, UUID.randomUUID(), set))
+        .isInstanceOf(TeamNotFoundException.class);
+    assertThatThrownBy(() -> service.replacePermissions(user, UUID.randomUUID(), created.teamId(), set))
+        .isInstanceOf(EventNotFoundException.class);
+
+    assertThat(ports.published).isEmpty();
+    assertThat(ports.audited).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 a team deleted between the read and the write is not found, and nothing is recorded")
+  void permissionsOfAVanishedTeam() {
+    event(EventStatus.Published);
+    member(Role.EventAdmin, Status.Active);
+    var created = service.create(user, eventId, "Control room");
+    ports.published.clear();
+    ports.teamVanishesOnWrite = true;
+
+    assertThatThrownBy(() -> service.replacePermissions(user, eventId, created.teamId(),
+        List.of(TeamPermission.of(Permission.MAP_EDIT)))).isInstanceOf(TeamNotFoundException.class);
+
+    assertThat(ports.published).isEmpty();
+    assertThat(ports.audited).isEmpty();
   }
 }
