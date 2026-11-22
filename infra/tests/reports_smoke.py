@@ -64,6 +64,11 @@ def main(env_path: str) -> int:
               "Reports accepts the Keycloak token and answers 404 to a user who is not a member of the event")
     idp.check(call(gateway, f"{path}/{uuid.uuid4()}", token) == 404,
               "Reports reads its database and does not reveal another event's request (404)")
+    # US-36 (#83): the triage status of scenario D1, on the default stack, which has no `ai` service
+    status = path.replace("/help-requests", "/triage-status")
+    idp.check(call(gateway, status, None) == 401, "the triage status needs a token (401)")
+    idp.check(call(gateway, status, token) == 404,
+              "the triage status answers 404 to a user who is not a member of the event")
 
     for failure in idp.failures:
         print(f"::error::{failure}")

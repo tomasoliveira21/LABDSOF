@@ -13,7 +13,7 @@
   <artifactId>gateway</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <name>Farol Gateway</name>
-  <description>API gateway, ADR-013 route table (#202)</description>
+  <description>API gateway (ADR-013)</description>
   <properties>
     <java.version>21</java.version>
   </properties>
@@ -43,6 +43,19 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-registry-prometheus</artifactId>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j_jdk17-core</artifactId>
+      <version>8.15.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

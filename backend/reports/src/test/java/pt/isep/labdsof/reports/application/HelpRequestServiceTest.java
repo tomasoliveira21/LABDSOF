@@ -136,6 +136,11 @@ class HelpRequestServiceTest {
       public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
         return List.of();
       }
+
+      @Override
+      public boolean saveTriage(HelpRequest triaged) {
+        return false;
+      }
     };
     var service = new HelpRequestService(refusing, ports, ports, clock);
     var clientRequestId = UUID.randomUUID();
@@ -266,6 +271,20 @@ class HelpRequestServiceTest {
     assertThatThrownBy(() -> service.list(EVENT, "ana", null)).isInstanceOf(ForbiddenException.class);
     assertThatThrownBy(() -> service.list(EVENT, "nobody", null))
         .isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("US-36 AC-2 only the control room reads the triage status")
+  void triageStatusAccess() {
+    controlRoomTeam();
+    member("ana", Role.RegularUser);
+    member("rui", Role.RegularUser, CONTROL_ROOM);
+    var service = service();
+    var otherEvent = UUID.randomUUID();
+    assertThatThrownBy(() -> service.requireTriage(EVENT, "ana")).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.requireTriage(EVENT, "nobody")).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.requireTriage(otherEvent, "rui")).isInstanceOf(NotFoundException.class);
+    service.requireTriage(EVENT, "rui");
   }
 
   @Test

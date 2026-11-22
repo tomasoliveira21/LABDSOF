@@ -62,7 +62,7 @@ This assessment uses the risk-identification/measurement/management approach of 
 | Bias in language/style | PT-PT slang/typos, English/mixed-language cases and paired paraphrases | Report per-slice failures/counts; small synthetic slices cannot establish fairness |
 | Harmful or diagnostic output | Category/priority/team only, short operator-facing reason; escape rendered text, no advice | Human review of reasons, not just JSON validation; reason may repeat sensitive text |
 | Automation bias | Explicit AI label, original input visible, easy correction; no fabricated confidence | Review accepted/changed suggestions and operator feedback |
-| Outage, slow model, quota/cost exhaustion | Immediate F7 visibility, 30 s end-to-end bound, fallback, monitoring and disable switch | AI-off/slow/malformed tests (SC5); runtime evidence still pending |
+| Outage, slow model, quota/cost exhaustion | Immediate F7 visibility, 30 s end-to-end bound, fallback, monitoring and disable switch | AI-off/slow/malformed tests (SC5); runtime evidence still pending. *21 November 2026 (#83): the SC5 test runs on every PR with a stub AI (stopped, slow, 503, dropped connection, invalid body; 100 % to the operator); circuit breaker, triage status and fallback counter built. The run with the real model on the local stack is still pending (#149)* |
 | Reproducibility/leakage | Versioned artefacts and documented label review for the academic demo; fresh blinded holdout as a future improvement | Record hashes and split use; public-in-repo test labels are not a blinded benchmark |
 | Drift or provider model replacement | Dated model ID where possible, canary re-evaluation on model/prompt changes | Re-run full quality and latency tests; provider availability may change |
 
@@ -90,16 +90,31 @@ This section is added to the snapshot so that deliverable 6 states its numbers a
 
 **Non-AI baseline, reproduced (updated 17 November 2026, #197).** The [baseline report](evaluation/baseline-report.json) applies keyword rules on the description (category and priority from ordered keyword lists; no keyword, no triage) to the 97 test cases (89 non-abstention references). The old baseline (participant category, default team, category floor: 24 of 31 urgent cases missed) no longer applies, since the participant chooses no category.
 
-| Gate, in order (ADR-005 decision 4; evaluation README) | Baseline | Gate |
-|---|---|---|
-| 1. Urgent cases missed (under-prioritised, abstained or missing) | 22 of 39 | 0 |
-| 2. Cases suggested below their minimum priority | 6 | 0 |
-| 3. `Low` or `Medium` cases rated `Critical` | 0 | 0 |
-| 4. Category accuracy | 0.573 (51 of 89) | ≥ 0.80 |
-| 5. Suggestion coverage | 0.596 (53 of 89) | ≥ 0.95 |
-| 6. Correct expected abstentions | 8 of 8 | all |
+| Gate, in order (ADR-005 decision 4; evaluation README) | Baseline | `qwen3:4b`, 19 November 2026 (#224) | Gate |
+|---|---|---|---|
+| 1. Urgent cases missed (under-prioritised, abstained or missing) | 22 of 39 | 0 of 39 | 0 |
+| 2. Cases suggested below their minimum priority | 6 | 0 | 0 |
+| 3. `Low` or `Medium` cases rated `Critical` | 0 | **5** (T006, T007, T013, T017, T119) | 0 |
+| 4. Category accuracy | 0.573 (51 of 89) | 0.966 (86 of 89) | ≥ 0.80 |
+| 5. Suggestion coverage | 0.596 (53 of 89) | 0.978 (87 of 89) | ≥ 0.95 |
+| 6. Correct expected abstentions | 8 of 8 | 8 of 8 | all |
 
 The baseline passes only the ceiling and abstention checks, because a description without a keyword is left untriaged; it has no semantic inconsistency. Its priority is at or above the minimum in 47 of 89 cases (0.528), exactly at the minimum in 44 (0.494) and above it in 3. **Where the AI must beat it** is priority first: zero urgent misses against the baseline's 22 of 39 (most of them descriptions its keywords do not recognise, such as *deixou de responder* or a fire), then the other gates. The value the AI is expected to bring is earlier attention to urgent requests written in words no fixed list anticipates; it is not measured until the model runs (guide K2).
+
+*19 November 2026 (#224): the model column is one local run of `qwen3:4b` Q4_K_M on the same 97 test cases, input only, with the prompt changed on the development split only ([run manifest](evaluation/runs/2026-11-19-local-qwen3/manifest.json), [report](evaluation/runs/2026-11-19-local-qwen3/report-run-1.json)). It beats the baseline on priority (no urgent case missed, against 22 of 39) and on category and coverage, and has no semantic inconsistency, but **fails the gate on the ceiling**: it rated `Critical` five requests whose minimum is `Medium` or `Low` (dizziness, a vague request for medical help, a conscious colleague asking for medical help, an injury, a wobbly table). It answered above the minimum in 31 of 89 cases and exactly at it in 56 (0.629). The two coverage misses (T081, T084) are questions for the staff it left untriaged; T101, an exposed live cable, got `Safety` instead of `Infrastructure`. Slices: English 7 of 7, mixed language 4 of 4 and injection 8 of 8 cases correct (4 of 4 hostile-only texts abstained; the cases with an instruction to lower the priority or change the format were still triaged by their content); slang and ambiguous each had one case rated `Critical` above its `Medium` minimum; `scale-example` 11 cases, no urgent miss, category 10 of 11. Visible breaks of the prompt's rules in the reasons, before any human review: Brazilian rather than European Portuguese forms in 13 reasons (gerunds such as *não respondendo* and *esmagando*, *em andamento*, *acessar*, *estandes*), one non-Portuguese word (*multitudine*, T107), one reason that contradicts its priority (T074), one that says the risk is to the team rather than the people (T027); no treatment advice and no copied injection text seen. A human review of every reason is still pending. The two development examples added to the prompt are close to test cases (a stolen coat, as T074; a structure that may fall, whose reason T119 copied when it rated a wobbly table `Critical`), so for those cases the test split is not a clean holdout ([spec 224](../../specs/224-ollama-evaluation-run.md) D3).*
+
+*20 November 2026 (#227): fresh holdout and repeated runs.* A holdout of 72 synthetic cases (29 urgent, 12 `Low`, 25 `Medium`, 6 abstentions; IDs H001 to H072), written without access to the prompts or any result, measures a prompt (v8) tuned on the development split only to stop over-rating ([spec 227](../../specs/227-critical-ceiling-holdout.md), [v8 manifest](evaluation/runs/2026-11-20-holdout-v8/manifest.json), [v4 manifest](evaluation/runs/2026-11-20-holdout-v4/manifest.json)):
+
+| Gate, in order | Keyword baseline | #224 prompt (v4), once | v8, three runs (identical) | Gate |
+|---|---|---|---|---|
+| 1. Urgent cases missed | 26 of 29 | **2** (H046, H060) | **2** (H046, H060) | 0 |
+| 2. Below the minimum priority | 8 | **2** | **2** | 0 |
+| 3. `Low` or `Medium` rated `Critical` | **2** | **1** (H037) | **2** (H037, H067) | 0 |
+| 4. Category accuracy | 0.152 (10 of 66) | 0.879 (58 of 66) | 0.909 (60 of 66) | ≥ 0.80 |
+| 5. Suggestion coverage | 0.333 (22 of 66) | 0.985 (65 of 66) | 1.0 (66 of 66) | ≥ 0.95 |
+| 6. Correct expected abstentions | 6 of 6 | 6 of 6 | 6 of 6 | all |
+
+*Every model run fails the gate. Both prompts rated `High` the same two cases labelled `Critical`, so the under-rating is not caused by the change; v8 did not remove the over-rating (one more ceiling failure than v4) but gained in category and coverage. Slices of v8: English 8, injection 6 (3 hostile-only texts abstained), slang 6, multiple 2 and `scale-example` 11 had no priority failure; the two ceiling failures are `plain` cases; category errors in `plain` (4), `mixed` (1) and `ambiguous` (1). A script found Brazilian rather than European Portuguese forms in 7 v8 reasons and 11 v4 reasons; it is not a human review, which is still pending, and no reason text is quoted here, so the holdout stays unread by whoever tunes the next prompt. The holdout labels are proposals of the same kind as the test split and are not independently reviewed.*
 
 **Known limitations:**
 
@@ -107,7 +122,7 @@ The baseline passes only the ceiling and abstention checks, because a descriptio
 - **Small slices.** The English, mixed-language, slang, injection, abstention and ambiguous slices have 3 to 8 test cases each, and multiple problems only one, too few to establish fairness or robustness.
 - **No calibrated confidence.** The model gives no score that has been checked against outcomes, so none is shown.
 - **One issue per suggestion.** The prompt asks for the most urgent described issue only ([system prompt](evaluation/system-prompt.txt)); a request describing several problems gets one suggestion.
-- **Latency not measured.** Time on the demo laptop's CPU is unknown until the model runs (ADR-005).
+- **End-to-end latency not measured.** Time on the demo laptop's CPU is unknown until the model runs (ADR-005). *19 November 2026 (#224): measured for direct calls only: 5.9 to 13.8 s per call (median 10.0 s, p95 12.8 s) on the laptop's CPU with Docker, after a cold start of 58.5 s; container memory peak 3.40 GB. This is `provider_ms`, not the 30 s submission-to-storage time of SC3, which needs the integrated application (#81).* *20 November 2026 (#227): on the holdout, v8 runs median 11.7 s and at most 18.5 s per call, one call per run over the 16 s slow threshold, cold start 51 to 53 s; the v4 run median 11.9 s, at most 15.6 s, cold start 50.6 s; memory peak 3.39 GB.*
 - **No routing in the evaluation.** The output has no team since 15 November 2026; the default team per event is an integration check.
 - **Provenance of retrieved information:** not applicable. The model has no tools and no retrieval; it sees only the minimised fields listed above.
 

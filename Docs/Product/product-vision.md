@@ -110,6 +110,8 @@ SC11 is the only criterion measured with users rather than by the system: it mea
 
 **Targets:** SC3 (30 s) set by the team on 8 October 2026; SC1, SC2, SC4, SC6 and SC11 confirmed on 24 October 2026 (#137), with SC6 raised from 10 s to 15 s to fit the 10 s polling of guide J3.
 
+*21 November 2026 (#83, US-36): SC5 has its automated test.* A Reports integration test with a stub in place of the AI ([spec US-36](../specs/US-36-requests-without-ai.md)) submits 20 requests with the AI stopped, and 20 for each of a reply slower than the timeout, an HTTP 503, a dropped connection and an invalid body: 100 % reach the control room's list at once, in order of arrival, with their description and no category or priority, and read `NotTriaged` with the reason (the first 4 with the failure, the rest `Unavailable` once the circuit opens). The same run on the local stack with the real model stopped is part of the end-to-end measurement of #149; the offline quality gate of the model still fails (#224, #227), which does not affect SC5.
+
 **Results (student survey, 3 to 6 and 30 October 2026, n = 30 to 31):** **V1 met**, 87 % (27/31). **V2 met**, 2.97, by a small margin and dependent on the answers of 30 October (report, *Limitations*); to confirm with a test in night conditions. The main pain reported is the wait at the entrance (80 %). Details, limitations and the decisions taken from them: report, *User Research*.
 
 ## 6. MVP boundary

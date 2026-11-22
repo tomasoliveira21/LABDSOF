@@ -1,0 +1,137 @@
+openapi: 3.0.3
+info:
+  title: Farol Badges
+  version: 0.1.0
+  description: Private badge progress and the Sprint C preference endpoints (API outline §6).
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/me/badges:
+    get:
+      tags: [Badges]
+      operationId: listMyBadges
+      summary: List the authenticated account's earned badges
+      responses:
+        '200':
+          description: The account's badges. A new account has an empty list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Badge'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/me/badges/preferences:
+    get:
+      tags: [Badges]
+      operationId: getMyBadgePreferences
+      summary: Read the authenticated account's badge preferences
+      responses:
+        '200':
+          description: Current preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadgePreferences'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '501':
+          $ref: '#/components/responses/PreferencesPending'
+    put:
+      tags: [Badges]
+      operationId: putMyBadgePreferences
+      summary: Replace the authenticated account's badge preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BadgePreferences'
+      responses:
+        '200':
+          description: Saved preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadgePreferences'
+        '400':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '501':
+          $ref: '#/components/responses/PreferencesPending'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthorized:
+      description: A valid Keycloak access token is required.
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    PreferencesPending:
+      description: Preference behavior is deferred to US-56. Ownership is pending API outline decision O5.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Badge:
+      type: object
+      additionalProperties: false
+      required: [track, qualifyingCount, tier]
+      properties:
+        track:
+          $ref: '#/components/schemas/BadgeTrack'
+        eventId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The event for an EventReporter badge. Account-wide tracks have no event.
+        qualifyingCount:
+          type: integer
+          minimum: 1
+        tier:
+          $ref: '#/components/schemas/BadgeTier'
+    BadgeTrack:
+      type: string
+      enum: [ReportHistory, EventReporter, EventAttendance]
+    BadgeTier:
+      type: string
+      enum: [Wood, Bronze, Silver, Gold, Platinum, Diamond]
+    BadgePreferences:
+      type: object
+      additionalProperties: false
+      required: [earningEnabled, visibility]
+      properties:
+        earningEnabled:
+          type: boolean
+        visibility:
+          type: string
+          description: Private by default. Sharing options will be defined with US-56.
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string

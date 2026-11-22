@@ -27,4 +27,10 @@ public interface HelpRequests {
    * must also touch it, or the control room never sees it (spec US-26 D5).
    */
   List<HelpRequest> candidatesSince(UUID eventId, Instant since);
+
+  /**
+   * Saves the request's new triage and moves its {@code updated_at} (spec US-26 D5), only while the stored triage
+   * still awaits the model (Pending without a reason); false otherwise, so nothing is overwritten (US-34 D6).
+   */
+  boolean saveTriage(HelpRequest triaged);
 }
