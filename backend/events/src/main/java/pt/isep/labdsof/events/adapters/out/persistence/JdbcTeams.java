@@ -161,7 +161,7 @@ class JdbcTeams implements Teams {
         .param(TEAM_ID, team.teamId())
         .update();
     if (stored != 1) {
-      // Before the permission rows are touched, so a lost race leaves the set the winner wrote (US-17 D2).
+      // Before the permission rows are touched, so a lost race leaves the set the winner wrote (US-16 D3).
       return missed(team);
     }
     jdbc.sql("DELETE FROM team_permission WHERE event_id = :eventId AND team_id = :teamId")
