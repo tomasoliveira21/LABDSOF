@@ -6,21 +6,14 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * The bus source (spec #193 D5, D7; US-40 D5): where it is ({@code TRANSPORT_SOURCE_URL}, WireMock in Compose), the
- * venue it is asked about, the J1 timeouts, retry and circuit breaker (architecture 9.1); how often is
- * {@code farol.transport.source.interval}, which the job reads. Switched on without a URL, or with one that is not an
+ * The bus source (spec #193 D5, D7): where it is ({@code TRANSPORT_SOURCE_URL}, WireMock in Compose), the venue it is
+ * asked about and the J1 timeouts (architecture 9.1); how often is {@code farol.transport.source.interval}, which the
+ * job reads. The retry and the circuit breaker are Resilience4j's, under {@code resilience4j.*} (US-40 D5). Switched on without a URL, or with one that is not an
  * absolute http or https URL, start-up fails: otherwise every read would fail and no read would be recorded.
  */
 @ConfigurationProperties("farol.transport.source")
 public record TransportSourceProperties(boolean enabled, String url, String coords, int maxDistance,
-    Duration connectTimeout, Duration readTimeout, Retry retry, CircuitBreaker circuitBreaker) {
-
-  /** Attempts in all, the first wait, and how much each wait grows (1 s, then 2 s). */
-  public record Retry(int maxAttempts, Duration firstWait, double multiplier) {}
-
-  /** Count-based: the last {@code slidingWindowSize} calls, at least {@code minimumNumberOfCalls}. */
-  public record CircuitBreaker(int slidingWindowSize, int minimumNumberOfCalls, float failureRateThreshold,
-      Duration waitInOpenState, int permittedCallsInHalfOpenState) {}
+    Duration connectTimeout, Duration readTimeout) {
 
   public TransportSourceProperties {
     if (enabled && (url == null || url.isBlank())) {

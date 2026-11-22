@@ -27,10 +27,9 @@ class PortoDigitalSourceIT {
   private final List<String> stubs = new ArrayList<>();
 
   private static PortoDigitalSource source(String url, String coords, Duration readTimeout) {
-    var properties = new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(3), readTimeout,
-        PortoDigitalSourceTest.RETRY, PortoDigitalSourceTest.BREAKER);
+    var properties = new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(3), readTimeout);
     return new PortoDigitalSource(properties, JsonMapper.builder().build(), RestClient.builder(),
-        ResilienceConfiguration.circuitBreakers(properties), ResilienceConfiguration.retries(properties));
+        TestResilience.breakers(), TestResilience.retries());
   }
 
   private static PortoDigitalSource source() {

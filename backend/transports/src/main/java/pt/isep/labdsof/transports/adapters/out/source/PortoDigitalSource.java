@@ -55,9 +55,12 @@ class PortoDigitalSource implements TransportSource {
     // Switched off, there may be no URL (the properties refuse an empty one only when the job is on)
     this.uri = properties.enabled() ? uri(properties.url(), properties.coords(), properties.maxDistance()) : null;
     this.json = json;
-    this.breaker = breakers.circuitBreaker(ResilienceConfiguration.NAME);
-    this.retry = retries.retry(ResilienceConfiguration.NAME);
+    this.breaker = breakers.circuitBreaker(RESILIENCE);
+    this.retry = retries.retry(RESILIENCE);
   }
+
+  /** The retry and the circuit breaker of the source, configured in application.yaml (US-40 D5, architecture 9.1). */
+  static final String RESILIENCE = "transport-source";
 
   private static final Pattern ROUTE = Pattern.compile("^stcp:route:(.+)$");
 

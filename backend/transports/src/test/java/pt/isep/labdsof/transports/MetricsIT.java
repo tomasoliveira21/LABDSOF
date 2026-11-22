@@ -39,7 +39,7 @@ class MetricsIT {
         "farol.transport.source.enabled", "true",
         "farol.transport.source.url", Infrastructure.wiremockUrl(),
         "farol.transport.source.interval", "1h",
-        "farol.transport.source.retry.first-wait", "10ms"));
+        "resilience4j.retry.instances.transport-source.wait-duration", "10ms"));
     await().atMost(Duration.ofSeconds(20)).until(() -> count("unavailable") >= 1);
   }
 

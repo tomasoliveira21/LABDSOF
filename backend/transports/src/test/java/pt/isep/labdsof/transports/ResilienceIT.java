@@ -45,8 +45,8 @@ class ResilienceIT {
         "farol.transport.source.url", Infrastructure.wiremockUrl(),
         "farol.transport.source.interval", "1h",
         "farol.transport.source.read-timeout", "300ms",
-        "farol.transport.source.retry.first-wait", "50ms",
-        "farol.transport.source.circuit-breaker.wait-in-open-state", OPEN.toMillis() + "ms"));
+        "resilience4j.retry.instances.transport-source.wait-duration", "50ms",
+        "resilience4j.circuitbreaker.instances.transport-source.wait-duration-in-open-state", OPEN.toMillis() + "ms"));
     await().atMost(Duration.ofSeconds(20)).until(() ->
         transports.getBean(SourceImports.class).lastSucceededAt().filter(at -> !at.isBefore(started)).isPresent());
   }
