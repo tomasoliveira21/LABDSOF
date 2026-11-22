@@ -27,8 +27,10 @@ class PortoDigitalSourceIT {
   private final List<String> stubs = new ArrayList<>();
 
   private static PortoDigitalSource source(String url, String coords, Duration readTimeout) {
-    var properties = new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(3), readTimeout);
-    return new PortoDigitalSource(properties, JsonMapper.builder().build(), RestClient.builder());
+    var properties = new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(3), readTimeout,
+        PortoDigitalSourceTest.RETRY, PortoDigitalSourceTest.BREAKER);
+    return new PortoDigitalSource(properties, JsonMapper.builder().build(), RestClient.builder(),
+        ResilienceConfiguration.circuitBreakers(properties), ResilienceConfiguration.retries(properties));
   }
 
   private static PortoDigitalSource source() {
@@ -82,7 +84,7 @@ class PortoDigitalSourceIT {
   void serviceUnavailable() {
     failure("{\"status\":503}");
 
-    assertThat(source().read()).isEqualTo(SourceReading.unavailable("HTTP 503", 1));
+    assertThat(source().read()).isEqualTo(SourceReading.unavailable("HTTP 503", 3));
   }
 
   @Test

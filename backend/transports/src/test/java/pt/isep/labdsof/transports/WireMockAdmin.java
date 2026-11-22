@@ -46,6 +46,11 @@ public final class WireMockAdmin {
     return String.valueOf(JSON.readValue(created, Map.class).get("id"));
   }
 
+  /** Any stub mapping, as WireMock's admin API takes it; returns its id, for {@link #remove}. */
+  public String stub(String mappingJson) {
+    return String.valueOf(JSON.readValue(send("POST", "/__admin/mappings", mappingJson), Map.class).get("id"));
+  }
+
   public void remove(String stubId) {
     send("DELETE", "/__admin/mappings/" + stubId, null);
   }

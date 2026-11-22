@@ -1,11 +1,19 @@
 package pt.isep.labdsof.transports.adapters.out.source;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryRegistry;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.http.MediaType;
@@ -33,9 +41,12 @@ class PortoDigitalSource implements TransportSource {
   private final RestClient client;
   private final URI uri;
   private final JsonMapper json;
+  private final CircuitBreaker breaker;
+  private final Retry retry;
 
   /** {@code client} is Boot's builder, which measures every call ({@code http.client.requests}, spec D12). */
-  PortoDigitalSource(TransportSourceProperties properties, JsonMapper json, RestClient.Builder client) {
+  PortoDigitalSource(TransportSourceProperties properties, JsonMapper json, RestClient.Builder client,
+      CircuitBreakerRegistry breakers, RetryRegistry retries) {
     var http = HttpClient.newBuilder().connectTimeout(properties.connectTimeout()).build();
     var factory = new JdkClientHttpRequestFactory(http);
     factory.setReadTimeout(properties.readTimeout());
@@ -43,6 +54,8 @@ class PortoDigitalSource implements TransportSource {
     // Switched off, there may be no URL (the properties refuse an empty one only when the job is on)
     this.uri = properties.enabled() ? uri(properties.url(), properties.coords(), properties.maxDistance()) : null;
     this.json = json;
+    this.breaker = breakers.circuitBreaker(ResilienceConfiguration.NAME);
+    this.retry = retries.retry(ResilienceConfiguration.NAME);
   }
 
   private static final Pattern ROUTE = Pattern.compile("^stcp:route:(.+)$");
@@ -62,40 +75,70 @@ class PortoDigitalSource implements TransportSource {
     return URI.create(base + query(coords, maxDistance));
   }
 
+  /**
+   * One run (US-40 D5): the retry wraps the circuit breaker, so every attempt counts for the circuit and nothing is
+   * tried while it is open. The answer is read outside both: an invalid answer is neither retried nor counted.
+   */
   @Override
   public SourceReading read() {
-    byte[] body;
+    var attempts = new AtomicInteger();
+    var lastFailure = new AtomicReference<String>();
+    Supplier<byte[]> call = () -> {
+      attempts.incrementAndGet();
+      try {
+        return fetch();
+      } catch (SourceFailure failure) {
+        lastFailure.set(failure.getMessage());
+        throw failure;
+      }
+    };
     try {
-      body = client.get().uri(uri).accept(MediaType.APPLICATION_JSON).retrieve().body(byte[].class);
-    } catch (RestClientResponseException e) {
-      return SourceReading.unavailable("HTTP " + e.getStatusCode().value(), 1);
-    } catch (RestClientException e) {
-      return SourceReading.unavailable(describe(e), 1);
+      var body = Retry.decorateSupplier(retry, CircuitBreaker.decorateSupplier(breaker, call)).get();
+      return parse(body, json, attempts.get());
+    } catch (CallNotPermittedException e) {
+      // Opened by this run's failed calls, or already open: the reason is the last failure, if this run had one
+      return SourceReading.unavailable(lastFailure.get() == null ? "circuit open" : lastFailure.get(), attempts.get());
+    } catch (SourceFailure failure) {
+      return SourceReading.unavailable(failure.getMessage(), attempts.get());
     }
-    return parse(body, json);
+  }
+
+  private byte[] fetch() {
+    try {
+      return client.get().uri(uri).accept(MediaType.APPLICATION_JSON).retrieve().body(byte[].class);
+    } catch (RestClientResponseException e) {
+      var status = e.getStatusCode().value();
+      throw new SourceFailure("HTTP " + status, status >= 500 || status == 429);
+    } catch (RestClientException e) {
+      throw new SourceFailure(describe(e), true);
+    }
+  }
+
+  static SourceReading parse(byte[] body, JsonMapper json) {
+    return parse(body, json, 1);
   }
 
   /** A list of NGSI entities, one reading each; an answer that is not a list of objects is invalid. */
-  static SourceReading parse(byte[] body, JsonMapper json) {
+  static SourceReading parse(byte[] body, JsonMapper json, int attempts) {
     if (body == null || body.length == 0) {
-      return SourceReading.invalid("empty body", 1);
+      return SourceReading.invalid("empty body", attempts);
     }
     try {
       var root = json.readTree(body);
       if (!root.isArray()) {
-        return SourceReading.invalid("not a JSON array", 1);
+        return SourceReading.invalid("not a JSON array", attempts);
       }
       var readings = new ArrayList<BusReading>();
       for (int i = 0; i < root.size(); i++) {
         var entity = root.get(i);
         if (!entity.isObject()) {
-          return SourceReading.invalid("entity " + i + " is not an object", 1);
+          return SourceReading.invalid("entity " + i + " is not an object", attempts);
         }
         readings.add(reading(i, entity));
       }
-      return SourceReading.answered(readings, 1);
+      return SourceReading.answered(readings, attempts);
     } catch (JacksonException e) {
-      return SourceReading.invalid("not JSON: " + describe(e), 1);
+      return SourceReading.invalid("not JSON: " + describe(e), attempts);
     }
   }
 

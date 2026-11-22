@@ -68,6 +68,17 @@ farol:
       read-timeout: 5s
       # US-40 D3: a bus observed longer ago than this is late and left out (ADR-008, the y of P4)
       freshness: 5m
+      # US-40 D5, the values of J1 (architecture 9.1): the retry wraps the circuit breaker
+      retry:
+        max-attempts: 3
+        first-wait: 1s
+        multiplier: 2
+      circuit-breaker:
+        sliding-window-size: 6
+        minimum-number-of-calls: 3
+        failure-rate-threshold: 50
+        wait-in-open-state: 60s
+        permitted-calls-in-half-open-state: 1
 
 logging:
   structured:

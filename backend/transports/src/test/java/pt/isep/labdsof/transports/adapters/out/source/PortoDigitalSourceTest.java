@@ -20,6 +20,9 @@ import tools.jackson.databind.node.ObjectNode;
 class PortoDigitalSourceTest {
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
+  static final TransportSourceProperties.Retry RETRY = new TransportSourceProperties.Retry(3, Duration.ofMillis(10), 2);
+  static final TransportSourceProperties.CircuitBreaker BREAKER =
+      new TransportSourceProperties.CircuitBreaker(6, 3, 50, Duration.ofSeconds(60), 1);
 
   /** One entity of the recordings (snapshot 1, bus 1126), its observation time fixed. */
   private static final String RECORDED = """
@@ -202,7 +205,7 @@ class PortoDigitalSourceTest {
   @DisplayName("193 D5 the job cannot be switched on with a source URL that is not an absolute http or https URL")
   void malformedUrlIsRefused(String url) {
     assertThatThrownBy(() -> new TransportSourceProperties(true, url, "41.1724,-8.6841", 2000,
-        Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        Duration.ofSeconds(3), Duration.ofSeconds(5), RETRY, BREAKER))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("farol.transport.source.url must be an absolute http or https URL");
   }
@@ -212,19 +215,19 @@ class PortoDigitalSourceTest {
   @DisplayName("193 D5 an absolute http or https source URL is accepted")
   void httpUrlIsAccepted(String url) {
     assertThat(new TransportSourceProperties(true, url, "41.1724,-8.6841", 2000, Duration.ofSeconds(3),
-        Duration.ofSeconds(5)).url()).isEqualTo(url);
+        Duration.ofSeconds(5), RETRY, BREAKER).url()).isEqualTo(url);
   }
 
   @Test
   @DisplayName("193 D5 the job cannot be switched on without a source URL")
   void urlIsRequiredWhenEnabled() {
     assertThatThrownBy(() -> new TransportSourceProperties(true, " ", "41.1724,-8.6841", 2000,
-        Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        Duration.ofSeconds(3), Duration.ofSeconds(5), RETRY, BREAKER))
         .isInstanceOf(IllegalArgumentException.class).hasMessage("farol.transport.source.url is required");
     assertThatThrownBy(() -> new TransportSourceProperties(true, null, "41.1724,-8.6841", 2000,
-        Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        Duration.ofSeconds(3), Duration.ofSeconds(5), RETRY, BREAKER))
         .isInstanceOf(IllegalArgumentException.class);
     assertThat(new TransportSourceProperties(false, null, "41.1724,-8.6841", 2000, Duration.ofSeconds(3),
-        Duration.ofSeconds(5)).enabled()).isFalse();
+        Duration.ofSeconds(5), RETRY, BREAKER).enabled()).isFalse();
   }
 }
