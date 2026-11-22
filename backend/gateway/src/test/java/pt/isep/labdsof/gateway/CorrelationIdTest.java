@@ -32,6 +32,8 @@ class CorrelationIdTest {
   // The stub Reports answers with the X-Correlation-Id it received ("none" without one).
   private static final HttpServer REPORTS = stub();
 
+  private static final String PATH = "/status/reports";
+
   @LocalServerPort private int port;
 
   @DynamicPropertySource
@@ -61,8 +63,13 @@ class CorrelationIdTest {
     }
   }
 
+  // A public route to Reports (its status), so no token is needed; /api/v1/** needs one since #190
   HttpResponse<String> get(String correlationId) throws Exception {
-    var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/v1/events/e1/help-requests"));
+    return get(PATH, correlationId);
+  }
+
+  HttpResponse<String> get(String path, String correlationId) throws Exception {
+    var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path));
     if (correlationId != null) {
       request.header("X-Correlation-Id", correlationId);
     }
@@ -78,7 +85,7 @@ class CorrelationIdTest {
     var response = get(id);
     assertThat(response.body()).isEqualTo(id);
     assertThat(response.headers().allValues("X-Correlation-Id")).containsExactly(id);
-    assertThat(output.getOut()).containsPattern("(?m)^" + id + " GET /api/v1/events/e1/help-requests -> 200 in ");
+    assertThat(output.getOut()).containsPattern("(?m)^" + id + " GET " + PATH + " -> 200 in ");
   }
 
   @Test
@@ -99,5 +106,15 @@ class CorrelationIdTest {
       assertThat(UUID.fromString(id)).as(bad).isNotNull();
       assertThat(response.body()).isEqualTo(id);
     }
+  }
+
+  @Test
+  @DisplayName("148 a request the gateway refuses (401, no token) still carries and logs its correlation id")
+  void refusalCarriesTheId(CapturedOutput output) throws Exception {
+    var id = "refused-" + UUID.randomUUID();
+    var response = get("/api/v1/events/e1/help-requests", id);
+    assertThat(response.statusCode()).isEqualTo(401);
+    assertThat(response.headers().allValues("X-Correlation-Id")).containsExactly(id);
+    assertThat(output.getOut()).containsPattern("(?m)^" + id + " GET /api/v1/events/e1/help-requests -> 401 in ");
   }
 }

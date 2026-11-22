@@ -21,6 +21,9 @@ import urllib.error
 import urllib.request
 import uuid
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import events_smoke as ev  # noqa: E402 - path set above (python -I leaves the script's folder out)
+
 COMPOSE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "compose.yaml")
 # Every target the service-down alert watches
 EXPECTED_UP = {"gateway", "reports", "events", "auth-users", "transports", "badges", "rabbitmq"}
@@ -103,7 +106,7 @@ def main(env_path: str, project: str | None = None) -> int:
     rules = {r["uid"] for r in json.loads(body)} if status == 200 else set()
     check(ALERT_RULES <= rules, f"the three core alert rules are provisioned ({sorted(rules)})")
 
-    # Without a token: Reports refuses it (401) and still logs it, with the id (the status check is not logged)
+    # Without a token the gateway refuses it (401, #190) and still returns and logs the id
     path = f"/api/v1/events/{uuid.uuid4()}/help-requests"
     correlation_id = str(uuid.uuid4())
     status, headers, _ = get(gateway + path, {"X-Correlation-Id": correlation_id})
@@ -112,11 +115,16 @@ def main(env_path: str, project: str | None = None) -> int:
     status, headers, _ = get(gateway + path,{"X-Correlation-Id": "bad id\twith tab" + "x" * 80})
     replaced = {k.lower(): v for k, v in headers.items()}.get("x-correlation-id", "")
     check(len(replaced) == 36 and "bad" not in replaced, f"the gateway replaces an invalid X-Correlation-Id ({replaced})")
-    # Events has no such endpoint yet: it answers 404 and still logs the request with the gateway's id
-    events_id = str(uuid.uuid4())
-    get(gateway + f"/api/v1/events/{uuid.uuid4()}", {"X-Correlation-Id": events_id})
+    # With a real token the request reaches the service: an event the account is not a member of is refused there
+    # (404), and Reports and Events still log the request with the gateway's id (their status check is not logged)
+    token = ev.token_for(env, ev.RITA)
+    check(token is not None, "a real Keycloak token for the demo account")
+    bearer = {"Authorization": f"Bearer {token}"}
+    reports_id, events_id = str(uuid.uuid4()), str(uuid.uuid4())
+    get(gateway + path, {"X-Correlation-Id": reports_id, **bearer})
+    get(gateway + f"/api/v1/events/{uuid.uuid4()}", {"X-Correlation-Id": events_id, **bearer})
     time.sleep(1)
-    for service, cid in (("gateway", correlation_id), ("reports", correlation_id), ("events", events_id)):
+    for service, cid in (("gateway", correlation_id), ("reports", reports_id), ("events", events_id)):
         check(logged_with(env_path, project, service, cid), f"{service} logs a JSON line with correlationId {cid}")
 
     return 1 if failures else 0

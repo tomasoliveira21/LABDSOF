@@ -84,3 +84,22 @@ farol-ci-rabbitmq-1	119.5MiB / 512MiB
 farol-ci-reports-1	218MiB / 512MiB
 farol-ci-transports-1	138.2MiB / 512MiB
 ```
+
+## Update, 22 November 2026: after merging main
+
+`main` brought Spring Security to Events (#192), Badges (#201) and the gateway (#190). Without changes the scrape of Events and Badges would have been refused, and the merge also left the gateway, Events and Badges without the management port, because their own `environment` replaced the anchor's. Fixed here: the management-port chain and a `ManagementPortIT` in Events and Badges, the shared settings repeated in those three services, and Badges' health check on `8081`. The gateway now refuses an `/api/v1` request without a token itself, so `observability_smoke.py` logs in as a demo account to reach Reports and Events. One stack on the `farol-ci` project, `--profile observability`, images built from this branch:
+
+```
+PASS Prometheus scrapes ['auth-users', 'badges', 'events', 'gateway', 'rabbitmq', 'reports', 'transports'] (up: ['auth-users', 'badges', 'events', 'gateway', 'rabbitmq', 'reports', 'transports'])
+PASS Grafana is healthy (200)
+PASS the Farol dashboard is provisioned (200)
+PASS the three core alert rules are provisioned (['farol-outbox-stalled', 'farol-service-down', 'farol-triage-below-target'])
+PASS the gateway returns the caller's X-Correlation-Id (22942cbd-f32c-4d92-b42d-a93f2e17e983)
+PASS the gateway replaces an invalid X-Correlation-Id (0e4b4f44-9de8-4244-9fc0-d60c4ee0868d)
+PASS a real Keycloak token for the demo account
+PASS gateway logs a JSON line with correlationId 22942cbd-f32c-4d92-b42d-a93f2e17e983
+PASS reports logs a JSON line with correlationId 5ee65690-465c-4236-bda5-20a674b658a0
+PASS events logs a JSON line with correlationId 7e5cd87f-6be9-4941-ae0e-1c03d8ce8a1d
+```
+
+The Reports, Events, Badges and Auth & Users smokes of `ci.yml` passed on the same stack. `mvn -B -ntp verify` passed in Reports, Events, Badges, Auth & Users and the gateway.
