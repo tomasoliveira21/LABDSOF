@@ -50,8 +50,10 @@ public class MeService {
     }
     var account = UserAccount.provision(identity.userId(), email, verified, identity.name(), clock.instant());
     if (!accounts.insertIfAbsent(account)) {
-      // Another first call committed the same sub (ON CONFLICT waited for it): use that account, write no event (D5)
-      return existing(accounts.findById(identity.userId()).orElseThrow(), email, verified);
+      // Another first call may have created this subject. An e-mail conflict alone cannot select an account.
+      var concurrent = accounts.findById(identity.userId())
+          .orElseThrow(() -> new IllegalStateException("Account insert conflicted without a matching subject"));
+      return existing(concurrent, email, verified);
     }
     outbox.add(OutgoingEvent.userProfileChanged(UUID.randomUUID(), account, identity.userId().toString()));
     if (!bootstrap.grants(email, identity.emailVerified())) {

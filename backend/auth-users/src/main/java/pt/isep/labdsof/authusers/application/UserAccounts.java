@@ -9,7 +9,7 @@ public interface UserAccounts {
 
   Optional<UserAccount> findById(UUID userId);
 
-  /** False when the account already exists (another call created it first). */
+  /** False when a uniqueness conflict prevents the insert. */
   boolean insertIfAbsent(UserAccount account);
 
   /** Writes the e-mail, whether it is verified, and the update time of {@code account}. */

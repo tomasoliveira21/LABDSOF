@@ -58,6 +58,8 @@ Stories: US-01 to US-05, US-08, US-12, US-15, US-18.
 
 Owns accounts, the `FarolAdmin` grant, memberships of events and team assignments. Keeps local copies of the events (status, name) and their teams (`EventChanged`, `TeamChanged`).
 
+See [AccountStatus](domain-model.md#accountstatus) and [MembershipStatus](domain-model.md#membershipstatus) for the account and membership lifecycles. The MVP removes membership copies on `UserDeleted`. `MembershipChanged` retains its existing status field pending the contract decision in #198.
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
 | — | _identity provider_ | Sign up, log in and log out happen in Keycloak; the web app sends its token on every call (§1.4). Sign-up asks for the terms on Keycloak's form | — | US-01, US-02, US-03 |
@@ -92,6 +94,8 @@ Owns events, teams with their permissions and help categories, map versions and 
 
 **Events**
 
+See [EventStatus](domain-model.md#eventstatus) for transition guards and who can trigger them.
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
 | `POST` | `/events` | Create an event as a draft (`{ name, organiserName, dates }`); the FarolAdmin then names its first EventAdmin in Auth & Users (§2) | FarolAdmin | US-06 |
@@ -99,9 +103,9 @@ Owns events, teams with their permissions and help categories, map versions and 
 | `GET` | `/events/{eventId}` | The event's details, status and, once published, its join link (the QR code encodes it) | Member, EventAdmin | US-10, US-11, US-12 |
 | `PATCH` | `/events/{eventId}` | Edit the name, dates or description of a draft or published event | EventAdmin | US-10 |
 | `POST` | `/events/{eventId}/publish` | Publish a draft; generates the join link | EventAdmin | US-11 |
-| `POST` | `/events/{eventId}/close` | Close the event: no more help requests or reports | EventAdmin | US-13 |
-| `POST` | `/events/{eventId}/suspend` | Suspend the event: participants can no longer open it | FarolAdmin | US-09 |
-| `POST` | `/events/{eventId}/reactivate` | Return a suspended event to its previous status | FarolAdmin | US-09 |
+| `POST` | `/events/{eventId}/close` | Close a published event. It remains readable to members with access. New joins, help requests and reports are refused | EventAdmin | US-13 |
+| `POST` | `/events/{eventId}/suspend` | Suspend a draft or published event, remembering its previous status. Participants lose access | FarolAdmin | US-09 |
+| `POST` | `/events/{eventId}/reactivate` | Restore a suspended event to its recorded previous status (draft or published) | FarolAdmin | US-09 |
 
 **Teams and permissions**
 
@@ -150,6 +154,8 @@ Owns help requests, triage suggestions, community reports, field tasks and their
 
 **Help requests**
 
+See [RequestStatus](domain-model.md#requeststatus) and [#177](https://github.com/tomasoliveira21/LABDSOF/issues/177) for the request lifecycle.
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
 | `POST` | `/events/{eventId}/help-requests` | Ask for help with a short description and a point on the map (§4.1); `422` if the event is closed or suspended. Sending the same `clientRequestId` again returns the request already saved, so the app can retry safely. After 5 in 10 minutes the gateway answers `429` with `Retry-After` (ADR-013 L-2) | Member | US-23, US-25 |
@@ -165,25 +171,29 @@ Owns help requests, triage suggestions, community reports, field tasks and their
 
 **Community reports**
 
+See [ReportStatus](domain-model.md#reportstatus) for transitions and map visibility.
+
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
 | `POST` | `/events/{eventId}/reports` | Report a problem (`{ type, location, clientRequestId }`), saved as *Pending*; `429` with `Retry-After` when the participant reports too often | Member | US-47, US-48 |
 | `GET` | `/events/{eventId}/reports?updatedSince=` | Live list. Participants see the confirmed, active reports without the reporter, and their own; reviewers see every report of the types they review | Member | US-47, US-49, US-50 |
-| `POST` | `/events/{eventId}/reports/{reportId}/confirm` | Confirm it: it goes on the map and counts for badges | `Reports.Review` for its type | US-50 |
-| `POST` | `/events/{eventId}/reports/{reportId}/reject` | Reject it | `Reports.Review` for its type | US-50 |
-| `POST` | `/events/{eventId}/reports/{reportId}/unconfirm` | Withdraw the confirmation: it leaves the map and stops counting; recorded with who and when | `Reports.Review` for its type | US-51 |
-| `POST` | `/events/{eventId}/reports/{reportId}/dispatch` | Send it to a team to check or fix (`{ teamId, purpose: Verify \| Fix }`); creates a field task; `422` if the team has no `Reports.Respond` | `Reports.Review` for its type | US-52, US-53 |
+| `POST` | `/events/{eventId}/reports/{reportId}/confirm` | Confirm a pending report. It appears on the map and counts for badges | `Reports.Review` for its type or EventAdmin | US-50 |
+| `POST` | `/events/{eventId}/reports/{reportId}/reject` | Reject a pending report | `Reports.Review` for its type or EventAdmin | US-50 |
+| `POST` | `/events/{eventId}/reports/{reportId}/unconfirm` | Withdraw a confirmed report. It leaves the map and stops counting for badges. Record who changed it and when | `Reports.Review` for its type | US-51 |
+| `POST` | `/events/{eventId}/reports/{reportId}/dispatch` | Create a field task to verify a pending report or fix a confirmed report (`{ teamId, purpose: Verify \| Fix }`). Dispatch keeps the report status. Return `422` if the team has no `Reports.Respond` | `Reports.Review` for its type | US-52, US-53 |
 
-- Reports expire on their own, after the time of their type (`features.md` §6.1); there is no endpoint for it.
+- When the type has a deadline, Reports moves a pending or confirmed report to `Expired` automatically (US-49). A previously confirmed report keeps its badge credit after expiry or resolution.
 
 **Field tasks**
+
+See [FieldTaskStatus](domain-model.md#fieldtaskstatus) for valid transitions by task purpose.
 
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
 | `GET` | `/events/{eventId}/field-tasks?updatedSince=` | Live list of the tasks of my teams, each with its request or report and its point on the map | `HelpRequests.Respond`, `Reports.Respond` | US-31, US-52 |
-| `POST` | `/events/{eventId}/field-tasks/{taskId}/accept` | Accept a task; the help request becomes *On the way*; `409` if another member already accepted it | Member of the task's team | US-32 |
-| `POST` | `/events/{eventId}/field-tasks/{taskId}/answer` | Answer a *Verify* task (`{ found: true \| false }`); the answer goes back to the reviewer | Member who accepted it | US-52 |
-| `POST` | `/events/{eventId}/field-tasks/{taskId}/resolve` | Mark the help request, or the report of a *Fix* task, resolved | Member who accepted it | US-33, US-53 |
+| `POST` | `/events/{eventId}/field-tasks/{taskId}/accept` | Accept an open task. For Assist, the help request becomes *On the way*. Return `409` if another member already accepted it | Member of the task's team | US-32, US-52, US-53 |
+| `POST` | `/events/{eventId}/field-tasks/{taskId}/answer` | Answer an accepted Verify task (`{ found: true \| false }`). The task becomes `Answered` and the reviewer receives the answer | Member who accepted it | US-52 |
+| `POST` | `/events/{eventId}/field-tasks/{taskId}/resolve` | Resolve an accepted Assist or Fix task and its target | Member who accepted it | US-33, US-53 |
 
 - Publishes `HelpRequestSubmitted` (for its own triage consumer), `ReportConfirmed` and `ReportUnconfirmed` (§7).
 
@@ -251,7 +261,7 @@ Owns help requests, triage suggestions, community reports, field tasks and their
 }
 ```
 
-- A field task targets exactly one help request or report. `Cancelled` covers a team deleted while the task was open: the request goes back to the control-room queue (US-16).
+- A field task targets exactly one help request or report. A team deletion cancels its open or accepted tasks and returns routed help requests to the control-room queue (US-16). Account deletion also cancels the requester’s open tasks (§7.4).
 
 ## 5. Transports
 
@@ -345,7 +355,7 @@ Every payload except `HelpRequestSubmitted` also carries `version` (§7.3). `eve
 | `ReportUnconfirmed` · `report.unconfirmed` | Reports | **Badges**: removes it from the counts and recalculates the tiers, which can go down (US-54, US-55) | `reportId`, `reporterUserId`, `type`, `confirmed: false`, `revokedAt` |
 
 - Transports and Badges publish nothing. The status of a help request reaches the participant by polling (§1.6), not by an event.
-- `ReportConfirmed` and `ReportUnconfirmed` carry the same full state, so Badges keeps one row per report and upserts it; a report confirmed, unconfirmed and confirmed again counts once. After its reporter deletes the account, a report is published with an empty `reporterUserId`, and Badges ignores it.
+- `ReportConfirmed` and `ReportUnconfirmed` carry the same full state. Badges upserts one row per report, so repeat confirmation events count once. Eligibility for reconfirming an `Unconfirmed` report is pending team confirmation in [#198](https://github.com/tomasoliveira21/LABDSOF/issues/198). After its reporter deletes the account, a report is published with an empty `reporterUserId`, and Badges ignores it.
 - If the badge preferences stay in Auth & Users (§6), Auth & Users also publishes `EngagementPreferencesChanged` to Badges.
 
 ### 7.5 Queues
