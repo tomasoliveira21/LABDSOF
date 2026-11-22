@@ -19,7 +19,8 @@ import pt.isep.labdsof.events.domain.TeamPermission;
 
 /**
  * The team table through its port. The use cases read the team before they write it, so the outcomes of a lost
- * race (US-16 D3) can only be reached here, by writing a row that is already deleted.
+ * race (US-16 D3) can only be reached here: by writing a row that is already deleted, or by writing twice from
+ * the same read, which is what two requests arriving together do.
  */
 class JdbcTeamsIT extends IntegrationTest {
 
@@ -46,6 +47,32 @@ class JdbcTeamsIT extends IntegrationTest {
 
     assertThat(teams.delete(team.asDeleted(), UUID.randomUUID(), AT)).isEqualTo(Write.GONE);
     assertThat(teams.replace(team.renamed("Medical", Set.of()), UUID.randomUUID(), AT)).isEqualTo(Write.GONE);
+    assertThat(teams.liveOfEvent(eventId)).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-16 AC-3 the second write from the same read is refused, so no two versions can be published")
+  void secondWriteFromTheSameReadIsRefused() {
+    var eventId = event();
+    var read = stored(eventId, "Nursing");
+
+    // Both writes start from the same read, as two requests arriving together do: the rename commits first.
+    assertThat(teams.replace(read.renamed("Medical", Set.of()), UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+    assertThat(teams.delete(read.asDeleted(), UUID.randomUUID(), AT)).isEqualTo(Write.CONFLICT);
+
+    // The delete changed nothing: without the guard it would have stored version 2 a second time, and Reports
+    // would have dropped it and kept the team active for ever.
+    var live = teams.liveOfEvent(eventId, read.teamId()).orElseThrow();
+    assertThat(live.name()).isEqualTo("Medical");
+    assertThat(live.version()).isEqualTo(2);
+    assertThat(live.deleted()).isFalse();
+
+    // The same the other way round, and between two renames.
+    assertThat(teams.replace(read.renamed("Triage", Set.of()), UUID.randomUUID(), AT)).isEqualTo(Write.CONFLICT);
+    assertThat(teams.liveOfEvent(eventId, read.teamId()).orElseThrow().name()).isEqualTo("Medical");
+
+    // A write that does hold the current version still goes through.
+    assertThat(teams.delete(live.asDeleted(), UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
     assertThat(teams.liveOfEvent(eventId)).isEmpty();
   }
 

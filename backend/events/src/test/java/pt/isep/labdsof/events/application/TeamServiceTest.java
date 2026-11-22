@@ -220,6 +220,24 @@ class TeamServiceTest {
   }
 
   @Test
+  @DisplayName("US-16 AC-3 a team changed between the read and the write is a conflict, and nothing is published")
+  void teamChangesBetweenReadAndWrite() {
+    event(EventStatus.Published);
+    member(Role.EventAdmin, Status.Active);
+    var created = service.create(user, eventId, "Nursing");
+    ports.published.clear();
+    ports.teamChangesOnWrite = true;
+
+    assertThatThrownBy(() -> service.delete(user, eventId, created.teamId()))
+        .isInstanceOf(TeamChangedConcurrentlyException.class);
+    assertThatThrownBy(() -> service.update(user, eventId, created.teamId(), "Medical", List.of()))
+        .isInstanceOf(TeamChangedConcurrentlyException.class);
+
+    // The point of the guard: a refused write publishes nothing, so no version is ever carried by two messages.
+    assertThat(ports.published).isEmpty();
+  }
+
+  @Test
   @DisplayName("US-16 AC-1 an unknown team, or a team of another event, is not found and the refusal is recorded")
   void unknownTeam() {
     event(EventStatus.Published);

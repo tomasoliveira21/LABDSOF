@@ -166,7 +166,9 @@ paths:
       tags: [Teams]
       operationId: updateTeam
       summary: Rename a team and set the help categories it handles (US-16, US-17); EventAdmin only
-      description: Both fields are sent; the web app's team form always has both.
+      description: >-
+        Both fields are sent; the web app's team form always has both. 409 when another request changed the team
+        meanwhile: read it again and decide.
       requestBody:
         required: true
         content:
@@ -194,7 +196,9 @@ paths:
       tags: [Teams]
       operationId: deleteTeam
       summary: Delete a team (US-16); EventAdmin only
-      description: Reports returns its routed requests to the control-room queue when it consumes TeamChanged.
+      description: >-
+        Reports returns its routed requests to the control-room queue when it consumes TeamChanged. 409 when
+        another request changed the team meanwhile: the delete is not lost silently, it is refused.
       responses:
         '204':
           description: The team is deleted
@@ -469,8 +473,9 @@ components:
             $ref: '#/components/schemas/Problem'
     Conflict:
       description: >-
-        State conflict: a team name already taken, an event that is not a draft, or an event that is
-        suspended or closed, whose teams are not changed (US-16)
+        State conflict: a team name already taken, an event that is not a draft, an event that is
+        suspended or closed, whose teams are not changed, or a team another request changed between
+        this one's read and its write, which is refused so that no version is published twice (US-16)
       content:
         application/problem+json:
           schema:
