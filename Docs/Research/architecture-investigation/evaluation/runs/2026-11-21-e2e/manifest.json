@@ -67,7 +67,9 @@
   },
   "deviations": [
     "SC5 ran twice. The first run (13:40:14 to 14:16:57 UTC, driver 1683fab, results in commit 58de091301ac4885b94a794b84113f32d739424f: passed, 72 of 72 shown, NotTriaged within 4.0 s) timed the operator's view from the start of each poll, before the list had arrived, and counted NotTriaged without checking its reason; the independent review (G8) found both. The driver was fixed (commit 3445a2f6fbe623de210266f35e378111e4443909) and SC5 was run again on a fresh stack with the same profile and pass rule; the results below are the second run. sc5-requests.jsonl of the second run also records sent_s, the real send time.",
-    "SC3 was not run again: its pass rule reads only Reports' database. Its first_seen_ms and not_triaged_seen_ms columns come from the first driver, so they leave out the duration of the poll that saw the request (tens of milliseconds on this stack); no SC3 figure uses them."
+    "SC3 was not run again: its pass rule reads only Reports' database. Its first_seen_ms and not_triaged_seen_ms columns come from the first driver, so they leave out the duration of the poll that saw the request (tens of milliseconds on this stack); no SC3 figure uses them.",
+    "Review of PR #235: the fixture of spec 234 D2 is asserted to match what LocalCopyListener writes for MembershipChanged and TeamChanged; nothing in this folder checks it. When US-12 and US-18 publish real memberships and teams, repeat the run through those producers before any figure here is cited as release evidence.",
+    "Review of PR #235: each summary first carried a pass block for the scenario that run did not measure (sc3-summary.json had sc5 pass false, sc5-summary.json had sc3 pass false), an artefact of summarising every block over one scenario's rows. On 22 November 2026 the driver marks the other block not_applicable and both summaries were recomputed from the unchanged rows; every figure of the scenario each run measured is unchanged."
   ],
   "results": {
     "sc3": {
@@ -103,26 +105,10 @@
           "Timeout": 4,
           "Unavailable": 1
         },
-        "sc5": {
-          "shown": 72,
-          "not_triaged_in_time": 11,
-          "out_of_order_polls": 0,
-          "pass": false,
-          "first_seen_ms": {
-            "n": 72,
-            "p50": 24.0,
-            "p95_nearest_rank": 50,
-            "max": 58
-          },
-          "not_triaged_seen_ms": {
-            "n": 11,
-            "p50": 12035,
-            "p95_nearest_rank": 22036,
-            "max": 22036
-          }
-        }
+        "sc5": "not_applicable"
       },
       "result": "FAILED: 61 of 66 non-abstention cases valid within 30 s (0.924, target 0.95); 61 of 72 under the NFR-03 count (0.847). Misses: 4 Timeout (H020, H035, H066, H067: the model call reached its 20 s cap) and 1 Unavailable (H069: the circuit opened after H066 and H067 timed out and H068 was slow, and closed 56 s later); the 6 expected abstentions abstained.",
+      "result_reading": "How to read it (review of PR #235): this profile measures the serial path, with at most one model call in flight, so 0.924 is an optimistic bound, not a worst case. Under concurrent arrivals the runtime (OLLAMA_NUM_PARALLEL=1, OLLAMA_MAX_QUEUE=1, admission only with 23 s left) queues a second request behind a 14 s call or refuses it, turning latency misses into Unavailable ones: the gap to 0.95 is not three points, and 0.924 is not the number to close.",
       "system_overhead_ms": {
         "definition": "e2e_ms minus worker_ms of the 61 stored suggestions: outbox, broker, worker queue and storage",
         "median": 286,
@@ -140,28 +126,7 @@
       "summary": {
         "requests": 72,
         "created": 72,
-        "sc3": {
-          "valid_on_time_non_abstention": 0,
-          "non_abstention_cases": 66,
-          "valid_on_time_rate": 0.0,
-          "valid_on_time_all": 0,
-          "valid_on_time_rate_all": 0.0,
-          "pass": false,
-          "suggestion_e2e_ms": {
-            "n": 0,
-            "p50": null,
-            "p95_nearest_rank": null,
-            "max": null
-          },
-          "worker_ms": {
-            "n": 72,
-            "p50": 1317.0,
-            "p95_nearest_rank": 1388,
-            "max": 1816
-          },
-          "expected_abstentions_abstained": 0,
-          "expected_abstentions": 6
-        },
+        "sc3": "not_applicable",
         "outcomes": {
           "ProviderError": 38,
           "Unavailable": 34

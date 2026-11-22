@@ -78,7 +78,16 @@ def valid_on_time(row: dict, deadline_ms: int) -> bool:
             and row["suggested_priority"] is not None and row["e2e_ms"] is not None and row["e2e_ms"] <= deadline_ms)
 
 
-def summarise(rows: list[dict], profile: dict = PROFILE) -> dict:
+def summarise(rows: list[dict], profile: dict = PROFILE, phase: str | None = None) -> dict:
+    """The summary of one run; with its phase (sc3 or sc5), the other scenario's block reads not_applicable (review of
+    #235: an SC3 run's rows cannot pass SC5, which needs the model stopped, nor an SC5 run's rows SC3)."""
+    summary = _summarise(rows, profile)
+    if phase in ("sc3", "sc5"):
+        summary["sc5" if phase == "sc3" else "sc3"] = "not_applicable"
+    return summary
+
+
+def _summarise(rows: list[dict], profile: dict) -> dict:
     deadline_ms = profile["deadline_s"] * 1000
     sc5_limit_ms = (profile["deadline_s"] + profile["sc5_grace_s"]) * 1000
     non_abstention = [r for r in rows if not r["abstain_expected"]]
@@ -317,7 +326,7 @@ def run(phase: str, out: Path, env_path: str, project: str, trial: bool = False)
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{phase}-requests.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
     (out / f"{phase}-status.jsonl").write_text("".join(json.dumps(s) + "\n" for s in status_log), encoding="utf-8")
-    summary = summarise(rows)
+    summary = summarise(rows, phase=phase)
     (out / f"{phase}-summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))
     return 0
@@ -340,7 +349,7 @@ def verify(run_dir: Path) -> None:
         rows = read_jsonl(run_dir / f"{phase}-requests.jsonl")
         check([r["case"] for r in rows] == ids, f"234 AC-2 the rows hold one line per holdout case ({phase})")
         summary = json.loads((run_dir / f"{phase}-summary.json").read_text(encoding="utf-8"))
-        check(summary == summarise(rows) and recorded.get("summary") == summary,
+        check(summary == summarise(rows, phase=phase) and recorded.get("summary") == summary,
               f"234 AC-2 a summary is recomputed from its rows ({phase})")
 
 
@@ -420,7 +429,10 @@ def self_test() -> None:
     check(tokens["a"]["access_token"] == "new", "234 AC-2 a failed token renewal is retried, not fatal")
     # --verify on a temporary run directory, complete and then with one thing changed at a time
     rows = [row(c["id"]) for c in load_cases()]
-    summary = summarise(rows)
+    summary = summarise(rows, phase="sc3")
+    check(summary["sc5"] == "not_applicable" and summarise(rows, phase="sc5")["sc3"] == "not_applicable"
+          and isinstance(summarise(rows)["sc5"], dict),
+          "234 AC-2 a run's summary carries only the scenario it ran")
     manifest = {"profile": PROFILE, "pass_rules": {"sc3": "", "sc5": ""}, "driver_commit": "0" * 40,
                 "package_sha256": {CASES: sha256(HERE / CASES)}, "results": {"sc3": {"summary": summary}}}
 

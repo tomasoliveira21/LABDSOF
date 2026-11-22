@@ -29,22 +29,5 @@
     "Timeout": 4,
     "Unavailable": 1
   },
-  "sc5": {
-    "shown": 72,
-    "not_triaged_in_time": 11,
-    "out_of_order_polls": 0,
-    "pass": false,
-    "first_seen_ms": {
-      "n": 72,
-      "p50": 24.0,
-      "p95_nearest_rank": 50,
-      "max": 58
-    },
-    "not_triaged_seen_ms": {
-      "n": 11,
-      "p50": 12035,
-      "p95_nearest_rank": 22036,
-      "max": 22036
-    }
-  }
+  "sc5": "not_applicable"
 }

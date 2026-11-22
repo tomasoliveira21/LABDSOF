@@ -1,28 +1,7 @@
 {
   "requests": 72,
   "created": 72,
-  "sc3": {
-    "valid_on_time_non_abstention": 0,
-    "non_abstention_cases": 66,
-    "valid_on_time_rate": 0.0,
-    "valid_on_time_all": 0,
-    "valid_on_time_rate_all": 0.0,
-    "pass": false,
-    "suggestion_e2e_ms": {
-      "n": 0,
-      "p50": null,
-      "p95_nearest_rank": null,
-      "max": null
-    },
-    "worker_ms": {
-      "n": 72,
-      "p50": 1317.0,
-      "p95_nearest_rank": 1388,
-      "max": 1816
-    },
-    "expected_abstentions_abstained": 0,
-    "expected_abstentions": 6
-  },
+  "sc3": "not_applicable",
   "outcomes": {
     "ProviderError": 38,
     "Unavailable": 34
