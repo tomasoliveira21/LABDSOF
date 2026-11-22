@@ -2,6 +2,9 @@ package pt.isep.labdsof.transports.adapters.out.source;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.retry.RetryRegistry;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,9 +30,15 @@ class PortoDigitalSourceIT {
   private final List<String> stubs = new ArrayList<>();
 
   private static PortoDigitalSource source(String url, String coords, Duration readTimeout) {
+    var breakers = TestResilience.breakers();
+    return source(url, coords, readTimeout, breakers, TestResilience.retries(breakers));
+  }
+
+  private static PortoDigitalSource source(String url, String coords, Duration readTimeout,
+      CircuitBreakerRegistry breakers, RetryRegistry retries) {
     var properties = new TransportSourceProperties(true, url, coords, 2000, Duration.ofSeconds(3), readTimeout);
-    return new PortoDigitalSource(properties, JsonMapper.builder().build(), RestClient.builder(),
-        TestResilience.breakers(), TestResilience.retries());
+    return new PortoDigitalSource(properties, JsonMapper.builder().build(), RestClient.builder(), breakers,
+        retries);
   }
 
   private static PortoDigitalSource source() {
@@ -84,6 +93,22 @@ class PortoDigitalSourceIT {
     failure("{\"status\":503}");
 
     assertThat(source().read()).isEqualTo(SourceReading.unavailable("HTTP 503", 3));
+  }
+
+  @Test
+  @DisplayName("US-40 D5 when a failure opens the circuit, the run stops at once instead of waiting to be refused")
+  void openingTheCircuitStopsTheRun() {
+    failure("{\"status\":503}");
+    var breakers = CircuitBreakerRegistry.of(
+        CircuitBreakerConfig.custom().slidingWindowSize(1).minimumNumberOfCalls(1).build());
+    var source = source(Infrastructure.wiremockUrl(), VENUE, Duration.ofSeconds(5), breakers,
+        TestResilience.retries(breakers, Duration.ofSeconds(2)));
+
+    var started = System.nanoTime();
+    var reading = source.read();
+
+    assertThat(reading).isEqualTo(SourceReading.unavailable("HTTP 503", 1));
+    assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofSeconds(1));
   }
 
   @Test

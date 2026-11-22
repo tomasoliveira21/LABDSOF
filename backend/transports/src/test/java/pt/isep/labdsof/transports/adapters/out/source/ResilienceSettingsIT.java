@@ -70,8 +70,8 @@ class ResilienceSettingsIT {
   }
 
   @Test
-  @DisplayName("US-40 D5 the circuit breaker's state is in the health check, and an open circuit does not make "
-      + "Transports unhealthy: the source is outside it")
+  @DisplayName("US-40 D5 the circuit breaker's state is in the health check, an open circuit does not make "
+      + "Transports unhealthy (the source is outside it), and nothing is retried while it is open")
   void circuitBreakerInTheHealthCheck() {
     var health = transports.getBean(HealthEndpoint.class);
     var before = health.health().getStatus();
@@ -81,6 +81,8 @@ class ResilienceSettingsIT {
       var transportSource = (Health) circuitBreakers.getDetails().get("transport-source");
 
       assertThat(String.valueOf(transportSource.getDetails().get("state"))).isEqualTo("OPEN");
+      assertThat(transports.getBean(RetryRegistry.class).retry("transport-source").getRetryConfig()
+          .getExceptionPredicate().test(new SourceFailure("HTTP 503", true))).isFalse();
       assertThat(transportSource.getStatus()).isNotEqualTo(Status.DOWN);
       assertThat(health.health().getStatus()).isEqualTo(before).isEqualTo(Status.UP);
     } finally {

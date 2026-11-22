@@ -9,7 +9,7 @@ import java.time.Duration;
 
 /**
  * The source's retry and circuit breaker for the tests that build the adapter by hand: the J1 values of
- * application.yaml (ResilienceSettingsIT checks those), with a 10 ms first wait.
+ * application.yaml (ResilienceSettingsIT checks those), with a 10 ms first wait unless a test needs another.
  */
 final class TestResilience {
 
@@ -26,11 +26,15 @@ final class TestResilience {
         .build());
   }
 
-  static RetryRegistry retries() {
+  static RetryRegistry retries(CircuitBreakerRegistry breakers) {
+    return retries(breakers, Duration.ofMillis(10));
+  }
+
+  static RetryRegistry retries(CircuitBreakerRegistry breakers, Duration firstWait) {
     return RetryRegistry.of(RetryConfig.custom()
         .maxAttempts(3)
-        .intervalFunction(IntervalFunction.ofExponentialBackoff(Duration.ofMillis(10), 2))
-        .retryOnException(new RetryableSourceFailure())
+        .intervalFunction(IntervalFunction.ofExponentialBackoff(firstWait, 2))
+        .retryOnException(new RetryableSourceFailure(() -> breakers.circuitBreaker(PortoDigitalSource.RESILIENCE)))
         .build());
   }
 }
