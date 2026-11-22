@@ -145,6 +145,8 @@ E1–E4 decididos na reunião da equipa de 22/10 ([registo](../Meetings/2026-10-
 
 **Alinhamento documental (26/10, #145):** [ADR-005](adr/0005-ai-triage-provider-and-evaluation.md#coverage-definition-aligned-26-october-2026-145), ADR-012, a observabilidade e o avaliador passam a usar a proposta **≥95% de sugestões válidas guardadas em ≤30 s**, com janela operacional de 1 h. As populações offline/operacional e o tratamento de falhas/abstenções estão explícitos. A discrepância de 90%/95% fica corrigida nas fontes para o NFR-03 da PR #139; As escolhas I1–I3 ficam documentadas no #148; K1–K2 são fechadas documentalmente no #153 (continuação de #149/#152). Revisão, implementação e resultados medidos são estados separados. [Estado do que existe e do que falta](../Research/architecture-investigation/README.md#ai-and-observability-status-26-october-2026-145).
 
+**Execução de I1–I3 (20/11/2026, #148):** perfil `observability` do Compose com Prometheus e Grafana, logs JSON com `correlationId`, dashboard e três alertas provisionados; alerta disparado e resolvido no ensaio, regra da triagem em *No data* até #81–#83. Limitações e hand-offs na [evidência](evidence/148/README.md) e no [ADR-012](adr/0012-observability.md).
+
 ## J · Resiliência e degradação (§6.8)
 
 | # | Decisão | Estado |

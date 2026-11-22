@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -62,7 +63,20 @@ class LocalCopyListener {
     handle(message);
   }
 
+  /** #148: the producer's AMQP correlation id, when it sent one, is in every log line of this message. */
   private void handle(Message message) {
+    var correlationId = message.getMessageProperties().getCorrelationId();
+    if (correlationId != null) {
+      MDC.put("correlationId", correlationId);
+    }
+    try {
+      apply(message);
+    } finally {
+      MDC.remove("correlationId");
+    }
+  }
+
+  private void apply(Message message) {
     Envelope envelope;
     Object copy;
     try {

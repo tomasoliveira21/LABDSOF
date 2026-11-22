@@ -1,0 +1,65 @@
+{
+  "capturedAt": "2026-11-20T10:28:59Z",
+  "correlationId": "0e37a838-8a83-414e-bad5-a18b4d4770f2",
+  "request": {
+    "status": 201,
+    "responseHeader": "0e37a838-8a83-414e-bad5-a18b4d4770f2",
+    "requestId": "bd40f89f-9140-4ab0-97e1-ab8cd32e7ce8"
+  },
+  "logLines": {
+    "gateway": [
+      {
+        "@timestamp": "2026-11-20T10:28:55.339687143Z",
+        "@version": "1",
+        "message": "POST /api/v1/events/4f84aae2-f879-488e-927c-d99f764a4195/help-requests -> 201 in 431 ms",
+        "logger_name": "pt.isep.labdsof.gateway.CorrelationIdFilter",
+        "thread_name": "tomcat-handler-27",
+        "level": "INFO",
+        "level_value": 20000,
+        "correlationId": "0e37a838-8a83-414e-bad5-a18b4d4770f2"
+      }
+    ],
+    "reports": [
+      {
+        "@timestamp": "2026-11-20T10:28:55.332289201Z",
+        "@version": "1",
+        "message": "POST /api/v1/events/4f84aae2-f879-488e-927c-d99f764a4195/help-requests -> 201 in 413 ms",
+        "logger_name": "pt.isep.labdsof.reports.adapters.in.web.CorrelationIdFilter",
+        "thread_name": "http-nio-8080-exec-2",
+        "level": "INFO",
+        "level_value": 20000,
+        "correlationId": "0e37a838-8a83-414e-bad5-a18b4d4770f2"
+      },
+      {
+        "@timestamp": "2026-11-20T10:28:55.590359594Z",
+        "@version": "1",
+        "message": "Outbox message 32b85b5e-c8c6-4f47-8939-2c73b2316e15 (HelpRequestSubmitted) published",
+        "logger_name": "pt.isep.labdsof.reports.adapters.out.messaging.OutboxPublisher",
+        "thread_name": "scheduling-1",
+        "level": "INFO",
+        "level_value": 20000,
+        "correlationId": "0e37a838-8a83-414e-bad5-a18b4d4770f2"
+      }
+    ]
+  },
+  "brokerMessages": [
+    {
+      "properties": {
+        "app_id": "reports",
+        "type": "HelpRequestSubmitted",
+        "message_id": "32b85b5e-c8c6-4f47-8939-2c73b2316e15",
+        "correlation_id": "0e37a838-8a83-414e-bad5-a18b4d4770f2",
+        "priority": 0,
+        "delivery_mode": 2,
+        "headers": {
+          "spring_listener_return_correlation": "970db5b4-d6f0-4480-bb62-c5654d23f62e",
+          "spring_returned_message_correlation": "32b85b5e-c8c6-4f47-8939-2c73b2316e15"
+        },
+        "content_encoding": "UTF-8",
+        "content_type": "application/json"
+      },
+      "routing_key": "help-request.submitted"
+    }
+  ],
+  "note": "Synthetic membership row inserted into Reports' membership_copy for the drill (US-06 not built)."
+}

@@ -11,9 +11,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.MDC;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -90,6 +93,41 @@ class CorrelationIdFilterTest {
     })).isSameAs(failure);
 
     assertThat(MDC.get(Correlation.MDC_KEY)).isNull();
+  }
+
+  @Test
+  @DisplayName("148 a request is logged with its method, path and status")
+  @ExtendWith(OutputCaptureExtension.class)
+  void requestIsLogged(CapturedOutput output) throws Exception {
+    var request = new MockHttpServletRequest("GET", "/api/v1/events/e1");
+    response.setStatus(404);
+
+    filter.doFilter(request, response, new MockFilterChain());
+
+    assertThat(output.getOut()).contains("GET /api/v1/events/e1 -> 404 in ");
+  }
+
+  @Test
+  @DisplayName("148 an exception escaping the chain is logged as 500, not as the response's default 200")
+  @ExtendWith(OutputCaptureExtension.class)
+  void escapedExceptionIsLoggedAs500(CapturedOutput output) {
+    var request = new MockHttpServletRequest("GET", "/api/v1/events/e1");
+
+    assertThatThrownBy(() -> filter.doFilter(request, response, (req, res) -> {
+      throw new ServletException("boom");
+    })).isInstanceOf(ServletException.class);
+
+    assertThat(output.getOut()).contains("GET /api/v1/events/e1 -> 500 in ");
+  }
+
+  @Test
+  @DisplayName("148 the health check's status request is not logged, but still gets its correlation id")
+  @ExtendWith(OutputCaptureExtension.class)
+  void statusRequestIsNotLogged(CapturedOutput output) throws Exception {
+    filter.doFilter(request("status-abcdefgh"), response, new MockFilterChain());
+
+    assertThat(response.getHeader("X-Correlation-Id")).isEqualTo("status-abcdefgh");
+    assertThat(output.getOut()).doesNotContain("/api/v1/status");
   }
 
   @Test
