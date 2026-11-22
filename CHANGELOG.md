@@ -37,6 +37,18 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The gateway limits API traffic to 120 requests per minute per account by default and returns a Problem Details
   response with `Retry-After` when the quota is exhausted.
 
+## [Unreleased] · 2026-11-21 · Measure the AI triage end to end (#234, Bruno de Abreu Lopes)
+
+**Why:** #149 AC-5 asks for SC3 and SC5 measured on the running system, not by direct model calls, and its AC-2 needs an independent label review. Spec: [`Docs/specs/234-ai-triage-end-to-end.md`](Docs/specs/234-ai-triage-end-to-end.md). Part of #149. Stacked on PR #233.
+
+### Added
+- `Docs/Research/architecture-investigation/evaluation/e2e_triage.py`: submits the 72 holdout texts through the gateway as participants, one every 30 s (an arrival profile proposed for the team's review), polls the control room's list as an operator every 2 s, and reads Reports' database once every deadline has passed; `--verify` and `--self-test`.
+- `runs/2026-11-21-e2e/`: the manifest, with the profile and the pass rules committed before the first measured submission, plus per-request rows (no text), summaries and triage-status changes. **SC3 failed:** 61 of 66 non-abstention cases valid within 30 s (0.924 against 0.95). Stored suggestions took 14.0 s at p50, 18.3 s at p95 and 20.1 s at most. 4 model calls were cut at 20 s, and 1 request was refused while the circuit was open. The rest of the system added 0.3 s. **SC5 passed:** with the model stopped, 72 of 72 requests were shown in order and read `NotTriaged` within 4.1 s. How to read it (review of PR #235): this profile measures the serial path, with at most one model call in flight, so 0.924 is an optimistic bound, not a worst case. Under concurrent arrivals the runtime (OLLAMA_NUM_PARALLEL=1, OLLAMA_MAX_QUEUE=1, admission only with 23 s left) queues a second request behind a 14 s call or refuses it, turning latency misses into Unavailable ones: the gap to 0.95 is not three points, and 0.924 is not the number to close.
+- `label_review.py` and `label-review/labels.md`: one line per case of the three case files (217), urgent and abstention cases first, without model output; `label-review/README.md` is the reviewer's guide (rubric, how to comment per line, the sentence that makes a review count).
+
+### Changed
+- Dated notes in `product-vision.md` (SC3, SC5), ADR-005 (status unchanged), `responsible-ai.md`, the local AI decisions (release gate step 7), the evaluation README, guide K2 and `Docs/README.md`.
+
 ## [Unreleased] · 2026-11-21 · Accept or change the AI suggestion (US-35, #82, Bruno de Abreu Lopes)
 
 **Why:** US-35 (#82): the control room must stay in control of the AI triage: accept the suggestion as its own decision, or set its own values, which a later suggestion never overwrites (NFR-22). Spec: [`Docs/specs/US-35-accept-or-change-suggestion.md`](Docs/specs/US-35-accept-or-change-suggestion.md). Stacked on PR #232.
