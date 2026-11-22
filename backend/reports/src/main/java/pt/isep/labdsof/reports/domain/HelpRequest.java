@@ -67,7 +67,17 @@ public record HelpRequest(
       return true;
     }
     var deadline = submittedAt.plus(TriageSuggestion.TRIAGE_DEADLINE);
-    return triage.state() == TriageState.Pending && deadline.isAfter(since) && !deadline.isAfter(now);
+    return triage.awaitsModel() && deadline.isAfter(since) && !deadline.isAfter(now);
+  }
+
+  /**
+   * This request with a new triage (US-34): only the triage and {@code updatedAt} change, so the live list shows it
+   * (spec US-26 D5) and the request's own category and priority stay as a member set them (NFR-22).
+   */
+  public HelpRequest withTriage(TriageSuggestion triage, Instant now) {
+    return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,
+        priority, status, defaultTeamId, routedTeamId, triage, submittedAt, now.truncatedTo(ChronoUnit.MICROS),
+        version);
   }
 
   /** This request as a reader sees it at {@code now} (NotTriaged derived from Pending). */

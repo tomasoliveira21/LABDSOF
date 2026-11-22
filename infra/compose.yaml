@@ -112,6 +112,21 @@ services:
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_REPORTS_PASSWORD:?set RABBITMQ_REPORTS_PASSWORD in infra/.env}
       FAROL_ISSUER_URI: http://${PUBLIC_HOST:-localhost}:${KEYCLOAK_PORT:-8180}/realms/farol
       FAROL_JWKS_URI: http://keycloak:8080/realms/farol/protocol/openid-connect/certs
+      # US-34 (spec D7, D10): empty by default, so CI and the default stack never call or download a model
+      FAROL_AI_URL: ${FAROL_AI_URL:-}
+
+  # US-34 (spec D10): the local model, opt-in (--profile ai); same image and settings as the evaluation runs (#224,
+  # #227). No published port: only Reports reaches it. Pull the model once: docker compose exec ai ollama pull qwen3:4b
+  ai:
+    image: ollama/ollama:0.40.16@sha256:910d0d8107b538fb0894e63163eb195de0cc7aefcbc666dc62d3b18f71124592
+    profiles: [ai]
+    environment:
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_MAX_QUEUE: "1"
+      OLLAMA_NO_CLOUD: "1"
+    volumes:
+      - ai-models:/root/.ollama
 
   transports:
     <<: *spring
@@ -292,3 +307,4 @@ services:
 volumes:
   rabbitmq-data:
   postgres-data:
+  ai-models:

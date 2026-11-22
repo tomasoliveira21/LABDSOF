@@ -23,6 +23,22 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The gateway limits API traffic to 120 requests per minute per account by default and returns a Problem Details
   response with `Retry-After` when the quota is exhausted.
 
+## [Unreleased] · 2026-11-20 · AI triage suggestion (US-34 part, #229, Bruno de Abreu Lopes)
+
+**Why:** US-34 (#81): each new help request should arrive with a suggested category and priority, and only its description may reach the model. Part of #81; the default team (#81 AC-2) waits for US-17 (#66). Spec: [`Docs/specs/US-34-ai-triage-suggestion.md`](Docs/specs/US-34-ai-triage-suggestion.md).
+
+### Added
+- Reports' triage consumer of its own `HelpRequestSubmitted` (queue `reports.reports-events`): one request at a time, the local Ollama through the JDK HTTP client with the runtime contract (connect 2 s, one attempt, the call capped at 20 s and by the time left, admission with at least 23 s of the 30 s left, late results discarded), and the model's output validated in the domain, never repaired.
+- The prompt (`prompts/v8.txt`, frozen by #227) and the output schema of the evaluation package, copied to `backend/reports/src/main/resources/triage/` and checked by SHA-256 against the package; kept in LF by `.gitattributes`.
+- A suggestion is stored as `triage.state: Suggested` with the category, priority and reason, and never written to the request's own category or priority (NFR-22). A timeout, provider error, invalid output, abstention or missing AI reads `NotTriaged` with its reason at once (stored as `Pending` with the reason: `NotTriaged` is never stored, decision 6), and the request stays in the control room's list.
+- `infra/compose.yaml`: the opt-in `ai` service (`--profile ai`, `ollama/ollama:0.40.16` by digest, model volume, no published port); Reports gets `FAROL_AI_URL`, empty by default (`infra/.env.example`).
+- Tests: domain and service tests, the adapter against a local stub HTTP server, and `TriageIT` end to end (HTTP submit, outbox, RabbitMQ, stub model, PostgreSQL).
+
+### Changed
+- Flyway `V2`: `triage_suggestion.suggested_reason` holds 240 characters, as the output schema and the production contract say (#194 had 200); `suggestedReason` in `contracts/openapi.yaml` too.
+- The envelope check of the local-copy listener is shared with the triage consumer.
+- `local-delivery.md` (`ai` row) and the local AI decisions record the consumer with dated notes. The model's offline gate fails (#224, #227): its suggestions are an operator aid, not release evidence; SC3 and SC5 are not claimed.
+
 ## [Unreleased] · 2026-11-20 · Critical over-rating on a fresh holdout (#227, Bruno de Abreu Lopes)
 
 **Why:** the #224 run failed the gate on the `Critical` ceiling, and the review of PR #225 said a fix must be tuned on the development split or on new cases, never on the test split; #149 AC-4 also asks for repeated runs. Spec: [`Docs/specs/227-critical-ceiling-holdout.md`](Docs/specs/227-critical-ceiling-holdout.md).
