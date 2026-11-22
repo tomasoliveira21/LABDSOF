@@ -1,0 +1,72 @@
+# US-28 (#75) · Set priority and status, with history
+
+> **Issue:** [#75](https://github.com/tomasoliveira21/LABDSOF/issues/75) · **Type:** user story (F7, incident backoffice) · **Service:** Reports (owner area: Reports, the AI triage and observability, decision 13 of the [meeting of 15 November 2026](../Meetings/2026-11-15-sprint-a-review-and-sprint-b-planning.md)) · **Spec rules:** [README](README.md)
+> **Sources:** [`features.md`](../Product/features.md) US-28; SC9 ([product vision](../Product/product-vision.md) §5) and NFR-16 ([NFRs](../Product/non-functional-requirements.md)); the meeting of 15 November 2026, decision 6 (`Submitted → Seen` through `/acknowledge`, US-28) and decision 11 (cut line: the history of US-28); [domain model](../Technical/domain-model.md) (RequestStatus); [API outline](../Technical/api-outline.md) §4 (`PATCH …/help-requests/{requestId}`, `POST …/acknowledge`, `GET …/history`), §4.1 and §7.4 (`UserDeleted`: audit entries keep the opaque user ID and drop the copied display name); [ADR-006](../Technical/adr/0006-identity-and-access.md) decision 2 (the token carries `sub`, `email`, `name`); [`contracts/openapi.yaml`](../../backend/reports/contracts/openapi.yaml) (the planned operations and the history entry); specs [US-35](US-35-accept-or-change-suggestion.md) (D2, D3, D4, D5) and [US-26](US-26-live-help-request-list.md) (D5).
+> **Base:** `main` (`8dd1bc2`). US-26 (#73), its only dependency, is merged (PR #216); the category and priority of the `PATCH` and the history table came with US-35 (PR #233).
+
+## 1. Source
+
+**Story:** as a control-room member, I want to set a request's category, priority and status, with every change recorded, so that everyone knows how urgent it is and what happened. Persona P2.
+
+**This PR:** `POST …/help-requests/{requestId}/acknowledge` (`Submitted → Seen`, recorded as a `status` change); `GET …/help-requests/{requestId}/history`; the member's name copied from the token into every history entry, including those of the `PATCH` and `accept-suggestion` of US-35. **Not in it:** closing a request (`POST …/close`, US-30 #77) and routing it (US-29 #76), which add their own `status` and `routedTeamId` entries; the backoffice page (the web app's owner, decision 13: what it needs is written on #75).
+
+| # | Acceptance criterion (#75) | Tests (name starts with `US-28 AC-<n>`) |
+|---|---|---|
+| AC-1 | Given I change the category, priority or status of a request, then the change is recorded with my name, the time, and the old and new values (SC9) | `ChangeHistoryIT`, `HelpRequestServiceTest`, `HelpRequestTest` |
+| AC-2 | Given I open a request, then I see its full change history | `ChangeHistoryIT`, `HelpRequestServiceTest` |
+
+## 2. Quality gates
+
+The gates of [#194](194-reports-postgres-outbox.md) §2 for `backend/reports`, unchanged: `mvn verify` green, JaCoCo ≥ 90 % lines and branches, PIT `DEFAULTS` ≥ 80 % on `domain` and `application`, Testcontainers with the Compose images, the production migrations and the broker set-up, `ContractIT`, the `ci.yml` smoke on a fresh stack, `DocumentationIT` for this spec's tests, the diff guard, an independent review and green CI with SonarQube. Both new endpoints get the full security matrix of G3 (`ChangeHistoryIT`).
+
+## 3. Decisions
+
+Decisions the documents leave open are marked **Proposed, for the team's review**.
+
+| # | Decision | Options weighed and why |
+|---|---|---|
+| D1 | **The status is not a field of the `PATCH`**: the control room changes it through actions, `POST …/acknowledge` here and `POST …/close` in US-30. The `PATCH` keeps the category and the priority, and the contract's *US-28 adds the status* is corrected | Decision 6 of 15 November 2026 names `/acknowledge` for `Submitted → Seen`; the API outline lists the `PATCH` with `{ category, priority }` only; the domain model gives every other transition to another actor (field member, task cancel, close). A status in the `PATCH` would duplicate both actions and need its own guard against the transitions the control room may not make |
+| D2 | **Acknowledge: `POST …/acknowledge`, no body**, only while the request is `Submitted`: the status becomes `Seen`, one `status` history entry (`Submitted → Seen`), `version` + 1, `updated_at` moves (the live list shows it). Any other status is `409`, nothing written. The triage is untouched: a request can be seen before, during or after its triage | Decision 6; the planned contract (`409 when the request is no longer Submitted`); the status and the triage are separate states (#177) |
+| D3 | **The acknowledge takes the same locks as a triage decision** (`findForUpdate`: triage, then request) and decides on what it reads, so two acknowledges at the same time give one `200` and one `409`, and an acknowledge and a `PATCH` at the same time both apply, one after the other | US-35 D4: one lock order for every writer, or two writers could deadlock |
+| D4 | **History: `GET …/history`** returns every entry of the request, oldest first (in the order written), with `field`, `oldValue`, `newValue`, `actorUserId`, `actorName` and `changedAt`; `items` is empty for a request nobody changed | API outline §4 and the planned history entry; the rows are those US-35 writes (US-35 D3) |
+| D5 | **Proposed, for the team's review: the member's name is copied from the token's `name` claim into each entry** (`actor_name`, Flyway `V5`), at the time of the change; `null` when the token has none | AC-1 *recorded with my name*. Reports has no copy of display names (no consumer of `UserProfileChanged`), and ADR-006 puts `name` in the token. Options: return only the `sub` and let the web app resolve names (it has no endpoint for another member's name), add a profile copy fed by `UserProfileChanged` (a new consumer for one label), or copy the name at write time (chosen). The API outline §7.4 already speaks of the *copied display name* of audit entries, which `UserDeleted` removes (US-05, not built). A name changed later is not rewritten: the entry says who acted, under the name they had |
+| D6 | **Proposed, for the team's review: only member changes are entries.** The triage worker's result is not one: it never writes the request's category, priority or status (US-34 D6), only the suggestion, which the control-room view shows, and a derived `NotTriaged` is never written (decision 6). US-29, US-30, US-32 and US-33 add their own entries as they are built | NFR-16 asks for every change to a request with who, when, from and to; the member's changes are the ones with a *who*. Option left for the team: system entries (`actorUserId` empty, as the contract allows) for the AI's suggestion |
+| D7 | **Who may act:** `HelpRequests.Triage` in the request's event, for both endpoints (`403` without it); a non-member, a removed member, a member of another event, or a request of another event or unknown gets `404` with the same body; every bad token gets `401`; a malformed ID gets `400` | API outline §4 and the matrix of US-35 D5; G3 |
+| D8 | **The acknowledge is logged at `INFO` with the request ID and the status before and after**, never the description or the user | ADR-005 decision 5 and US-35 D8 |
+| D9 | **The acknowledge answers with the control-room view after it** (`200`) | The planned contract (`ControlRoomView`), as US-35 D9 |
+
+## 4. Features (build order)
+
+| # | Feature | Tests |
+|---|---|---|
+| F1 | Domain: `HelpRequest.acknowledge`; the `Actor` (user ID and name) of a change; `HistoryEntry`; the 409 of a status or triage conflict as one `RequestConflictException` (D2, D4, D5) | `HelpRequestTest` |
+| F2 | Application: `HelpRequestService.acknowledge` and `history`, decisions saved with the `Actor`; ports `saveDecision` (status and name) and `history` (D2 to D8) | `HelpRequestServiceTest` |
+| F3 | Out adapter: `JdbcHelpRequests` (status, name, history read), Flyway `V5` (D2, D4, D5) | `ChangeHistoryIT` |
+| F4 | In adapter: the two endpoints, the name from the token, the contract marked implemented (D1, D2, D4, D7, D9) | `ChangeHistoryIT`, `ContractIT` |
+| F5 | Documentation | `DocumentationIT` |
+
+## 5. Edge-case matrix
+
+| Case | Expected | Test |
+|---|---|---|
+| Acknowledge a `Submitted` request | Status `Seen`, `version` + 1, `updatedAt` moves, the triage unchanged; one `status` entry `Submitted → Seen` with the member, their name and the time | `HelpRequestTest` · `US-28 AC-1 acknowledging moves Submitted to Seen and records the status`; `HelpRequestServiceTest` · `US-28 AC-1 an acknowledge is saved as the member's change with their name`; `ChangeHistoryIT` · `US-28 AC-1 the control room acknowledges a request and it reads Seen` |
+| Acknowledge `Seen`, `OnTheWay`, `Resolved`, `Closed` | `409`, nothing written | `HelpRequestTest` · `US-28 AC-1 only a Submitted request can be acknowledged`; `ChangeHistoryIT` · `US-28 AC-1 acknowledging a request that is not Submitted is a conflict` |
+| Acknowledge with any triage state (`Pending`, `Suggested`, derived `NotTriaged`, `Accepted`, `Changed`) | Allowed; the triage keeps its state | `HelpRequestTest` · `US-28 AC-1 acknowledging moves Submitted to Seen and records the status` |
+| Two acknowledges at the same time | One `200`, one `409`; one entry | `ChangeHistoryIT` · `US-28 AC-1 two acknowledges at the same time record one change` |
+| Participant and live list after an acknowledge | The participant view reads `Seen`; the next poll of the live list lists it | `ChangeHistoryIT` · `US-28 AC-1 the control room acknowledges a request and it reads Seen` |
+| History after a `PATCH`, an accept and an acknowledge | Every entry, oldest first, each with field, old and new value, user ID, name and time; nothing else in an entry | `ChangeHistoryIT` · `US-28 AC-2 the history lists every change oldest first with who and when` |
+| History of a request nobody changed | `200` with `items: []` | `ChangeHistoryIT` · `US-28 AC-2 a request nobody changed has an empty history` |
+| Token without a `name` | The change is recorded, `actorName` null | `ChangeHistoryIT` · `US-28 AC-1 a token without a name records the change without one` |
+| History read through the port | Only the request's entries, of its event, in order; `404` for a request not in the event | `HelpRequestServiceTest` · `US-28 AC-2 the history is read only for a request of the event` |
+| Log | `INFO` with the request ID and the statuses; no description or user | `HelpRequestServiceTest` · `US-28 AC-1 an acknowledge is logged without the description or the user` |
+| Member without `HelpRequests.Triage` | `403` on both, nothing written | `HelpRequestServiceTest` · `US-28 AC-1 only the control room acknowledges or reads the history`; `ChangeHistoryIT` · `US-28 AC-1 a member without HelpRequests.Triage gets 403` |
+| Non-member, removed member, member of another event, request of another event, unknown request | `404`, same body, nothing written | `ChangeHistoryIT` · `US-28 AC-1 another event's member or request gets 404 without revealing it` |
+| No, expired, wrong-signature, wrong-issuer, wrong-audience, malformed token | `401` on both | `ChangeHistoryIT` · `US-28 AC-1 every bad token gets 401` |
+| Malformed event or request ID | `400` on both | `ChangeHistoryIT` · `US-28 AC-1 a malformed ID is rejected` |
+| Name with injection text or markup | Stored and returned as text | `ChangeHistoryIT` · `US-28 AC-2 the history lists every change oldest first with who and when` |
+
+## 6. Handoff
+
+**22 November 2026.**
+
+- Baseline on `main` (`8dd1bc2`): _to be filled_.
