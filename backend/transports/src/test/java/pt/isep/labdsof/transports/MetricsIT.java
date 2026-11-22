@@ -31,7 +31,9 @@ class MetricsIT {
   static void start() throws SQLException {
     try (var connection = DriverManager.getConnection(Infrastructure.POSTGRES.getJdbcUrl(),
         Infrastructure.POSTGRES.getUsername(), Infrastructure.POSTGRES.getPassword())) {
-      connection.createStatement().execute("DELETE FROM source_import");
+      // No valid import yet; run alone, Flyway has not created the table yet either
+      connection.createStatement().execute(
+          "DO $$ BEGIN IF to_regclass('source_import') IS NOT NULL THEN DELETE FROM source_import; END IF; END $$");
     }
     // The read at start-up fails, so there is no valid import yet
     unavailable = WIREMOCK.failure("{\"status\":503}");
@@ -103,5 +105,16 @@ class MetricsIT {
         .isNotEmpty();
     assertThat(meters().find("resilience4j.retry.calls").tag("name", "transport-source").functionCounters())
         .isNotEmpty();
+  }
+
+  @Test
+  @Order(5)
+  @DisplayName("US-40 D10 after a restart, before any run, the data age comes from the last valid import in "
+      + "source_import")
+  void dataAgeAfterARestart() {
+    try (var restarted = Infrastructure.startTransports(Map.of("farol.transport.source.enabled", "false"))) {
+      assertThat(restarted.getBean(MeterRegistry.class).get("farol.transport.data.age").gauge().value())
+          .isBetween(0.0, 60.0);
+    }
   }
 }
