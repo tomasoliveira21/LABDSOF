@@ -11,10 +11,12 @@ import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import pt.isep.labdsof.reports.application.HelpRequests;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
+import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
 import pt.isep.labdsof.reports.domain.Priority;
@@ -179,17 +181,18 @@ class JdbcHelpRequests implements HelpRequests {
   }
 
   @Override
-  public void saveDecision(HelpRequest r, String actorUserId, List<HelpRequestChange> changes) {
+  public void saveDecision(HelpRequest r, Actor actor, List<HelpRequestChange> changes) {
     var at = Timestamp.from(r.updatedAt());
     int updated = jdbc.sql("""
-        UPDATE help_request SET category = :category, priority = :priority, updated_at = :updatedAt,
-            version = :version
+        UPDATE help_request SET category = :category, priority = :priority, status = :status,
+            updated_at = :updatedAt, version = :version
         WHERE id = :id AND event_id = :eventId AND version = :version - 1
         """)
         .param("id", r.id())
         .param(EVENT_ID, r.eventId())
         .param(CATEGORY, name(r.category()))
         .param(PRIORITY, name(r.priority()))
+        .param("status", r.status().name())
         .param("updatedAt", at)
         .param("version", r.version())
         .update();
@@ -209,19 +212,34 @@ class JdbcHelpRequests implements HelpRequests {
         .update();
     for (var change : changes) {
       jdbc.sql("""
-          INSERT INTO help_request_change (request_id, event_id, actor_user_id, changed_at, field, old_value,
-              new_value)
-          VALUES (:id, :eventId, :actor, :changedAt, :field, :oldValue, :newValue)
+          INSERT INTO help_request_change (request_id, event_id, actor_user_id, actor_name, changed_at, field,
+              old_value, new_value)
+          VALUES (:id, :eventId, :actor, :actorName, :changedAt, :field, :oldValue, :newValue)
           """)
           .param("id", r.id())
           .param(EVENT_ID, r.eventId())
-          .param("actor", actorUserId)
+          .param("actor", actor.userId())
+          .param("actorName", actor.name())
           .param("changedAt", at)
           .param("field", change.field())
           .param("oldValue", change.oldValue())
           .param("newValue", change.newValue())
           .update();
     }
+  }
+
+  @Override
+  public List<HistoryEntry> history(UUID eventId, UUID requestId) {
+    return jdbc.sql("""
+        SELECT field, old_value, new_value, actor_user_id, actor_name, changed_at FROM help_request_change
+        WHERE event_id = :eventId AND request_id = :id ORDER BY id
+        """)
+        .param(EVENT_ID, eventId)
+        .param("id", requestId)
+        .query((rs, row) -> new HistoryEntry(rs.getString("field"), rs.getString("old_value"),
+            rs.getString("new_value"), rs.getString("actor_user_id"), rs.getString("actor_name"),
+            rs.getTimestamp("changed_at").toInstant()))
+        .list();
   }
 
   private static HelpRequest map(ResultSet rs, int row) throws SQLException {

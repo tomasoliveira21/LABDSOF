@@ -4,8 +4,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestChange;
+import pt.isep.labdsof.reports.domain.HistoryEntry;
 
 /** Port: the help requests of Reports' own database. Every read is filtered by event (ADR-003 decision 3). */
 public interface HelpRequests {
@@ -42,9 +44,12 @@ public interface HelpRequests {
   Optional<HelpRequest> findForUpdate(UUID eventId, UUID requestId);
 
   /**
-   * Saves a member's decision read with {@link #findForUpdate}: the request's category, priority, triage state,
-   * updated_at and version, and one history row per change, by {@code actorUserId} at the request's updatedAt
-   * (spec US-35 D3).
+   * Saves a member's change read with {@link #findForUpdate}: the request's category, priority, status, triage state,
+   * updated_at and version, and one history row per change, by {@code actor} (user ID and name) at the request's
+   * updatedAt (spec US-35 D3, US-28 D2, D5).
    */
-  void saveDecision(HelpRequest decided, String actorUserId, List<HelpRequestChange> changes);
+  void saveDecision(HelpRequest decided, Actor actor, List<HelpRequestChange> changes);
+
+  /** The request's history rows, oldest first (in the order written); empty for an unknown request (US-28 D4). */
+  List<HistoryEntry> history(UUID eventId, UUID requestId);
 }

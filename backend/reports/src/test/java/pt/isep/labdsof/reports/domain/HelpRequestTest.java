@@ -228,11 +228,11 @@ class HelpRequestTest {
     var changed = withTriage(SUGGESTED).change(Category.Safety, null, LATER).request();
     for (var request : java.util.List.of(pending, stored, accepted, changed)) {
       assertThatThrownBy(() -> request.acceptSuggestion(LATER)).as(request.triage().toString())
-          .isInstanceOf(TriageConflictException.class);
+          .isInstanceOf(RequestConflictException.class);
     }
     // Pending past its deadline reads NotTriaged/Timeout: nothing to accept either
     assertThatThrownBy(() -> pending.acceptSuggestion(NOW.plusSeconds(31)))
-        .isInstanceOf(TriageConflictException.class);
+        .isInstanceOf(RequestConflictException.class);
   }
 
   @Test
@@ -307,5 +307,51 @@ class HelpRequestTest {
   void changeNeedsAValue() {
     var request = withTriage(SUGGESTED);
     assertThatThrownBy(() -> request.change(null, null, LATER)).isInstanceOf(InvalidHelpRequestException.class);
+  }
+
+  static HelpRequest withStatus(HelpRequestStatus status) {
+    var r = submit("help");
+    return new HelpRequest(r.id(), r.eventId(), r.requesterId(), r.clientRequestId(), r.description(), r.location(),
+        r.category(), r.priority(), status, r.defaultTeamId(), r.routedTeamId(), r.triage(), r.submittedAt(),
+        r.updatedAt(), r.version());
+  }
+
+  @Test
+  @DisplayName("US-28 AC-1 acknowledging moves Submitted to Seen and records the status")
+  void acknowledge() {
+    var pendingPastDeadline = submit("help");
+    var requests = java.util.List.of(submit("help"), withTriage(SUGGESTED), pendingPastDeadline,
+        withTriage(SUGGESTED).acceptSuggestion(LATER).request(),
+        withTriage(SUGGESTED).change(Category.Safety, null, LATER).request());
+    for (var request : requests) {
+      var decision = request.acknowledge(LATER);
+      var seen = decision.request();
+
+      assertThat(seen.status()).isEqualTo(HelpRequestStatus.Seen);
+      assertThat(seen.version()).isEqualTo(request.version() + 1);
+      assertThat(seen.updatedAt()).isEqualTo(LATER.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+      // The triage keeps its stored state: the status and the triage are separate (#177)
+      assertThat(seen).usingRecursiveComparison().ignoringFields("status", "updatedAt", "version").isEqualTo(request);
+      assertThat(decision.changes()).containsExactly(new HelpRequestChange("status", "Submitted", "Seen"));
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Seen", "OnTheWay", "Resolved", "Closed"})
+  @DisplayName("US-28 AC-1 only a Submitted request can be acknowledged")
+  void acknowledgeOnlySubmitted(String status) {
+    var request = withStatus(HelpRequestStatus.valueOf(status));
+    assertThatThrownBy(() -> request.acknowledge(LATER)).isInstanceOf(RequestConflictException.class)
+        .hasMessage("The request is no longer Submitted");
+  }
+
+  @Test
+  @DisplayName("US-28 AC-1 a change is made by a member with a user ID, the name may be missing")
+  void actor() {
+    assertThat(new Actor("operator", null).name()).isNull();
+    assertThat(new Actor("operator", "Ana").userId()).isEqualTo("operator");
+    for (var userId : new String[] {null, "", " "}) {
+      assertThatThrownBy(() -> new Actor(userId, "Ana")).isInstanceOf(IllegalArgumentException.class);
+    }
   }
 }

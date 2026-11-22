@@ -12,17 +12,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.EventAccess;
 import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Priority;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
- * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), and the
- * control room's triage decisions (US-35).
+ * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), the control
+ * room's triage decisions (US-35), the acknowledge and the change history (US-28).
  */
 @Service
 public class HelpRequestService {
@@ -120,30 +122,50 @@ public class HelpRequestService {
 
   /** The control room takes the AI's suggestion as the request's values (US-35 AC-1, spec D1). */
   @Transactional
-  public HelpRequest acceptSuggestion(UUID eventId, String userId, UUID requestId) {
-    requireTriage(eventId, userId);
+  public HelpRequest acceptSuggestion(UUID eventId, Actor actor, UUID requestId) {
+    requireTriage(eventId, actor.userId());
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
-    return decided(request, request.acceptSuggestion(now), userId, now);
+    return decided(request, request.acceptSuggestion(now), actor, now);
   }
 
   /** The control room sets the category, the priority or both (US-35 AC-2, spec D2). */
   @Transactional
-  public HelpRequest change(UUID eventId, String userId, UUID requestId, Category category, Priority priority) {
-    requireTriage(eventId, userId);
+  public HelpRequest change(UUID eventId, Actor actor, UUID requestId, Category category, Priority priority) {
+    requireTriage(eventId, actor.userId());
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
-    return decided(request, request.change(category, priority, now), userId, now);
+    return decided(request, request.change(category, priority, now), actor, now);
+  }
+
+  /** The control room has seen the request: Submitted becomes Seen, recorded as the member's change (US-28 D2, D8). */
+  @Transactional
+  public HelpRequest acknowledge(UUID eventId, Actor actor, UUID requestId) {
+    requireTriage(eventId, actor.userId());
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
+    var now = clock.instant();
+    var decision = request.acknowledge(now);
+    helpRequests.saveDecision(decision.request(), actor, decision.changes());
+    log.info("Status of request {}: {} -> {}", request.id(), request.status(), decision.request().status());
+    return decision.request().asSeenAt(now);
+  }
+
+  /** Every recorded change of a request of the event, oldest first; only HelpRequests.Triage (US-28 D4, D7). */
+  @Transactional(readOnly = true)
+  public List<HistoryEntry> history(UUID eventId, String userId, UUID requestId) {
+    requireTriage(eventId, userId);
+    helpRequests.find(eventId, requestId).orElseThrow(NotFoundException::new);
+    return helpRequests.history(eventId, requestId);
   }
 
   /**
    * Saves and records the decision taken at {@code now}, counts the first one on a suggestion once it is committed,
    * logs metadata only (D3, D6, D8).
    */
-  private HelpRequest decided(HelpRequest before, HelpRequest.Decision decision, String userId, Instant now) {
+  private HelpRequest decided(HelpRequest before, HelpRequest.Decision decision, Actor actor, Instant now) {
     var after = decision.request();
     if (!decision.changes().isEmpty()) {
-      helpRequests.saveDecision(after, userId, decision.changes());
+      helpRequests.saveDecision(after, actor, decision.changes());
       var state = after.triage().state();
       if (before.triage().state() == TriageState.Suggested) {
         afterCommit(() -> metrics.decided(state));
