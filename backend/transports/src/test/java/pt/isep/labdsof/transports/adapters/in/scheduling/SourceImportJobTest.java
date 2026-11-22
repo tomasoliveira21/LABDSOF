@@ -13,6 +13,7 @@ import org.slf4j.MDC;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import pt.isep.labdsof.transports.Correlation;
+import pt.isep.labdsof.transports.application.RecordedImports;
 import pt.isep.labdsof.transports.application.SourceImportService;
 import pt.isep.labdsof.transports.application.SourceReading;
 import pt.isep.labdsof.transports.application.TransportSource;
@@ -23,7 +24,7 @@ class SourceImportJobTest {
   private final List<String> seen = new ArrayList<>();
 
   private SourceImportJob job(TransportSource source) {
-    return new SourceImportJob(new SourceImportService(source, i -> { }, Clock.systemUTC()));
+    return new SourceImportJob(new SourceImportService(source, new RecordedImports(), Clock.systemUTC()));
   }
 
   @Test
@@ -46,9 +47,7 @@ class SourceImportJobTest {
   @DisplayName("193 AC-6 a failed run is logged and does not stop the next one")
   void aFailedRunDoesNotStopTheNextOne(CapturedOutput output) {
     var job = new SourceImportJob(new SourceImportService(() -> SourceReading.succeeded(1),
-        i -> {
-          throw new IllegalStateException("database down");
-        }, Clock.systemUTC()));
+        new RecordedImports(new IllegalStateException("database down")), Clock.systemUTC()));
 
     assertThatCode(job::run).doesNotThrowAnyException();
     assertThat(MDC.get(Correlation.MDC_KEY)).isNull();

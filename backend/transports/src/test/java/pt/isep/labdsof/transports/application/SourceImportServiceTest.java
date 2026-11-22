@@ -6,8 +6,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import pt.isep.labdsof.transports.domain.ImportOutcome;
@@ -39,10 +37,10 @@ class SourceImportServiceTest {
     }
   }
 
-  private final List<SourceImport> recorded = new ArrayList<>();
+  private final RecordedImports imports = new RecordedImports();
 
   private SourceImport run(SourceReading reading) {
-    return new SourceImportService(() -> reading, recorded::add, new SteppingClock()).runOnce();
+    return new SourceImportService(() -> reading, imports, new SteppingClock()).runOnce();
   }
 
   @Test
@@ -51,7 +49,7 @@ class SourceImportServiceTest {
     var result = run(SourceReading.succeeded(7));
 
     assertThat(result).isEqualTo(new SourceImport(T0, T0.plusMillis(250), ImportOutcome.Succeeded, 7, null));
-    assertThat(recorded).containsExactly(result);
+    assertThat(imports.recorded).containsExactly(result);
   }
 
   @Test
@@ -61,7 +59,7 @@ class SourceImportServiceTest {
 
     assertThat(result).isEqualTo(new SourceImport(T0, T0.plusMillis(250), ImportOutcome.Unavailable, null,
         "HTTP 503"));
-    assertThat(recorded).containsExactly(result);
+    assertThat(imports.recorded).containsExactly(result);
   }
 
   @Test
@@ -71,7 +69,7 @@ class SourceImportServiceTest {
 
     assertThat(result).isEqualTo(new SourceImport(T0, T0.plusMillis(250), ImportOutcome.Invalid, null,
         "not a JSON array"));
-    assertThat(recorded).containsExactly(result);
+    assertThat(imports.recorded).containsExactly(result);
   }
 
   @Test
