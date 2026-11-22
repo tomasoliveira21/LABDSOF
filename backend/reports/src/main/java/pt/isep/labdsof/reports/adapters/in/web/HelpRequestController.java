@@ -150,11 +150,21 @@ class HelpRequestController {
   }
 
   /** Every recorded change of the request, oldest first (US-28 AC-2, spec D4). */
-  record HistoryView(List<HistoryEntry> items) {}
+  record HistoryView(List<HistoryEntryView> items) {}
+
+  /** One entry as the contract publishes it, apart from the domain's HistoryEntry (review of #245). */
+  record HistoryEntryView(String field, String oldValue, String newValue, String actorUserId, String actorName,
+      Instant changedAt) {}
 
   @GetMapping(value = "/help-requests/{requestId}/history", produces = "application/json")
   HistoryView history(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt) {
-    return new HistoryView(service.history(eventId, jwt.getSubject(), requestId));
+    return new HistoryView(service.history(eventId, jwt.getSubject(), requestId).stream()
+        .map(HelpRequestController::entry).toList());
+  }
+
+  private static HistoryEntryView entry(HistoryEntry e) {
+    return new HistoryEntryView(e.field(), e.oldValue(), e.newValue(), e.actorUserId(), e.actorName(),
+        e.changedAt());
   }
 
   /**

@@ -135,10 +135,11 @@ class ChangeHistoryIT extends IntegrationTest {
   }
 
   long waitingOnLocks() {
-    // Only the members' row locks on this table: another session waiting on a lock must not count (G8 review)
+    // Only the members' row locks on this table: another session waiting on a lock must not count (G8 review);
+    // loose on the text, so a reformatted statement still matches (review of #245)
     return jdbc.sql("""
         SELECT count(*) FROM pg_stat_activity
-        WHERE wait_event_type = 'Lock' AND query LIKE 'SELECT 1 FROM triage_suggestion%FOR UPDATE'
+        WHERE wait_event_type = 'Lock' AND query LIKE '%triage_suggestion%FOR UPDATE%'
         """).query(Long.class).single();
   }
 
@@ -168,7 +169,8 @@ class ChangeHistoryIT extends IntegrationTest {
       while (waitingOnLocks() < calls.size() && Instant.now().isBefore(deadline)) {
         Thread.onSpinWait();
       }
-      assertThat(waitingOnLocks()).isEqualTo(calls.size());
+      assertThat(waitingOnLocks()).as("calls waiting on the triage_suggestion row lock of findForUpdate")
+          .isEqualTo(calls.size());
       release.countDown();
       holder.get(10, TimeUnit.SECONDS);
       var codes = new ArrayList<Integer>();
