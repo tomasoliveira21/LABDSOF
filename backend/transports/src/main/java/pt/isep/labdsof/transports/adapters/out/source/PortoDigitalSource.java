@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -165,8 +166,9 @@ class PortoDigitalSource implements TransportSource {
     return node == null ? null : node.get("value");
   }
 
+  /** Text, or null when missing, not text, or holding a NUL character, which PostgreSQL cannot store (AC-6). */
   private static String text(JsonNode node) {
-    return node != null && node.isString() ? node.stringValue() : null;
+    return node != null && node.isString() && !node.stringValue().contains("\0") ? node.stringValue() : null;
   }
 
   /** The route of the first {@code stcp:route:<route>} annotation, or null. */
@@ -175,7 +177,7 @@ class PortoDigitalSource implements TransportSource {
       return null;
     }
     for (var annotation : annotations) {
-      var matcher = ROUTE.matcher(annotation.isString() ? annotation.stringValue() : "");
+      var matcher = ROUTE.matcher(Objects.requireNonNullElse(text(annotation), ""));
       if (matcher.matches()) {
         return matcher.group(1);
       }

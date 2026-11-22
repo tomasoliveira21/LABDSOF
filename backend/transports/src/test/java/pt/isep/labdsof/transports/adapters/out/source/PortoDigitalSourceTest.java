@@ -157,6 +157,23 @@ class PortoDigitalSourceTest {
     assertThat(reading(recordedWith("observationDateTime", null)).observedAt()).isNull();
   }
 
+  @Test
+  @DisplayName("US-40 AC-6 text holding a NUL character, which PostgreSQL cannot store, is read as missing, for the "
+      + "rules to reject or leave out")
+  void textWithANulIsMissing() {
+    var id = reading(RECORDED.replace("bus:1126\",\"type\"", "bus:1126\\u0000\",\"type\""));
+    var provider = reading(recordedWith("dataProvider", "{\"value\":\"\\u0000STCP\"}"));
+    var fleet = reading(recordedWith("fleetVehicleId", "{\"value\":\"11\\u000026\"}"));
+    var route = reading(recordedWith("annotations", "{\"value\":[\"stcp:route:205\\u0000\"]}"));
+
+    assertThat(id.externalEntityId()).isNull();
+    assertThat(provider.dataProvider()).isNull();
+    assertThat(fleet.fleetVehicleId()).isNull();
+    assertThat(route.routeId()).isNull();
+    assertThat(List.of(id.dataProvider(), provider.externalEntityId(), fleet.routeId(), route.fleetVehicleId()))
+        .containsExactly("STCP", "urn:ngsi-ld:Vehicle:porto:stcp:bus:1126", "205", "1126");
+  }
+
   @ParameterizedTest(name = "{0}")
   @CsvSource(delimiter = '|', textBlock = """
       no id      | {"type":"Vehicle"}
