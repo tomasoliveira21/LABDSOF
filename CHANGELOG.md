@@ -9,8 +9,8 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Added
 - The import stores the buses within 2 km of the venue and each one's latest position; a valid import replaces the buses in use, and positions older than 5 minutes are left out.
 - Validation: one broken bus (no id or a duplicate one, no provider, no position or one out of range or at 0,0, no route, no or a future observation time) rejects the whole import, recorded `Invalid` with the bus and the reason; the previous buses stay in use. So does an answer whose buses are all late, so the data in use shows its real age (decided by the owner on 22 November 2026).
-- Retry (3 attempts, 1 s and 2 s apart) and circuit breaker (last 6 calls, opens at 50 % failed, 60 s) of J1 with Resilience4j 2.4.0's Spring Boot 4 starter, as architecture §9.1 agreed, set under `resilience4j.*` in `application.yaml`; while open, runs record `circuit open` and call nothing. The circuit breaker is in the health check and never makes Transports unhealthy.
-- Metrics: `farol.transport.import{result}`, `farol.transport.data.age`, and Resilience4j's `transport-source` circuit breaker and retry.
+- Retry (3 attempts, 1 s and 2 s apart) and circuit breaker (last 6 calls, opens at 50 % failed, 60 s) of J1 with Resilience4j 2.4.0's Spring Boot 4 starter, as architecture §9.1 agreed, set under `resilience4j.*` in `application.yaml`; a failure is retried only while the circuit lets calls through; while open, runs record `circuit open` and call nothing. The circuit breaker is in the health check and never makes Transports unhealthy.
+- Metrics: `farol.transport.import{result}` (each result from 0), `farol.transport.data.age` (kept in memory, so a scrape never waits for the database and the age keeps growing while it is down), and Resilience4j's `transport-source` circuit breaker and retry.
 - The CI smoke checks that the last import's buses are stored.
 
 ### Changed
