@@ -9,6 +9,8 @@ import static pt.isep.labdsof.transports.NgsiFixtures.vehicle;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -118,18 +120,21 @@ class ImportIT {
   }
 
   @Test
-  @DisplayName("US-40 AC-3 an answer of late buses only is Succeeded with 0 and leaves no bus in use")
+  @DisplayName("US-40 D3 an answer of late buses only is recorded Invalid: the previous buses stay in use and the time "
+      + "of the last valid import does not move")
   void lateBusesOnly() {
     imports().runOnce();
-    answers(answer(vehicle("urn:ngsi-ld:Vehicle:porto:stcp:bus:1002", "205", -8.68, 41.17,
-        Instant.now().minus(Duration.ofMinutes(10)))));
+    var previous = buses().inUse();
+    var lastValid = transports.getBean(SourceImports.class).lastSucceededAt();
+    var observed = Instant.now().minus(Duration.ofMinutes(10)).truncatedTo(ChronoUnit.SECONDS);
+    answers(answer(vehicle("urn:ngsi-ld:Vehicle:porto:stcp:bus:1002", "205", -8.68, 41.17, observed)));
 
     var run = imports().runOnce();
 
-    assertThat(run.sourceImport().outcome()).isEqualTo(ImportOutcome.Succeeded);
-    assertThat(run.sourceImport().vehicleCount()).isZero();
-    assertThat(run.late()).isEqualTo(1);
-    assertThat(buses().inUse()).isEmpty();
+    assertThat(run.sourceImport().outcome()).isEqualTo(ImportOutcome.Invalid);
+    assertThat(run.sourceImport().error()).isEqualTo("every bus is late (1, the newest observed at " + observed + ")");
+    assertThat(buses().inUse()).isNotEmpty().isEqualTo(previous);
+    assertThat(transports.getBean(SourceImports.class).lastSucceededAt()).isEqualTo(lastValid);
   }
 
   @Test

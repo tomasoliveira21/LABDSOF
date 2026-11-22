@@ -10,7 +10,8 @@ import java.util.Set;
 /**
  * The rules of an import (spec US-40 D2, D3). The first broken bus, in the answer's order, rejects the whole import:
  * the previous data stays in use. A valid bus observed more than {@code freshness} before the import is late: left
- * out and counted, and the rest is accepted. Broken wins over late.
+ * out and counted, and the rest is accepted; when every bus is late, the source is not current and the import is
+ * rejected too, so the data in use keeps its age. Broken wins over late.
  */
 public sealed interface BusImport permits BusImport.Accepted, BusImport.Rejected {
 
@@ -24,7 +25,10 @@ public sealed interface BusImport permits BusImport.Accepted, BusImport.Rejected
     }
   }
 
-  /** Why the import was rejected: {@code entity <position>[ (<id>)]: <reason>}. */
+  /**
+   * Why the import was rejected: {@code entity <position>[ (<id>)]: <reason>}, or {@code every bus is late (<count>,
+   * the newest observed at <time>)}.
+   */
   record Rejected(String reason) implements BusImport {}
 
   static BusImport of(List<BusReading> readings, Instant retrievedAt, Duration freshness) {
@@ -32,6 +36,7 @@ public sealed interface BusImport permits BusImport.Accepted, BusImport.Rejected
     var seen = new HashSet<String>();
     var oldest = retrievedAt.minus(freshness);
     int late = 0;
+    Instant newestLate = null;
     for (var reading : readings) {
       var problem = problem(reading, seen, retrievedAt);
       if (problem != null) {
@@ -41,10 +46,16 @@ public sealed interface BusImport permits BusImport.Accepted, BusImport.Rejected
       seen.add(reading.externalEntityId());
       if (reading.observedAt().isBefore(oldest)) {
         late++;
+        if (newestLate == null || reading.observedAt().isAfter(newestLate)) {
+          newestLate = reading.observedAt();
+        }
       } else {
         buses.add(new ObservedBus(reading.externalEntityId(), reading.dataProvider(), reading.fleetVehicleId(),
             reading.routeId(), reading.longitude(), reading.latitude(), reading.observedAt()));
       }
+    }
+    if (buses.isEmpty() && late > 0) {
+      return new Rejected("every bus is late (" + late + ", the newest observed at " + newestLate + ")");
     }
     return new Accepted(buses, late);
   }

@@ -154,11 +154,16 @@ class BusImportTest {
   }
 
   @Test
-  @DisplayName("US-40 AC-3 every bus late is an accepted import of no bus")
+  @DisplayName("US-40 D3 an answer whose buses are all late is rejected with how many and the newest observation, "
+      + "and an answer of no bus is accepted with none")
   void everyBusLate() {
-    var old = AT.minus(Duration.ofMinutes(10));
-    assertThat(check(with(bus(0, "a"), "observedAt", old), with(bus(1, "b"), "observedAt", old)))
-        .isEqualTo(new Accepted(List.of(), 2));
+    var tenMinutes = with(bus(0, "a"), "observedAt", AT.minus(Duration.ofMinutes(10)));
+    var eightMinutes = with(bus(1, "b"), "observedAt", AT.minus(Duration.ofMinutes(8)));
+    var twelveMinutes = with(bus(2, "c"), "observedAt", AT.minus(Duration.ofMinutes(12)));
+
+    assertThat(check(tenMinutes, eightMinutes, twelveMinutes))
+        .isEqualTo(new Rejected("every bus is late (3, the newest observed at 2027-05-08T23:06:05Z)"));
+    assertThat(check()).isEqualTo(new Accepted(List.of(), 0));
   }
 
   @Test
