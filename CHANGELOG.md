@@ -14,7 +14,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - `contracts/openapi.yaml`: `acknowledgeHelpRequest` and `getHelpRequestHistory` are implemented; the history entry has `actorName`. The `PATCH` keeps the category and the priority only: the status changes through `acknowledge` and `close` (spec D1), which corrects *US-28 adds the status* written by US-35.
-- The 409 of a triage or status conflict is one `RequestConflictException`. Decisions D5 (the copied name) and D6 (only member changes are history entries) are proposed for the team's review.
+- The 409 of a triage or status conflict is one `RequestConflictException`. Decisions D5 (the copied name) and D6 (only member changes are history entries) are accepted with the approval of this PR (22 November 2026).
 
 ## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
 
