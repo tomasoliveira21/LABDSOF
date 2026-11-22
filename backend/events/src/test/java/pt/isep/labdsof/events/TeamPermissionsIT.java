@@ -284,6 +284,8 @@ class TeamPermissionsIT extends IntegrationTest {
     ApiClient.assertProblem(response, 409);
     assertThat(ApiClient.json(response).get("detail")).isEqualTo("This event is not open to changes.");
     assertThat(storedPermissions(team)).isEmpty();
+    // Nothing stored and nothing published: only the TeamChanged of the team's creation is in the outbox.
+    assertThat(changes(open)).hasSize(1);
   }
 
   @Test
@@ -300,6 +302,8 @@ class TeamPermissionsIT extends IntegrationTest {
 
     assertThat(storedPermissions(team)).containsExactly(
         Map.of("permission", "HelpRequests.Triage", "reportTypes", List.of()));
+    // The refused call published nothing: the creation and the one accepted PUT above, and no more.
+    assertThat(changes(event)).hasSize(2);
   }
 
   @Test

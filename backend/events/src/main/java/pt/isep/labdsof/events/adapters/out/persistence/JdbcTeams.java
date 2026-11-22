@@ -152,7 +152,7 @@ class JdbcTeams implements Teams {
   public Write replacePermissions(Team team, UUID actor, Instant at) {
     var stored = jdbc.sql("""
         UPDATE team SET version = :version, updated_at = :at, updated_by = :actor
-        WHERE event_id = :eventId AND team_id = :teamId AND deleted_at IS NULL
+        WHERE event_id = :eventId AND team_id = :teamId AND deleted_at IS NULL AND version = :version - 1
         """)
         .param(VERSION, team.version())
         .param(AT, Timestamp.from(at))
@@ -161,7 +161,8 @@ class JdbcTeams implements Teams {
         .param(TEAM_ID, team.teamId())
         .update();
     if (stored != 1) {
-      return Write.GONE;
+      // Before the permission rows are touched, so a lost race leaves the set the winner wrote (US-17 D2).
+      return missed(team);
     }
     jdbc.sql("DELETE FROM team_permission WHERE event_id = :eventId AND team_id = :teamId")
         .param(EVENT_ID, team.eventId())

@@ -222,7 +222,8 @@ paths:
         The whole set at once: an empty array takes every permission away. Recorded with who and when
         (the team's updated_by and updated_at, and one log line). reportTypes is given only with
         Reports.Review, which may also carry none and then reviews nothing; a repeated permission or
-        report type is refused with 400 (US-17 D3, D4).
+        report type is refused with 400 (US-17 D3, D4). 409 when another request changed the team
+        meanwhile: nothing is stored or published, so read it again and decide.
       requestBody:
         required: true
         content:
@@ -517,7 +518,9 @@ components:
       enum: [HelpRequests.Triage, HelpRequests.Respond, Reports.Review, Reports.Respond, Announcements.Publish, Map.Edit, Transport.Edit, Entrances.Update]
     ReportType:
       type: string
-      description: Proposed in spec D6 until US-17 (features §6.1 gives labels only)
+      description: >-
+        Confirmed on 21 November 2026 (features §6.1, which gave labels only); the report stories (US-47
+        onwards) use this same list
       enum: [QueueAtEntrance, CrowdedArea, WcProblem, NoWater, Hazard, TransportProblem, WrongInformation]
     PoiType:
       type: string

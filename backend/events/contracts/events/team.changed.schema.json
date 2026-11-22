@@ -34,7 +34,7 @@
                     "WrongInformation"]
                 },
                 "uniqueItems": true,
-                "description": "Only Reports.Review carries any (proposed codes, spec D6)"
+                "description": "Only Reports.Review carries any; the codes are confirmed (features.md §6.1, 21 November 2026)"
               }
             },
             "if": { "properties": { "permission": { "const": "Reports.Review" } } },
