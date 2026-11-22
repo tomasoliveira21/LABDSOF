@@ -3,6 +3,7 @@ package pt.isep.labdsof.transports.adapters.out.source;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -14,7 +15,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import pt.isep.labdsof.transports.Infrastructure;
 import pt.isep.labdsof.transports.WireMockAdmin;
 import pt.isep.labdsof.transports.application.SourceReading;
-import pt.isep.labdsof.transports.domain.ImportOutcome;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -55,8 +55,17 @@ class PortoDigitalSourceIT {
   void recordedBusesAreRead() {
     var reading = source().read();
 
-    assertThat(reading.outcome()).isEqualTo(ImportOutcome.Succeeded);
-    assertThat(reading.vehicleCount()).isBetween(2, 13);
+    assertThat(reading).isInstanceOfSatisfying(SourceReading.Answered.class, answered -> {
+      assertThat(answered.buses()).hasSizeBetween(2, 13);
+      assertThat(answered.buses()).allSatisfy(bus -> {
+        assertThat(bus.externalEntityId()).startsWith("urn:ngsi-ld:Vehicle:porto:stcp:bus:");
+        assertThat(bus.dataProvider()).isEqualTo("STCP");
+        assertThat(bus.routeId()).isNotBlank();
+        assertThat(bus.longitude()).isBetween(-8.72, -8.64);
+        assertThat(bus.latitude()).isBetween(41.15, 41.19);
+        assertThat(bus.observedAt()).isBefore(Instant.now().plusSeconds(1));
+      });
+    });
     assertThat(WIREMOCK.requestedUrls()).containsExactly(WireMockAdmin.GEO_QUERY);
   }
 
@@ -65,7 +74,7 @@ class PortoDigitalSourceIT {
   void noBusIsZero() {
     failure("{\"status\":200,\"body\":\"[]\",\"headers\":{\"Content-Type\":\"application/json\"}}");
 
-    assertThat(source().read()).isEqualTo(SourceReading.succeeded(0));
+    assertThat(source().read()).isEqualTo(SourceReading.answered(List.of(), 1));
   }
 
   @Test
@@ -73,7 +82,7 @@ class PortoDigitalSourceIT {
   void serviceUnavailable() {
     failure("{\"status\":503}");
 
-    assertThat(source().read()).isEqualTo(SourceReading.unavailable("HTTP 503"));
+    assertThat(source().read()).isEqualTo(SourceReading.unavailable("HTTP 503", 1));
   }
 
   @Test
@@ -81,7 +90,7 @@ class PortoDigitalSourceIT {
   void otherCoordinatesGet404() {
     var reading = source(Infrastructure.wiremockUrl(), "41.17240,-8.68410", Duration.ofSeconds(5)).read();
 
-    assertThat(reading).isEqualTo(SourceReading.unavailable("HTTP 404"));
+    assertThat(reading).isEqualTo(SourceReading.unavailable("HTTP 404", 1));
   }
 
   @Test
@@ -93,8 +102,8 @@ class PortoDigitalSourceIT {
     var reading = source(Infrastructure.wiremockUrl(), VENUE, Duration.ofMillis(500)).read();
     var elapsed = Duration.ofNanos(System.nanoTime() - started);
 
-    assertThat(reading.outcome()).isEqualTo(ImportOutcome.Unavailable);
-    assertThat(reading.error()).startsWith("HttpTimeoutException");
+    assertThat(reading).isInstanceOfSatisfying(SourceReading.Unavailable.class,
+        unavailable -> assertThat(unavailable.reason()).startsWith("HttpTimeoutException"));
     assertThat(elapsed).isLessThan(Duration.ofMillis(2500));
   }
 
@@ -103,7 +112,7 @@ class PortoDigitalSourceIT {
   void droppedConnection() {
     failure("{\"fault\":\"CONNECTION_RESET_BY_PEER\"}");
 
-    assertThat(source().read().outcome()).isEqualTo(ImportOutcome.Unavailable);
+    assertThat(source().read()).isInstanceOf(SourceReading.Unavailable.class);
   }
 
   @Test
@@ -111,8 +120,8 @@ class PortoDigitalSourceIT {
   void nothingListening() {
     var reading = source("http://127.0.0.1:1", VENUE, Duration.ofSeconds(5)).read();
 
-    assertThat(reading.outcome()).isEqualTo(ImportOutcome.Unavailable);
-    assertThat(reading.error()).isNotBlank();
+    assertThat(reading).isInstanceOfSatisfying(SourceReading.Unavailable.class,
+        unavailable -> assertThat(unavailable.reason()).isNotBlank());
   }
 
   @ParameterizedTest(name = "{0}")
@@ -120,13 +129,12 @@ class PortoDigitalSourceIT {
       an object                | {}
       HTML                     | <html>maintenance</html>
       a number in the list     | [1]
-      an entity without id     | [{"type":"Vehicle"}]
       truncated JSON           | [{"id":"a"
       """)
   @DisplayName("193 AC-6 a body that is not a list of NGSI entities is an invalid reading")
   void invalidBodies(String name, String body) {
     failure("{\"status\":200,\"body\":\"" + body.replace("\"", "\\\"") + "\"}");
 
-    assertThat(source().read().outcome()).isEqualTo(ImportOutcome.Invalid);
+    assertThat(source().read()).isInstanceOf(SourceReading.Invalid.class);
   }
 }

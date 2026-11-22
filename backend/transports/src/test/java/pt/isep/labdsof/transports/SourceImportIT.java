@@ -71,7 +71,7 @@ class SourceImportIT {
           """).query().singleRow();
       assertThat(row).containsEntry("outcome", "Unavailable").containsEntry("error", "HTTP 503");
       assertThat(row.get("vehicle_count")).isNull();
-      assertThat(result.error()).isEqualTo("HTTP 503");
+      assertThat(result.sourceImport().error()).isEqualTo("HTTP 503");
     } finally {
       WIREMOCK.remove(stub);
     }

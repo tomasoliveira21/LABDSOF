@@ -35,10 +35,13 @@ class SourceImportJob {
   void run() {
     MDC.put(Correlation.MDC_KEY, UUID.randomUUID().toString());
     try {
-      var result = imports.runOnce();
+      var run = imports.runOnce();
+      var result = run.sourceImport();
       log.atLevel(result.outcome() == ImportOutcome.Succeeded ? Level.INFO : Level.WARN)
           .addKeyValue("outcome", result.outcome().name())
           .addKeyValue("vehicleCount", result.vehicleCount())
+          .addKeyValue("late", run.late())
+          .addKeyValue("attempts", run.attempts())
           .addKeyValue("durationMs", Duration.between(result.startedAt(), result.finishedAt()).toMillis())
           .addKeyValue("error", result.error())
           .log("Transport source read");

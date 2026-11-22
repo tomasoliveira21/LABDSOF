@@ -66,6 +66,8 @@ farol:
       interval: 30s
       connect-timeout: 3s
       read-timeout: 5s
+      # US-40 D3: a bus observed longer ago than this is late and left out (ADR-008, the y of P4)
+      freshness: 5m
 
 logging:
   structured:
