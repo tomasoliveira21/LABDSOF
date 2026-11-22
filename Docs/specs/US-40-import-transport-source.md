@@ -82,3 +82,17 @@ The gates of [#193](193-transports-service.md) for `backend/transports`, unchang
 
 - **21 Nov 2026 · research and decisions.** Read: issue #84, `features.md` US-40 and §3.1, ADR-008, architecture §7 and §9.1–9.2, the recorded answers (all 300 entities of the first snapshots have the 17 attributes; none broken), the proof of concept's reader, and the code of #193. The owner decided D2, D4, D5 and D9 on 21 November 2026.
 - **21 Nov 2026 · read as its builder** before approval: the numbering of the broken bus, the J1 values as properties and the data age before the first import were settled here (D5, D8, D10).
+- **22 Nov 2026 · built** (F1–F6, branch `feature/84-import-transport-source`, on top of #193's branch). Clean `mvn verify`: 178 unit and 223 integration tests, JaCoCo 652/654 lines and 247/249 branches, PIT 86/86 mutations killed; every step of `ci.yml` passes locally. Calls made while building, beyond the plan:
+  - The first wait of the retry is `farol.transport.source.retry.first-wait` (`wait` cannot be a Java record component).
+  - A point with a third coordinate (altitude) is valid GeoJSON: its longitude and latitude are kept.
+  - #193's "has no id" check moved from the adapter to `BusImport` (D2 `no id`), so the domain is the one judge.
+  - `JdbcBusData.replace` writes every bus and position in one statement (arrays and `unnest`), then deletes the positions of the buses that left: two round trips for up to 1000 buses.
+  - When the circuit refuses the trial call after this run's own failed attempts, the run records the last failure (`HTTP 503`); `circuit open` only when nothing was called.
+  - The metrics are `MeterBinder` beans that Spring Boot binds. `resilience4j-micrometer` brings the bulkhead, rate limiter and time limiter modules with it; they are kept.
+- **What the J1 values do**, for the team to know: with 6 calls counted, at least 3, opening at 50 %, a run that fails twice and then succeeds also opens the circuit (2 of 3 calls failed), and the next runs record `circuit open` for 60 s. That follows from D5 ("one failed import opens it"); changing it is a matter of the `circuit-breaker` properties.
+- **What later stories read:**
+  - US-41 and US-42: `BusData.inUse()`, the buses of the last valid import (`ObservedBus`: id, provider, fleet number, route, longitude, latitude, observation time).
+  - US-42 ("Data from HH:MM") and US-43 (the time of the last successful import): `SourceImports.lastSucceededAt()`, the `finished_at` of the last `Succeeded` row.
+  - US-43: the `source_import` rows (outcome, error) and the metrics `farol.transport.import{result}`, `farol.transport.data.age` and `resilience4j.circuitbreaker.state{name=transport-source}`; `GET …/transport-source-status` is its to build (D9).
+  - The D2 panel: the same metrics, in Prometheus once #231 is merged and #193's Task 9 gives Transports its management port.
+- **Delivery:** the pull request waits for #244 (#193) to be merged, then this branch is rebased onto `main`.

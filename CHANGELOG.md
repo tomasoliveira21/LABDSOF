@@ -2,6 +2,21 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-22 · Import of the external transport source (US-40, #84, António Guerra)
+
+**Why:** participants need the buses near the venue from the Porto Digital source, imported regularly and validated (assignment §6.5, ADR-008). Spec: [`Docs/specs/US-40-import-transport-source.md`](Docs/specs/US-40-import-transport-source.md). Built on #193.
+
+### Added
+- The import stores the buses within 2 km of the venue and each one's latest position; a valid import replaces the buses in use, and positions older than 5 minutes are left out.
+- Validation: one broken bus (no id or a duplicate one, no provider, no position or one out of range or at 0,0, no route, no or a future observation time) rejects the whole import, recorded `Invalid` with the bus and the reason; the previous buses stay in use.
+- Retry (3 attempts, 1 s and 2 s apart) and circuit breaker (last 6 calls, opens at 50 % failed, 60 s) of J1 with Resilience4j 2.4.0 core modules; while open, runs record `circuit open` and call nothing.
+- Metrics: `farol.transport.import{result}`, `farol.transport.data.age`, and Resilience4j's `transport-source` circuit breaker and retry.
+- The CI smoke checks that the last import's buses are stored.
+
+### Changed
+- The query asks for up to 1000 buses (`limit=1000`); the real API sends 20 without it.
+- `GET …/transport-source-status` answers `501` naming US-43, which will build it (US-40 D9).
+
 ## [Unreleased] · 2026-11-21 · Transports service (#193, António Guerra)
 
 **Why:** Transports was a skeleton; its Sprint B stories (US-40 #84, US-41 #85) need its own database, token validation, the copies it decides with, its contract and a first read of the bus source (ADR-008). Spec: [`Docs/specs/193-transports-service.md`](Docs/specs/193-transports-service.md).

@@ -227,7 +227,7 @@ class ContractIT extends IntegrationTest {
 
   private static final Map<String, String> STORIES = Map.of(
       "GET /api/v1/events/{eventId}/bus-observations", "US-41",
-      "GET /api/v1/events/{eventId}/transport-source-status", "US-40",
+      "GET /api/v1/events/{eventId}/transport-source-status", "US-43",
       "POST /api/v1/events/{eventId}/transport-options", "US-41");
 
   private static final Map<String, String> BODIES = Map.of(
