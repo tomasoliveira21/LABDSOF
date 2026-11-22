@@ -150,19 +150,44 @@ class ImportIT {
     imports().runOnce();
     var previous = buses().inUse();
     var before = runs();
-    var n = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-    jdbc().sql("CREATE FUNCTION test_fail_" + n + "() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN "
-        + "RAISE EXCEPTION 'test: database unavailable'; END $$").update();
-    jdbc().sql("CREATE TRIGGER test_fail_" + n + " BEFORE INSERT OR UPDATE ON bus_observation FOR EACH ROW "
-        + "EXECUTE FUNCTION test_fail_" + n + "()").update();
-    try {
-      assertThatThrownBy(() -> imports().runOnce()).isInstanceOf(DataAccessException.class)
-          .hasMessageContaining("database unavailable");
-    } finally {
-      jdbc().sql("DROP TRIGGER IF EXISTS test_fail_" + n + " ON bus_observation").update();
-      jdbc().sql("DROP FUNCTION IF EXISTS test_fail_" + n + "()").update();
-    }
+
+    whileWritesFail("BEFORE INSERT OR UPDATE ON bus_observation FOR EACH ROW", () ->
+        assertThatThrownBy(() -> imports().runOnce()).isInstanceOf(DataAccessException.class)
+            .hasMessageContaining("database unavailable"));
+
     assertThat(runs()).isEqualTo(before);
     assertThat(buses().inUse()).isEqualTo(previous);
+  }
+
+  @Test
+  @DisplayName("US-40 D4 the buses and the record are one transaction: when the record fails after the buses are "
+      + "written, the previous buses stay in use")
+  void recordFailureRollsTheBusesBack() {
+    imports().runOnce();
+    var previous = buses().inUse();
+    var before = runs();
+    answers(answer(vehicle("urn:ngsi-ld:Vehicle:porto:stcp:bus:1003", "205", -8.68, 41.17, Instant.now())));
+
+    whileWritesFail("BEFORE INSERT ON source_import FOR EACH ROW WHEN (NEW.outcome = 'Succeeded')", () ->
+        assertThatThrownBy(() -> imports().runOnce()).isInstanceOf(DataAccessException.class)
+            .hasMessageContaining("database unavailable"));
+
+    assertThat(runs()).isEqualTo(before);
+    assertThat(buses().inUse()).isNotEmpty().isEqualTo(previous);
+  }
+
+  /** Runs {@code check} while a trigger ({@code when}: its timing, table and condition) makes those writes fail. */
+  private static void whileWritesFail(String when, Runnable check) {
+    var n = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    var table = when.replaceAll(".* ON (\\w+) .*", "$1");
+    jdbc().sql("CREATE FUNCTION test_fail_" + n + "() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN "
+        + "RAISE EXCEPTION 'test: database unavailable'; END $$").update();
+    jdbc().sql("CREATE TRIGGER test_fail_" + n + " " + when + " EXECUTE FUNCTION test_fail_" + n + "()").update();
+    try {
+      check.run();
+    } finally {
+      jdbc().sql("DROP TRIGGER IF EXISTS test_fail_" + n + " ON " + table).update();
+      jdbc().sql("DROP FUNCTION IF EXISTS test_fail_" + n + "()").update();
+    }
   }
 }
