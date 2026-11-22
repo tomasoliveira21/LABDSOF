@@ -48,6 +48,8 @@ class TeamsController implements TeamsApi {
 
   @Override
   public ResponseEntity<Team> replaceTeamPermissions(UUID eventId, UUID teamId, List<TeamPermission> teamPermission) {
-    throw new NotYetImplementedException("US-17");
+    var updated = teams.replacePermissions(TokenIdentity.currentUserId(), eventId, teamId,
+        TeamResponse.permissions(teamPermission));
+    return ResponseEntity.ok(TeamResponse.of(updated));
   }
 }

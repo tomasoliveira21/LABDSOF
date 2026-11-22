@@ -15,14 +15,19 @@ import java.util.UUID;
 import pt.isep.labdsof.events.domain.Event;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Team;
+import pt.isep.labdsof.events.domain.TeamPermission;
 
 /** Fakes of the ports, so the use cases are tested without a database. */
-class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAudit, Teams, Outbox {
+class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAudit, Teams, Outbox,
+    TeamAudit {
 
   record Refused(UUID userId, UUID eventId, Instant at, Refusal refusal) {}
 
   /** Who wrote a team and when, as the team table's updated_by and updated_at record it. */
   record Write(UUID teamId, UUID actor, Instant at, long version) {}
+
+  /** A permission change as US-17 AC-4 records it. */
+  record Audited(UUID userId, UUID eventId, UUID teamId, Instant at, List<TeamPermission> permissions) {}
 
   final Map<UUID, Event> events = new HashMap<>();
   final Map<List<UUID>, Membership> memberships = new HashMap<>();
@@ -31,6 +36,7 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
   final Map<UUID, Team> teams = new LinkedHashMap<>();
   final List<Write> writes = new ArrayList<>();
   final List<OutgoingEvent> published = new ArrayList<>();
+  final List<Audited> audited = new ArrayList<>();
 
   /** Set to simulate another request deleting the team between the read and the write (US-16 D3). */
   boolean teamVanishesOnWrite;
@@ -106,8 +112,19 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
   }
 
   @Override
+  public Teams.Write replacePermissions(Team team, UUID actor, Instant at) {
+    return store(team, actor, at);
+  }
+
+  @Override
   public void add(OutgoingEvent event) {
     published.add(event);
+  }
+
+  @Override
+  public void permissionsReplaced(UUID userId, UUID eventId, UUID teamId, Instant at,
+      List<TeamPermission> permissions) {
+    audited.add(new Audited(userId, eventId, teamId, at, permissions));
   }
 
   /** As team_name_per_event: the name is free among the live teams of the event, this one apart. */

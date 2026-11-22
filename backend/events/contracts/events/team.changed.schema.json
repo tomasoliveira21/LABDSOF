@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "team.changed.schema.json",
   "title": "TeamChanged",
-  "description": "Published by Events to farol.events with routing key team.changed, through the outbox (ADR-004), whenever a team is created, renamed or given its categories (US-16), given its permissions (US-17) or deleted (US-16: kept with deleted true and a higher version); nothing publishes it before US-16. Consumed from auth-users.events-events, reports.events-events and transports.events-events (API outline §7.4, §7.5). Full state with a version (§7.3); a team never moves to another event. Stricter than what Reports reads (#214, consumed/team.changed.schema.json): every permission carries reportTypes, empty unless the permission is Reports.Review. Report type codes are proposed until US-17 (spec D6). AMQP properties as EventChanged, with type = TeamChanged.",
+  "description": "Published by Events to farol.events with routing key team.changed, through the outbox (ADR-004), whenever a team is created, renamed or given its categories (US-16), given its permissions (US-17) or deleted (US-16: kept with deleted true and a higher version), by the use cases of US-16 and US-17. Consumed from auth-users.events-events, reports.events-events and transports.events-events (API outline §7.4, §7.5). Full state with a version (§7.3); a team never moves to another event. Stricter than what Reports reads (#214, consumed/team.changed.schema.json): every permission carries reportTypes, empty unless the permission is Reports.Review. Report type codes are the confirmed list of features.md §6.1 (21 November 2026, US-17). AMQP properties as EventChanged, with type = TeamChanged.",
   "allOf": [{ "$ref": "envelope.schema.json" }],
   "properties": {
     "type": { "const": "TeamChanged" },
@@ -34,7 +34,7 @@
                     "WrongInformation"]
                 },
                 "uniqueItems": true,
-                "description": "Only Reports.Review carries any (proposed codes, spec D6)"
+                "description": "Only Reports.Review carries any; the codes are confirmed (features.md §6.1, 21 November 2026)"
               }
             },
             "if": { "properties": { "permission": { "const": "Reports.Review" } } },

@@ -2,6 +2,60 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-22 · Import of the external transport source (US-40, #84, António Guerra)
+
+**Why:** participants need the buses near the venue from the Porto Digital source, imported regularly and validated (assignment §6.5, ADR-008). Spec: [`Docs/specs/US-40-import-transport-source.md`](Docs/specs/US-40-import-transport-source.md). Built on #193.
+
+### Added
+- The import stores the buses within 2 km of the venue and each one's latest position; a valid import replaces the buses in use, and positions older than 5 minutes are left out.
+- Validation: one broken bus (no id or a duplicate one, no provider, no position or one out of range or at 0,0, no route, no or a future observation time) rejects the whole import, recorded `Invalid` with the bus and the reason; the previous buses stay in use. So does an answer whose buses are all late, so the data in use shows its real age (decided by the owner on 22 November 2026).
+- Retry (3 attempts, 1 s and 2 s apart) and circuit breaker (last 6 calls, opens at 50 % failed, 60 s) of J1 with Resilience4j 2.4.0's Spring Boot 4 starter, as architecture §9.1 agreed, set under `resilience4j.*` in `application.yaml`; a failure is retried only while the circuit lets calls through; while open, runs record `circuit open` and call nothing. The circuit breaker is in the health check and never makes Transports unhealthy.
+- Metrics: `farol.transport.import{result}` (each result from 0), `farol.transport.data.age` (kept in memory, so a scrape never waits for the database and the age keeps growing while it is down), and Resilience4j's `transport-source` circuit breaker and retry.
+- The CI smoke checks that the last import's buses are stored.
+
+### Changed
+- The query asks for up to 1000 buses (`limit=1000`); the real API sends 20 without it.
+- `GET …/transport-source-status` answers `501` naming US-43, which will build it (US-40 D9).
+- The *Transport data age* panel of #148 now has data: [`local-observability.md`](Docs/Technical/plans/local-observability.md) and the #148 entry below say so.
+
+## [Unreleased] · 2026-11-21 · Transports service (#193, António Guerra)
+
+**Why:** Transports was a skeleton; its Sprint B stories (US-40 #84, US-41 #85) need its own database, token validation, the copies it decides with, its contract and a first read of the bus source (ADR-008). Spec: [`Docs/specs/193-transports-service.md`](Docs/specs/193-transports-service.md).
+
+### Added
+- `backend/transports`: Flyway `V1` with TransportOption, TransportDeparture, BusVehicle, BusObservation, one `source_import` row per read of the source, and copies of memberships, event statuses and teams; Keycloak JWT validation (`401` Problem Details, a `sub` that is not a UUID refused), Problem Details, correlation id on requests, messages and import runs.
+- Consumers of `transports.auth-users-events` and `transports.events-events` as the `transports` broker user: `MembershipChanged`, `EventChanged` and `TeamChanged` upserted by version and applied once per `messageId`; invalid messages to their dead-letter queue with the reason; `PointOfInterestChanged`, `UserStatusChanged` and `UserDeleted` acknowledged and logged until their stories. The schemas it reads are in `backend/transports/contracts/events/`.
+- [`contracts/openapi.yaml`](backend/transports/contracts/openapi.yaml), contract-first with `openapi-generator`: the Sprint B operations of API outline §5 (bus observations, source status, adding a transport option), each answering `501` with its story (US-40, US-41).
+- A scheduled job that reads the bus source every 30 s with the 2 km geo-query and the J1 timeouts and records `Succeeded` (with the number of buses), `Unavailable` or `Invalid`. Storing the buses, validation, freshness, retry and the circuit breaker stay in US-40.
+- `wiremock` in `infra/compose.yaml` (`wiremock/wiremock:3.13.2`, pinned, unprivileged, admin API on `127.0.0.1:8090`) with the recorded Porto Digital stubs; Transports reads it through `TRANSPORT_SOURCE_URL`.
+- Health and metrics on the private management port of #148 (`/actuator/health` and `/actuator/prometheus` without a token, never published), as for the other services; the calls to the bus source are measured (`http.client.requests`).
+- [`infra/tests/transports_smoke.py`](infra/tests/transports_smoke.py) and its CI step: tokens through the gateway, `501` naming US-41, Flyway, a successful read through WireMock, both queues consumed.
+- Quality gates of the [specs README](Docs/specs/README.md) adopted for `backend/transports`: JaCoCo 90 % lines and branches, generated code included; PIT 80 % on domain and application; Testcontainers with the Compose images.
+
+### Changed
+- No outbox, although the issue listed one: Transports publishes nothing (API outline §5, §7.4) and its broker user may write only dead letters (spec D2).
+- `local-delivery.md` §0 and `infra/wiremock/README.md` describe Transports and WireMock in the stack; `Docs/README.md` lists the Transports spec.
+
+## [Unreleased] · 2026-11-21 · A team's permissions (US-17, #66, Tiago Teixeira)
+
+**Why:** US-16 (#65) gives an event its teams; until each team has permissions, no member can do anything beyond the participant features (`features.md` §4.2). This completes the *Teams* tag of the Events contract: every one of its five operations is now served. Spec, decisions and edge-case matrix: [`Docs/specs/US-17-team-permissions.md`](Docs/specs/US-17-team-permissions.md). **Stacked on #65 (PR #242).**
+
+### Added
+- `PUT /api/v1/events/{eventId}/teams/{teamId}/permissions` in Events: the EventAdmin of a `Draft` or `Published` event replaces the team's whole permission set from the fixed list of `features.md` §4.2. An empty array takes every permission away, which is how a permission is removed; the answer and `GET …/teams` show the new set at once.
+- `Reports.Review` carries the report types the team reviews, and only it: another permission with report types, a repeated permission, a repeated or null report type, an unknown code and more than eight permissions are all `400`. A `Reports.Review` with no type is accepted and reviews nothing (`features.md` §4.2 chooses the types per team; API outline §4 gives `Reports.Review` *for its type*).
+- The change is recorded with who made it and when: the team's `updated_by` and `updated_at`, one `TeamChanged` with the new set and a higher version, and one `INFO` log line with the correlation id, the pseudonymous `userId`, the team and the permissions — never a name or an e-mail (M-10).
+- Domain: `Team.withPermissions`, `Team.permissionsOf` and `TeamPermission.reportTypesOf` keep the rules where the tests can see them, and a deleted team still grants nothing.
+
+### Changed
+- `backend/events/contracts/openapi.yaml`: the `PUT` declares `409` (a suspended or closed event does not change its teams, as every other team write) and says what the body refuses; US-17 is no longer listed among the stories still to come, and the report type codes are stored, published and **described as confirmed** — `ReportType` and `team.changed.schema.json` no longer call them a proposal, which the header of the contract already stated.
+- **The permission write matches the version it read** (`… AND version = :version - 1`), as the three team writes of #65 now do: two `PUT`s that start from the same read cannot both store a version, so the second is `409` and publishes nothing. Without it both committed and published **two `TeamChanged` carrying one version**, and a consumer that applies only a strictly newer version kept the first — a permission taken away stayed in force in Reports' copy, which is AC-4 failing in the consumer. Found in the review of this PR on 22 November 2026.
+
+### Notes
+- **Several teams may handle the same help category, and several may review the same report type: this PR does not refuse it** (**confirmed on 21 November 2026**). *Which team is the default when two teams handle the same category* stays an open product decision (domain model), where it belongs: Reports picks the default team from `TeamChanged` and answers `defaultTeamId: null` when no team handles the category.
+- **The seven report type codes are confirmed** (`QueueAtEntrance`, `CrowdedArea`, `WcProblem`, `NoWater`, `Hazard`, `TransportProblem`, `WrongInformation`) and written into [`features.md` §6.1](Docs/Product/features.md#61-what-can-be-reported), which had labels only; they were Events' proposal since #192 D6. `openapi.yaml` and `team.changed.schema.json` no longer call them a proposal, and the report stories (US-47 onwards) use the same list. Decided on 21 November 2026 and recorded in [the meeting record of 21 November 2026](Docs/Meetings/2026-11-21-report-type-codes-and-team-writes.md), agreed by the owner of the Reports stories, who consumes them.
+- AC-3 (*the team becomes the default for the categories it handles*) is met in Events by storing and publishing the categories; the routing itself is US-29 (#76) in Reports.
+- Sending the same set twice is recorded twice, each with a new version: every call is an EventAdmin's decision and AC-4 asks for it to be recorded (confirmed on 21 November 2026, over skipping a no-op).
+
 ## [Unreleased] · 2026-11-21 · Teams of an event (US-16, #65, Tiago Teixeira)
 
 **Why:** #192 created the `team` and `team_permission` tables, the `TeamChanged` contract and the four team paths, but every one of them answered `501`. US-16 is the first story an EventAdmin needs before giving a team its permissions (US-17, #66, stacked on this branch) or putting members in it (US-18). Spec, decisions and edge-case matrix: [`Docs/specs/US-16-teams.md`](Docs/specs/US-16-teams.md).
@@ -153,7 +207,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Added
 - `infra/compose.yaml`, profile `observability`: Prometheus `v3.5.0` and Grafana `12.2.1`, pinned by digest, published on `127.0.0.1` only (`9090`, `3001`), hardened like the other containers, Prometheus kept 1 day or 512 MB. Without `--profile observability` the stack is unchanged.
-- `infra/observability/`: the Prometheus scrape list (every 15 s), the Grafana data source, the dashboard *Farol local operations* (the four groups of plan §4) and the three core alert rules: service or telemetry down (2 min), outbox oldest pending row > 60 s (2 min), useful triage < 95 % of the mature one-hour cohort with at least 20 eligible (5 min). No code emits `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`, so the triage rule shows *No data*, still none after #81–#83 (PRs #230, #232, #233) merge: they emit `farol.triage.fallback`, `farol.triage.suggested` and `farol.triage.decision`, not these gauges, which come with SC3 (#149). The *Transport data age* panel (`farol_transport_data_age_seconds`) has no data either: no code emits it.
+- `infra/observability/`: the Prometheus scrape list (every 15 s), the Grafana data source, the dashboard *Farol local operations* (the four groups of plan §4) and the three core alert rules: service or telemetry down (2 min), outbox oldest pending row > 60 s (2 min), useful triage < 95 % of the mature one-hour cohort with at least 20 eligible (5 min). No code emits `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`, so the triage rule shows *No data*, still none after #81–#83 (PRs #230, #232, #233) merge: they emit `farol.triage.fallback`, `farol.triage.suggested` and `farol.triage.decision`, not these gauges, which come with SC3 (#149). The *Transport data age* panel (`farol_transport_data_age_seconds`) has data since US-40 (#84): Transports emits the seconds since its last valid import (`NaN` before the first one).
 - Health and metrics on a private management port, `8081`, never published (`/actuator/health`, `/actuator/prometheus`), and JSON console logs (`logstash`) for every Spring service, through `infra/compose.yaml`. Actuator and the Prometheus registry in Reports, the gateway, Events, Transports and Badges; the registry in Auth & Users (which had actuator). Every Spring service is scraped. Each owner agreed to the change in their module and reviews it.
 - Reports and Auth & Users: a `SecurityFilterChain` that serves only `health` and `prometheus` without a token, and only when the management port is separate (`@ConditionalOnManagementPort(DIFFERENT)`); on the API port the actuator still needs a token. The Auth & Users change was agreed with its owner, who reviews it. Events and Badges, which got Spring Security on `main` while this was open (#192, #201), have the same chain and a `ManagementPortIT` since 22 November 2026, for their owners to review.
 - Gateway: `X-Correlation-Id` kept when it is 8 to 64 letters, digits or hyphens, otherwise a new UUID; forwarded to the service, returned to the caller and logged with one line per request, as Auth & Users already does. Events keeps its own `CorrelationIdFilter` (#192), registered once in `WebConfiguration`, with two additions: an exception that escapes the chain is logged as `500`, not the response's default `200`, and the health check's status request is not logged.

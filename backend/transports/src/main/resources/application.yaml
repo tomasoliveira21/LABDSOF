@@ -1,0 +1,107 @@
+# Transports (spec Docs/specs/193-transports-service.md). Every secret comes from the environment
+# (infra/compose.yaml, infra/.env); no default secret.
+spring:
+  application:
+    name: transports
+  mvc:
+    problemdetails:
+      # Problem Details for every MVC error (API outline 1.7)
+      enabled: true
+  jackson:
+    deserialization:
+      # Reject fields outside the documented bodies (mass assignment). The consumers tolerate unknown fields on
+      # their own mapper (contracts evolve by adding).
+      fail-on-unknown-properties: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      # At most 10 connections per service on the shared server (#189 handoff)
+      maximum-pool-size: 5
+  flyway:
+    locations: classpath:db/migration
+  rabbitmq:
+    # The transports user declares nothing and publishes only dead letters; the topology comes from
+    # infra/rabbitmq/topology.json (#212, spec D2, D3)
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:}
+    password: ${SPRING_RABBITMQ_PASSWORD:}
+    # A dead letter is confirmed by the broker before the original is acknowledged (spec D3, #214 D8)
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        # Start before rabbitmq-setup has created the queues and consume once they exist (spec D3, #214 D9)
+        missing-queues-fatal: false
+        # 4 attempts, backoff 1 s, 2 s, 4 s, then the dead-letter queue (spec D3, ADR-004 decision 3)
+        retry:
+          enabled: true
+          max-retries: 3
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 4s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # ADR-006: public issuer checked against iss, keys from Keycloak's internal address, audience farol-api
+          issuer-uri: ${FAROL_ISSUER_URI}
+          jwk-set-uri: ${FAROL_JWKS_URI}
+          audiences: farol-api
+
+farol:
+  transport:
+    # The bus source (spec D5, D7, ADR-008; values of architecture 9.1, J1). TRANSPORT_SOURCE_URL is WireMock in
+    # Compose; switched on without it, start-up fails. coords is the Queimodromo, written exactly as the recorded
+    # stubs match it (infra/wiremock/README.md), latitude first.
+    source:
+      enabled: true
+      url: ${TRANSPORT_SOURCE_URL:}
+      coords: "41.1724,-8.6841"
+      max-distance: 2000
+      interval: 30s
+      connect-timeout: 3s
+      read-timeout: 5s
+      # US-40 D3: a bus observed longer ago than this is late and left out (ADR-008, the y of P4)
+      freshness: 5m
+
+# US-40 D5: the retry and the circuit breaker of the bus source, with the values of J1 (architecture 9.1), through
+# Resilience4j's Spring Boot 4 starter. The retry wraps the circuit breaker (PortoDigitalSource), so every attempt
+# counts for the circuit and nothing is tried while it is open. ResilienceSettingsIT reads the values back: the
+# starter ignores a key it does not know.
+resilience4j:
+  retry:
+    instances:
+      transport-source:
+        # 3 attempts in all, 1 s then 2 s apart. Only after I/O errors, timeouts, 5xx and 429, and only while the
+        # circuit is not open: set in code, as it reads the circuit's state (SourceResilienceConfiguration)
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+  circuitbreaker:
+    instances:
+      transport-source:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 6
+        minimum-number-of-calls: 3
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 1
+        # Its state is in the health check, but the source being down never makes Transports unhealthy
+        register-health-indicator: true
+        allow-health-indicator-to-fail: false
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+
+logging:
+  structured:
+    format:
+      console: logstash

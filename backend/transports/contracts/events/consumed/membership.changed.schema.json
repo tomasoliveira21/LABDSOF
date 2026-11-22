@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "membership.changed.schema.json",
+  "title": "MembershipChanged, as Transports reads it",
+  "description": "Published by Auth & Users (farol.auth-users, routing key membership.changed), consumed from transports.auth-users-events into the membership copy (spec #193 D3). Copied from Events (backend/events/contracts/events/consumed), which reads it the same way; the producer's own contract (#191) wins where they differ. Full state with a version: Transports upserts its copy, ignores a version not newer than the one it has and keeps Removed rows; a missing status is read as Active.",
+  "allOf": [{ "$ref": "../envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "MembershipChanged" },
+    "schemaVersion": { "const": 1 },
+    "eventId": { "type": "string", "format": "uuid" },
+    "payload": {
+      "type": "object",
+      "required": ["userId", "role", "teamIds", "version"],
+      "properties": {
+        "userId": { "type": "string", "format": "uuid", "description": "The user's sub (#191 D4)" },
+        "role": { "enum": ["EventAdmin", "RegularUser"] },
+        "status": { "enum": ["Active", "Removed"], "default": "Active", "description": "Optional: read as Active when missing" },
+        "teamIds": { "type": "array", "items": { "type": "string", "format": "uuid" }, "uniqueItems": true },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

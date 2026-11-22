@@ -27,6 +27,25 @@ final class TeamResponse {
         : pt.isep.labdsof.events.domain.HelpCategory.valueOf(category.getValue())).toList();
   }
 
+  /**
+   * The permissions of a PUT body (US-17). A null item is passed on for the domain to refuse as a bad request,
+   * and so is a repeated one; each permission's report types become its set there too.
+   */
+  static List<pt.isep.labdsof.events.domain.TeamPermission> permissions(List<TeamPermission> sent) {
+    return sent.stream().map(TeamResponse::permission).toList();
+  }
+
+  private static pt.isep.labdsof.events.domain.TeamPermission permission(TeamPermission sent) {
+    if (sent == null) {
+      return null;
+    }
+    return new pt.isep.labdsof.events.domain.TeamPermission(
+        pt.isep.labdsof.events.domain.Permission.ofCode(sent.permission().getValue()),
+        pt.isep.labdsof.events.domain.TeamPermission.reportTypesOf(sent.reportTypes().stream()
+            .map(type -> type == null ? null : pt.isep.labdsof.events.domain.ReportType.valueOf(type.getValue()))
+            .toList()));
+  }
+
   private static TeamPermission permission(pt.isep.labdsof.events.domain.TeamPermission permission) {
     return new TeamPermission(Permission.fromValue(permission.permission().code()),
         permission.reportTypes().stream().map(type -> ReportType.fromValue(type.name())).toList());

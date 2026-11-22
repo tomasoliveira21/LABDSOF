@@ -37,4 +37,10 @@ public interface Teams {
    * held becomes free, so this never meets the unique index.
    */
   Write delete(Team team, UUID actor, Instant at);
+
+  /**
+   * Replaces the team's permission rows by the ones the team now carries and stores its next version, in one
+   * statement each (US-17 D1). Never {@code NAME_TAKEN}: the name does not change.
+   */
+  Write replacePermissions(Team team, UUID actor, Instant at);
 }

@@ -148,6 +148,40 @@ class JdbcTeams implements Teams {
         .orElse(false) ? Write.CONFLICT : Write.GONE;
   }
 
+  @Override
+  public Write replacePermissions(Team team, UUID actor, Instant at) {
+    var stored = jdbc.sql("""
+        UPDATE team SET version = :version, updated_at = :at, updated_by = :actor
+        WHERE event_id = :eventId AND team_id = :teamId AND deleted_at IS NULL AND version = :version - 1
+        """)
+        .param(VERSION, team.version())
+        .param(AT, Timestamp.from(at))
+        .param(ACTOR, actor)
+        .param(EVENT_ID, team.eventId())
+        .param(TEAM_ID, team.teamId())
+        .update();
+    if (stored != 1) {
+      // Before the permission rows are touched, so a lost race leaves the set the winner wrote (US-16 D3).
+      return missed(team);
+    }
+    jdbc.sql("DELETE FROM team_permission WHERE event_id = :eventId AND team_id = :teamId")
+        .param(EVENT_ID, team.eventId())
+        .param(TEAM_ID, team.teamId())
+        .update();
+    for (var permission : team.permissions()) {
+      jdbc.sql("""
+          INSERT INTO team_permission (event_id, team_id, permission, report_types)
+          VALUES (:eventId, :teamId, :permission, :reportTypes)
+          """)
+          .param(EVENT_ID, team.eventId())
+          .param(TEAM_ID, team.teamId())
+          .param("permission", permission.permission().code())
+          .param("reportTypes", permission.reportTypes().stream().map(ReportType::name).toArray(String[]::new))
+          .update();
+    }
+    return Write.STORED;
+  }
+
   private static String[] codes(Team team) {
     return team.handledCategories().stream().map(HelpCategory::name).toArray(String[]::new);
   }
