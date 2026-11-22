@@ -7,8 +7,9 @@ info:
     from the Porto Digital urban platform (API outline §5, ADR-008). Contract-first (C7): the server
     interfaces and DTOs are generated from this file. Sprint B endpoints only (spec #193 D6); every
     operation answers 501 until its story (US-41, US-43; US-40 D9 moved the source status to US-43),
-    and their request and response shapes are proposals until then. The import of the source is a scheduled job, never an endpoint. Every /api/v1
-    call needs a valid access token issued by Keycloak to the web app (audience farol-api);
+    and their request and response shapes are proposals until then. The import of the source is a
+    scheduled job, never an endpoint. Every /api/v1 call needs a valid access token issued by Keycloak
+    to the web app (audience farol-api);
     /api/v1/status is the only diagnostic exception.
 servers:
   - url: /
