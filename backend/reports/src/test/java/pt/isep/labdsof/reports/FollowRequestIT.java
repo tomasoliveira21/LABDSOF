@@ -106,8 +106,8 @@ class FollowRequestIT extends IntegrationTest {
     submit(other, "someone else's");
     var otherEvent = UUID.randomUUID();
     member(otherEvent, participant, Role.RegularUser);
-    post("/api/v1/events/" + otherEvent + "/help-requests", JWKS.valid(participant),
-        submitBody(UUID.randomUUID(), "elsewhere"));
+    assertThat(post("/api/v1/events/" + otherEvent + "/help-requests", JWKS.valid(participant),
+        submitBody(UUID.randomUUID(), "elsewhere")).statusCode()).isEqualTo(201);
     setStatus(closed, "Closed");
 
     var body = poll(null);
@@ -206,11 +206,12 @@ class FollowRequestIT extends IntegrationTest {
       // The page polls on its own rhythm, unrelated to when the control room changes the status (spec D5)
       poller.scheduleAtFixedRate(() -> {
         try {
-          var sent = Instant.now(); // when the page asked, so a slow runner's response time does not count
           var body = poll(cursor.get());
+          // When the answer arrived, as the participant sees it: the read time counts toward the 5 s
+          var arrived = Instant.now();
           if (changed.get() && ids(body).contains(id)
               && "OnTheWay".equals(JsonPath.read(body, "$.items[0].status"))) {
-            seen.compareAndSet(null, sent);
+            seen.compareAndSet(null, arrived);
           }
           cursor.set(JsonPath.read(body, "$.serverTime"));
         } catch (Exception | AssertionError e) {

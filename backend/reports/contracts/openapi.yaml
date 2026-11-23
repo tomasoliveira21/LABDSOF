@@ -142,31 +142,22 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - type: object
-                    description: Without mine, the control-room list (US-26).
-                    additionalProperties: false
-                    required: [items, serverTime]
-                    properties:
-                      items:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/HelpRequestForControlRoom'
-                      serverTime:
-                        type: string
-                        format: date-time
-                  - type: object
-                    description: With mine=true, the caller's own requests (US-24).
-                    additionalProperties: false
-                    required: [items, serverTime]
-                    properties:
-                      items:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/HelpRequestForParticipant'
-                      serverTime:
-                        type: string
-                        format: date-time
+                type: object
+                additionalProperties: false
+                required: [items, serverTime]
+                properties:
+                  items:
+                    type: array
+                    description: >-
+                      Control-room items without mine (US-26); participant items with mine=true (US-24). One
+                      answer has only one kind.
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/HelpRequestForControlRoom'
+                        - $ref: '#/components/schemas/HelpRequestForParticipant'
+                  serverTime:
+                    type: string
+                    format: date-time
         '400':
           $ref: '#/components/responses/Invalid'
         '401':
