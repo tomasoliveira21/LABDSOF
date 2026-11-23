@@ -121,6 +121,16 @@ class JdbcHelpRequests implements HelpRequests {
   }
 
   @Override
+  public List<HelpRequest> ofRequester(UUID eventId, String requesterId) {
+    // Served by the unique index (event_id, requester_id, client_request_id)
+    return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.requester_id = :requesterId" + ARRIVAL_ORDER)
+        .param(EVENT_ID, eventId)
+        .param("requesterId", requesterId)
+        .query(JdbcHelpRequests::map)
+        .list();
+  }
+
+  @Override
   public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
     // Truncated down to the database's microsecond, so rounding can only widen the superset
     var from = since.truncatedTo(ChronoUnit.MICROS);

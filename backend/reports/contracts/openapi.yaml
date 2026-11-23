@@ -108,17 +108,23 @@ paths:
         request whose triage turned NotTriaged after it. Both in order of arrival. serverTime is 5 s before
         the server's time, so consecutive polls overlap and a request can come twice: keep one row per id.
         Poll every 2 s while the page is visible (SC2, spec US-26 D7).
-        Planned: own requests with mine=true (US-24); the requests routed to the caller's teams with
-        HelpRequests.Respond (US-31); the filters status and teamId (US-27, US-31). Until then those
-        parameters are ignored.
+        Implemented (US-24): with mine=true, any active member gets their own requests of the event in the
+        participant view, whatever their permissions (spec US-24 D1). Without updatedSince, every own
+        request, Closed ones included; with it, every own request changed after it. Same serverTime
+        overlap. Poll every 3 s while the request screen is open (spec US-24 D5).
+        Planned: the requests routed to the caller's teams with HelpRequests.Respond (US-31); the filters
+        status and teamId (US-27, US-31). Until then those parameters are ignored.
       x-farol-status: implemented
       parameters:
         - $ref: '#/components/parameters/UpdatedSince'
         - name: mine
           in: query
-          description: Planned (US-24); ignored for now.
+          description: >-
+            true: only the caller's own requests, in the participant view (US-24). false or absent: the
+            control-room list.
           schema:
             type: boolean
+            default: false
         - name: status
           in: query
           description: Planned (US-27, US-31); ignored for now.
@@ -136,17 +142,31 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                required: [items, serverTime]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/HelpRequestForControlRoom'
-                  serverTime:
-                    type: string
-                    format: date-time
+                oneOf:
+                  - type: object
+                    description: Without mine, the control-room list (US-26).
+                    additionalProperties: false
+                    required: [items, serverTime]
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HelpRequestForControlRoom'
+                      serverTime:
+                        type: string
+                        format: date-time
+                  - type: object
+                    description: With mine=true, the caller's own requests (US-24).
+                    additionalProperties: false
+                    required: [items, serverTime]
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HelpRequestForParticipant'
+                      serverTime:
+                        type: string
+                        format: date-time
         '400':
           $ref: '#/components/responses/Invalid'
         '401':
@@ -533,7 +553,8 @@ components:
       in: query
       description: >-
         Only what changed after this time (API outline §1.6). When absent, the first load the operation
-        describes (for help requests, every request that is not Closed).
+        describes (for the control room's help requests, every request that is not Closed; with mine=true,
+        every own request).
       schema:
         type: string
         format: date-time
@@ -650,7 +671,10 @@ components:
       type: object
       additionalProperties: false
       required: [id, description, status, updatedAt]
-      description: What the participant sees; never a category or a priority (US-24).
+      description: >-
+        What the participant sees; never a category or a priority (US-24). updatedAt is the time of the last
+        change of the request, of any field (spec US-24 D3). Statuses shown as Sent (Submitted), Seen,
+        On the way (OnTheWay), Resolved and Closed (spec US-24 D7).
       properties:
         id:
           type: string

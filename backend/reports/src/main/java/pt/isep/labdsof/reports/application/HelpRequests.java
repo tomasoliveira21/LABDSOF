@@ -20,6 +20,9 @@ public interface HelpRequests {
   /** The event's requests that are not Closed, in order of arrival (submittedAt, then id). */
   List<HelpRequest> open(UUID eventId);
 
+  /** The requests one requester sent to the event, Closed ones included, in order of arrival (US-24). */
+  List<HelpRequest> ofRequester(UUID eventId, String requesterId);
+
   /**
    * The event's requests that may have changed after {@code since}, in order of arrival: updated after it, or
    * submitted after {@code since} minus the triage deadline. A superset: the caller keeps those for which

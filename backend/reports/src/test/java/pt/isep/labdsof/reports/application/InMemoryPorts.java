@@ -59,6 +59,11 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   }
 
   @Override
+  public List<HelpRequest> ofRequester(UUID eventId, String requesterId) {
+    return inArrivalOrder(eventId, r -> r.requesterId().equals(requesterId));
+  }
+
+  @Override
   public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
     var submittedAfter = since.minus(TriageSuggestion.TRIAGE_DEADLINE);
     return inArrivalOrder(eventId,

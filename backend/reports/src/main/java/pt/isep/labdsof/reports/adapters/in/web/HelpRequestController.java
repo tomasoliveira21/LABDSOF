@@ -90,14 +90,20 @@ class HelpRequestController {
         .body(participant(request));
   }
 
-  /** One poll of the live list (US-26): the items, and the serverTime to send as updatedSince next time. */
-  record ListView(List<ControlRoomView> items, Instant serverTime) {}
+  /** One poll of a live list (US-24, US-26): the items, and the serverTime to send as updatedSince next time. */
+  record ListView<T>(List<T> items, Instant serverTime) {}
 
+  /** The control room's list (US-26), or with mine=true the caller's own requests in the participant view (US-24). */
   @GetMapping(value = "/help-requests", produces = "application/json")
-  ListView list(@PathVariable UUID eventId, @RequestParam(required = false) Instant updatedSince,
-      @AuthenticationPrincipal Jwt jwt) {
+  ListView<?> list(@PathVariable UUID eventId, @RequestParam(required = false) Instant updatedSince,
+      @RequestParam(defaultValue = "false") boolean mine, @AuthenticationPrincipal Jwt jwt) {
+    if (mine) {
+      var own = service.mine(eventId, jwt.getSubject(), updatedSince);
+      return new ListView<>(own.items().stream().map(HelpRequestController::participant).toList(),
+          own.serverTime());
+    }
     var changes = service.list(eventId, jwt.getSubject(), updatedSince);
-    return new ListView(changes.items().stream().map(HelpRequestController::controlRoom).toList(),
+    return new ListView<>(changes.items().stream().map(HelpRequestController::controlRoom).toList(),
         changes.serverTime());
   }
 
