@@ -95,15 +95,15 @@ class HelpRequestController {
 
   /** The control room's list (US-26), or with mine=true the caller's own requests in the participant view (US-24). */
   @GetMapping(value = "/help-requests", produces = "application/json")
-  ListView<?> list(@PathVariable UUID eventId, @RequestParam(required = false) Instant updatedSince,
+  ListView<Record> list(@PathVariable UUID eventId, @RequestParam(required = false) Instant updatedSince,
       @RequestParam(defaultValue = "false") boolean mine, @AuthenticationPrincipal Jwt jwt) {
     if (mine) {
       var own = service.mine(eventId, jwt.getSubject(), updatedSince);
-      return new ListView<>(own.items().stream().map(HelpRequestController::participant).toList(),
+      return new ListView<>(own.items().stream().<Record>map(HelpRequestController::participant).toList(),
           own.serverTime());
     }
     var changes = service.list(eventId, jwt.getSubject(), updatedSince);
-    return new ListView<>(changes.items().stream().map(HelpRequestController::controlRoom).toList(),
+    return new ListView<>(changes.items().stream().<Record>map(HelpRequestController::controlRoom).toList(),
         changes.serverTime());
   }
 
