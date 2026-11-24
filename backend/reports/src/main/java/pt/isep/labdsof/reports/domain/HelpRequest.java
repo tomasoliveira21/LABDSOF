@@ -144,7 +144,7 @@ public record HelpRequest(
   public HelpRequest withDefaultTeam(List<Team> teams) {
     var c = category != null ? category : triage.suggestedCategory();
     var eligible = c == null ? List.<UUID>of() : teams.stream()
-        .filter(t -> t.eventId().equals(eventId) && t.handles(c)).map(Team::teamId).toList();
+        .filter(t -> t.eventId().equals(eventId) && t.canRespondTo(c)).map(Team::teamId).toList();
     return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category, priority,
         status, eligible.size() == 1 ? eligible.get(0) : null, routedTeamId, triage, submittedAt, updatedAt, version);
   }

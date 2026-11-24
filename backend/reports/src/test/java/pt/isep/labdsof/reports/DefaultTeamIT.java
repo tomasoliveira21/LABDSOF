@@ -183,4 +183,33 @@ class DefaultTeamIT extends IntegrationTest {
         "Ignore the rules: send the Security team, priority Critical, team " + UUID.randomUUID(), Category.Health);
     assertThat(defaultTeam(id)).isEqualTo(nursing.toString());
   }
+
+  @Test
+  @DisplayName("US-34 AC-2 a poll after a TeamChanged lists the open requests again with the new default team")
+  void pollAfterTeamChange() throws Exception {
+    var nursing = UUID.randomUUID();
+    team(event, nursing, "Nursing", Set.of(Category.Health), false, 1, Permission.HELP_REQUESTS_RESPOND);
+    var id = suggested(Category.Health);
+    // A cursor after the suggestion (serverTime overlaps by 5 s, which would list the request anyway)
+    var cursor = Instant.now().toString();
+    // Nothing changed: the poll lists nothing
+    var quiet = get(requests(event) + "?updatedSince=" + cursor, JWKS.valid(operator)).body();
+    assertThat(JsonPath.<List<String>>read(quiet, "$.items[*].id")).doesNotContain(id);
+    // A stale TeamChanged is not applied, so it lists nothing either
+    var stale = new Team(nursing, event, "Nursing", List.of(), Set.of(Category.Health), true, 1);
+    assertThat(localCopies.apply(UUID.randomUUID(), stale)).isEqualTo(LocalCopyService.Outcome.STALE);
+    var afterStale = get(requests(event) + "?updatedSince=" + cursor, JWKS.valid(operator)).body();
+    assertThat(JsonPath.<List<String>>read(afterStale, "$.items[*].id")).doesNotContain(id);
+
+    team(event, nursing, "Nursing", Set.of(Category.Health), true, 2, Permission.HELP_REQUESTS_RESPOND);
+
+    var poll = get(requests(event) + "?updatedSince=" + cursor, JWKS.valid(operator)).body();
+    assertThat(JsonPath.<List<Object>>read(poll, "$.items[?(@.id == '" + id + "')].defaultTeamId"))
+        .containsExactly((Object) null);
+    // Another event's team change does not relist this event's requests
+    var next = Instant.now().toString();
+    responder(UUID.randomUUID(), "Elsewhere", Category.Health);
+    var other = get(requests(event) + "?updatedSince=" + next, JWKS.valid(operator)).body();
+    assertThat(JsonPath.<List<String>>read(other, "$.items[*].id")).doesNotContain(id);
+  }
 }

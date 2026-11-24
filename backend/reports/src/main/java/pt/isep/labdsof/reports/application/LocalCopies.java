@@ -1,5 +1,6 @@
 package pt.isep.labdsof.reports.application;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,9 @@ public interface LocalCopies {
   Optional<Membership> membership(UUID eventId, String userId);
 
   List<Team> teams(UUID eventId, Collection<UUID> teamIds);
+
+  /** Whether a TeamChanged of the event was applied after {@code since} (spec US-34-default-team D6). */
+  boolean teamsChangedSince(UUID eventId, Instant since);
 
   /** Every team of the event, deleted ones included. */
   List<Team> teams(UUID eventId);

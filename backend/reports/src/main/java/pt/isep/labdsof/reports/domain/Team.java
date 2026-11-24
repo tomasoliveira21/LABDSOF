@@ -36,7 +36,7 @@ public record Team(UUID teamId, UUID eventId, String name, List<TeamPermission> 
   }
 
   /** Whether this team can take requests of {@code category}: it handles it and responds (spec US-34 AC-2, D1). */
-  public boolean handles(Category category) {
+  public boolean canRespondTo(Category category) {
     return handledCategories.contains(category) && grants(Permission.HELP_REQUESTS_RESPOND);
   }
 }

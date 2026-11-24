@@ -105,7 +105,8 @@ paths:
         Implemented (US-26): a member with HelpRequests.Triage gets every request of the event in the
         control-room view; a member without it gets 403. Without updatedSince, every request that is not
         Closed; with it, every request changed after it, Closed ones included so the page drops them, and a
-        request whose triage turned NotTriaged after it. Both in order of arrival. serverTime is 5 s before
+        request whose triage turned NotTriaged after it; after a team change of the event, every request that
+        is not Closed too, so its defaultTeamId is current (US-34 #81). In order of arrival. serverTime is 5 s before
         the server's time, so consecutive polls overlap and a request can come twice: keep one row per id.
         Poll every 2 s while the page is visible (SC2, spec US-26 D7).
         Planned: own requests with mine=true (US-24); the requests routed to the caller's teams with
@@ -700,8 +701,8 @@ components:
             The event's team that handles the category and has HelpRequests.Respond (US-34 #81 AC-2): the
             category a member set, else the AI's suggested one. Null without a category, with no such team, or
             with several (the operator routes by hand). Read from the current copy of the event's teams, never
-            chosen by the AI and not stored, so a team change shows on the next read; a poll with updatedSince
-            lists a request again only when the request itself changed.
+            chosen by the AI and not stored. A poll with updatedSince after a team change of the event lists
+            every open request again, so the default team stays current.
         routedTeamId:
           type: string
           format: uuid

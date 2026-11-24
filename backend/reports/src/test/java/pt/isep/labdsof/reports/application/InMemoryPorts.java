@@ -106,6 +106,15 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
         .filter(t -> t.eventId().equals(eventId) && teamIds.contains(t.teamId())).toList();
   }
 
+  /** When the copy of each event's teams last changed; the tests set it. */
+  final Map<UUID, Instant> teamsChangedAt = new HashMap<>();
+
+  @Override
+  public boolean teamsChangedSince(UUID eventId, Instant since) {
+    var at = teamsChangedAt.get(eventId);
+    return at != null && at.isAfter(since);
+  }
+
   @Override
   public List<Team> teams(UUID eventId) {
     return teams.values().stream().filter(t -> t.eventId().equals(eventId)).toList();

@@ -526,4 +526,32 @@ class HelpRequestServiceTest {
     assertThat(service.get(EVENT, "ana", request.id()).request().defaultTeamId()).isNull();
     assertThat(ports.find(EVENT, request.id()).orElseThrow().defaultTeamId()).isNull();
   }
+
+  @Test
+  @DisplayName("US-34 AC-2 a poll after a team change lists the open requests again, with those that changed")
+  void pollAfterTeamChange() {
+    var service = operatorService();
+    var quiet = stored(SUGGESTED);
+    var since = NOW.plusSeconds(40);
+    // A request changed in the window (accepted at DECIDED), and one that did not change
+    var accepted = service.acceptSuggestion(EVENT, "miguel", stored(SUGGESTED).id());
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactly(accepted.id());
+
+    ports.teamsChangedAt.put(EVENT, since);
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactly(accepted.id());
+    ports.teamsChangedAt.put(EVENT, since.plusNanos(1000));
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactlyInAnyOrder(quiet.id(), accepted.id());
+
+    // A request closed in the window is still sent, so the page drops it (US-26), and only once
+    var c = stored(SUGGESTED);
+    var closed = new HelpRequest(c.id(), EVENT, c.requesterId(), c.clientRequestId(), c.description(), c.location(),
+        c.category(), c.priority(), HelpRequestStatus.Closed, null, null, c.triage(), c.submittedAt(), DECIDED,
+        c.version() + 1);
+    ports.requests.put(c.id(), closed);
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactlyInAnyOrder(quiet.id(), accepted.id(), closed.id());
+  }
 }

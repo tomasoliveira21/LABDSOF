@@ -6,6 +6,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -104,13 +106,27 @@ public class HelpRequestService {
     requireTriage(eventId, userId);
     // To the microsecond, as the database keeps times, so the next updatedSince compares exactly
     var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
-    var items = since == null ? helpRequests.open(eventId)
-        : helpRequests.candidatesSince(eventId, since).stream().filter(r -> r.changedAfter(since, now)).toList();
+    var items = since == null ? helpRequests.open(eventId) : changes(eventId, since, now);
     // Limit: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
     // cursor (snapshot xmin) if one ever is
     var teams = copies.teams(eventId);
     return new Changes(items.stream().map(r -> r.asSeenAt(now).withDefaultTeam(teams)).toList(),
         now.minus(POLL_OVERLAP));
+  }
+
+  /**
+   * The requests changed after {@code since}; after a team change, every open request too, so the default team of a
+   * request already listed is current (spec US-34-default-team D6).
+   */
+  private List<HelpRequest> changes(UUID eventId, Instant since, Instant now) {
+    var changed = helpRequests.candidatesSince(eventId, since).stream().filter(r -> r.changedAfter(since, now))
+        .toList();
+    if (!copies.teamsChangedSince(eventId, since)) {
+      return changed;
+    }
+    var open = helpRequests.open(eventId);
+    var openIds = open.stream().map(HelpRequest::id).collect(Collectors.toSet());
+    return Stream.concat(open.stream(), changed.stream().filter(r -> !openIds.contains(r.id()))).toList();
   }
 
   /** The control room of the event only: HelpRequests.Triage (403); a non-member gets 404 (US-26, US-36 D5). */
