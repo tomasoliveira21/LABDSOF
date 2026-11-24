@@ -136,6 +136,19 @@ public record HelpRequest(
     return value == null ? null : value.name();
   }
 
+  /**
+   * This request with its default team (spec US-34 AC-2, D1 to D3): the only team of {@code teams} in this event that
+   * handles the category (a member's, else the AI's) and responds; none or several give null and the operator routes
+   * by hand. Derived when read, never stored (D4).
+   */
+  public HelpRequest withDefaultTeam(List<Team> teams) {
+    var c = category != null ? category : triage.suggestedCategory();
+    var eligible = c == null ? List.<UUID>of() : teams.stream()
+        .filter(t -> t.eventId().equals(eventId) && t.handles(c)).map(Team::teamId).toList();
+    return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category, priority,
+        status, eligible.size() == 1 ? eligible.get(0) : null, routedTeamId, triage, submittedAt, updatedAt, version);
+  }
+
   /** This request as a reader sees it at {@code now} (NotTriaged derived from Pending). */
   public HelpRequest asSeenAt(Instant now) {
     return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,

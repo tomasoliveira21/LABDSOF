@@ -34,4 +34,9 @@ public record Team(UUID teamId, UUID eventId, String name, List<TeamPermission> 
   public boolean grants(Permission permission) {
     return !deleted && permissions.stream().anyMatch(p -> p.permission() == permission);
   }
+
+  /** Whether this team can take requests of {@code category}: it handles it and responds (spec US-34 AC-2, D1). */
+  public boolean handles(Category category) {
+    return handledCategories.contains(category) && grants(Permission.HELP_REQUESTS_RESPOND);
+  }
 }

@@ -71,6 +71,12 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
   }
 
   @Override
+  public List<Team> teams(UUID eventId) {
+    return jdbc.sql("SELECT * FROM team_copy WHERE event_id = :eventId").param(EVENT_ID, eventId).query(this::team)
+        .list();
+  }
+
+  @Override
   public boolean upsertIfNewer(Membership m) {
     return jdbc.sql("""
         INSERT INTO membership_copy (event_id, user_id, role, status, team_ids, version)

@@ -22,7 +22,8 @@ import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
  * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), and the
- * control room's triage decisions (US-35).
+ * control room's triage decisions (US-35). The control room's reads and decisions answer the default team, derived
+ * from the current copy of the event's teams (spec US-34 AC-2, D4).
  */
 @Service
 public class HelpRequestService {
@@ -86,7 +87,7 @@ public class HelpRequestService {
     var request = helpRequests.find(eventId, requestId).orElseThrow(NotFoundException::new)
         .asSeenAt(clock.instant());
     if (access.has(Permission.HELP_REQUESTS_TRIAGE)) {
-      return new Read(request, true);
+      return new Read(request.withDefaultTeam(copies.teams(eventId)), true);
     }
     if (request.requesterId().equals(userId)) {
       return new Read(request, false);
@@ -107,7 +108,9 @@ public class HelpRequestService {
         : helpRequests.candidatesSince(eventId, since).stream().filter(r -> r.changedAfter(since, now)).toList();
     // Limit: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
     // cursor (snapshot xmin) if one ever is
-    return new Changes(items.stream().map(r -> r.asSeenAt(now)).toList(), now.minus(POLL_OVERLAP));
+    var teams = copies.teams(eventId);
+    return new Changes(items.stream().map(r -> r.asSeenAt(now).withDefaultTeam(teams)).toList(),
+        now.minus(POLL_OVERLAP));
   }
 
   /** The control room of the event only: HelpRequests.Triage (403); a non-member gets 404 (US-26, US-36 D5). */
@@ -150,7 +153,7 @@ public class HelpRequestService {
       }
       log.info("Triage decision on request {}: {} -> {}", before.id(), before.asSeenAt(now).triage().state(), state);
     }
-    return after.asSeenAt(now);
+    return after.asSeenAt(now).withDefaultTeam(copies.teams(after.eventId()));
   }
 
   /** After the commit, so a decision rolled back is never counted (G8 review); at once outside a transaction. */

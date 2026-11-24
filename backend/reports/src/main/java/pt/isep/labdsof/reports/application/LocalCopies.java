@@ -14,6 +14,9 @@ public interface LocalCopies {
 
   List<Team> teams(UUID eventId, Collection<UUID> teamIds);
 
+  /** Every team of the event, deleted ones included. */
+  List<Team> teams(UUID eventId);
+
   /** Inserts or replaces the copy; false when the copy already has this or a newer version. */
   boolean upsertIfNewer(Membership membership);
 

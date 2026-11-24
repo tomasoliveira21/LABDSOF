@@ -497,4 +497,33 @@ class HelpRequestServiceTest {
       logger.detachAppender(appender);
     }
   }
+
+  @Test
+  @DisplayName("US-34 AC-2 every control-room read and decision answers the default team")
+  void defaultTeamOnEveryControlRoomRead() {
+    var service = operatorService();
+    var nursing = UUID.randomUUID();
+    ports.upsertIfNewer(new Team(nursing, EVENT, "Nursing",
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(Category.Health), false, 1));
+    var security = UUID.randomUUID();
+    ports.upsertIfNewer(new Team(security, EVENT, "Security",
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(Category.Safety), false, 1));
+    member("ana", Role.RegularUser);
+    var request = stored(SUGGESTED);
+
+    assertThat(service.get(EVENT, "miguel", request.id()).request().defaultTeamId()).isEqualTo(nursing);
+    assertThat(service.list(EVENT, "miguel", null).items()).extracting(HelpRequest::defaultTeamId)
+        .containsExactly(nursing);
+    assertThat(service.list(EVENT, "miguel", NOW).items()).extracting(HelpRequest::defaultTeamId)
+        .containsExactly(nursing);
+    assertThat(service.change(EVENT, "miguel", request.id(), Category.Safety, null).defaultTeamId())
+        .isEqualTo(security);
+    assertThat(service.acceptSuggestion(EVENT, "miguel", stored(SUGGESTED).id()).defaultTeamId()).isEqualTo(nursing);
+    // Nothing changed: the answer still carries the default team
+    assertThat(service.change(EVENT, "miguel", request.id(), Category.Safety, null).defaultTeamId())
+        .isEqualTo(security);
+    // The participant's own read is not the control room's, and the team is never stored
+    assertThat(service.get(EVENT, "ana", request.id()).request().defaultTeamId()).isNull();
+    assertThat(ports.find(EVENT, request.id()).orElseThrow().defaultTeamId()).isNull();
+  }
 }

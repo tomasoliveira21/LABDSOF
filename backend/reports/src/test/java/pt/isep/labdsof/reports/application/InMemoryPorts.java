@@ -107,6 +107,11 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   }
 
   @Override
+  public List<Team> teams(UUID eventId) {
+    return teams.values().stream().filter(t -> t.eventId().equals(eventId)).toList();
+  }
+
+  @Override
   public boolean upsertIfNewer(Membership membership) {
     var key = membership.eventId() + "/" + membership.userId();
     var current = memberships.get(key);
