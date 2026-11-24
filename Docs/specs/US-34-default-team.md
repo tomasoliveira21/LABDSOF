@@ -63,4 +63,20 @@ Decisions the documents leave open are marked **Proposed, for the team's review*
 
 ## 6. Handoff
 
-(Written as the work goes.)
+**24 November 2026.**
+
+- Baseline on `main` (`d517d76`): `mvn -B -ntp -f backend/reports/pom.xml verify` green: 120 unit tests, 168 integration tests, JaCoCo 97.78 % lines and 95.90 % branches, PIT 160 of 172 mutations killed (93 %).
+- Built test first (§4). Red before green: the domain tests did not compile before `withDefaultTeam`; with the service change set aside, `HelpRequestServiceTest` failed on the default team and `DefaultTeamIT` failed 5 of its 7 tests (the two *no default* cases pass either way, as they should); the D6 service test failed before `changes(…)` existed. One test of US-26 needed its set-up changed: `LiveListIT` now dates its control-room team an hour back, because a team created during the test is a team change (D6) and lists the open requests again, which is the new rule, not a defect.
+- **G1** `mvn -B -ntp -f backend/reports/pom.xml verify`: 128 unit tests, 177 integration tests, JaCoCo 97.82 % lines and 96.12 % branches (≥ 90 %), PIT 187 of 187 mutations killed on `domain` and `application` (≥ 80 %).
+- **G2** `DefaultTeamIT`: real PostgreSQL and RabbitMQ (the Compose images, production migrations including `V6`, `setup.sh`); team changes go through `LocalCopyService`, as a `TeamChanged` does (the broker path is `LocalCopiesIT`'s).
+- **G3** no new endpoint; the existing matrices are unchanged and green. The rule's own security row: another event's team is never proposed (`HelpRequestTest`, `DefaultTeamIT`).
+- **G4** `contracts/openapi.yaml`: `defaultTeamId` described, the list operation says a poll after a team change lists the open requests again, `acceptTriageSuggestion` no longer *planned*. `ContractIT` passes. No event schema changes.
+- **G5** smoke on a fresh stack (`down --volumes`, images built one by one, `up -d --wait`, every check step of the `ci` job, `down --volumes`): 14 of 14 steps pass, after the G8 fixes (the Reports image runs `V6`).
+- **G6** guard: no blocking finding, test census 910 → 927, no warning.
+- **G7** CHANGELOG entry; dated notes in the API outline §4.1, ADR-005, the local AI decisions (routing scenarios) and `responsible-ai.md`; `DocumentationIT` checks every test this spec names (AC-2 only: AC-1 and AC-3 of #81 were delivered under #229's names).
+- **G8 independent review** (`code-review` at `high` on `d517d76...HEAD`), 6 findings:
+  - Important, fixed test first: a poll with `updatedSince` never sent an already listed request again after a team change, so a deleted team stayed proposed (D6, Flyway `V6`). A mutant that survived the first run (a request closed in the window, after a team change) got its own assertion.
+  - Nits fixed: `DocumentationIT` had no case for this spec; the API outline's example comment for `defaultTeamId` was out of date; this §6 was empty; `Team.handles` hid the `HelpRequests.Respond` check and is now `canRespondTo`.
+  - Nit kept: no meeting record for D2 and D6. They are proposals for the team's review, recorded here and in the CHANGELOG as other specs' proposals are; a record in `Docs/Meetings/` is written when the team decides (as for #75's D5 and D6).
+- Not done, and not claimed: refusing another event's or an ineligible team when a member routes, and the route action (US-29, #76), so #149 AC-3 is complete only with US-29; the tie-break when several teams handle a category (open product decision, D2); dropping the unused `default_team_id` column (D4); the backoffice page (the web app's owner). The model's offline gate fails (#224, #227), so the suggestions are not release evidence.
+- Merge note: PR #245 adds a Reports Flyway `V5`; this branch adds `V6`. If this PR merges first, #245's `V5` must be renumbered above `V6` before it merges, or Flyway refuses it on a database that already has `V6`.
