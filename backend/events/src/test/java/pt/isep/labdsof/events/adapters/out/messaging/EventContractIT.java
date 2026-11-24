@@ -38,6 +38,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import pt.isep.labdsof.events.Infrastructure;
 import pt.isep.labdsof.events.IntegrationTest;
 import pt.isep.labdsof.events.adapters.out.persistence.JdbcOutbox;
+import pt.isep.labdsof.events.application.EventEvents;
+import pt.isep.labdsof.events.application.EventService;
 import pt.isep.labdsof.events.application.Events;
 import pt.isep.labdsof.events.application.OutgoingEvent;
 import pt.isep.labdsof.events.application.TeamEvents;
@@ -77,6 +79,7 @@ class EventContractIT extends IntegrationTest {
   @Autowired JsonMapper json;
   @Autowired Events events;
   @Autowired Teams teamsPort;
+  @Autowired EventService eventService;
 
   @BeforeEach
   void cleanSlate() {
@@ -97,13 +100,11 @@ class EventContractIT extends IntegrationTest {
   }
 
   /**
-   * Until US-06/US-16 add {@code OutgoingEvent} factories, this is the payload an Events row produces; the
-   * factories must keep this test green.
+   * The payload of an event row, now from the service's own factory (US-11 D5), which is what #192 asked of the
+   * first story to publish EventChanged: {@code EventEvents.changed} must keep this test green.
    */
   static Map<String, Object> eventChanged(Event e) {
-    return Map.of("name", e.name(), "organiserName", e.organiserName(),
-        "dates", Map.of("start", e.dates().start().toString(), "end", e.dates().end().toString()),
-        "status", e.status().name(), "version", e.version());
+    return EventEvents.payload(e);
   }
 
   /**
@@ -254,6 +255,33 @@ class EventContractIT extends IntegrationTest {
         assertThat(schema(schemaOf(type)).validate(text(message), InputFormat.JSON)).as(queue + " " + type)
             .isEmpty();
       }
+    }
+  }
+
+  @Test
+  @DisplayName("US-11 AC-1 publishing an event publishes an EventChanged that matches its JSON Schema, with no "
+      + "join code, in every queue bound to event.changed")
+  void publishingAnEventSendsAValidEventChanged() {
+    var eventId = insertEvent("Draft", null, null);
+    var actor = UUID.randomUUID();
+    member(eventId, actor, Membership.Role.EventAdmin, Membership.Status.Active, 1);
+    eventService.publish(actor, eventId);
+
+    var sent = new OutboxPublisher(outbox, rabbit, tx, Clock.systemUTC(), 50, Duration.ofSeconds(2)).publishDue();
+
+    assertThat(sent).isEqualTo(1);
+    for (var queue : QUEUES) {
+      var messages = drain(queue);
+      assertThat(messages).as(queue).hasSize(1);
+      var message = messages.get(0);
+      assertThat(message.getMessageProperties().getType()).isEqualTo("EventChanged");
+      assertThat(message.getMessageProperties().getAppId()).isEqualTo("events");
+      assertThat(schema(EVENT).validate(text(message), InputFormat.JSON)).as(queue).isEmpty();
+      assertThat(schema(ENVELOPE).validate(text(message), InputFormat.JSON)).as(queue + " envelope").isEmpty();
+      var payload = json.readTree(text(message)).get("payload");
+      assertThat(payload.get("status").asString()).isEqualTo("Published");
+      assertThat(payload.get("version").asInt()).isEqualTo(2);
+      assertThat(payload.has("joinCode")).isFalse();
     }
   }
 

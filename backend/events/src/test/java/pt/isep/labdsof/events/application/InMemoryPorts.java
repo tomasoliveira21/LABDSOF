@@ -13,15 +13,22 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import pt.isep.labdsof.events.domain.Event;
+import pt.isep.labdsof.events.domain.EventStatus;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Team;
 import pt.isep.labdsof.events.domain.TeamPermission;
 
 /** Fakes of the ports, so the use cases are tested without a database. */
 class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAudit, Teams, Outbox,
-    TeamAudit {
+    TeamAudit, JoinCodes, EventAudit {
 
   record Refused(UUID userId, UUID eventId, Instant at, Refusal refusal) {}
+
+  /** A publish as US-11 D7 records it. */
+  record Published(UUID userId, UUID eventId, Instant at, EventStatus status, long version) {}
+
+  /** Who published an event and when, as the event table's updated_by and updated_at record it. */
+  record EventWrite(UUID eventId, UUID actor, Instant at, long version) {}
 
   /** Who wrote a team and when, as the team table's updated_by and updated_at record it. */
   record Write(UUID teamId, UUID actor, Instant at, long version) {}
@@ -35,6 +42,7 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
   final List<Refused> refusals = new ArrayList<>();
   final Map<UUID, Team> teams = new LinkedHashMap<>();
   final List<Write> writes = new ArrayList<>();
+  final List<EventWrite> eventWrites = new ArrayList<>();
   final List<OutgoingEvent> published = new ArrayList<>();
   final List<Audited> audited = new ArrayList<>();
 
@@ -44,9 +52,72 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
   /** Set to simulate another request changing the team, which is still live, between the read and the write. */
   boolean teamChangesOnWrite;
 
+  /** The join codes {@link #next()} hands out, in order; it repeats the last one once the list runs out. */
+  final List<String> codes = new ArrayList<>(List.of("JOIN-CODE-1"));
+
+  /** The codes asked for, so a refused publish can be shown to have asked for none of them twice. */
+  final List<String> codesAsked = new ArrayList<>();
+
+  /** The join codes the table already holds, as event_join_code_unique sees them (US-11 D1). */
+  final Set<String> takenCodes = new HashSet<>();
+
+  /** The publishes recorded by the {@link EventAudit} port. */
+  final List<Published> publishes = new ArrayList<>();
+
+  /**
+   * Set to the outcome the adapter reports for a publish that matched no row, so the answer the use case gives to
+   * each one can be tested: another request published the event meanwhile ({@code NOT_DRAFT}), published it from
+   * the same read ({@code CONFLICT}), or there is no such event ({@code GONE}). None of them is reachable with a
+   * sequential request, which is why the real outcomes live in {@code JdbcEventsIT} (US-11 D4).
+   */
+  Events.Write publishOutcome;
+
   @Override
   public Optional<Event> findById(UUID eventId) {
     return Optional.ofNullable(events.get(eventId));
+  }
+
+  /** The join codes the port hands out, in order. */
+  void handOut(String... joinCodes) {
+    codes.clear();
+    codes.addAll(List.of(joinCodes));
+  }
+
+  @Override
+  public String next() {
+    var code = codes.get(Math.min(codesAsked.size(), codes.size() - 1));
+    codesAsked.add(code);
+    return code;
+  }
+
+  @Override
+  public void published(UUID userId, UUID eventId, Instant at, EventStatus status, long version) {
+    publishes.add(new Published(userId, eventId, at, status, version));
+  }
+
+  /** The guard of the real adapter: the row must still be the draft the use case read (US-11 D4). */
+  @Override
+  public Events.Write publish(Event event, UUID actor, Instant at) {
+    if (takenCodes.contains(event.joinCode())) {
+      return Events.Write.CODE_TAKEN;
+    }
+    if (publishOutcome != null) {
+      return publishOutcome;
+    }
+    var stored = events.get(event.eventId());
+    if (stored == null) {
+      return Events.Write.GONE;
+    }
+    if (stored.status() != EventStatus.Draft) {
+      return Events.Write.NOT_DRAFT;
+    }
+    if (stored.version() != event.version() - 1) {
+      return Events.Write.CONFLICT;
+    }
+    events.put(event.eventId(), event);
+    takenCodes.add(event.joinCode());
+    eventWrites.add(new EventWrite(event.eventId(), actor, at, event.version()));
+    return Events.Write.STORED;
   }
 
   @Override

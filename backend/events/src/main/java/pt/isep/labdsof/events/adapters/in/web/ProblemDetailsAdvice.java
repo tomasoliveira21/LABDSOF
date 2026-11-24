@@ -9,9 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import pt.isep.labdsof.events.application.EventChangedConcurrentlyException;
 import pt.isep.labdsof.events.application.EventNotFoundException;
 import pt.isep.labdsof.events.application.EventNotOpenException;
 import pt.isep.labdsof.events.application.ForbiddenException;
+import pt.isep.labdsof.events.domain.EventNotDraftException;
 import pt.isep.labdsof.events.application.TeamChangedConcurrentlyException;
 import pt.isep.labdsof.events.application.TeamNameTakenException;
 import pt.isep.labdsof.events.application.TeamNotFoundException;
@@ -66,6 +68,20 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
   ResponseEntity<ProblemDetail> eventNotOpen(EventNotOpenException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "This event is not open to changes."));
+  }
+
+  /** US-11 D2: only a draft publishes, and a second publish of the same event lands here too. */
+  @ExceptionHandler(EventNotDraftException.class)
+  ResponseEntity<ProblemDetail> eventNotDraft(EventNotDraftException e) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "This event is not a draft."));
+  }
+
+  /** US-11 D4: another request changed the event between this one's read and its write; nothing was published. */
+  @ExceptionHandler(EventChangedConcurrentlyException.class)
+  ResponseEntity<ProblemDetail> eventChangedConcurrently(EventChangedConcurrentlyException e) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "This event changed meanwhile; read it again."));
   }
 
   /** A team the caller described wrongly; the reason is the domain's, never shown. */

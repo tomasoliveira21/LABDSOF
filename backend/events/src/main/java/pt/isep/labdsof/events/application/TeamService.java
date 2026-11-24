@@ -22,22 +22,17 @@ import pt.isep.labdsof.events.domain.TeamPermission;
 @Service
 public class TeamService {
 
-  /** What the event and the membership copy say about the caller, read once per operation. */
-  private record Reader(Membership membership, EventStatus status) {}
-
-  private final Events events;
+  private final EventReader reader;
   private final Teams teams;
-  private final LocalCopies copies;
   private final Outbox outbox;
   private final AccessAudit audit;
   private final TeamAudit teamAudit;
   private final Clock clock;
 
-  public TeamService(Events events, Teams teams, LocalCopies copies, Outbox outbox, AccessAudit audit,
-      TeamAudit teamAudit, Clock clock) {
-    this.events = events;
+  TeamService(EventReader reader, Teams teams, Outbox outbox, AccessAudit audit, TeamAudit teamAudit,
+      Clock clock) {
+    this.reader = reader;
     this.teams = teams;
-    this.copies = copies;
     this.outbox = outbox;
     this.audit = audit;
     this.teamAudit = teamAudit;
@@ -46,7 +41,7 @@ public class TeamService {
 
   @Transactional(readOnly = true)
   public List<Team> list(UUID userId, UUID eventId) {
-    var membership = reader(userId, eventId).membership();
+    var membership = reader.of(userId, eventId).membership();
     var live = teams.liveOfEvent(eventId);
     if (!membership.isEventAdmin() && live.stream().noneMatch(team -> reads(membership, team))) {
       throw new ForbiddenException();
@@ -123,27 +118,9 @@ public class TeamService {
     return membership.teamIds().contains(team.teamId()) && team.grantsTeamReading();
   }
 
-  /**
-   * An active member who may see the event (spec #192 D5): anything else is the same 404 as an unknown event.
-   * The caller then checks the permission, which is never read from the token (ADR-006).
-   */
-  private Reader reader(UUID userId, UUID eventId) {
-    var event = events.findById(eventId).orElseThrow(() -> refused(userId, eventId, Refusal.NO_SUCH_EVENT));
-    var membership = copies.membership(eventId, userId).filter(Membership::isActive)
-        .orElseThrow(() -> refused(userId, eventId, Refusal.NOT_A_MEMBER));
-    if (!membership.canSee(event.status())) {
-      throw refused(userId, eventId, Refusal.NOT_VISIBLE);
-    }
-    return new Reader(membership, event.status());
-  }
-
-  /** An EventAdmin of an event that still accepts changes (D2). */
+  /** An EventAdmin of an event that still accepts changes (D2); who may see it at all is {@link EventReader}. */
   private void administrator(UUID userId, UUID eventId) {
-    var reader = reader(userId, eventId);
-    if (!reader.membership().isEventAdmin()) {
-      throw new ForbiddenException();
-    }
-    if (!open(reader.status())) {
+    if (!open(reader.administrator(userId, eventId).event().status())) {
       throw new EventNotOpenException();
     }
   }
@@ -160,10 +137,5 @@ public class TeamService {
   private TeamNotFoundException teamNotFound(UUID userId, UUID eventId, Instant at) {
     audit.refused(userId, eventId, at, Refusal.NO_SUCH_TEAM);
     return new TeamNotFoundException();
-  }
-
-  private EventNotFoundException refused(UUID userId, UUID eventId, Refusal refusal) {
-    audit.refused(userId, eventId, clock.instant(), refusal);
-    return new EventNotFoundException();
   }
 }
