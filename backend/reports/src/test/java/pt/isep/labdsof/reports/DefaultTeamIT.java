@@ -93,6 +93,10 @@ class DefaultTeamIT extends IntegrationTest {
     var list = get(requests(event), JWKS.valid(operator)).body();
     assertThat(JsonPath.<List<String>>read(list, "$.items[?(@.id == '" + id + "')].defaultTeamId"))
         .containsExactly(nursing.toString());
+    // The acknowledge of US-28 answers the same control-room view, so it carries the default team too (D4)
+    var seen = post(requests(event) + "/" + id + "/acknowledge", JWKS.valid(operator), "");
+    assertThat(seen.statusCode()).as(seen.body()).isEqualTo(200);
+    assertThat(JsonPath.<String>read(seen.body(), "$.defaultTeamId")).isEqualTo(nursing.toString());
     // The participant's view has no team (D5), and the team is not stored (D4)
     var own = get(requests(event) + "/" + id, JWKS.valid(participant)).body();
     assertThat(JsonPath.<java.util.Map<String, Object>>read(own, "$")).doesNotContainKey("defaultTeamId");

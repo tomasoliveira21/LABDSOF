@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -116,9 +117,14 @@ public class HelpRequestService {
         now.minus(POLL_OVERLAP));
   }
 
+  /** In order of arrival, as the database lists them: {@code ORDER BY submitted_at, id}. */
+  // The id as text: Postgres orders a uuid by its bytes, which UUID.compareTo (signed longs) does not
+  private static final Comparator<HelpRequest> ARRIVAL =
+      Comparator.comparing(HelpRequest::submittedAt).thenComparing(r -> r.id().toString());
+
   /**
    * The requests changed after {@code since}; after a team change, every open request too, so the default team of a
-   * request already listed is current (spec US-34-default-team D6).
+   * request already listed is current (spec US-34-default-team D6). Still in order of arrival, as the contract says.
    */
   private List<HelpRequest> changes(UUID eventId, Instant since, Instant now) {
     var changed = helpRequests.candidatesSince(eventId, since).stream().filter(r -> r.changedAfter(since, now))
@@ -128,7 +134,8 @@ public class HelpRequestService {
     }
     var open = helpRequests.open(eventId);
     var openIds = open.stream().map(HelpRequest::id).collect(Collectors.toSet());
-    return Stream.concat(open.stream(), changed.stream().filter(r -> !openIds.contains(r.id()))).toList();
+    return Stream.concat(open.stream(), changed.stream().filter(r -> !openIds.contains(r.id()))).sorted(ARRIVAL)
+        .toList();
   }
 
   /**
@@ -184,7 +191,8 @@ public class HelpRequestService {
     var decision = request.acknowledge(now);
     helpRequests.saveDecision(decision.request(), actor, decision.changes());
     log.info("Status of request {}: {} -> {}", request.id(), request.status(), decision.request().status());
-    return decision.request().asSeenAt(now);
+    // Same ControlRoomView as the list and the other decisions, so it carries the default team too (US-34 D4)
+    return decision.request().asSeenAt(now).withDefaultTeam(copies.teams(eventId));
   }
 
   /** Every recorded change of a request of the event, oldest first; only HelpRequests.Triage (US-28 D4, D7). */
