@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import pt.isep.labdsof.reports.application.HelpRequests;
 import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
@@ -150,9 +151,17 @@ class JdbcHelpRequests implements HelpRequests {
   }
 
   @Override
+  @Transactional
   public boolean saveTriage(HelpRequest r) {
-    // One statement: the triage is written only while it still awaits the model, and only then does the request's
-    // updated_at move, so the live list shows it (spec US-34 D6, D8; US-26 D5)
+    // The members' locks first, in their order, and the status read after them: a request closed while the model
+    // answered takes no result. A condition in the UPDATE alone would read the status as it was before it waited on
+    // the close (spec US-30 G8 review)
+    var current = findForUpdate(r.eventId(), r.id());
+    if (current.isEmpty() || current.get().status() == HelpRequestStatus.Closed) {
+      return false;
+    }
+    // The triage is written only while it still awaits the model, and only then does the request's updated_at move,
+    // so the live list shows it (spec US-34 D6, D8; US-26 D5)
     var t = r.triage();
     return jdbc.sql("""
         WITH saved AS (

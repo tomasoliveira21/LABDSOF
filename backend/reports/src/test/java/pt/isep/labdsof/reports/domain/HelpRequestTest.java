@@ -468,7 +468,10 @@ class HelpRequestTest {
   void close(String status) {
     var open = withStatus(HelpRequestStatus.valueOf(status));
     var suggested = open.withTriage(SUGGESTED, NOW.plusSeconds(4));
-    for (var request : java.util.List.of(open, suggested, suggested.acceptSuggestion(LATER).request())) {
+    // Pending (read NotTriaged at LATER, past the deadline), Suggested, Accepted, Changed and a stored NotTriaged
+    for (var request : java.util.List.of(open, suggested, suggested.acceptSuggestion(LATER).request(),
+        suggested.change(Category.Safety, null, LATER).request(),
+        open.withTriage(TriageSuggestion.notTriaged(NotTriagedReason.Abstained), NOW.plusSeconds(4)))) {
       var decision = request.close(LATER);
       var closed = decision.request();
 
@@ -504,5 +507,23 @@ class HelpRequestTest {
     var accepted = withTriage(SUGGESTED).acceptSuggestion(LATER).request().close(later).request();
     assertThatThrownBy(() -> accepted.change(Category.Health, Priority.High, later))
         .isInstanceOf(RequestConflictException.class).hasMessage("The request is closed");
+    // A body that is invalid in itself is invalid whatever the status (G8 review)
+    assertThatThrownBy(() -> closed.change(null, null, later)).isInstanceOf(InvalidHelpRequestException.class);
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a closed request awaits no triage and is not listed again at its deadline")
+  void closedAwaitsNoTriage() {
+    var open = submit("help");
+    var closed = open.close(NOW.plusSeconds(3)).request();
+    assertThat(open.awaitsModel()).isTrue();
+    assertThat(closed.awaitsModel()).isFalse();
+    assertThat(withTriage(SUGGESTED).awaitsModel()).isFalse();
+    // A poll whose window holds the triage deadline lists a Pending open request again (US-26), never a closed one
+    var since = NOW.plusSeconds(10);
+    var now = NOW.plusSeconds(40);
+    assertThat(open.changedAfter(since, now)).isTrue();
+    assertThat(closed.changedAfter(since, now)).isFalse();
+    assertThat(closed.changedAfter(NOW.plusSeconds(2), now)).isTrue();
   }
 }

@@ -69,7 +69,12 @@ public record HelpRequest(
       return true;
     }
     var deadline = submittedAt.plus(TriageSuggestion.TRIAGE_DEADLINE);
-    return triage.awaitsModel() && deadline.isAfter(since) && !deadline.isAfter(now);
+    return awaitsModel() && deadline.isAfter(since) && !deadline.isAfter(now);
+  }
+
+  /** Whether the AI's result may still be written: the triage awaits it and the request is not closed (US-30 G8). */
+  public boolean awaitsModel() {
+    return status != HelpRequestStatus.Closed && triage.awaitsModel();
   }
 
   /**
@@ -103,10 +108,10 @@ public record HelpRequest(
    * becomes Changed, keeping the suggestion or the NotTriaged reason as read at {@code now}; a null is not sent.
    */
   public Decision change(Category newCategory, Priority newPriority, Instant now) {
-    requireOpen();
     if (newCategory == null && newPriority == null) {
       throw new InvalidHelpRequestException("category or priority is required");
     }
+    requireOpen();
     var mergedCategory = newCategory == null ? category : newCategory;
     var mergedPriority = newPriority == null ? priority : newPriority;
     if (mergedCategory == category && mergedPriority == priority) {

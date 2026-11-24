@@ -222,6 +222,60 @@ class CloseRequestIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-30 AC-1 an AI result that arrives after the close is not written")
+  void triageAfterClose() throws Exception {
+    var id = submit();
+    var pending = helpRequests.find(event, UUID.fromString(id)).orElseThrow();
+    var suggestion = pending.withTriage(
+        TriageSuggestion.suggested(Category.Health, Priority.High, "Desmaio relatado"), Instant.now());
+    var closing = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    try (var pool = Executors.newFixedThreadPool(2)) {
+      // The close holds its locks while the worker saves: the worker must read the status after it waited
+      var close = pool.submit(() -> transactions.executeWithoutResult(s -> {
+        var request = helpRequests.findForUpdate(event, pending.id()).orElseThrow();
+        var decision = request.close(Instant.now());
+        helpRequests.saveDecision(decision.request(), new pt.isep.labdsof.reports.domain.Actor(operator, null),
+            decision.changes());
+        closing.countDown();
+        try {
+          release.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }));
+      assertThat(closing.await(10, TimeUnit.SECONDS)).isTrue();
+      var worker = pool.submit(() -> helpRequests.saveTriage(suggestion));
+      var deadline = Instant.now().plusSeconds(10);
+      while (waitingOnTriageRow() < 1 && Instant.now().isBefore(deadline)) {
+        Thread.onSpinWait();
+      }
+      assertThat(waitingOnTriageRow()).as("the worker waiting on the close's lock").isEqualTo(1);
+      release.countDown();
+      close.get(10, TimeUnit.SECONDS);
+      assertThat(worker.get(10, TimeUnit.SECONDS)).isFalse();
+    }
+    // Nothing of the worker's: the close's version, the triage row as it was submitted
+    assertThat(version(id)).isEqualTo(2);
+    assertThat(jdbc.sql("SELECT state FROM triage_suggestion WHERE request_id = :id")
+        .param("id", UUID.fromString(id)).query(String.class).single()).isEqualTo("Pending");
+    // After the close, without a race, nothing is written either
+    assertThat(helpRequests.saveTriage(suggestion)).isFalse();
+    var read = get(requests() + "/" + id, JWKS.valid(operator)).body();
+    assertThat(JsonPath.<String>read(read, "$.status")).isEqualTo("Closed");
+    assertThat(JsonPath.<String>read(read, "$.triage.state")).isIn("Pending", "NotTriaged");
+    assertThat(JsonPath.<Object>read(read, "$.triage.suggestedCategory")).isNull();
+  }
+
+  long waitingOnTriageRow() {
+    // Any statement of the worker waiting on a lock of the triage or the request row
+    return jdbc.sql("""
+        SELECT count(*) FROM pg_stat_activity
+        WHERE wait_event_type = 'Lock' AND (query LIKE '%triage_suggestion%' OR query LIKE '%help_request%')
+        """).query(Long.class).single();
+  }
+
+  @Test
   @DisplayName("US-30 AC-1 a member without HelpRequests.Triage gets 403")
   void forbidden() throws Exception {
     var id = submit();

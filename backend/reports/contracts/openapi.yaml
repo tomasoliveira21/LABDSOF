@@ -338,7 +338,8 @@ paths:
         recorded as a status history entry with who and when (US-30 #77, spec D1). The request leaves the first load
         of the control room's live list and is sent once, Closed, in the next poll; the participant keeps it, Closed.
         No body. 409 when it is already Closed, with the same detail after a retry as when another member closed it
-        first. A closed request is final: acknowledge, accept-suggestion and the PATCH answer 409 (spec D2).
+        first. A closed request is final: acknowledge, accept-suggestion and the PATCH answer 409, and an AI result that
+        arrives after the close is not written (spec D2).
       x-farol-status: implemented
       responses:
         '200':

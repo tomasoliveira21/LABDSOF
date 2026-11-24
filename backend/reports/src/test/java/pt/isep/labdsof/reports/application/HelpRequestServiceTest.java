@@ -269,8 +269,8 @@ class HelpRequestServiceTest {
     // At the 30 s deadline, the Pending requests come back as NotTriaged (D4)
     clock = Clock.fixed(NOW.plusSeconds(31), ZoneOffset.UTC);
     var late = service().list(EVENT, "rui", NOW.plusSeconds(26));
-    // The closed one too: harmless, the page drops closed requests
-    assertThat(late.items()).extracting(HelpRequest::id).containsExactly(first.id(), closed.id());
+    // Not the closed one: it awaits no triage, so it is sent once, when it is closed (spec US-30 D4, G8 review)
+    assertThat(late.items()).extracting(HelpRequest::id).containsExactly(first.id());
     assertThat(late.items().get(0).triage().state()).isEqualTo(TriageState.NotTriaged);
   }
 

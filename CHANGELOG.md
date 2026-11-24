@@ -11,7 +11,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `CloseRequestIT`: the close over HTTP on the real database, two closes at the same time, and the security matrix of the endpoint. Two smoke checks through the gateway (`close` without a token → 401, for a non-member → 404).
 
 ### Changed
-- A closed request is final for the control room: `PATCH …/help-requests/{requestId}`, `accept-suggestion` and `acknowledge` answer `409` (spec D2, proposed for the team's review). `contracts/openapi.yaml`: `closeHelpRequest` implemented, `409` on the `PATCH`. Dated note in the API outline §4.1.
+- A closed request is final for the control room: `PATCH …/help-requests/{requestId}`, `accept-suggestion` and `acknowledge` answer `409` (spec D2, proposed for the team's review). It takes no AI result either: the triage worker skips it, and a result that arrives after the close is not written nor counted, so a closed request is not sent to the live list again. `contracts/openapi.yaml`: `closeHelpRequest` implemented, `409` on the `PATCH`. Dated note in the API outline §4.1.
 
 ## [Unreleased] · 2026-11-24 · Propose the event's team for the AI category (US-34 AC-2, #81, Bruno de Abreu Lopes)
 

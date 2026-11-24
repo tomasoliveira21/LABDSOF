@@ -282,6 +282,38 @@ class TriageServiceTest {
   }
 
   @Test
+  @DisplayName("US-30 AC-1 a closed request is not triaged, and a result after the close is not saved")
+  void closedRequest() {
+    var actor = new pt.isep.labdsof.reports.domain.Actor("miguel", null);
+    // Closed before the worker reads it: the model is not called
+    var early = submitted();
+    var closing = early.close(SUBMITTED.plusSeconds(1));
+    ports.saveDecision(closing.request(), actor, closing.changes());
+    assertThat(service().triage(EVENT, early.id()).outcome()).isEqualTo(Outcome.ALREADY_TRIAGED);
+    assertThat(model.descriptions).isEmpty();
+
+    // Closed while the model answered: the result is not saved, nor counted
+    var late = submitted();
+    var service = new TriageService(ports, new TriageModel() {
+      @Override
+      public boolean configured() {
+        return true;
+      }
+
+      @Override
+      public Object suggest(String description, Duration budget) {
+        var closed = stored(late).close(SUBMITTED.plusSeconds(2));
+        ports.saveDecision(closed.request(), actor, closed.changes());
+        return VALID;
+      }
+    }, circuit, metrics, clock);
+    assertThat(service.triage(EVENT, late.id()).outcome()).isEqualTo(Outcome.ALREADY_TRIAGED);
+    assertThat(stored(late).triage()).isEqualTo(TriageSuggestion.pending());
+    assertThat(stored(late).status()).isEqualTo(pt.isep.labdsof.reports.domain.HelpRequestStatus.Closed);
+    assertThat(metrics.counted).isEmpty();
+  }
+
+  @Test
   @DisplayName("229 AC-1 a triage written while the model answered is not overwritten")
   void concurrentWrite() {
     var request = submitted();
