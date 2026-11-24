@@ -2,6 +2,19 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-24 · Propose the event's team for the AI category (US-34 AC-2, #81, Bruno de Abreu Lopes)
+
+**Why:** the last acceptance criterion of US-34 (#81) and #149 AC-3: when the AI suggests a category, the control room sees the event's team that handles it as the default team; the AI never chooses the team (meeting of 15 November 2026, decision 1). Spec: [`Docs/specs/US-34-default-team.md`](Docs/specs/US-34-default-team.md).
+
+### Added
+- `defaultTeamId` in every control-room read and decision (`GET …/help-requests`, `GET …/help-requests/{requestId}`, `POST …/accept-suggestion`, `POST …/acknowledge`, `PATCH …/help-requests/{requestId}`): the only team of the event, not deleted, with `HelpRequests.Respond`, that handles the category a member set, else the suggested one. None or several give `null` and the operator routes by hand (the tie-break is an open product decision; spec D2 proposed for the team's review).
+- Derived on each read from Reports' current copy of the teams (`TeamChanged`), not stored, so a team change after the suggestion shows on the next read; no call to Events and nothing read from the participant's text.
+- Flyway `V6`: `team_copy.changed_at`. A poll of the live list after a team change answers every open request again, so the default team on screen follows the change.
+- `DefaultTeamIT`: two events, no team, two teams, a team losing `Respond`, a new team and a deleted team after the suggestion, accept and change of the category, a description naming a team.
+
+### Changed
+- `contracts/openapi.yaml`: `defaultTeamId` described, and `acceptTriageSuggestion` no longer says it is planned. Dated notes in the API outline §4.1, ADR-005 and the local AI decisions (routing scenarios).
+
 ## [Unreleased] · 2026-11-23 · Follow my help request (US-24, #72, Bruno de Abreu Lopes)
 
 **Why:** a participant who asked for help needs to know whether help is coming (US-24). Spec: [`Docs/specs/US-24-follow-help-request.md`](Docs/specs/US-24-follow-help-request.md).

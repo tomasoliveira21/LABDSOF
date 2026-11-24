@@ -2,6 +2,10 @@ package pt.isep.labdsof.reports.adapters.out.persistence;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -36,10 +40,12 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
 
   private final JdbcClient jdbc;
   private final JsonMapper json;
+  private final Clock clock;
 
-  JdbcLocalCopies(JdbcClient jdbc, JsonMapper json) {
+  JdbcLocalCopies(JdbcClient jdbc, JsonMapper json, Clock clock) {
     this.jdbc = jdbc;
     this.json = json;
+    this.clock = clock;
   }
 
   @Override
@@ -71,6 +77,18 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
   }
 
   @Override
+  public boolean teamsChangedSince(UUID eventId, Instant since) {
+    return jdbc.sql("SELECT EXISTS (SELECT 1 FROM team_copy WHERE event_id = :eventId AND changed_at > :since)")
+        .param(EVENT_ID, eventId).param("since", Timestamp.from(since)).query(Boolean.class).single();
+  }
+
+  @Override
+  public List<Team> teams(UUID eventId) {
+    return jdbc.sql("SELECT * FROM team_copy WHERE event_id = :eventId").param(EVENT_ID, eventId).query(this::team)
+        .list();
+  }
+
+  @Override
   public boolean upsertIfNewer(Membership m) {
     return jdbc.sql("""
         INSERT INTO membership_copy (event_id, user_id, role, status, team_ids, version)
@@ -96,12 +114,13 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
         .toList();
     // A team never moves to another event: an update for another event_id changes nothing.
     var applied = jdbc.sql("""
-        INSERT INTO team_copy (team_id, event_id, name, permissions, handled_categories, deleted, version)
-        VALUES (:teamId, :eventId, :name, CAST(:permissions AS jsonb), :categories, :deleted, :version)
+        INSERT INTO team_copy (team_id, event_id, name, permissions, handled_categories, deleted, version,
+            changed_at)
+        VALUES (:teamId, :eventId, :name, CAST(:permissions AS jsonb), :categories, :deleted, :version, :changedAt)
         ON CONFLICT (team_id) DO UPDATE
           SET name = excluded.name, permissions = excluded.permissions,
               handled_categories = excluded.handled_categories, deleted = excluded.deleted,
-              version = excluded.version
+              version = excluded.version, changed_at = excluded.changed_at
           WHERE team_copy.version < excluded.version AND team_copy.event_id = excluded.event_id
         """)
         .param("teamId", t.teamId())
@@ -111,6 +130,8 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
         .param("categories", t.handledCategories().stream().map(Enum::name).sorted().toArray(String[]::new))
         .param("deleted", t.deleted())
         .param(VERSION, t.version())
+        // The application's clock, as help_request.updated_at, so a poll's updatedSince compares the same clock
+        .param("changedAt", Timestamp.from(clock.instant().truncatedTo(ChronoUnit.MICROS)))
         .update() == 1;
     if (!applied) {
       var savedEvent = jdbc.sql("SELECT event_id FROM team_copy WHERE team_id = :teamId")
