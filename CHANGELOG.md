@@ -15,6 +15,17 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `contracts/openapi.yaml`: `defaultTeamId` described, and `acceptTriageSuggestion` no longer says it is planned. Dated notes in the API outline §4.1, ADR-005 and the local AI decisions (routing scenarios).
 
+## [Unreleased] · 2026-11-23 · Follow my help request (US-24, #72, Bruno de Abreu Lopes)
+
+**Why:** a participant who asked for help needs to know whether help is coming (US-24). Spec: [`Docs/specs/US-24-follow-help-request.md`](Docs/specs/US-24-follow-help-request.md).
+
+### Added
+- `GET /api/v1/events/{eventId}/help-requests?mine=true&updatedSince=`: any active member gets their own requests of the event in the participant view (description, status, time of the last change), `Closed` ones included; later polls return only what changed, with the same 5 s overlap as the control room's list. A member with `HelpRequests.Triage` asking `mine` also gets only their own. Recommended polling: every 3 s while the request screen is open, so a status change shows within 5 s.
+- Acceptance tests for the participant view of one request (`GET …/help-requests/{requestId}`, already served since #194).
+
+### Changed
+- [`openapi.yaml`](backend/reports/contracts/openapi.yaml) of Reports: `mine` is implemented; the list answers the control-room shape without it and the participant shape with it. The participant view says what `updatedAt` means (any change, spec D3) and which page labels map to the statuses.
+
 ## [Unreleased] · 2026-11-22 · Import of the external transport source (US-40, #84, António Guerra)
 
 **Why:** participants need the buses near the venue from the Porto Digital source, imported regularly and validated (assignment §6.5, ADR-008). Spec: [`Docs/specs/US-40-import-transport-source.md`](Docs/specs/US-40-import-transport-source.md). Built on #193.
@@ -88,6 +99,21 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - **No product document said whether a suspended or closed event may still have its teams changed.** This PR refuses it with `409`, reading US-09 (*cannot be used*) and US-10 (edits on *a draft or published event*); reading the teams is unchanged. **Confirmed on 21 November 2026** by the owner of the story; to be noted in the next meeting record.
 - `uniqueItems: true` on `handledCategories` was tried and dropped: openapi-generator 7.27 then reads the array into a `Set` and deduplicates a repeated category silently instead of refusing it (spec D7).
 - The CI smoke test is not extended: nothing can create an event until US-06 (#61), so no team can be created through the gateway yet.
+
+## [Unreleased] · 2026-11-22 · Set priority and status, with history (US-28, #75, Bruno de Abreu Lopes)
+
+**Why:** US-28 (#75): every change the control room makes to a request is recorded with who, when, the old and the new value (SC9, NFR-16), and the control room can read that history and mark a request as seen. Spec: [`Docs/specs/US-28-priority-status-history.md`](Docs/specs/US-28-priority-status-history.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/acknowledge` (`HelpRequests.Triage`): `Submitted → Seen` (decision 6 of 15 November 2026), recorded as a `status` history entry; `409` when the request is no longer `Submitted`.
+- `GET /api/v1/events/{eventId}/help-requests/{requestId}/history` (`HelpRequests.Triage`): every recorded change, oldest first, with `actorUserId`, `actorName` and `changedAt`.
+- Flyway `V5`: column `help_request_change.actor_name`, the token's `name` claim copied when the change is recorded (also for the `PATCH` and `accept-suggestion` of US-35).
+- `ChangeHistoryIT`: both endpoints with the security matrix, two acknowledges at once, and the full history after an accept, a change and an acknowledge; `infra/tests/reports_smoke.py`: both endpoints through the gateway.
+
+### Changed
+- `contracts/openapi.yaml`: `acknowledgeHelpRequest` and `getHelpRequestHistory` are implemented; the history entry has `actorName`. The `PATCH` keeps the category and the priority only: the status changes through `acknowledge` and `close` (spec D1), which corrects *US-28 adds the status* written by US-35.
+- The 409 of a triage or status conflict is one `RequestConflictException`. Decisions D5 (the copied name) and D6 (only member changes are history entries) are accepted with the approval of this PR (22 November 2026) and recorded in [`Docs/Meetings/2026-11-22-help-request-history-names.md`](Docs/Meetings/2026-11-22-help-request-history-names.md).
+- After the review of #245: the [security and privacy assessment](Docs/Technical/security-and-privacy-assessment.md) says where Reports keeps the name (§3, M-7) and that account deletion does not remove it yet (§7, §12); `GET …/history` answers with its own view record; the contract no longer promises system entries and says a `409` on acknowledge is benign for a retry.
 
 ## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
 

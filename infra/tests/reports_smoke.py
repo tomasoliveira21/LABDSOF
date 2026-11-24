@@ -64,6 +64,10 @@ def main(env_path: str) -> int:
               "Reports accepts the Keycloak token and answers 404 to a user who is not a member of the event")
     idp.check(call(gateway, f"{path}/{uuid.uuid4()}", token) == 404,
               "Reports reads its database and does not reveal another event's request (404)")
+    # US-24 (#72): the participant's own requests go through the gateway with the query string
+    idp.check(call(gateway, f"{path}?mine=true", None) == 401, "following my requests needs a token (401)")
+    idp.check(call(gateway, f"{path}?mine=true", token) == 404,
+              "following my requests answers 404 to a user who is not a member of the event")
     # US-36 (#83): the triage status of scenario D1, on the default stack, which has no `ai` service
     status = path.replace("/help-requests", "/triage-status")
     idp.check(call(gateway, status, None) == 401, "the triage status needs a token (401)")
@@ -77,6 +81,12 @@ def main(env_path: str) -> int:
               "setting the category or priority answers 404 to a user who is not a member of the event")
     idp.check(call(gateway, f"{request}/accept-suggestion", token, {}) == 404,
               "accepting a suggestion answers 404 to a user who is not a member of the event")
+    # US-28 (#75): the acknowledge and the change history go through the gateway
+    idp.check(call(gateway, f"{request}/acknowledge", None, {}) == 401, "acknowledging needs a token (401)")
+    idp.check(call(gateway, f"{request}/acknowledge", token, {}) == 404,
+              "acknowledging answers 404 to a user who is not a member of the event")
+    idp.check(call(gateway, f"{request}/history", token) == 404,
+              "the change history answers 404 to a user who is not a member of the event")
 
     for failure in idp.failures:
         print(f"::error::{failure}")

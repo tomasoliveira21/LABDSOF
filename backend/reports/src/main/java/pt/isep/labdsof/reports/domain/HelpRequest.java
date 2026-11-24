@@ -91,7 +91,7 @@ public record HelpRequest(
    */
   public Decision acceptSuggestion(Instant now) {
     if (triage.state() != TriageState.Suggested) {
-      throw new TriageConflictException("There is no suggestion to accept");
+      throw new RequestConflictException("There is no suggestion to accept");
     }
     return decide(triage.suggestedCategory(), triage.suggestedPriority(), triage.decided(TriageState.Accepted),
         TriageState.Suggested, now);
@@ -113,6 +113,20 @@ public record HelpRequest(
     }
     var seen = triage.asSeenAt(submittedAt, now);
     return decide(mergedCategory, mergedPriority, seen.decided(TriageState.Changed), seen.state(), now);
+  }
+
+  /**
+   * The control room has seen the request (US-28, spec D2; decision 6): Submitted becomes Seen, whatever the triage;
+   * any other status is a conflict.
+   */
+  public Decision acknowledge(Instant now) {
+    if (status != HelpRequestStatus.Submitted) {
+      throw new RequestConflictException("The request is no longer Submitted");
+    }
+    return new Decision(new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,
+        priority, HelpRequestStatus.Seen, defaultTeamId, routedTeamId, triage, submittedAt,
+        now.truncatedTo(ChronoUnit.MICROS), version + 1),
+        List.of(new HelpRequestChange("status", status.name(), HelpRequestStatus.Seen.name())));
   }
 
   private Decision decide(Category newCategory, Priority newPriority, TriageSuggestion newTriage, TriageState from,
