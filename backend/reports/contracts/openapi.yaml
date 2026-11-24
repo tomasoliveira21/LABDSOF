@@ -291,8 +291,7 @@ paths:
         Requires HelpRequests.Triage. The request's category and priority become the suggested ones and the
         triage becomes Accepted, recorded as the member's decision (category, priority and triage history
         entries). 409 when the triage is not Suggested: no suggestion yet, NotTriaged, or a member already
-        accepted or set the values (NFR-22). Planned: the default team follows from the category (US-34 #81
-        AC-2); until then defaultTeamId stays null.
+        accepted or set the values (NFR-22). The default team follows from the category (US-34 #81 AC-2).
       x-farol-status: implemented
       responses:
         '200':
@@ -697,7 +696,12 @@ components:
           type: string
           format: uuid
           nullable: true
-          description: The event's team that handles the category; null without a category or such a team.
+          description: >-
+            The event's team that handles the category and has HelpRequests.Respond (US-34 #81 AC-2): the
+            category a member set, else the AI's suggested one. Null without a category, with no such team, or
+            with several (the operator routes by hand). Read from the current copy of the event's teams, never
+            chosen by the AI and not stored, so a team change shows on the next read; a poll with updatedSince
+            lists a request again only when the request itself changed.
         routedTeamId:
           type: string
           format: uuid
