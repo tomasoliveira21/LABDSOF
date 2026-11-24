@@ -75,5 +75,12 @@ Decisions the documents leave open are marked **Proposed, for the team's review*
   - (3) a `PATCH` without category or priority on a closed request answered `409`, not `400`: the body is now checked first.
   - (4) the close test covered only `Pending`, `Suggested` and `Accepted`: `Changed` and a stored `NotTriaged` added.
 - **G5** smoke on a fresh stack (`down --volumes`, images built one by one, `up -d --wait`, every check step of the `ci` job, the observability profile included, `down --volumes`): 14 of 14 steps pass, with the two new close checks through the gateway. `smoke.sh` matched `ci.yml`.
-- **G6** guard: no blocking finding, no warning; test census 963 → 980 before the G8 fixes.
+- **G6** guard: no blocking finding, no warning; test census 963 → 983.
 - One unit run during the G8 fixes had `OllamaTriageModelTest` `timeout` red (one request seen instead of two) while the G5 stack was running on the same machine; it passed in the next run and in G1, and this PR does not touch that adapter.
+- **G1** (after the G8 fixes) `mvn -B -ntp -f backend/reports/pom.xml verify`: 153 unit tests, 229 integration tests, JaCoCo 98.0 % lines and 95.9 % branches (≥ 90 %), PIT 212 of 212 mutations killed on `domain` and `application` (≥ 80 %).
+- **G2** `CloseRequestIT`: real PostgreSQL and RabbitMQ (the Compose images, the production migrations, `setup.sh`); the two race tests hold real row locks and wait until the other calls are blocked on them in `pg_stat_activity`. No database or broker mock.
+- **G3** `CloseRequestIT`: every bad token → 401; a member without `HelpRequests.Triage` → 403; a non-member, a removed member, a member of another event, a valid token without `sub`, a request of another event or an unknown request → 404 with the same body as an unknown event; malformed IDs → 400; a body sent with the close is ignored.
+- **G4** `contracts/openapi.yaml`: `closeHelpRequest` implemented, `409` on the `PATCH`, the closed rule on `accept-suggestion`; `ContractIT` passes. No event schema changes.
+- **G5** repeated on the final code (the Reports image rebuilt): 14 of 14 steps pass.
+- **G7** `CHANGELOG.md`, the API outline §4.1 (dated note), this spec; `DocumentationIT` checks that every test named here exists (at least 15 names, AC-1 covered).
+- Not done, and not claimed: cancelling the open field task on a close (no field tasks before US-29, #76); the system close of a deleted user's requests (US-05); the backoffice page (what it needs is on #77). D2 waits for the team's review.
