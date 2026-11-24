@@ -431,7 +431,11 @@ class HelpRequestServiceTest {
 
   /** A request of the event, submitted at NOW, with this triage stored at NOW + 5 s. */
   HelpRequest stored(TriageSuggestion triage) {
-    var request = HelpRequest.submit(UUID.randomUUID(), EVENT, "ana", UUID.randomUUID(), "Friend fainted", POINT,
+    return stored(UUID.randomUUID(), triage);
+  }
+
+  HelpRequest stored(UUID id, TriageSuggestion triage) {
+    var request = HelpRequest.submit(id, EVENT, "ana", UUID.randomUUID(), "Friend fainted", POINT,
         NOW);
     ports.insertIfNew(request);
     if (!triage.equals(TriageSuggestion.pending())) {
@@ -688,6 +692,71 @@ class HelpRequestServiceTest {
     assertThat(saved.submittedAt()).isEqualTo(NOW.plusSeconds(7));
     assertThat(saved.updatedAt()).isEqualTo(NOW.plusSeconds(7));
     assertThat(ports.calls).containsExactly("lock ana", "count ana after " + NOW.plusSeconds(7).minus(Duration.ofMinutes(10)));
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 every control-room read and decision answers the default team")
+  void defaultTeamOnEveryControlRoomRead() {
+    var service = operatorService();
+    var nursing = UUID.randomUUID();
+    ports.upsertIfNewer(new Team(nursing, EVENT, "Nursing",
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(Category.Health), false, 1));
+    var security = UUID.randomUUID();
+    ports.upsertIfNewer(new Team(security, EVENT, "Security",
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(Category.Safety), false, 1));
+    member("ana", Role.RegularUser);
+    var request = stored(SUGGESTED);
+
+    assertThat(service.get(EVENT, "miguel", request.id()).request().defaultTeamId()).isEqualTo(nursing);
+    assertThat(service.list(EVENT, "miguel", null).items()).extracting(HelpRequest::defaultTeamId)
+        .containsExactly(nursing);
+    assertThat(service.list(EVENT, "miguel", NOW).items()).extracting(HelpRequest::defaultTeamId)
+        .containsExactly(nursing);
+    assertThat(service.change(EVENT, actor("miguel"), request.id(), Category.Safety, null).defaultTeamId())
+        .isEqualTo(security);
+    assertThat(service.acceptSuggestion(EVENT, actor("miguel"), stored(SUGGESTED).id()).defaultTeamId())
+        .isEqualTo(nursing);
+    // Nothing changed: the answer still carries the default team
+    assertThat(service.change(EVENT, actor("miguel"), request.id(), Category.Safety, null).defaultTeamId())
+        .isEqualTo(security);
+    // The acknowledge (US-28) answers the same control-room view
+    assertThat(service.acknowledge(EVENT, actor("miguel"), stored(SUGGESTED).id()).defaultTeamId())
+        .isEqualTo(nursing);
+    // The participant's own read is not the control room's, and the team is never stored
+    assertThat(service.get(EVENT, "ana", request.id()).request().defaultTeamId()).isNull();
+    assertThat(ports.find(EVENT, request.id()).orElseThrow().defaultTeamId()).isNull();
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 a poll after a team change lists the open requests again, with those that changed")
+  void pollAfterTeamChange() {
+    var service = operatorService();
+    // Fixed ids that a signed UUID.compareTo orders the other way round from the database (see below)
+    var quiet = stored(UUID.fromString("80000000-0000-4000-8000-000000000000"), SUGGESTED);
+    var since = NOW.plusSeconds(40);
+    // A request changed in the window (accepted at DECIDED), and one that did not change
+    var accepted = service.acceptSuggestion(EVENT, actor("miguel"),
+        stored(UUID.fromString("00000000-0000-4000-8000-000000000001"), SUGGESTED).id());
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactly(accepted.id());
+
+    ports.teamsChangedAt.put(EVENT, since);
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactly(accepted.id());
+    ports.teamsChangedAt.put(EVENT, since.plusNanos(1000));
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactlyInAnyOrder(quiet.id(), accepted.id());
+
+    // A request closed in the window is still sent, so the page drops it (US-26), and only once. It arrived
+    // before the open ones, so it comes first: the list stays in order of arrival, as the contract says
+    var c = stored(SUGGESTED);
+    var closed = new HelpRequest(c.id(), EVENT, c.requesterId(), c.clientRequestId(), c.description(), c.location(),
+        c.category(), c.priority(), HelpRequestStatus.Closed, null, null, c.triage(), NOW.minusSeconds(1), DECIDED,
+        c.version() + 1);
+    ports.requests.put(c.id(), closed);
+    // The two that arrived at the same time follow by id, compared as the database compares a uuid (by its bytes)
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactly(closed.id(), accepted.id(), quiet.id());
   }
 
   // US-28: acknowledge and history (spec US-28 D2 to D8)

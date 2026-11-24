@@ -87,6 +87,15 @@ class DocumentationIT {
   }
 
   @Test
+  @DisplayName("US-34 AC-2 the changelog has the default team, and every test its spec names exists")
+  void us34DefaultTeamSpecNamesRealTests() throws Exception {
+    assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
+        .contains("Propose the event's team for the AI category (US-34 AC-2, #81, Bruno de Abreu Lopes)");
+    // Only AC-2 here (AC-1 and AC-3 were delivered under #229's names); at least 15 AC-2 names, each a real test
+    specNamesRealTests(ROOT.resolve("Docs/specs/US-34-default-team.md"), "US-34", 15, 0);
+  }
+
+  @Test
   @DisplayName("US-24 AC-1 the changelog has the story, and every test its spec names exists")
   void us24SpecNamesRealTests() throws Exception {
     assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))

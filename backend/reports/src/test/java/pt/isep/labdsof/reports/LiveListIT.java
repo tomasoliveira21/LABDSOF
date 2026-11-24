@@ -40,6 +40,9 @@ class LiveListIT extends IntegrationTest {
     copies.upsertIfNewer(new Team(team, event, "Control room",
         List.of(new Team.TeamPermission(Permission.HELP_REQUESTS_TRIAGE, Set.of())), Set.of(Category.Health),
         false, 1));
+    // The team existed before the requests: a team change would list every open request again (US-34 D6)
+    jdbc.sql("UPDATE team_copy SET changed_at = changed_at - interval '1 hour' WHERE team_id = :team")
+        .param("team", team).update();
     member(event, participant, Role.RegularUser);
     member(event, operator, Role.RegularUser, team);
   }

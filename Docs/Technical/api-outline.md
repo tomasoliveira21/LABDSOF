@@ -222,7 +222,7 @@ See [FieldTaskStatus](domain-model.md#fieldtaskstatus) for valid transitions by 
   "status": "Submitted",               // Submitted | Seen | OnTheWay | Resolved | Closed
   "submittedAt": "2027-05-08T23:14:05Z",
   "updatedAt": "2027-05-08T23:14:05Z",
-  "defaultTeamId": "tm-03…",           // the event's team that handles the category (US-29); null without category or without such a team
+  "defaultTeamId": "tm-03…",           // the event's only team with HelpRequests.Respond for the category (a member's, else the suggested one; #81); null without category, with no such team or with several
   "routedTeamId": null,
   "triage": {
     "state": "Suggested",              // Pending | Suggested | NotTriaged | Accepted | Changed
@@ -239,6 +239,7 @@ See [FieldTaskStatus](domain-model.md#fieldtaskstatus) for valid transitions by 
 - The request is saved and shown at once, with `triage.state: Pending` and no category or priority. `NotTriaged` is not stored: a read returns it when the request is still `Pending` 30 s after `submittedAt` (scenario D1, US-36; #177), so a lost or dead-lettered `HelpRequestSubmitted` needs no sweeper job, and a suggestion that arrives later is discarded. The control room then sets the category and priority by hand. A suggestion never overwrites a value a member already set (NFR-22).
 - *21 November 2026 (#82, US-35):* `accept-suggestion` and the category and priority of the `PATCH` are served. A member's value makes the triage `Changed` from any state, and each changed field is written as a history entry (`category`, `priority`, `triage`) with who and when, which `GET …/history` (US-28) will return. Until #81 AC-2, `defaultTeamId` stays null after an accept ([spec US-35](../specs/US-35-accept-or-change-suggestion.md)).
 - *22 November 2026 (#75, US-28):* `acknowledge` (`Submitted → Seen`) and `GET …/history` are served. The `PATCH` keeps `{ category, priority }`: the status changes only through the actions of decision 6 (`acknowledge`, `close`). Each history entry carries `actorUserId` and `actorName`, the token's `name` copied when the change is recorded, the *copied display name* that `UserDeleted` removes (§7.4). Only member changes are entries; the AI's suggestion is not ([spec US-28](../specs/US-28-priority-status-history.md) D1, D5, D6).
+- *24 November 2026 (#81, US-34 AC-2):* every control-room read and decision answers `defaultTeamId`: the only team of the event, not deleted, with `HelpRequests.Respond`, that handles the category (a member's, else the suggested one); none or several give `null` and the operator routes by hand. It is derived from Reports' current copy of the teams (`TeamChanged`) on each read, not stored ([spec](../specs/US-34-default-team.md)). Refusing another event's or an ineligible team when a member routes is US-29.
 - The status set is the one above for every document (#177, decided on 15 November 2026): `Submitted → Seen → OnTheWay → Resolved → Closed`; the triage has its own state, so there is no *Triaged* or *Dispatched* status. Routing (US-29) creates a field task and keeps the status.
 
 **A field task:** `GET /events/{eventId}/field-tasks?updatedSince=`

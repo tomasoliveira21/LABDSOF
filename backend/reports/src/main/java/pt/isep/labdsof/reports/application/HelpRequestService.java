@@ -4,8 +4,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,7 +28,8 @@ import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
  * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), the control
- * room's triage decisions (US-35), the acknowledge and the change history (US-28).
+ * room's triage decisions (US-35), the acknowledge and the change history (US-28). The control room's reads and
+ * decisions answer the default team, derived from the current copy of the event's teams (spec US-34 AC-2, D4).
  */
 @Service
 public class HelpRequestService {
@@ -110,7 +114,7 @@ public class HelpRequestService {
     var request = helpRequests.find(eventId, requestId).orElseThrow(NotFoundException::new)
         .asSeenAt(clock.instant());
     if (access.has(Permission.HELP_REQUESTS_TRIAGE)) {
-      return new Read(request, true);
+      return new Read(request.withDefaultTeam(copies.teams(eventId)), true);
     }
     if (request.requesterId().equals(userId)) {
       return new Read(request, false);
@@ -127,11 +131,33 @@ public class HelpRequestService {
     triageAccess(eventId, userId);
     // To the microsecond, as the database keeps times, so the next updatedSince compares exactly
     var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
-    var items = since == null ? helpRequests.open(eventId)
-        : helpRequests.candidatesSince(eventId, since).stream().filter(r -> r.changedAfter(since, now)).toList();
+    var items = since == null ? helpRequests.open(eventId) : changes(eventId, since, now);
     // Limit: a write slower than POLL_OVERLAP between updated_at and commit is missed; a commit-ordered
     // cursor (snapshot xmin) if one ever is
-    return new Changes(items.stream().map(r -> r.asSeenAt(now)).toList(), now.minus(POLL_OVERLAP));
+    var teams = copies.teams(eventId);
+    return new Changes(items.stream().map(r -> r.asSeenAt(now).withDefaultTeam(teams)).toList(),
+        now.minus(POLL_OVERLAP));
+  }
+
+  /** In order of arrival, as the database lists them: {@code ORDER BY submitted_at, id}. */
+  // The id as text: Postgres orders a uuid by its bytes, which UUID.compareTo (signed longs) does not
+  private static final Comparator<HelpRequest> ARRIVAL =
+      Comparator.comparing(HelpRequest::submittedAt).thenComparing(r -> r.id().toString());
+
+  /**
+   * The requests changed after {@code since}; after a team change, every open request too, so the default team of a
+   * request already listed is current (spec US-34-default-team D6). Still in order of arrival, as the contract says.
+   */
+  private List<HelpRequest> changes(UUID eventId, Instant since, Instant now) {
+    var changed = helpRequests.candidatesSince(eventId, since).stream().filter(r -> r.changedAfter(since, now))
+        .toList();
+    if (!copies.teamsChangedSince(eventId, since)) {
+      return changed;
+    }
+    var open = helpRequests.open(eventId);
+    var openIds = open.stream().map(HelpRequest::id).collect(Collectors.toSet());
+    return Stream.concat(open.stream(), changed.stream().filter(r -> !openIds.contains(r.id()))).sorted(ARRIVAL)
+        .toList();
   }
 
   /**
@@ -187,7 +213,8 @@ public class HelpRequestService {
     var decision = request.acknowledge(now);
     helpRequests.saveDecision(decision.request(), actor, decision.changes());
     log.info("Status of request {}: {} -> {}", request.id(), request.status(), decision.request().status());
-    return decision.request().asSeenAt(now);
+    // Same ControlRoomView as the list and the other decisions, so it carries the default team too (US-34 D4)
+    return decision.request().asSeenAt(now).withDefaultTeam(copies.teams(eventId));
   }
 
   /** Every recorded change of a request of the event, oldest first; only HelpRequests.Triage (US-28 D4, D7). */
@@ -212,7 +239,7 @@ public class HelpRequestService {
       }
       log.info("Triage decision on request {}: {} -> {}", before.id(), before.asSeenAt(now).triage().state(), state);
     }
-    return after.asSeenAt(now);
+    return after.asSeenAt(now).withDefaultTeam(copies.teams(after.eventId()));
   }
 
   /** After the commit, so a decision rolled back is never counted (G8 review); at once outside a transaction. */
