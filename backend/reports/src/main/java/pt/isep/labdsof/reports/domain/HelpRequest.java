@@ -90,6 +90,7 @@ public record HelpRequest(
    * triage becomes Accepted and the suggestion stays visible. Only a Suggested triage can be accepted.
    */
   public Decision acceptSuggestion(Instant now) {
+    requireOpen();
     if (triage.state() != TriageState.Suggested) {
       throw new RequestConflictException("There is no suggestion to accept");
     }
@@ -102,6 +103,7 @@ public record HelpRequest(
    * becomes Changed, keeping the suggestion or the NotTriaged reason as read at {@code now}; a null is not sent.
    */
   public Decision change(Category newCategory, Priority newPriority, Instant now) {
+    requireOpen();
     if (newCategory == null && newPriority == null) {
       throw new InvalidHelpRequestException("category or priority is required");
     }
@@ -123,10 +125,28 @@ public record HelpRequest(
     if (status != HelpRequestStatus.Submitted) {
       throw new RequestConflictException("The request is no longer Submitted");
     }
+    return moveTo(HelpRequestStatus.Seen, now);
+  }
+
+  /**
+   * The control room closes the request (US-30, spec D1; decision 6): any other status becomes Closed, whatever the
+   * triage. Closed is final (D2).
+   */
+  public Decision close(Instant now) {
+    requireOpen();
+    return moveTo(HelpRequestStatus.Closed, now);
+  }
+
+  private void requireOpen() {
+    if (status == HelpRequestStatus.Closed) {
+      throw new RequestConflictException("The request is closed");
+    }
+  }
+
+  private Decision moveTo(HelpRequestStatus to, Instant now) {
     return new Decision(new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,
-        priority, HelpRequestStatus.Seen, defaultTeamId, routedTeamId, triage, submittedAt,
-        now.truncatedTo(ChronoUnit.MICROS), version + 1),
-        List.of(new HelpRequestChange("status", status.name(), HelpRequestStatus.Seen.name())));
+        priority, to, defaultTeamId, routedTeamId, triage, submittedAt, now.truncatedTo(ChronoUnit.MICROS),
+        version + 1), List.of(new HelpRequestChange("status", status.name(), to.name())));
   }
 
   private Decision decide(Category newCategory, Priority newPriority, TriageSuggestion newTriage, TriageState from,
