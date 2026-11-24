@@ -76,7 +76,7 @@ The gates of [#194](194-reports-postgres-outbox.md) §2 for `backend/reports`, u
 - **G3** No new endpoint. The new `429`: its body is `application/problem+json`, nothing is saved and nothing reaches the outbox; membership is checked first, so a non-member learns nothing from it. The location rows of AC-3 cover the owner, another participant, a responding team and the control room.
 - **G4** `contracts/openapi.yaml`: `submitHelpRequest` says Reports answers `429`, and `TooManyRequests` has its body and `Retry-After` (minimum 1). `ContractIT` passes.
 - **G5** smoke on a fresh stack: 14 of 14 steps pass (run again after the compose change of the G8 fixes).
-- **G6** guard: no blocking finding, test census 910 → 925, no warning.
+- **G6** guard: no blocking finding, test census 910 → 926. One warning: `infra/.env.example` is outside the owned paths; it gets `FAROL_HELPREQUESTS_LIMIT=5` because `ComposeConfigIT` requires every variable that Reports' Compose service uses to be in it (the G8 fix above).
 - **G7** CHANGELOG entry; the record of 24 November 2026 (listed in `Docs/README.md`); dated notes in ADR-013 and the evaluation README; the API outline §4 and the assessment's T15; `DocumentationIT` checks this spec's test names, the ADR note, the record and the production values.
 - **G8 independent review** (`code-review` at `high` on `d517d76...HEAD`), 5 findings:
   - Important, fixed test first: the request's time was read before the account lock, so a submission that waited was stamped too early, and with a slow holder it could commit with an `updated_at` older than the live list's next cursor (US-26 D3). The lock now comes first (D5).
