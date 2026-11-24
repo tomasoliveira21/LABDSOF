@@ -112,6 +112,19 @@ public class HelpRequestService {
     return new Changes(items.stream().map(r -> r.asSeenAt(now)).toList(), now.minus(POLL_OVERLAP));
   }
 
+  /**
+   * The caller's own requests (US-24): every one on the first load ({@code since} null), Closed ones included,
+   * then those changed after {@code since}. Any active member; a non-member gets 404 (spec US-24 D1, D2).
+   */
+  @Transactional(readOnly = true)
+  public Changes mine(UUID eventId, String userId, Instant since) {
+    access(eventId, userId);
+    var now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+    var items = helpRequests.ofRequester(eventId, userId).stream()
+        .filter(r -> since == null || r.updatedAt().isAfter(since)).toList();
+    return new Changes(items, now.minus(POLL_OVERLAP));
+  }
+
   /** The control room of the event only: HelpRequests.Triage (403); a non-member gets 404 (US-26, US-36 D5). */
   @Transactional(readOnly = true)
   public void requireTriage(UUID eventId, String userId) {

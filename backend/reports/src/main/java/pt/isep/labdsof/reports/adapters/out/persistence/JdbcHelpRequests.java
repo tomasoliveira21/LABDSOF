@@ -34,6 +34,7 @@ class JdbcHelpRequests implements HelpRequests {
 
   private static final String ARRIVAL_ORDER = " ORDER BY r.submitted_at, r.id";
   private static final String EVENT_ID = "eventId";
+  private static final String REQUESTER_ID = "requesterId";
   private static final String CATEGORY = "category";
   private static final String PRIORITY = "priority";
   private static final String TRIAGE = "triage";
@@ -57,7 +58,7 @@ class JdbcHelpRequests implements HelpRequests {
         """)
         .param("id", r.id())
         .param(EVENT_ID, r.eventId())
-        .param("requesterId", r.requesterId())
+        .param(REQUESTER_ID, r.requesterId())
         .param("clientRequestId", r.clientRequestId())
         .param("description", r.description())
         .param("mapVersion", r.location().mapVersion())
@@ -110,7 +111,7 @@ class JdbcHelpRequests implements HelpRequests {
            AND r.client_request_id = :clientRequestId
         """)
         .param(EVENT_ID, eventId)
-        .param("requesterId", requesterId)
+        .param(REQUESTER_ID, requesterId)
         .param("clientRequestId", clientRequestId)
         .query(JdbcHelpRequests::map)
         .optional();
@@ -120,6 +121,16 @@ class JdbcHelpRequests implements HelpRequests {
   public List<HelpRequest> open(UUID eventId) {
     return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.status <> 'Closed'" + ARRIVAL_ORDER)
         .param(EVENT_ID, eventId)
+        .query(JdbcHelpRequests::map)
+        .list();
+  }
+
+  @Override
+  public List<HelpRequest> ofRequester(UUID eventId, String requesterId) {
+    // Served by the unique index (event_id, requester_id, client_request_id)
+    return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.requester_id = :requesterId" + ARRIVAL_ORDER)
+        .param(EVENT_ID, eventId)
+        .param(REQUESTER_ID, requesterId)
         .query(JdbcHelpRequests::map)
         .list();
   }

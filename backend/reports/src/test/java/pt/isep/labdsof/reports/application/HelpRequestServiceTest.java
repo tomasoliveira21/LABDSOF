@@ -147,6 +147,11 @@ class HelpRequestServiceTest {
       }
 
       @Override
+      public List<HelpRequest> ofRequester(UUID eventId, String requesterId) {
+        return List.of();
+      }
+
+      @Override
       public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
         return List.of();
       }
@@ -300,6 +305,70 @@ class HelpRequestServiceTest {
     assertThatThrownBy(() -> service.list(EVENT, "ana", null)).isInstanceOf(ForbiddenException.class);
     assertThatThrownBy(() -> service.list(EVENT, "nobody", null))
         .isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("US-24 AC-1 mine lists my requests and later polls list what changed")
+  void mine() {
+    member("ana", Role.RegularUser);
+    member("rui", Role.RegularUser);
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(elsewhere, "ana", Role.RegularUser, Status.Active, Set.of(), 1));
+    var second = submitAt(NOW.plusSeconds(2), "second");
+    var first = submitAt(NOW, "first");
+    var closed = submitAt(NOW.plusSeconds(1), "closed");
+    close(closed, NOW.plusSeconds(3));
+    service().submit(EVENT, "rui", UUID.randomUUID(), "rui's", POINT);
+    service().submit(elsewhere, "ana", UUID.randomUUID(), "other event", POINT);
+
+    clock = Clock.fixed(NOW.plusSeconds(10), ZoneOffset.UTC);
+    var load = service().mine(EVENT, "ana", null);
+    // Closed ones stay: the participant sees Closed (D2)
+    assertThat(load.items()).extracting(HelpRequest::id).containsExactly(first.id(), closed.id(), second.id());
+    assertThat(load.serverTime()).isEqualTo(NOW.plusSeconds(5));
+
+    assertThat(service().mine(EVENT, "ana", NOW.plusSeconds(1)).items()).extracting(HelpRequest::description)
+        .containsExactly("closed", "second");
+    // Strictly after updatedSince
+    assertThat(service().mine(EVENT, "ana", NOW.plusSeconds(2)).items()).extracting(HelpRequest::description)
+        .containsExactly("closed");
+
+    // The triage deadline changes nothing the participant sees, so nothing comes back (D2)
+    clock = Clock.fixed(NOW.plusSeconds(31), ZoneOffset.UTC);
+    assertThat(service().mine(EVENT, "ana", NOW.plusSeconds(26)).items()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-24 AC-1 a triage member asking mine gets only their own requests")
+  void mineForTriage() {
+    member("ana", Role.RegularUser);
+    member("rui", Role.RegularUser, CONTROL_ROOM);
+    member("sofia", Role.EventAdmin);
+    controlRoomTeam();
+    submitAt(NOW, "ana's");
+    var rui = service().submit(EVENT, "rui", UUID.randomUUID(), "rui's", POINT).request();
+
+    assertThat(service().mine(EVENT, "rui", null).items()).containsExactly(rui);
+    assertThat(service().mine(EVENT, "sofia", null).items()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-24 AC-1 a non-member asking mine gets 404")
+  void mineNotMember() {
+    member("ana", Role.RegularUser);
+    submitAt(NOW, "help");
+    ports.upsertIfNewer(new Membership(EVENT, "gone", Role.RegularUser, Status.Removed, Set.of(), 1));
+    var service = service();
+    assertThatThrownBy(() -> service.mine(EVENT, "nobody", null)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.mine(EVENT, "gone", null)).isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("US-24 AC-2 serverTime overlaps the polls by 5 s, to the microsecond")
+  void mineServerTime() {
+    member("ana", Role.RegularUser);
+    clock = Clock.fixed(NOW.plusNanos(1_700), ZoneOffset.UTC);
+    assertThat(service().mine(EVENT, "ana", null).serverTime()).isEqualTo(NOW.plusNanos(1_000).minusSeconds(5));
   }
 
   @Test

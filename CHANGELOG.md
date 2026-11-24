@@ -2,6 +2,17 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-23 · Follow my help request (US-24, #72, Bruno de Abreu Lopes)
+
+**Why:** a participant who asked for help needs to know whether help is coming (US-24). Spec: [`Docs/specs/US-24-follow-help-request.md`](Docs/specs/US-24-follow-help-request.md).
+
+### Added
+- `GET /api/v1/events/{eventId}/help-requests?mine=true&updatedSince=`: any active member gets their own requests of the event in the participant view (description, status, time of the last change), `Closed` ones included; later polls return only what changed, with the same 5 s overlap as the control room's list. A member with `HelpRequests.Triage` asking `mine` also gets only their own. Recommended polling: every 3 s while the request screen is open, so a status change shows within 5 s.
+- Acceptance tests for the participant view of one request (`GET …/help-requests/{requestId}`, already served since #194).
+
+### Changed
+- [`openapi.yaml`](backend/reports/contracts/openapi.yaml) of Reports: `mine` is implemented; the list answers the control-room shape without it and the participant shape with it. The participant view says what `updatedAt` means (any change, spec D3) and which page labels map to the statuses.
+
 ## [Unreleased] · 2026-11-22 · Import of the external transport source (US-40, #84, António Guerra)
 
 **Why:** participants need the buses near the venue from the Porto Digital source, imported regularly and validated (assignment §6.5, ADR-008). Spec: [`Docs/specs/US-40-import-transport-source.md`](Docs/specs/US-40-import-transport-source.md). Built on #193.
