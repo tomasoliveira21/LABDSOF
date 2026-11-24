@@ -32,6 +32,7 @@ class JdbcHelpRequests implements HelpRequests {
 
   private static final String ARRIVAL_ORDER = " ORDER BY r.submitted_at, r.id";
   private static final String EVENT_ID = "eventId";
+  private static final String REQUESTER_ID = "requesterId";
   private static final String CATEGORY = "category";
   private static final String PRIORITY = "priority";
 
@@ -53,7 +54,7 @@ class JdbcHelpRequests implements HelpRequests {
         """)
         .param("id", r.id())
         .param(EVENT_ID, r.eventId())
-        .param("requesterId", r.requesterId())
+        .param(REQUESTER_ID, r.requesterId())
         .param("clientRequestId", r.clientRequestId())
         .param("description", r.description())
         .param("mapVersion", r.location().mapVersion())
@@ -101,7 +102,7 @@ class JdbcHelpRequests implements HelpRequests {
   @Override
   public void lockRequester(String requesterId) {
     // A lock per account, released at the end of the submit transaction (spec US-23 D5)
-    jdbc.sql("SELECT pg_advisory_xact_lock(hashtextextended(:requesterId, 0))").param("requesterId", requesterId)
+    jdbc.sql("SELECT pg_advisory_xact_lock(hashtextextended(:requesterId, 0))").param(REQUESTER_ID, requesterId)
         .query().singleRow();
   }
 
@@ -109,7 +110,7 @@ class JdbcHelpRequests implements HelpRequests {
   public List<Instant> submittedSince(String requesterId, Instant from) {
     // ponytail: no index on requester_id, a scan of the help requests; add one if the k6 runs (#43) show it
     return jdbc.sql("SELECT submitted_at FROM help_request WHERE requester_id = :requesterId AND submitted_at > :from")
-        .param("requesterId", requesterId)
+        .param(REQUESTER_ID, requesterId)
         .param("from", Timestamp.from(from))
         .query((rs, row) -> rs.getTimestamp(1).toInstant())
         .list();
@@ -123,7 +124,7 @@ class JdbcHelpRequests implements HelpRequests {
            AND r.client_request_id = :clientRequestId
         """)
         .param(EVENT_ID, eventId)
-        .param("requesterId", requesterId)
+        .param(REQUESTER_ID, requesterId)
         .param("clientRequestId", clientRequestId)
         .query(JdbcHelpRequests::map)
         .optional();

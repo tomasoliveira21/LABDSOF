@@ -56,9 +56,11 @@ class SubmitLimitTest {
   @Test
   @DisplayName("US-23 AC-4 a limit below 1 or a window that is not positive is refused")
   void settings() {
-    assertThatThrownBy(() -> new SubmitLimit(0, Duration.ofMinutes(10))).isInstanceOf(IllegalArgumentException.class);
+    var tenMinutes = Duration.ofMinutes(10);
+    var negative = Duration.ofSeconds(-1);
+    assertThatThrownBy(() -> new SubmitLimit(0, tenMinutes)).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> new SubmitLimit(5, Duration.ZERO)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> new SubmitLimit(5, Duration.ofSeconds(-1))).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> new SubmitLimit(5, negative)).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> new SubmitLimit(5, null)).isInstanceOf(NullPointerException.class);
     var one = new SubmitLimit(1, Duration.ofSeconds(1));
     assertThat(one.retryAfter(List.of(NOW), NOW)).contains(Duration.ofSeconds(1));
