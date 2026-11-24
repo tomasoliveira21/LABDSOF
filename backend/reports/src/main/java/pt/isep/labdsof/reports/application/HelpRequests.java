@@ -17,6 +17,12 @@ public interface HelpRequests {
 
   Optional<HelpRequest> findByClientRequestId(UUID eventId, String requesterId, UUID clientRequestId);
 
+  /** Holds the account's submissions back until the transaction ends (spec US-23 D5). */
+  void lockRequester(String requesterId);
+
+  /** When the account's requests, in every event, were submitted, for those submitted after {@code from} (D2). */
+  List<Instant> submittedSince(String requesterId, Instant from);
+
   /** The event's requests that are not Closed, in order of arrival (submittedAt, then id). */
   List<HelpRequest> open(UUID eventId);
 
