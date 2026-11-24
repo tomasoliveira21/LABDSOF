@@ -104,7 +104,9 @@ class AskForHelpIT extends IntegrationTest {
   @Test
   @DisplayName("US-23 AC-3 only the control room and the EventAdmin see the location")
   void location() throws Exception {
-    String id = JsonPath.read(submit(participant).body(), "$.id");
+    var created = submit(participant);
+    assertThat(created.statusCode()).isEqualTo(201);
+    String id = JsonPath.read(created.body(), "$.id");
     var one = requests(event) + "/" + id;
 
     for (var reader : List.of(operator, admin)) {
@@ -172,9 +174,11 @@ class AskForHelpIT extends IntegrationTest {
   @DisplayName("US-23 AC-4 a retry of a saved request is answered at the limit")
   void retryAtTheLimit() throws Exception {
     var first = UUID.randomUUID();
-    String id = JsonPath.read(submit(event, participant, first).body(), "$.id");
+    var created = submit(event, participant, first);
+    assertThat(created.statusCode()).isEqualTo(201);
+    String id = JsonPath.read(created.body(), "$.id");
     for (int i = 0; i < 4; i++) {
-      submit(participant);
+      assertThat(submit(participant).statusCode()).isEqualTo(201);
     }
 
     var retried = submit(event, participant, first);
@@ -188,7 +192,7 @@ class AskForHelpIT extends IntegrationTest {
   @DisplayName("US-23 AC-4 two submissions at once with 4 saved give one 201 and one 429")
   void concurrent() throws Exception {
     for (int i = 0; i < 4; i++) {
-      submit(participant);
+      assertThat(submit(participant).statusCode()).isEqualTo(201);
     }
     var start = new CountDownLatch(1);
     Callable<Integer> one = () -> {

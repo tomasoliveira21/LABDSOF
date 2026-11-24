@@ -64,16 +64,18 @@ public class HelpRequestService {
 
   /**
    * Saves the request and its HelpRequestSubmitted in one transaction (ADR-004 outbox). Checks, in order: membership
-   * (404), the description and point (400), a retry of a saved request (answered, never limited), then the account's
-   * limit (429, L-2), under a lock per account so two submissions cannot both pass it (spec US-23 D3, D5).
+   * (404), then under a lock per account, so two submissions cannot both pass the limit: the description and point
+   * (400), a retry of a saved request (answered, never limited), then the account's limit (429, L-2) (spec US-23 D3,
+   * D5).
    */
   @Transactional
   public Submitted submit(UUID eventId, String userId, UUID clientRequestId, String description,
       Location location) {
     access(eventId, userId);
+    // The lock first, then the clock: a submission that waited is stamped when it can commit (US-26 D3, G8 review)
+    helpRequests.lockRequester(userId);
     var request = HelpRequest.submit(UUID.randomUUID(), eventId, userId, clientRequestId, description,
         location, clock.instant());
-    helpRequests.lockRequester(userId);
     var saved = helpRequests.findByClientRequestId(eventId, userId, clientRequestId);
     if (saved.isPresent()) {
       return retried(saved.get(), description, location);

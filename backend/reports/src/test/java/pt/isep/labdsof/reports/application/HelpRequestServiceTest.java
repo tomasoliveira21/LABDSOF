@@ -574,4 +574,36 @@ class HelpRequestServiceTest {
     clock = Clock.fixed(NOW.plus(Duration.ofMinutes(10)), ZoneOffset.UTC);
     assertThat(service().submit(EVENT, "ana", client, "help", POINT).created()).isTrue();
   }
+
+  @Test
+  @DisplayName("US-23 AC-4 the time of a request is read after the account lock")
+  void timeAfterTheLock() {
+    member("ana", Role.RegularUser);
+    var time = new java.util.concurrent.atomic.AtomicReference<>(NOW);
+    var moving = new Clock() {
+      @Override
+      public ZoneOffset getZone() {
+        return ZoneOffset.UTC;
+      }
+
+      @Override
+      public Clock withZone(java.time.ZoneId zone) {
+        return this;
+      }
+
+      @Override
+      public Instant instant() {
+        return time.get();
+      }
+    };
+    // The lock is held by another submission of the account for 7 s
+    ports.onLock = () -> time.set(NOW.plusSeconds(7));
+
+    var saved = new HelpRequestService(ports, ports, ports, metrics, LIMIT, moving)
+        .submit(EVENT, "ana", UUID.randomUUID(), "help", POINT).request();
+
+    assertThat(saved.submittedAt()).isEqualTo(NOW.plusSeconds(7));
+    assertThat(saved.updatedAt()).isEqualTo(NOW.plusSeconds(7));
+    assertThat(ports.calls).containsExactly("lock ana", "count ana after " + NOW.plusSeconds(7).minus(Duration.ofMinutes(10)));
+  }
 }

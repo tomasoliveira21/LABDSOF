@@ -50,9 +50,13 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   /** The account locks and counts, in order (spec US-23 D5). */
   final List<String> calls = new ArrayList<>();
 
+  /** Runs when an account is locked, as another transaction ending while this one waits. */
+  Runnable onLock = () -> { };
+
   @Override
   public void lockRequester(String requesterId) {
     calls.add("lock " + requesterId);
+    onLock.run();
   }
 
   @Override
