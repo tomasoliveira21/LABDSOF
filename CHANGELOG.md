@@ -8,7 +8,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Added
 - L-2 in Reports: after 5 help requests of an account in 10 minutes, in any event, `POST …/help-requests` answers `429` `application/problem+json` with `Retry-After` (whole seconds until one more can be sent). Only saved requests count: a retry with the same `clientRequestId` is answered at the limit, and refused requests use nothing up. A lock per account keeps two submissions at once from both passing.
-- Settings `farol.help-requests.limit` (5) and `farol.help-requests.limit-window` (10 min), as ADR-013 asks.
+- Settings `farol.help-requests.limit` (5) and `farol.help-requests.limit-window` (10 min), as ADR-013 asks. `infra/compose.yaml` passes `FAROL_HELPREQUESTS_LIMIT` (default 5); a measurement run of the AI end to end (#234), which sends exactly 5 per account in 10 minutes, raises it.
 - `AskForHelpIT`: the confirmation, the refused descriptions and points, who sees the location (control room and EventAdmin only), the 6th request, other events, another account, a retry at the limit, two submissions at once.
 
 ### Changed
