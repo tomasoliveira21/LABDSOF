@@ -222,7 +222,7 @@ See [FieldTaskStatus](domain-model.md#fieldtaskstatus) for valid transitions by 
   "status": "Submitted",               // Submitted | Seen | OnTheWay | Resolved | Closed
   "submittedAt": "2027-05-08T23:14:05Z",
   "updatedAt": "2027-05-08T23:14:05Z",
-  "defaultTeamId": "tm-03…",           // the event's team that handles the category (US-29); null without category or without such a team
+  "defaultTeamId": "tm-03…",           // the event's only team with HelpRequests.Respond for the category (a member's, else the suggested one; #81); null without category, with no such team or with several
   "routedTeamId": null,
   "triage": {
     "state": "Suggested",              // Pending | Suggested | NotTriaged | Accepted | Changed

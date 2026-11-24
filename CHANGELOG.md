@@ -9,6 +9,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Added
 - `defaultTeamId` in every control-room read and decision (`GET …/help-requests`, `GET …/help-requests/{requestId}`, `POST …/accept-suggestion`, `PATCH …/help-requests/{requestId}`): the only team of the event, not deleted, with `HelpRequests.Respond`, that handles the category a member set, else the suggested one. None or several give `null` and the operator routes by hand (the tie-break is an open product decision; spec D2 proposed for the team's review).
 - Derived on each read from Reports' current copy of the teams (`TeamChanged`), not stored, so a team change after the suggestion shows on the next read; no call to Events and nothing read from the participant's text.
+- Flyway `V6`: `team_copy.changed_at`. A poll of the live list after a team change answers every open request again, so the default team on screen follows the change.
 - `DefaultTeamIT`: two events, no team, two teams, a team losing `Respond`, a new team and a deleted team after the suggestion, accept and change of the category, a description naming a team.
 
 ### Changed
