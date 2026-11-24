@@ -86,6 +86,24 @@ class DocumentationIT {
     assertThat(Files.readString(spec)).contains("`US-23 AC-3 ").contains("`US-23 AC-4 ");
   }
 
+  @Test
+  @DisplayName("US-24 AC-1 the changelog has the story, and every test its spec names exists")
+  void us24SpecNamesRealTests() throws Exception {
+    assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
+        .contains("Follow my help request (US-24, #72, Bruno de Abreu Lopes)");
+    specNamesRealTests(ROOT.resolve("Docs/specs/US-24-follow-help-request.md"), "US-24", 15, 2);
+  }
+
+  @Test
+  @DisplayName("US-28 AC-2 the changelog and the API outline have the story, and every test its spec names exists")
+  void us28SpecNamesRealTests() throws Exception {
+    assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
+        .contains("Set priority and status, with history (US-28, #75, Bruno de Abreu Lopes)");
+    assertThat(Files.readString(ROOT.resolve("Docs/Technical/api-outline.md")))
+        .contains("22 November 2026 (#75, US-28)");
+    specNamesRealTests(ROOT.resolve("Docs/specs/US-28-priority-status-history.md"), "US-28", 15, 2);
+  }
+
   static void specNamesRealTests(Path spec, String prefix, int atLeast, int criteria) throws Exception {
     String tests;
     try (var files = Files.walk(Path.of("src/test/java"))) {
