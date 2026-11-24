@@ -77,6 +77,9 @@ class DocumentationIT {
     assertThat(Files.readString(ROOT.resolve("Docs/Technical/adr/0013-api-gateway.md")))
         .contains("24 November 2026 (#71, US-23): L-2 is enforced by Reports");
     assertThat(ROOT.resolve("Docs/Meetings/2026-11-24-help-request-rate-limit.md")).exists();
+    // The values AskForHelpIT tests are the production ones
+    assertThat(Files.readString(Path.of("src/main/resources/application.properties")))
+        .contains("farol.help-requests.limit=5").contains("farol.help-requests.limit-window=10m");
     // AC-2 is Sprint C: AC-1 is checked by the loop, AC-3 and AC-4 here
     var spec = ROOT.resolve("Docs/specs/US-23-ask-for-help.md");
     specNamesRealTests(spec, "US-23", 18, 1);

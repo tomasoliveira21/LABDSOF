@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.TestPropertySource;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.Membership.Role;
 import pt.isep.labdsof.reports.domain.Permission;
@@ -22,8 +23,10 @@ import pt.isep.labdsof.reports.domain.Team;
 /**
  * US-23 (#71): a participant asks for help with a description and a point, who sees the location, and the limit of
  * 5 help requests per account in 10 minutes (L-2, in Reports since 24 November 2026), over HTTP on the real database
- * (spec US-23 §5). Every test uses its own accounts, so the counts of one never reach another.
+ * (spec US-23 §5). Every test uses its own accounts, so the counts of one never reach another. The production values
+ * of the limit are set here, as the shared context lifts it; DocumentationIT checks application.properties has them.
  */
+@TestPropertySource(properties = {"farol.help-requests.limit=5", "farol.help-requests.limit-window=10m"})
 class AskForHelpIT extends IntegrationTest {
 
   final UUID event = UUID.randomUUID();

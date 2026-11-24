@@ -84,8 +84,8 @@ public class HelpRequestService {
       throw new TooManyHelpRequestsException(wait.get());
     }
     if (!helpRequests.insertIfNew(request)) {
-      return retried(helpRequests.findByClientRequestId(eventId, userId, clientRequestId)
-          .orElseThrow(() -> new IllegalStateException("conflicting submit not visible")), description, location);
+      // Not found above, yet taken: the account lock was not held, so no request is invented or dropped
+      throw new IllegalStateException("conflicting submit not visible");
     }
     outbox.add(OutgoingEvent.helpRequestSubmitted(UUID.randomUUID(), request));
     return new Submitted(request, true);
