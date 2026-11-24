@@ -11,10 +11,12 @@ import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import pt.isep.labdsof.reports.application.HelpRequests;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
+import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
 import pt.isep.labdsof.reports.domain.Priority;
@@ -35,6 +37,8 @@ class JdbcHelpRequests implements HelpRequests {
   private static final String REQUESTER_ID = "requesterId";
   private static final String CATEGORY = "category";
   private static final String PRIORITY = "priority";
+  private static final String TRIAGE = "triage";
+  private static final String STATUS = "status";
 
   private final JdbcClient jdbc;
 
@@ -62,7 +66,7 @@ class JdbcHelpRequests implements HelpRequests {
         .param("y", r.location().y())
         .param(CATEGORY, name(r.category()))
         .param(PRIORITY, name(r.priority()))
-        .param("status", r.status().name())
+        .param(STATUS, r.status().name())
         .param("defaultTeamId", r.defaultTeamId())
         .param("routedTeamId", r.routedTeamId())
         .param("submittedAt", Timestamp.from(r.submittedAt()))
@@ -190,17 +194,18 @@ class JdbcHelpRequests implements HelpRequests {
   }
 
   @Override
-  public void saveDecision(HelpRequest r, String actorUserId, List<HelpRequestChange> changes) {
+  public void saveDecision(HelpRequest r, Actor actor, List<HelpRequestChange> changes) {
     var at = Timestamp.from(r.updatedAt());
     int updated = jdbc.sql("""
-        UPDATE help_request SET category = :category, priority = :priority, updated_at = :updatedAt,
-            version = :version
+        UPDATE help_request SET category = :category, priority = :priority, status = :status,
+            updated_at = :updatedAt, version = :version
         WHERE id = :id AND event_id = :eventId AND version = :version - 1
         """)
         .param("id", r.id())
         .param(EVENT_ID, r.eventId())
         .param(CATEGORY, name(r.category()))
         .param(PRIORITY, name(r.priority()))
+        .param(STATUS, r.status().name())
         .param("updatedAt", at)
         .param("version", r.version())
         .update();
@@ -208,31 +213,49 @@ class JdbcHelpRequests implements HelpRequests {
       // The row is locked by findForUpdate, so this is a caller that skipped it
       throw new IllegalStateException("help request changed without its lock");
     }
-    jdbc.sql("""
-        UPDATE triage_suggestion SET state = :state, not_triaged_reason = :notTriagedReason, updated_at = :updatedAt
-        WHERE request_id = :id AND event_id = :eventId
-        """)
-        .param("id", r.id())
-        .param(EVENT_ID, r.eventId())
-        .param("state", r.triage().state().name())
-        .param("notTriagedReason", name(r.triage().notTriagedReason()))
-        .param("updatedAt", at)
-        .update();
-    for (var change : changes) {
+    // A status change (acknowledge) leaves the triage row and its time alone (G8 review of US-28)
+    if (changes.stream().anyMatch(change -> TRIAGE.equals(change.field()))) {
       jdbc.sql("""
-          INSERT INTO help_request_change (request_id, event_id, actor_user_id, changed_at, field, old_value,
-              new_value)
-          VALUES (:id, :eventId, :actor, :changedAt, :field, :oldValue, :newValue)
+          UPDATE triage_suggestion SET state = :state, not_triaged_reason = :notTriagedReason, updated_at = :updatedAt
+          WHERE request_id = :id AND event_id = :eventId
           """)
           .param("id", r.id())
           .param(EVENT_ID, r.eventId())
-          .param("actor", actorUserId)
+          .param("state", r.triage().state().name())
+          .param("notTriagedReason", name(r.triage().notTriagedReason()))
+          .param("updatedAt", at)
+          .update();
+    }
+    for (var change : changes) {
+      jdbc.sql("""
+          INSERT INTO help_request_change (request_id, event_id, actor_user_id, actor_name, changed_at, field,
+              old_value, new_value)
+          VALUES (:id, :eventId, :actor, :actorName, :changedAt, :field, :oldValue, :newValue)
+          """)
+          .param("id", r.id())
+          .param(EVENT_ID, r.eventId())
+          .param("actor", actor.userId())
+          .param("actorName", actor.name())
           .param("changedAt", at)
           .param("field", change.field())
           .param("oldValue", change.oldValue())
           .param("newValue", change.newValue())
           .update();
     }
+  }
+
+  @Override
+  public List<HistoryEntry> history(UUID eventId, UUID requestId) {
+    return jdbc.sql("""
+        SELECT field, old_value, new_value, actor_user_id, actor_name, changed_at FROM help_request_change
+        WHERE event_id = :eventId AND request_id = :id ORDER BY id
+        """)
+        .param(EVENT_ID, eventId)
+        .param("id", requestId)
+        .query((rs, row) -> new HistoryEntry(rs.getString("field"), rs.getString("old_value"),
+            rs.getString("new_value"), rs.getString("actor_user_id"), rs.getString("actor_name"),
+            rs.getTimestamp("changed_at").toInstant()))
+        .list();
   }
 
   private static HelpRequest map(ResultSet rs, int row) throws SQLException {
@@ -251,7 +274,7 @@ class JdbcHelpRequests implements HelpRequests {
         new Location(rs.getInt("map_version"), rs.getDouble("x"), rs.getDouble("y")),
         value(Category.class, rs.getString(CATEGORY)),
         value(Priority.class, rs.getString(PRIORITY)),
-        HelpRequestStatus.valueOf(rs.getString("status")),
+        HelpRequestStatus.valueOf(rs.getString(STATUS)),
         rs.getObject("default_team_id", UUID.class),
         rs.getObject("routed_team_id", UUID.class),
         triage,

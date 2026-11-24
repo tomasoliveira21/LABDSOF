@@ -31,18 +31,20 @@ import pt.isep.labdsof.reports.application.ForbiddenException;
 import pt.isep.labdsof.reports.application.HelpRequestService;
 import pt.isep.labdsof.reports.application.NotFoundException;
 import pt.isep.labdsof.reports.application.TriageService;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
+import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.InvalidHelpRequestException;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
 import pt.isep.labdsof.reports.domain.Priority;
-import pt.isep.labdsof.reports.domain.TriageConflictException;
+import pt.isep.labdsof.reports.domain.RequestConflictException;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
- * Help requests, the control room's triage decisions and the triage status (API outline §4,
+ * Help requests, the control room's triage decisions, acknowledge and history, and the triage status (API outline §4,
  * contracts/openapi.yaml). The caller is always the token's sub.
  */
 @RestController
@@ -136,14 +138,51 @@ class HelpRequestController {
   @PostMapping(value = "/help-requests/{requestId}/accept-suggestion", produces = "application/json")
   ControlRoomView acceptSuggestion(@PathVariable UUID eventId, @PathVariable UUID requestId,
       @AuthenticationPrincipal Jwt jwt) {
-    return controlRoom(service.acceptSuggestion(eventId, jwt.getSubject(), requestId));
+    return controlRoom(service.acceptSuggestion(eventId, actor(jwt), requestId));
   }
 
   /** The control room sets the category, the priority or both (US-35 AC-2, spec D2). */
   @PatchMapping(value = "/help-requests/{requestId}", consumes = "application/json", produces = "application/json")
   ControlRoomView change(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt,
       @RequestBody ChangeBody body) {
-    return controlRoom(service.change(eventId, jwt.getSubject(), requestId, body.category, body.priority));
+    return controlRoom(service.change(eventId, actor(jwt), requestId, body.category, body.priority));
+  }
+
+  /** The control room has seen the request: Submitted becomes Seen (US-28 AC-1, spec D2). */
+  @PostMapping(value = "/help-requests/{requestId}/acknowledge", produces = "application/json")
+  ControlRoomView acknowledge(@PathVariable UUID eventId, @PathVariable UUID requestId,
+      @AuthenticationPrincipal Jwt jwt) {
+    return controlRoom(service.acknowledge(eventId, actor(jwt), requestId));
+  }
+
+  /** Every recorded change of the request, oldest first (US-28 AC-2, spec D4). */
+  record HistoryView(List<HistoryEntryView> items) {}
+
+  /** One entry as the contract publishes it, apart from the domain's HistoryEntry (review of #245). */
+  record HistoryEntryView(String field, String oldValue, String newValue, String actorUserId, String actorName,
+      Instant changedAt) {}
+
+  @GetMapping(value = "/help-requests/{requestId}/history", produces = "application/json")
+  HistoryView history(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt) {
+    return new HistoryView(service.history(eventId, jwt.getSubject(), requestId).stream()
+        .map(HelpRequestController::entry).toList());
+  }
+
+  private static HistoryEntryView entry(HistoryEntry e) {
+    return new HistoryEntryView(e.field(), e.oldValue(), e.newValue(), e.actorUserId(), e.actorName(),
+        e.changedAt());
+  }
+
+  /**
+   * Who acts: the token's sub, and its name claim copied into the history (spec US-28 D5). A valid token without a sub
+   * names nobody, so it gets the 404 of a non-member, not a server error (G8 review).
+   */
+  private static Actor actor(Jwt jwt) {
+    var subject = jwt.getSubject();
+    if (subject == null || subject.isBlank()) {
+      throw new NotFoundException();
+    }
+    return new Actor(subject, jwt.getClaimAsString("name"));
   }
 
   /** Whether a new request would be sent to the AI, for the web app's banner (US-36 AC-2, spec D4, D5). */
@@ -166,8 +205,8 @@ class HelpRequestController {
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
   }
 
-  @ExceptionHandler(TriageConflictException.class)
-  ResponseEntity<ProblemDetail> triageConflict(TriageConflictException e) {
+  @ExceptionHandler(RequestConflictException.class)
+  ResponseEntity<ProblemDetail> requestConflict(RequestConflictException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
   }
