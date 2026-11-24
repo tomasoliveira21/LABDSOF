@@ -55,6 +55,20 @@ public final class Jwks {
     return sign(key, claims(subject, ISSUER, AUDIENCE, Instant.now().plusSeconds(300)));
   }
 
+  /** A valid token with a name claim, as Keycloak issues it with the profile scope (ADR-006 decision 2). */
+  public String named(String subject, String name) {
+    var claims = new JWTClaimsSet.Builder(claims(subject, ISSUER, AUDIENCE, Instant.now().plusSeconds(300)))
+        .claim("name", name).build();
+    return sign(key, claims);
+  }
+
+  /** A valid token without a sub, as a client without the basic scope may issue it. */
+  public String withoutSubject() {
+    var claims = new JWTClaimsSet.Builder(claims("ignored", ISSUER, AUDIENCE, Instant.now().plusSeconds(300)))
+        .subject(null).build();
+    return sign(key, claims);
+  }
+
   public String expired(String subject) {
     // Past Spring's default clock skew of 60 s
     return sign(key, claims(subject, ISSUER, AUDIENCE, Instant.now().minusSeconds(120)));

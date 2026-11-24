@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
 import pt.isep.labdsof.reports.application.HelpRequestService;
 import pt.isep.labdsof.reports.application.HelpRequests;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.Membership.Role;
 import pt.isep.labdsof.reports.domain.Membership;
@@ -140,7 +141,7 @@ class TriageDecisionIT extends IntegrationTest {
     var rolledBack = UUID.fromString(suggested());
     var before = accepted();
     transactions.executeWithoutResult(status -> {
-      service.acceptSuggestion(event, operator, rolledBack);
+      service.acceptSuggestion(event, new Actor(operator, null), rolledBack);
       status.setRollbackOnly();
     });
     assertThat(accepted()).isEqualTo(before);
@@ -250,7 +251,7 @@ class TriageDecisionIT extends IntegrationTest {
       var member = pool.submit(() -> transactions.executeWithoutResult(status -> {
         var request = helpRequests.findForUpdate(event, id).orElseThrow();
         var decision = request.change(Category.Safety, Priority.High, Instant.now());
-        helpRequests.saveDecision(decision.request(), operator, decision.changes());
+        helpRequests.saveDecision(decision.request(), new Actor(operator, null), decision.changes());
         locked.countDown();
         try {
           assertThat(release.await(20, TimeUnit.SECONDS)).isTrue();

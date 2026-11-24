@@ -76,6 +76,21 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `uniqueItems: true` on `handledCategories` was tried and dropped: openapi-generator 7.27 then reads the array into a `Set` and deduplicates a repeated category silently instead of refusing it (spec D7).
 - The CI smoke test is not extended: nothing can create an event until US-06 (#61), so no team can be created through the gateway yet.
 
+## [Unreleased] · 2026-11-22 · Set priority and status, with history (US-28, #75, Bruno de Abreu Lopes)
+
+**Why:** US-28 (#75): every change the control room makes to a request is recorded with who, when, the old and the new value (SC9, NFR-16), and the control room can read that history and mark a request as seen. Spec: [`Docs/specs/US-28-priority-status-history.md`](Docs/specs/US-28-priority-status-history.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/acknowledge` (`HelpRequests.Triage`): `Submitted → Seen` (decision 6 of 15 November 2026), recorded as a `status` history entry; `409` when the request is no longer `Submitted`.
+- `GET /api/v1/events/{eventId}/help-requests/{requestId}/history` (`HelpRequests.Triage`): every recorded change, oldest first, with `actorUserId`, `actorName` and `changedAt`.
+- Flyway `V5`: column `help_request_change.actor_name`, the token's `name` claim copied when the change is recorded (also for the `PATCH` and `accept-suggestion` of US-35).
+- `ChangeHistoryIT`: both endpoints with the security matrix, two acknowledges at once, and the full history after an accept, a change and an acknowledge; `infra/tests/reports_smoke.py`: both endpoints through the gateway.
+
+### Changed
+- `contracts/openapi.yaml`: `acknowledgeHelpRequest` and `getHelpRequestHistory` are implemented; the history entry has `actorName`. The `PATCH` keeps the category and the priority only: the status changes through `acknowledge` and `close` (spec D1), which corrects *US-28 adds the status* written by US-35.
+- The 409 of a triage or status conflict is one `RequestConflictException`. Decisions D5 (the copied name) and D6 (only member changes are history entries) are accepted with the approval of this PR (22 November 2026) and recorded in [`Docs/Meetings/2026-11-22-help-request-history-names.md`](Docs/Meetings/2026-11-22-help-request-history-names.md).
+- After the review of #245: the [security and privacy assessment](Docs/Technical/security-and-privacy-assessment.md) says where Reports keeps the name (§3, M-7) and that account deletion does not remove it yet (§7, §12); `GET …/history` answers with its own view record; the contract no longer promises system entries and says a `409` on acknowledge is benign for a retry.
+
 ## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
 
 - Badges starts in Compose with its own PostgreSQL database, Flyway migrations, Keycloak JWT validation,
