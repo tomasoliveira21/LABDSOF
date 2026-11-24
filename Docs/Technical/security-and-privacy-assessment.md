@@ -320,7 +320,7 @@ The security tests that the strategy in assignment §8.3 asks for.
 | T8, AC-8 | The `reports` RabbitMQ user publishing to `farol.auth-users` is refused; the `reports` database login cannot connect to the `events` database | Every PR (Testcontainers) |
 | T9 | Uploads that are too large, of the wrong type, disguised by their extension, or multi-page PDFs are refused; a JPEG's EXIF is gone from the stored image | Every PR (Events) |
 | T11, M-10 | Logs captured during the help-request integration test contain neither the text nor the map point | Every PR (Reports) |
-| T15 | The 121st call in a minute and the 6th help request in 10 minutes get 429 with `Retry-After` (L-1, L-2) | Every PR (gateway) |
+| T15 | The 121st call in a minute and the 6th help request in 10 minutes get 429 with `Retry-After` (L-1, L-2) | Every PR (gateway for L-1; Reports for L-2 since 24 November 2026, `AskForHelpIT`) |
 | T17 | gitleaks | Every PR (E4), from Sprint B (ADR-010 point 9) |
 | T18 | Dependency check and image scan | Every PR |
 | §9 | From another computer on the network, nothing of the demo answers (laptop-only demo, 15 November 2026); if phones are used later, only the gateway, Keycloak and the web container, and only over HTTPS | Before each demo |

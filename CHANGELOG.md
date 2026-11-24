@@ -2,6 +2,18 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-24 · Ask for help on the map (US-23, #71, Bruno de Abreu Lopes)
+
+**Why:** US-23 (#71): a participant asks for help with a short description and a point on the map, and cannot flood the control room (ADR-013 L-2). Spec: [`Docs/specs/US-23-ask-for-help.md`](Docs/specs/US-23-ask-for-help.md). The submission itself was built in #194; this adds the limit and the acceptance tests.
+
+### Added
+- L-2 in Reports: after 5 help requests of an account in 10 minutes, in any event, `POST …/help-requests` answers `429` `application/problem+json` with `Retry-After` (whole seconds until one more can be sent). Only saved requests count: a retry with the same `clientRequestId` is answered at the limit, and refused requests use nothing up. A lock per account keeps two submissions at once from both passing.
+- Settings `farol.help-requests.limit` (5) and `farol.help-requests.limit-window` (10 min), as ADR-013 asks.
+- `AskForHelpIT`: the confirmation, the refused descriptions and points, who sees the location (control room and EventAdmin only), the 6th request, other events, another account, a retry at the limit, two submissions at once.
+
+### Changed
+- Decided on 24 November 2026 with the gateway's owner: L-2 moves from the gateway to Reports ([record](Docs/Meetings/2026-11-24-help-request-rate-limit.md)). Dated note in ADR-013; `openapi.yaml` (`429` of `submitHelpRequest`), the API outline §4 and the assessment's T15 follow it.
+
 ## [Unreleased] · 2026-11-22 · Import of the external transport source (US-40, #84, António Guerra)
 
 **Why:** participants need the buses near the venue from the Porto Digital source, imported regularly and validated (assignment §6.5, ADR-008). Spec: [`Docs/specs/US-40-import-transport-source.md`](Docs/specs/US-40-import-transport-source.md). Built on #193.

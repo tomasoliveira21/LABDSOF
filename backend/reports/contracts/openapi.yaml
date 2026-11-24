@@ -56,7 +56,9 @@ paths:
         clientRequestId again returns the request already saved (200) and publishes nothing new; sending it
         with another description or location is refused (409), so a reused id never drops a request.
         Planned with US-23: 422 when the event is closed or suspended or the map version does not exist.
-        The gateway answers 429 after 5 requests in 10 minutes (ADR-013 L-2).
+        After 5 help requests of the account in 10 minutes, in any event, Reports answers 429 with
+        Retry-After (ADR-013 L-2, enforced by Reports since 24 November 2026, spec US-23): only saved requests
+        count, so a retry with the same clientRequestId is answered at the limit and uses nothing up.
       x-farol-status: implemented
       requestBody:
         required: true
@@ -584,11 +586,19 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     TooManyRequests:
-      description: Answered by the gateway (ADR-013 L-2).
+      description: >-
+        The account already sent the most help requests the window allows (ADR-013 L-2, spec US-23 D4);
+        nothing is saved. Retry-After is the whole number of seconds, at least 1, until it can ask again.
+        The gateway's own limit (L-1) answers 429 the same way.
       headers:
         Retry-After:
           schema:
             type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
 
   schemas:
     Category:
