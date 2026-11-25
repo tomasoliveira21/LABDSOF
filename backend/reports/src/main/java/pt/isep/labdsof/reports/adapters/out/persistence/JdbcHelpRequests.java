@@ -39,6 +39,7 @@ class JdbcHelpRequests implements HelpRequests {
   private static final String PRIORITY = "priority";
   private static final String TRIAGE = "triage";
   private static final String STATUS = "status";
+  private static final String ROUTED_TEAM_ID = "routedTeamId";
 
   private final JdbcClient jdbc;
 
@@ -68,7 +69,7 @@ class JdbcHelpRequests implements HelpRequests {
         .param(PRIORITY, name(r.priority()))
         .param(STATUS, r.status().name())
         .param("defaultTeamId", r.defaultTeamId())
-        .param("routedTeamId", r.routedTeamId())
+        .param(ROUTED_TEAM_ID, r.routedTeamId())
         .param("submittedAt", Timestamp.from(r.submittedAt()))
         .param("updatedAt", Timestamp.from(r.updatedAt()))
         .param("version", r.version())
@@ -198,7 +199,7 @@ class JdbcHelpRequests implements HelpRequests {
     var at = Timestamp.from(r.updatedAt());
     int updated = jdbc.sql("""
         UPDATE help_request SET category = :category, priority = :priority, status = :status,
-            updated_at = :updatedAt, version = :version
+            routed_team_id = :routedTeamId, updated_at = :updatedAt, version = :version
         WHERE id = :id AND event_id = :eventId AND version = :version - 1
         """)
         .param("id", r.id())
@@ -206,6 +207,7 @@ class JdbcHelpRequests implements HelpRequests {
         .param(CATEGORY, name(r.category()))
         .param(PRIORITY, name(r.priority()))
         .param(STATUS, r.status().name())
+        .param(ROUTED_TEAM_ID, r.routedTeamId())
         .param("updatedAt", at)
         .param("version", r.version())
         .update();
@@ -242,6 +244,15 @@ class JdbcHelpRequests implements HelpRequests {
           .param("newValue", change.newValue())
           .update();
     }
+  }
+
+  @Override
+  public List<UUID> routedTo(UUID eventId, UUID teamId) {
+    return jdbc.sql("SELECT id FROM help_request WHERE event_id = :eventId AND routed_team_id = :teamId ORDER BY id")
+        .param(EVENT_ID, eventId)
+        .param("teamId", teamId)
+        .query(UUID.class)
+        .list();
   }
 
   @Override
