@@ -136,8 +136,7 @@ class LocalCopyServiceTest {
       assertThat(returned.version()).isEqualTo(4);
       assertThat(returned.updatedAt()).isEqualTo(NOW);
     }
-    assertThat(ports.requests).containsEntry(resolved.id(), resolved);
-    assertThat(ports.requests).containsEntry(elsewhere.id(), elsewhere);
+    assertThat(ports.requests).containsEntry(resolved.id(), resolved).containsEntry(elsewhere.id(), elsewhere);
     assertThat(ports.tasks).extracting(InMemoryPorts.Task::requestId, InMemoryPorts.Task::status)
         .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple(submitted.id(), "Cancelled"),
             org.assertj.core.groups.Tuple.tuple(seen.id(), "Cancelled"),
@@ -158,8 +157,7 @@ class LocalCopyServiceTest {
     var routedAgain = routed(TEAM, HelpRequestStatus.Seen);
     assertThat(service.apply(UUID.randomUUID(), new Team(TEAM, EVENT, "Nursing", List.of(), Set.of(), true, 2)))
         .isEqualTo(Outcome.STALE);
-    assertThat(ports.requests).containsEntry(routedAgain.id(), routedAgain);
-    assertThat(ports.requests).containsAllEntriesOf(after);
+    assertThat(ports.requests).containsEntry(routedAgain.id(), routedAgain).containsAllEntriesOf(after);
     assertThat(ports.tasks).containsAll(tasks);
     // A team that is not deleted keeps its requests
     assertThat(service.apply(UUID.randomUUID(), team("Nursing", 3))).isEqualTo(Outcome.APPLIED);
