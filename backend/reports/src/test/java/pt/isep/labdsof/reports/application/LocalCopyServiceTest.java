@@ -83,6 +83,33 @@ class LocalCopyServiceTest {
   }
 
   @Test
+  @DisplayName("US-29 AC-2 a request routed elsewhere after it was listed keeps its team and its task")
+  void routedElsewhereMeanwhile() {
+    // The listing is read before each request is locked: a route in between moves the request to another team
+    var listsEveryRequest = new InMemoryPorts() {
+      @Override
+      public List<UUID> routedTo(UUID eventId, UUID teamId) {
+        return requests.keySet().stream().toList();
+      }
+    };
+    var racing = new LocalCopyService(listsEveryRequest, listsEveryRequest, listsEveryRequest, listsEveryRequest,
+        Clock.fixed(NOW, ZoneOffset.UTC));
+    var other = UUID.randomUUID();
+    var r = HelpRequest.submit(UUID.randomUUID(), EVENT, "ana", UUID.randomUUID(), "help", new Location(1, 0.5, 0.5),
+        NOW.minusSeconds(60));
+    var moved = new HelpRequest(r.id(), EVENT, r.requesterId(), r.clientRequestId(), r.description(), r.location(),
+        null, null, HelpRequestStatus.Seen, null, other, r.triage(), r.submittedAt(), r.updatedAt(), 2);
+    listsEveryRequest.requests.put(moved.id(), moved);
+    listsEveryRequest.tasks.add(new InMemoryPorts.Task(UUID.randomUUID(), EVENT, moved.id(), other, "Open", NOW));
+    racing.apply(UUID.randomUUID(), team("Nursing", 1));
+
+    racing.apply(UUID.randomUUID(), new Team(TEAM, EVENT, "Nursing", List.of(), Set.of(), true, 2));
+
+    assertThat(listsEveryRequest.requests.get(moved.id())).isEqualTo(moved);
+    assertThat(listsEveryRequest.tasks).singleElement().extracting(InMemoryPorts.Task::status).isEqualTo("Open");
+  }
+
+  @Test
   @DisplayName("US-29 AC-2 a deleted team's requests go back to the queue and its tasks are cancelled")
   void deletedTeam() {
     service.apply(UUID.randomUUID(), team("Nursing", 1));
