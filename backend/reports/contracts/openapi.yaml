@@ -268,8 +268,16 @@ paths:
       tags: [Help requests]
       operationId: routeHelpRequest
       summary: Route the request to a team; creates a field task and keeps the status (US-29)
-      description: Requires HelpRequests.Triage. 422 when the team has no HelpRequests.Respond.
-      x-farol-status: planned
+      description: >-
+        Requires HelpRequests.Triage. The team must be a team of the event, not deleted, with
+        HelpRequests.Respond; it need not handle the request's category (routing by hand). An unknown team,
+        another event's, a deleted one or one without HelpRequests.Respond all get the same 422. Allowed while
+        the request is Submitted or Seen, that is while its field task is still Open: routedTeamId is set, the
+        status is kept, a routedTeamId history entry records the member, and an Assist field task, Open, is
+        dispatched to the team; routing to another team cancels the Open task first. Routing to the team it
+        already has writes nothing. 409 once a member accepted the task (OnTheWay), and when it is Resolved or
+        Closed (US-29 #76, spec D1 to D3).
+      x-farol-status: implemented
       requestBody:
         required: true
         content:
@@ -293,6 +301,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
 
@@ -354,8 +364,8 @@ paths:
       summary: Full change history of the request (US-28)
       description: >-
         Requires HelpRequests.Triage. Every change a member made, oldest first: the category, priority and triage
-        decisions of US-35 and the status of acknowledge (US-28 #75, spec D4, D6). Empty items for a request nobody
-        changed.
+        decisions of US-35, the status of acknowledge (US-28 #75, spec D4, D6) and the routedTeamId of a route
+        (US-29 #76). Empty items for a request nobody changed.
       x-farol-status: implemented
       responses:
         '200':
@@ -738,6 +748,9 @@ components:
           type: string
           format: uuid
           nullable: true
+          description: >-
+            The team the control room routed the request to (US-29 #76); null until then, and again when that
+            team is deleted, which sends the request back to the queue (OnTheWay becomes Seen).
         triage:
           type: object
           additionalProperties: false
