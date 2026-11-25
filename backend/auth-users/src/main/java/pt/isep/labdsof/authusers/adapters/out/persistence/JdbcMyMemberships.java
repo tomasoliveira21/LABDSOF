@@ -19,20 +19,21 @@ class JdbcMyMemberships implements MyMemberships {
   @Override
   public List<Entry> findForUser(UUID userId) {
     return jdbc.sql("""
-        SELECT e.event_id, e.name, e.status, m.role,
+        SELECT m.event_id, e.name, e.status, m.role,
                ARRAY(SELECT t.team_id FROM team_assignment t
                      WHERE t.event_id = m.event_id AND t.user_id = m.user_id ORDER BY t.team_id) AS team_ids
         FROM event_membership m
-        JOIN event_copy e ON e.event_id = m.event_id
+        LEFT JOIN event_copy e ON e.event_id = m.event_id
         WHERE m.user_id = :userId
-        ORDER BY lower(e.name), e.event_id
+        ORDER BY lower(e.name), m.event_id
         """)
         .param("userId", userId)
         .query((row, number) -> {
           var teamIds = row.getArray("team_ids");
           try {
+            var status = row.getString("status");
             return new Entry(row.getObject("event_id", UUID.class), row.getString("name"),
-                Status.valueOf(row.getString("status")), row.getString("role"),
+                status == null ? null : Status.valueOf(status), row.getString("role"),
                 Arrays.asList((UUID[]) teamIds.getArray()));
           } finally {
             teamIds.free();

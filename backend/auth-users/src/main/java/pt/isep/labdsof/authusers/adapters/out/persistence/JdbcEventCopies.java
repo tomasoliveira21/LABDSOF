@@ -3,17 +3,19 @@ package pt.isep.labdsof.authusers.adapters.out.persistence;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import pt.isep.labdsof.authusers.application.EventCopies;
 import pt.isep.labdsof.authusers.application.MyMemberships.Status;
 
 @Repository
-public class JdbcEventCopies {
+class JdbcEventCopies implements EventCopies {
 
   private final JdbcClient jdbc;
 
-  public JdbcEventCopies(JdbcClient jdbc) {
+  JdbcEventCopies(JdbcClient jdbc) {
     this.jdbc = jdbc;
   }
 
+  @Override
   public void event(UUID eventId, String name, Status status, long version) {
     jdbc.sql("""
         INSERT INTO event_copy (event_id, name, status, version)
@@ -26,6 +28,7 @@ public class JdbcEventCopies {
         .update();
   }
 
+  @Override
   public void team(UUID eventId, UUID teamId, String payload, long version) {
     jdbc.sql("""
         INSERT INTO event_team_copy (team_id, event_id, payload, version)

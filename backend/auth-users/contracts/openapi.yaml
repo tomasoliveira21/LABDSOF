@@ -308,7 +308,8 @@ components:
     Membership:
       type: object
       additionalProperties: false
-      required: [eventId, eventName, eventStatus, role, teamIds]
+      description: Event name and status are omitted until the local Events projection is available.
+      required: [eventId, role, teamIds]
       properties:
         eventId:
           type: string

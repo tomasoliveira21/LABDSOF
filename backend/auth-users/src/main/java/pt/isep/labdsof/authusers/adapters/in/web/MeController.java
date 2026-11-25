@@ -44,7 +44,8 @@ class MeController implements MeApi {
     var userId = TokenIdentity.current().userId();
     log.info("GET /me/memberships by userId={}", userId);
     return ResponseEntity.ok(memberships.list(userId).stream()
-        .map(entry -> new Membership(entry.eventId(), entry.eventName(), EventStatus.fromValue(entry.eventStatus().name()),
+        .map(entry -> new Membership(entry.eventId(), entry.eventName(),
+            entry.eventStatus() == null ? null : EventStatus.fromValue(entry.eventStatus().name()),
             EventRole.fromValue(entry.role()), entry.teamIds()))
         .toList());
   }

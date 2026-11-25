@@ -10,8 +10,8 @@ const eventStatuses = {
 
 type Membership = {
   eventId: string;
-  eventName: string;
-  eventStatus: keyof typeof eventStatuses;
+  eventName?: string;
+  eventStatus?: keyof typeof eventStatuses;
   role: "EventAdmin" | "RegularUser";
   teamIds: string[];
 };
@@ -50,8 +50,8 @@ export default function MembershipList() {
     </>}
     {state.status === "ready" && (state.events.length === 0 ? <p>Ainda não pertences a nenhum evento.</p> :
       <ul className="member-event-list">{state.events.map(event => <li key={event.eventId}>
-        <strong>{event.eventName}</strong>
-        <span>{eventStatuses[event.eventStatus]} · {event.role === "EventAdmin" ? "Administração" : "Participação"}</span>
+        <strong>{event.eventName ?? "Evento sem detalhes disponíveis"}</strong>
+        <span>{event.eventStatus ? eventStatuses[event.eventStatus] : "Estado indisponível"} · {event.role === "EventAdmin" ? "Administração" : "Participação"}</span>
       </li>)}</ul>)}
   </section>;
 }
