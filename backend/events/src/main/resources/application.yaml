@@ -7,6 +7,11 @@ spring:
     problemdetails:
       # Problem Details for every MVC error (API outline 1.7); ProblemDetailsAdvice extends ResponseEntityExceptionHandler
       enabled: true
+  servlet:
+    multipart:
+      # ADR-013 L-4 and US-19 D5: a map above 20 MB is refused before it is read, as 413 Problem Details
+      max-file-size: 20MB
+      max-request-size: 21MB
   jackson:
     deserialization:
       # Reject fields outside the documented bodies (mass assignment). The consumer of
@@ -54,6 +59,10 @@ spring:
           audiences: farol-api
 
 farol:
+  # US-19 D9 and API outline D6: the venue map images live on a volume of this service, and only their names are
+  # in the database. In the local deployment it is the events-maps volume of infra/compose.yaml.
+  map:
+    directory: ${FAROL_MAP_DIRECTORY:/var/lib/farol/maps}
   # Same values as Auth & Users (#191) and Reports (#214 D5), so the services the team reviews behave alike
   # (spec D1). Inside architecture section 6 (poll up to 1 s, batch up to 100): 500 ms keeps the delay to
   # consumers under 1 s including the confirm, and 50 is far above the rate of event and team changes.

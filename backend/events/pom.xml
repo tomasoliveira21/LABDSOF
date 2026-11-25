@@ -20,6 +20,7 @@
     <pitest.version>1.30.2</pitest.version>
     <pitest-junit5.version>1.2.3</pitest-junit5.version>
     <jacoco.version>0.8.16</jacoco.version>
+    <pdfbox.version>3.0.6</pdfbox.version>
     <!-- Quality gates of Docs/specs/README.md: the build fails below them. Never lower them. -->
     <coverage.line.minimum>0.90</coverage.line.minimum>
     <coverage.branch.minimum>0.90</coverage.branch.minimum>
@@ -85,6 +86,12 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers-rabbitmq</artifactId>
       <scope>test</scope>
+    </dependency>
+    <!-- US-19 D4: the single-page PDF of a map upload is rendered to an image (ADR-007 decision 2) -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <version>${pdfbox.version}</version>
     </dependency>
     <!-- Spec D7: event messages checked against contracts/events (same library and version as Reports #214 and Auth & Users #191) -->
     <dependency>

@@ -3,11 +3,15 @@ package pt.isep.labdsof.events.adapters.in.web;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import pt.isep.labdsof.events.application.EventChangedConcurrentlyException;
 import pt.isep.labdsof.events.application.EventNotFoundException;
@@ -17,7 +21,9 @@ import pt.isep.labdsof.events.domain.EventNotDraftException;
 import pt.isep.labdsof.events.application.TeamChangedConcurrentlyException;
 import pt.isep.labdsof.events.application.TeamNameTakenException;
 import pt.isep.labdsof.events.application.TeamNotFoundException;
+import pt.isep.labdsof.events.domain.InvalidMapFileException;
 import pt.isep.labdsof.events.domain.InvalidTeamException;
+import pt.isep.labdsof.events.domain.MapFileTooLargeException;
 
 /**
  * Problem Details for every error (spec D1, API outline 1.7). The standard MVC exceptions come from the superclass;
@@ -89,6 +95,40 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
   ResponseEntity<ProblemDetail> invalidTeam(InvalidTeamException e) {
     return ResponseEntity.badRequest()
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid team."));
+  }
+
+  /** US-19 AC-2: the file is not a PNG, a JPEG or a single-page PDF this service can render. */
+  @ExceptionHandler(InvalidMapFileException.class)
+  ResponseEntity<ProblemDetail> invalidMapFile(InvalidMapFileException e) {
+    return ResponseEntity.badRequest()
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+            "The map must be a PNG, JPEG or single-page PDF."));
+  }
+
+  /**
+   * US-19 AC-3 and D5: above the 20 MB of ADR-013 L-4. The detail names the limit, which is what the criterion
+   * asks for.
+   */
+  @ExceptionHandler(MapFileTooLargeException.class)
+  ResponseEntity<ProblemDetail> mapFileTooLarge(MapFileTooLargeException e) {
+    return tooLarge();
+  }
+
+  /**
+   * The same answer when the multipart limit of the service raises it, which is the normal way: the file is
+   * refused as it arrives, so nothing of it is ever read. The superclass already maps this to {@code 413}; what
+   * is replaced here is its generic detail, which says nothing about the limit.
+   */
+  @Override
+  protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e,
+      HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(tooLarge().getBody());
+  }
+
+  private static ResponseEntity<ProblemDetail> tooLarge() {
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE,
+            "The map file must be at most 20 MB."));
   }
 
   /** Never the violation text. */

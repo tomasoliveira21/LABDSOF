@@ -2,6 +2,29 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-25 · Upload the venue map (US-19, #68, Tiago Teixeira)
+
+**Why:** the venue map is the shared spatial reference of the product — points of interest, help requests and reports are all placed on it — and it starts with an EventAdmin uploading an image or a PDF (`features.md` US-19, ADR-007). Spec: [`Docs/specs/US-19-venue-map-upload.md`](Docs/specs/US-19-venue-map-upload.md). Built on US-11 (#62).
+
+### Added
+- `POST /api/v1/events/{eventId}/map-versions`: an EventAdmin, or a member of a team with `Map.Edit`, uploads the map as `multipart/form-data` (part `file`) and it becomes the event's current version, answered as a `MapVersion` with its number, its time and its points.
+- The upload hardening ADR-007 decision 2 and the [security assessment](Docs/Technical/security-and-privacy-assessment.md) (T9, finding 10, M-11) ask for: the type read from the **content** and never from the name or the `Content-Type` (PNG, JPEG or single-page PDF, **never SVG**); an image refused above **25 megapixels**, read from its header before it is decoded, which is the pixel limit the ADR left to this story; a PDF rendered by PDFBox 3 at 150 dpi, single page, not encrypted, inside a 20-second timeout; and **every upload re-encoded to a PNG** of at most 4096 px on its long side, so no EXIF, no PDF metadata and no active content survives.
+- The new version **starts with a copy of the live points** of the one before it (API outline D5), with new ids and the uploader as their author; the version before it keeps its own.
+- The first **`VenueMapVersionPublished`** the product publishes, through the outbox in the same transaction (ADR-004), with the new `venue-map-version.published.schema.json`. Reports needs it before a help request or a report can point at a map version (US-23, US-47).
+- The record of who uploaded and when: `venue_map_version.uploaded_by`/`uploaded_at` and one `INFO` log line with the correlation id, the pseudonymous `userId`, the version, the source type and its size — never the file name or the file itself.
+- The map files live on the new `events-maps` volume of the Events container (`FAROL_MAP_DIRECTORY`), with only their names in the database (API outline D6); the container's root file system stays read-only.
+- `PngMapImagesTest`, `VolumeMapFilesTest`, `JdbcVenueMapsIT`, `UploadMapVersionIT` and an `EventContractIT` case through the real broker; `events_smoke.py` checks the `401`, the `404` and the missing file part of the new path.
+
+### Changed
+- A file that is not a map is `400` *The map must be a PNG, JPEG or single-page PDF.* and a file above 20 MB is `413` *The map file must be at most 20 MB.* (ADR-013 L-4) — the detail names the limit, and in both cases **the current map stays**.
+- Versions are numbered per event and the event row is **locked for the transaction** before the next number is read, so two uploads of one event queue instead of racing (a unique violation could not be retried, as the review of #249 showed). Uploads of different events never wait for each other.
+- A suspended or closed event takes no map (`409`, as its teams since US-16), a `RegularUser` member of a draft gets the same `404` as a non-member, and a member without `Map.Edit` gets `403`. The permission check of #192 D5 is now one `EventReader.with(Permission)`, instead of being copied into a third service.
+- Seven operations of the contract still answer `501` (eight before): `openapi.yaml` and `local-delivery.md` §0 say what is served now.
+
+### Known limits
+- **US-06 (#61) is still open**, so no event can be created through the API: the upload is complete and tested on an event seeded in the database, and the end-to-end demo waits for US-06 and for the map component of the web app (ADR-007 decision 4, #44).
+- **ADR-013 L-4 also asks the gateway to cap the upload at 20 MB** and the gateway has no `RequestSize` filter: the service refuses the file itself, so the limit holds, but the body still reaches it. The gateway is #202's, and the point is on #68.
+
 ## [Unreleased] · 2026-11-24 · Publish an event (US-11, #62, Tiago Teixeira)
 
 **Why:** an event is a draft nobody can find until its EventAdmin publishes it, and the join link and QR code of US-12 only exist once it is published (`features.md` US-11, domain model `EventStatus`). Spec: [`Docs/specs/US-11-publish-event.md`](Docs/specs/US-11-publish-event.md).

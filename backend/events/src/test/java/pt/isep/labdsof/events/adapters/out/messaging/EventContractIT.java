@@ -10,6 +10,10 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.SpecVersion;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
@@ -23,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,6 +46,7 @@ import pt.isep.labdsof.events.adapters.out.persistence.JdbcOutbox;
 import pt.isep.labdsof.events.application.EventEvents;
 import pt.isep.labdsof.events.application.EventService;
 import pt.isep.labdsof.events.application.Events;
+import pt.isep.labdsof.events.application.MapService;
 import pt.isep.labdsof.events.application.OutgoingEvent;
 import pt.isep.labdsof.events.application.TeamEvents;
 import pt.isep.labdsof.events.application.Teams;
@@ -67,6 +73,7 @@ class EventContractIT extends IntegrationTest {
   static final String ENVELOPE = "envelope.schema.json";
   static final String EVENT = "event.changed.schema.json";
   static final String TEAM = "team.changed.schema.json";
+  static final String MAP_VERSION = "venue-map-version.published.schema.json";
   static final String MEMBERSHIP = "consumed/membership.changed.schema.json";
   static final List<String> QUEUES = List.of("auth-users.events-events", "reports.events-events",
       "transports.events-events", "badges.events-events");
@@ -80,6 +87,10 @@ class EventContractIT extends IntegrationTest {
   @Autowired Events events;
   @Autowired Teams teamsPort;
   @Autowired EventService eventService;
+  @Autowired MapService mapService;
+
+  /** The smallest real PNG: US-19's adapter re-encodes it, so what it draws does not matter. */
+  static final byte[] PNG_FILE = smallPng();
 
   @BeforeEach
   void cleanSlate() {
@@ -190,6 +201,16 @@ class EventContractIT extends IntegrationTest {
         .formatted(user, role, statusField, ids, version);
   }
 
+  private static byte[] smallPng() {
+    var bytes = new ByteArrayOutputStream();
+    try {
+      ImageIO.write(new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB), "png", bytes);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return bytes.toByteArray();
+  }
+
   static Stream<Arguments> eventRows() {
     return Stream.of(
         Arguments.of("Draft", null, false),
@@ -282,6 +303,37 @@ class EventContractIT extends IntegrationTest {
       assertThat(payload.get("status").asString()).isEqualTo("Published");
       assertThat(payload.get("version").asInt()).isEqualTo(2);
       assertThat(payload.has("joinCode")).isFalse();
+    }
+  }
+
+  @Test
+  @DisplayName("US-19 AC-1 uploading a map publishes a VenueMapVersionPublished that matches its JSON Schema")
+  void uploadingAMapSendsAValidVenueMapVersionPublished() {
+    var eventId = insertEvent("Published", null, "map-" + UUID.randomUUID());
+    var actor = UUID.randomUUID();
+    member(eventId, actor, Membership.Role.EventAdmin, Membership.Status.Active, 1);
+    var uploaded = mapService.upload(actor, eventId, PNG_FILE);
+
+    var sent = new OutboxPublisher(outbox, rabbit, tx, Clock.systemUTC(), 50, Duration.ofSeconds(2)).publishDue();
+
+    assertThat(sent).isEqualTo(1);
+    // Only Reports is bound to venue-map-version.published (#212, API outline §7.5)
+    var messages = drain("reports.events-events");
+    assertThat(messages).hasSize(1);
+    var message = messages.get(0);
+    assertThat(message.getMessageProperties().getType()).isEqualTo("VenueMapVersionPublished");
+    assertThat(message.getMessageProperties().getAppId()).isEqualTo("events");
+    assertThat(schema(MAP_VERSION).validate(text(message), InputFormat.JSON)).isEmpty();
+    assertThat(schema(ENVELOPE).validate(text(message), InputFormat.JSON)).as("envelope").isEmpty();
+    var body = json.readTree(text(message));
+    assertThat(body.get("eventId").asString()).isEqualTo(eventId.toString());
+    assertThat(body.get("actorUserId").asString()).isEqualTo(actor.toString());
+    assertThat(body.get("payload").get("mapVersion").asInt()).isEqualTo(uploaded.version());
+    assertThat(body.get("payload").get("publishedAt").asString()).isEqualTo(uploaded.uploadedAt().toString());
+    for (var queue : QUEUES) {
+      if (!"reports.events-events".equals(queue)) {
+        assertThat(drain(queue)).as(queue).isEmpty();
+      }
     }
   }
 

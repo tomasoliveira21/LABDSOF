@@ -1,5 +1,9 @@
 package pt.isep.labdsof.events;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +26,21 @@ public abstract class IntegrationTest {
 
   private static final JsonMapper LOG_JSON = JsonMapper.builder().build();
 
+  /** Stands in for the volume of the deployment (US-19 D9): one directory for the whole context. */
+  protected static final Path MAP_DIRECTORY = tempDirectory();
+
   @DynamicPropertySource
   static void infrastructure(DynamicPropertyRegistry registry) {
     Infrastructure.properties().forEach((key, value) -> registry.add(key, () -> value));
+    registry.add("farol.map.directory", MAP_DIRECTORY::toString);
+  }
+
+  private static Path tempDirectory() {
+    try {
+      return Files.createTempDirectory("farol-maps");
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   @LocalServerPort protected int port;
@@ -34,7 +50,13 @@ public abstract class IntegrationTest {
   protected static final Jwks JWKS = Infrastructure.JWKS;
 
   protected void member(UUID eventId, UUID userId, Membership.Role role, Membership.Status status, long version) {
-    copies.upsertIfNewer(new Membership(eventId, userId, role, status, Set.of(), version));
+    member(eventId, userId, role, status, version, Set.of());
+  }
+
+  /** A member who is in teams, which is what the permissions of a team grant them (US-19 D6). */
+  protected void member(UUID eventId, UUID userId, Membership.Role role, Membership.Status status, long version,
+      Set<UUID> teamIds) {
+    copies.upsertIfNewer(new Membership(eventId, userId, role, status, teamIds, version));
   }
 
   /** Inserts an event with fixed fields; the caller supplies the status and what the checks tie to it. */
