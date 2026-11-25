@@ -14,7 +14,18 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - `RouteRequestIT`, and two smoke checks of the route through the gateway.
 
 ### Changed
-- `contracts/openapi.yaml`: `routeHelpRequest` implemented, with its `409`; `routedTeamId` and the history describe the route. Dated note in the API outline §4.1. Closing a request is proposed to cancel its task (spec D7), done when this PR and US-30's #252 meet.
+- `contracts/openapi.yaml`: `routeHelpRequest` implemented, with its `409`; `routedTeamId` and the history describe the route. Dated note in the API outline §4.1. Closing a request (US-30) now cancels its live task too (proposed, for the team's review: spec D7); `closeHelpRequest` says so.
+
+## [Unreleased] · 2026-11-24 · Close a request (US-30, #77, Bruno de Abreu Lopes)
+
+**Why:** finished cases must leave the control room's active queue (US-30). Spec: [`Docs/specs/US-30-close-help-request.md`](Docs/specs/US-30-close-help-request.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/close` (`HelpRequests.Triage`): `Submitted`, `Seen`, `OnTheWay` or `Resolved` becomes `Closed`, recorded as a `status` history entry with the member's ID and name; `409` when it is already `Closed`. The request leaves the first load of the live list (US-26) and the participant reads it `Closed` (US-24).
+- `CloseRequestIT`: the close over HTTP on the real database, two closes at the same time, and the security matrix of the endpoint. Two smoke checks through the gateway (`close` without a token → 401, for a non-member → 404).
+
+### Changed
+- A closed request is final for the control room: `PATCH …/help-requests/{requestId}`, `accept-suggestion` and `acknowledge` answer `409` (spec D2, proposed for the team's review). It takes no AI result either: the triage worker skips it, and a result that arrives after the close is not written nor counted, so a closed request is not sent to the live list again. `contracts/openapi.yaml`: `closeHelpRequest` implemented, `409` on the `PATCH`. Dated note in the API outline §4.1.
 
 ## [Unreleased] · 2026-11-24 · Propose the event's team for the AI category (US-34 AC-2, #81, Bruno de Abreu Lopes)
 

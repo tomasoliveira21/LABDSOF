@@ -460,6 +460,73 @@ class HelpRequestTest {
     }
   }
 
+  // US-30: close (spec US-30 D1, D2)
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Submitted", "Seen", "OnTheWay", "Resolved"})
+  @DisplayName("US-30 AC-1 closing moves any open status to Closed and records it")
+  void close(String status) {
+    var open = withStatus(HelpRequestStatus.valueOf(status));
+    var suggested = open.withTriage(SUGGESTED, NOW.plusSeconds(4));
+    // Pending (read NotTriaged at LATER, past the deadline), Suggested, Accepted, Changed and a stored NotTriaged
+    for (var request : java.util.List.of(open, suggested, suggested.acceptSuggestion(LATER).request(),
+        suggested.change(Category.Safety, null, LATER).request(),
+        open.withTriage(TriageSuggestion.notTriaged(NotTriagedReason.Abstained), NOW.plusSeconds(4)))) {
+      var decision = request.close(LATER);
+      var closed = decision.request();
+
+      assertThat(closed.status()).isEqualTo(HelpRequestStatus.Closed);
+      assertThat(closed.version()).isEqualTo(request.version() + 1);
+      assertThat(closed.updatedAt()).isEqualTo(LATER.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+      // The triage, the values and the times of the request stay as they were (#177)
+      assertThat(closed).usingRecursiveComparison().ignoringFields("status", "updatedAt", "version")
+          .isEqualTo(request);
+      assertThat(decision.changes()).containsExactly(new HelpRequestChange("status", status, "Closed"));
+    }
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a closed request cannot be closed again")
+  void closeOnce() {
+    var closed = submit("help").close(LATER).request();
+    assertThatThrownBy(() -> closed.close(LATER)).isInstanceOf(RequestConflictException.class)
+        .hasMessage("The request is closed");
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a closed request refuses the control room's changes")
+  void closedIsFinal() {
+    var closed = withTriage(SUGGESTED).close(LATER).request();
+    var later = LATER.plusSeconds(1);
+    assertThatThrownBy(() -> closed.acceptSuggestion(later)).isInstanceOf(RequestConflictException.class)
+        .hasMessage("The request is closed");
+    assertThatThrownBy(() -> closed.change(Category.Safety, Priority.Low, later))
+        .isInstanceOf(RequestConflictException.class).hasMessage("The request is closed");
+    assertThatThrownBy(() -> closed.acknowledge(later)).isInstanceOf(RequestConflictException.class);
+    // Even a change to the values it already has: the answer does not depend on the values sent
+    var accepted = withTriage(SUGGESTED).acceptSuggestion(LATER).request().close(later).request();
+    assertThatThrownBy(() -> accepted.change(Category.Health, Priority.High, later))
+        .isInstanceOf(RequestConflictException.class).hasMessage("The request is closed");
+    // A body that is invalid in itself is invalid whatever the status (G8 review)
+    assertThatThrownBy(() -> closed.change(null, null, later)).isInstanceOf(InvalidHelpRequestException.class);
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a closed request awaits no triage and is not listed again at its deadline")
+  void closedAwaitsNoTriage() {
+    var open = submit("help");
+    var closed = open.close(NOW.plusSeconds(3)).request();
+    assertThat(open.awaitsModel()).isTrue();
+    assertThat(closed.awaitsModel()).isFalse();
+    assertThat(withTriage(SUGGESTED).awaitsModel()).isFalse();
+    // A poll whose window holds the triage deadline lists a Pending open request again (US-26), never a closed one
+    var since = NOW.plusSeconds(10);
+    var now = NOW.plusSeconds(40);
+    assertThat(open.changedAfter(since, now)).isTrue();
+    assertThat(closed.changedAfter(since, now)).isFalse();
+    assertThat(closed.changedAfter(NOW.plusSeconds(2), now)).isTrue();
+  }
+
   static HelpRequest routedTo(UUID teamId, HelpRequestStatus status) {
     var r = withStatus(status);
     return new HelpRequest(r.id(), r.eventId(), r.requesterId(), r.clientRequestId(), r.description(), r.location(),

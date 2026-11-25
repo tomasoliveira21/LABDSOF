@@ -468,4 +468,19 @@ class RouteRequestIT extends IntegrationTest {
     assertThat(tasks(id)).isEmpty();
     assertThat(rows(id)).isEmpty();
   }
+
+  @Test
+  @DisplayName("US-29 AC-2 closing a routed request cancels its task")
+  void closeCancelsTheTask() throws Exception {
+    var id = submit();
+    assertThat(route(id, JWKS.valid(operator), nursing).statusCode()).isEqualTo(200);
+
+    assertThat(post(requests() + "/" + id + "/close", JWKS.valid(colleague), "").statusCode()).isEqualTo(200);
+
+    assertThat(liveTasks(id)).isEmpty();
+    assertThat(tasks(id)).singleElement().satisfies(t -> assertThat(t).containsEntry("status", "Cancelled")
+        .containsEntry("version", 2L));
+    // Closed is final: it can no longer be routed
+    assertThat(route(id, JWKS.valid(operator), security).statusCode()).isEqualTo(409);
+  }
 }

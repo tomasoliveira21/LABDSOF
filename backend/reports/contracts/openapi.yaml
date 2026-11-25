@@ -209,7 +209,7 @@ paths:
         of US-28); a change to the values the request already has records nothing, whatever the triage state.
         At least one of the two is required, and neither may be null. Implemented by US-35 (#82, spec D2, D3). The
         status is not set here: the control room changes it through acknowledge (US-28) and close (US-30), spec
-        US-28 D1.
+        US-28 D1. 409 when the request is Closed (spec US-30 D2).
       x-farol-status: implemented
       requestBody:
         required: true
@@ -235,6 +235,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /api/v1/events/{eventId}/help-requests/{requestId}/acknowledge:
     parameters:
@@ -320,7 +322,8 @@ paths:
         Requires HelpRequests.Triage. The request's category and priority become the suggested ones and the
         triage becomes Accepted, recorded as the member's decision (category, priority and triage history
         entries). 409 when the triage is not Suggested: no suggestion yet, NotTriaged, or a member already
-        accepted or set the values (NFR-22). The default team follows from the category (US-34 #81 AC-2).
+        accepted or set the values (NFR-22), or the request is Closed (spec US-30 D2). The default team follows
+        from the category (US-34 #81 AC-2).
       x-farol-status: implemented
       responses:
         '200':
@@ -342,8 +345,15 @@ paths:
       tags: [Help requests]
       operationId: closeHelpRequest
       summary: Close the request; it leaves the active list (US-30)
-      description: Requires HelpRequests.Triage. 409 when it is already Closed.
-      x-farol-status: planned
+      description: >-
+        Requires HelpRequests.Triage. Submitted, Seen, OnTheWay or Resolved becomes Closed, whatever the triage state,
+        recorded as a status history entry with who and when (US-30 #77, spec D1). The request leaves the first load
+        of the control room's live list and is sent once, Closed, in the next poll; the participant keeps it, Closed.
+        No body. 409 when it is already Closed, with the same detail after a retry as when another member closed it
+        first. A closed request is final: acknowledge, accept-suggestion and the PATCH answer 409, and an AI result that
+        arrives after the close is not written (spec D2). The request's live field task, if any, is cancelled in the
+        same transaction (US-29 #76, spec D7, proposed for the team's review).
+      x-farol-status: implemented
       responses:
         '200':
           $ref: '#/components/responses/ControlRoomView'

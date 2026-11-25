@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -28,8 +29,9 @@ import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
  * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), the control
- * room's triage decisions (US-35), the acknowledge and the change history (US-28). The control room's reads and
- * decisions answer the default team, derived from the current copy of the event's teams (spec US-34 AC-2, D4).
+ * room's triage decisions (US-35), the acknowledge and the change history (US-28), the close (US-30). The control
+ * room's reads and decisions answer the default team, derived from the current copy of the event's teams (spec US-34
+ * AC-2, D4).
  */
 @Service
 public class HelpRequestService {
@@ -209,10 +211,27 @@ public class HelpRequestService {
   /** The control room has seen the request: Submitted becomes Seen, recorded as the member's change (US-28 D2, D8). */
   @Transactional
   public HelpRequest acknowledge(UUID eventId, Actor actor, UUID requestId) {
+    return moveStatus(eventId, actor, requestId, HelpRequest::acknowledge);
+  }
+
+  /**
+   * The control room closes the request: it leaves the active list, recorded as the member's change (US-30 D1), and
+   * its live field task is cancelled, under the request's lock, so it leaves the team's list too (US-29 D7).
+   */
+  @Transactional
+  public HelpRequest close(UUID eventId, Actor actor, UUID requestId) {
+    var closed = moveStatus(eventId, actor, requestId, HelpRequest::close);
+    fieldTasks.cancelLive(eventId, requestId, closed.updatedAt());
+    return closed;
+  }
+
+  /** One status action under the decisions' locks (US-28 D3, US-30 D3), logged with metadata only (D8, D6). */
+  private HelpRequest moveStatus(UUID eventId, Actor actor, UUID requestId,
+      BiFunction<HelpRequest, Instant, HelpRequest.Decision> action) {
     triageAccess(eventId, actor.userId());
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
-    var decision = request.acknowledge(now);
+    var decision = action.apply(request, now);
     helpRequests.saveDecision(decision.request(), actor, decision.changes());
     log.info("Status of request {}: {} -> {}", request.id(), request.status(), decision.request().status());
     // Same ControlRoomView as the list and the other decisions, so it carries the default team too (US-34 D4)

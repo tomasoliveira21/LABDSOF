@@ -98,7 +98,7 @@ class InMemoryPorts implements HelpRequests, FieldTasks, LocalCopies, Outbox, Pr
   @Override
   public boolean saveTriage(HelpRequest triaged) {
     var current = requests.get(triaged.id());
-    if (current == null || !current.eventId().equals(triaged.eventId()) || !current.triage().awaitsModel()) {
+    if (current == null || !current.eventId().equals(triaged.eventId()) || !current.awaitsModel()) {
       return false;
     }
     requests.put(triaged.id(), current.withTriage(triaged.triage(), triaged.updatedAt()));
