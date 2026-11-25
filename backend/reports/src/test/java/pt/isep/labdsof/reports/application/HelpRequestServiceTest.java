@@ -50,7 +50,7 @@ class HelpRequestServiceTest {
   Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
   HelpRequestService service() {
-    return new HelpRequestService(ports, ports, ports, metrics, clock);
+    return new HelpRequestService(ports, ports, ports, ports, metrics, clock);
   }
 
   void member(String user, Role role, UUID... teams) {
@@ -172,11 +172,16 @@ class HelpRequestServiceTest {
       }
 
       @Override
+      public List<UUID> routedTo(UUID eventId, UUID teamId) {
+        return List.of();
+      }
+
+      @Override
       public List<HistoryEntry> history(UUID eventId, UUID requestId) {
         return List.of();
       }
     };
-    var service = new HelpRequestService(refusing, ports, ports, metrics, clock);
+    var service = new HelpRequestService(refusing, ports, ports, ports, metrics, clock);
     var clientRequestId = UUID.randomUUID();
     assertThatThrownBy(() -> service.submit(EVENT, "ana", clientRequestId, "help", POINT))
         .isInstanceOf(IllegalStateException.class);
@@ -740,6 +745,154 @@ class HelpRequestServiceTest {
       assertThat(appender.list).singleElement().satisfies(line -> {
         assertThat(line.getLevel()).isEqualTo(Level.INFO);
         assertThat(line.getFormattedMessage()).contains(request.id().toString(), "Submitted", "Seen")
+            .doesNotContain("miguel", "Friend", "fainted");
+      });
+    } finally {
+      logger.detachAppender(appender);
+    }
+  }
+
+  static final UUID NURSING = UUID.randomUUID();
+  static final UUID SECURITY = UUID.randomUUID();
+
+  void respondingTeam(UUID teamId, Category category) {
+    ports.upsertIfNewer(new Team(teamId, EVENT, "Team " + teamId,
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(category), false, 1));
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 a route dispatches an open task to the team and is saved as the member's change")
+  void routeSaved() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    var request = stored(SUGGESTED);
+
+    var routed = service.route(EVENT, actor("miguel"), request.id(), NURSING);
+
+    var saved = ports.find(EVENT, request.id()).orElseThrow();
+    assertThat(saved.routedTeamId()).isEqualTo(NURSING);
+    assertThat(saved.status()).isEqualTo(HelpRequestStatus.Submitted);
+    assertThat(saved.updatedAt()).isEqualTo(DECIDED);
+    // The control-room view, default team included (D9)
+    assertThat(routed).isEqualTo(saved.asSeenAt(DECIDED).withDefaultTeam(ports.teams(EVENT)));
+    assertThat(routed.defaultTeamId()).isEqualTo(NURSING);
+    assertThat(ports.decisions).singleElement().satisfies(d -> {
+      assertThat(d.actor()).isEqualTo(new Actor("miguel", "Name of miguel"));
+      assertThat(d.changes()).containsExactly(new HelpRequestChange("routedTeamId", null, NURSING.toString()));
+    });
+    assertThat(ports.tasks).singleElement().satisfies(task -> {
+      assertThat(task.eventId()).isEqualTo(EVENT);
+      assertThat(task.requestId()).isEqualTo(request.id());
+      assertThat(task.teamId()).isEqualTo(NURSING);
+      assertThat(task.status()).isEqualTo("Open");
+      assertThat(task.at()).isEqualTo(DECIDED);
+    });
+    assertThat(metrics.counted).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 routing again cancels the open task and dispatches a new one")
+  void routeAgain() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    respondingTeam(SECURITY, Category.Safety);
+    var request = stored(SUGGESTED);
+
+    service.route(EVENT, actor("miguel"), request.id(), NURSING);
+    service.route(EVENT, actor("miguel"), request.id(), SECURITY);
+
+    assertThat(ports.find(EVENT, request.id()).orElseThrow().routedTeamId()).isEqualTo(SECURITY);
+    assertThat(ports.tasks).extracting(InMemoryPorts.Task::teamId, InMemoryPorts.Task::status)
+        .containsExactly(org.assertj.core.groups.Tuple.tuple(NURSING, "Cancelled"),
+            org.assertj.core.groups.Tuple.tuple(SECURITY, "Open"));
+    assertThat(ports.decisions).extracting(InMemoryPorts.Decision::changes).containsExactly(
+        List.of(new HelpRequestChange("routedTeamId", null, NURSING.toString())),
+        List.of(new HelpRequestChange("routedTeamId", NURSING.toString(), SECURITY.toString())));
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 routing to the same team again writes nothing")
+  void routeToTheSameTeam() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    var request = stored(SUGGESTED);
+    service.route(EVENT, actor("miguel"), request.id(), NURSING);
+    var saved = ports.find(EVENT, request.id()).orElseThrow();
+
+    var again = service.route(EVENT, actor("miguel"), request.id(), NURSING);
+
+    assertThat(again.version()).isEqualTo(saved.version());
+    assertThat(ports.find(EVENT, request.id()).orElseThrow()).isEqualTo(saved);
+    assertThat(ports.decisions).hasSize(1);
+    assertThat(ports.tasks).singleElement().extracting(InMemoryPorts.Task::status).isEqualTo("Open");
+  }
+
+  @Test
+  @DisplayName("US-29 AC-3 a team that cannot respond gets 422 and nothing is written")
+  void routeToATeamThatCannotRespond() {
+    var service = operatorService();
+    var request = stored(SUGGESTED);
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Team(elsewhere, UUID.randomUUID(), "Elsewhere",
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(Category.Health), false, 1));
+    var miguel = actor("miguel");
+    var id = request.id();
+
+    for (var team : List.of(CONTROL_ROOM, elsewhere, UUID.randomUUID())) {
+      assertThatThrownBy(() -> service.route(EVENT, miguel, id, team))
+          .isInstanceOf(pt.isep.labdsof.reports.domain.IneligibleTeamException.class);
+    }
+    assertThat(ports.find(EVENT, id).orElseThrow()).isEqualTo(request);
+    assertThat(ports.decisions).isEmpty();
+    assertThat(ports.tasks).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 only the control room routes")
+  void onlyTheControlRoomRoutes() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    member("nurse", Role.RegularUser, NURSING);
+    member("ana", Role.RegularUser);
+    var id = stored(SUGGESTED).id();
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var miguel = actor("miguel");
+
+    assertThatThrownBy(() -> service.route(EVENT, actor("nurse"), id, NURSING))
+        .isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.route(EVENT, actor("ana"), id, NURSING)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.route(EVENT, actor("nobody"), id, NURSING))
+        .isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.route(elsewhere, miguel, id, NURSING)).isInstanceOf(NotFoundException.class);
+    var unknown = UUID.randomUUID();
+    // An unknown request is 404 even with an unusable team: the request is read first (D8)
+    assertThatThrownBy(() -> service.route(EVENT, miguel, unknown, NURSING)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.route(EVENT, miguel, unknown, CONTROL_ROOM))
+        .isInstanceOf(NotFoundException.class);
+    assertThat(ports.find(EVENT, id).orElseThrow().routedTeamId()).isNull();
+    assertThat(ports.decisions).isEmpty();
+    assertThat(ports.tasks).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 a route is logged without the description or the user")
+  void routeLogged() {
+    var logger = (Logger) LoggerFactory.getLogger(HelpRequestService.class);
+    var appender = new ListAppender<ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      var service = operatorService();
+      respondingTeam(NURSING, Category.Health);
+      var request = stored(SUGGESTED);
+      service.route(EVENT, actor("miguel"), request.id(), NURSING);
+      // The same team again writes nothing, so it logs nothing
+      service.route(EVENT, actor("miguel"), request.id(), NURSING);
+
+      assertThat(appender.list).singleElement().satisfies(line -> {
+        assertThat(line.getLevel()).isEqualTo(Level.INFO);
+        assertThat(line.getFormattedMessage()).contains(request.id().toString(), "null", NURSING.toString())
             .doesNotContain("miguel", "Friend", "fainted");
       });
     } finally {

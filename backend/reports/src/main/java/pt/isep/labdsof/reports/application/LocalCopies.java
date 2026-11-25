@@ -21,6 +21,12 @@ public interface LocalCopies {
   /** Every team of the event, deleted ones included. */
   List<Team> teams(UUID eventId);
 
+  /**
+   * The event's team, its copy locked against a TeamChanged until the transaction ends (SELECT ... FOR SHARE), so a
+   * route never dispatches a task to a team being deleted (US-29 D5). Empty for an unknown or other event's team.
+   */
+  Optional<Team> teamForShare(UUID eventId, UUID teamId);
+
   /** Inserts or replaces the copy; false when the copy already has this or a newer version. */
   boolean upsertIfNewer(Membership membership);
 

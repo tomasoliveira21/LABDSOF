@@ -36,14 +36,16 @@ public class HelpRequestService {
   private static final Logger log = LoggerFactory.getLogger(HelpRequestService.class);
 
   private final HelpRequests helpRequests;
+  private final FieldTasks fieldTasks;
   private final LocalCopies copies;
   private final Outbox outbox;
   private final TriageMetrics metrics;
   private final Clock clock;
 
-  public HelpRequestService(HelpRequests helpRequests, LocalCopies copies, Outbox outbox, TriageMetrics metrics,
-      Clock clock) {
+  public HelpRequestService(HelpRequests helpRequests, FieldTasks fieldTasks, LocalCopies copies, Outbox outbox,
+      TriageMetrics metrics, Clock clock) {
     this.helpRequests = helpRequests;
+    this.fieldTasks = fieldTasks;
     this.copies = copies;
     this.outbox = outbox;
     this.metrics = metrics;
@@ -193,6 +195,28 @@ public class HelpRequestService {
     log.info("Status of request {}: {} -> {}", request.id(), request.status(), decision.request().status());
     // Same ControlRoomView as the list and the other decisions, so it carries the default team too (US-34 D4)
     return decision.request().asSeenAt(now).withDefaultTeam(copies.teams(eventId));
+  }
+
+  /**
+   * The control room routes the request to a team (US-29 D1 to D5): its Open task, if any, is cancelled and a new one
+   * is dispatched to the team, recorded as the member's change. The team's copy is locked before the request, the
+   * order a team deletion takes too (D5).
+   */
+  @Transactional
+  public HelpRequest route(UUID eventId, Actor actor, UUID requestId, UUID teamId) {
+    triageAccess(eventId, actor.userId());
+    var team = copies.teamForShare(eventId, teamId).orElse(null);
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
+    var now = clock.instant();
+    var decision = request.route(team, now);
+    var routed = decision.request();
+    if (!decision.changes().isEmpty()) {
+      helpRequests.saveDecision(routed, actor, decision.changes());
+      fieldTasks.cancelLive(eventId, requestId, routed.updatedAt());
+      fieldTasks.dispatch(UUID.randomUUID(), eventId, requestId, teamId, routed.updatedAt());
+      log.info("Request {} routed: {} -> {}", request.id(), request.routedTeamId(), teamId);
+    }
+    return routed.asSeenAt(now).withDefaultTeam(copies.teams(eventId));
   }
 
   /** Every recorded change of a request of the event, oldest first; only HelpRequests.Triage (US-28 D4, D7). */
