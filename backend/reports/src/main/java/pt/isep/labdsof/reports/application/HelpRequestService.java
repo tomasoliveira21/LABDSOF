@@ -23,6 +23,7 @@ import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Priority;
+import pt.isep.labdsof.reports.domain.SubmitLimit;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
@@ -40,15 +41,17 @@ public class HelpRequestService {
   private final LocalCopies copies;
   private final Outbox outbox;
   private final TriageMetrics metrics;
+  private final SubmitLimit limit;
   private final Clock clock;
 
   public HelpRequestService(HelpRequests helpRequests, FieldTasks fieldTasks, LocalCopies copies, Outbox outbox,
-      TriageMetrics metrics, Clock clock) {
+      TriageMetrics metrics, SubmitLimit limit, Clock clock) {
     this.helpRequests = helpRequests;
     this.fieldTasks = fieldTasks;
     this.copies = copies;
     this.outbox = outbox;
     this.metrics = metrics;
+    this.limit = limit;
     this.clock = clock;
   }
 
@@ -67,24 +70,43 @@ public class HelpRequestService {
    */
   static final Duration POLL_OVERLAP = Duration.ofSeconds(5);
 
-  /** Saves the request and its HelpRequestSubmitted in one transaction (ADR-004 outbox). */
+  /**
+   * Saves the request and its HelpRequestSubmitted in one transaction (ADR-004 outbox). Checks, in order: membership
+   * (404), then under a lock per account, so two submissions cannot both pass the limit: the description and point
+   * (400), a retry of a saved request (answered, never limited), then the account's limit (429, L-2) (spec US-23 D3,
+   * D5).
+   */
   @Transactional
   public Submitted submit(UUID eventId, String userId, UUID clientRequestId, String description,
       Location location) {
     access(eventId, userId);
+    // The lock first, then the clock: a submission that waited is stamped when it can commit (US-26 D3, G8 review)
+    helpRequests.lockRequester(userId);
     var request = HelpRequest.submit(UUID.randomUUID(), eventId, userId, clientRequestId, description,
         location, clock.instant());
+    var saved = helpRequests.findByClientRequestId(eventId, userId, clientRequestId);
+    if (saved.isPresent()) {
+      return retried(saved.get(), description, location);
+    }
+    var now = request.submittedAt();
+    var wait = limit.retryAfter(helpRequests.submittedSince(userId, limit.since(now)), now);
+    if (wait.isPresent()) {
+      throw new TooManyHelpRequestsException(wait.get());
+    }
     if (!helpRequests.insertIfNew(request)) {
-      var saved = helpRequests.findByClientRequestId(eventId, userId, clientRequestId)
-          .orElseThrow(() -> new IllegalStateException("conflicting submit not visible"));
-      // A reused id with other content is a client bug: refuse it rather than drop the new request.
-      if (!saved.description().equals(description) || !saved.location().equals(location)) {
-        throw new ClientRequestConflictException();
-      }
-      return new Submitted(saved, false);
+      // Not found above, yet taken: the account lock was not held, so no request is invented or dropped
+      throw new IllegalStateException("conflicting submit not visible");
     }
     outbox.add(OutgoingEvent.helpRequestSubmitted(UUID.randomUUID(), request));
     return new Submitted(request, true);
+  }
+
+  /** A reused id with other content is a client bug: refuse it rather than drop the new request. */
+  private static Submitted retried(HelpRequest saved, String description, Location location) {
+    if (!saved.description().equals(description) || !saved.location().equals(location)) {
+      throw new ClientRequestConflictException();
+    }
+    return new Submitted(saved, false);
   }
 
   /** The owner gets their request; HelpRequests.Triage gets any request of the event; others get 404. */

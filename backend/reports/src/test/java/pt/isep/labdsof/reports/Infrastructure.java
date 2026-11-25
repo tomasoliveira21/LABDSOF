@@ -79,6 +79,8 @@ public final class Infrastructure {
   public static ConfigurableApplicationContext startReports(Map<String, Object> overrides) {
     var all = properties();
     all.put("server.port", "0");
+    // As in IntegrationTest: these contexts send many help requests from one account (spec US-23 D6)
+    all.put("farol.help-requests.limit", "1000000");
     all.putAll(overrides);
     var args = all.entrySet().stream().map(e -> "--" + e.getKey() + "=" + e.getValue())
         .toArray(String[]::new);
