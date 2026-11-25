@@ -36,6 +36,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
 
   private static final Logger log = LoggerFactory.getLogger(JdbcLocalCopies.class);
   private static final String EVENT_ID = "eventId";
+  private static final String TEAM_ID = "teamId";
   private static final String VERSION = "version";
 
   private final JdbcClient jdbc;
@@ -92,7 +93,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
   public Optional<Team> teamForShare(UUID eventId, UUID teamId) {
     return jdbc.sql("SELECT * FROM team_copy WHERE event_id = :eventId AND team_id = :teamId FOR SHARE")
         .param(EVENT_ID, eventId)
-        .param("teamId", teamId)
+        .param(TEAM_ID, teamId)
         .query(this::team)
         .optional();
   }
@@ -132,7 +133,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
               version = excluded.version, changed_at = excluded.changed_at
           WHERE team_copy.version < excluded.version AND team_copy.event_id = excluded.event_id
         """)
-        .param("teamId", t.teamId())
+        .param(TEAM_ID, t.teamId())
         .param(EVENT_ID, t.eventId())
         .param("name", t.name())
         .param("permissions", json.writeValueAsString(permissions))
@@ -144,7 +145,7 @@ class JdbcLocalCopies implements LocalCopies, ProcessedMessages {
         .update() == 1;
     if (!applied) {
       var savedEvent = jdbc.sql("SELECT event_id FROM team_copy WHERE team_id = :teamId")
-          .param("teamId", t.teamId()).query(UUID.class).single();
+          .param(TEAM_ID, t.teamId()).query(UUID.class).single();
       if (!savedEvent.equals(t.eventId())) { // not stale: Events broke an invariant
         log.warn("TeamChanged for team {} of event {} ignored: the team belongs to event {}", t.teamId(),
             t.eventId(), savedEvent);

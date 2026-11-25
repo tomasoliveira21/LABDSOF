@@ -967,12 +967,13 @@ class HelpRequestServiceTest {
     var elsewhere = UUID.randomUUID();
     ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
     var miguel = actor("miguel");
+    var nurse = actor("nurse");
+    var ana = actor("ana");
+    var nobody = actor("nobody");
 
-    assertThatThrownBy(() -> service.route(EVENT, actor("nurse"), id, NURSING))
-        .isInstanceOf(ForbiddenException.class);
-    assertThatThrownBy(() -> service.route(EVENT, actor("ana"), id, NURSING)).isInstanceOf(ForbiddenException.class);
-    assertThatThrownBy(() -> service.route(EVENT, actor("nobody"), id, NURSING))
-        .isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.route(EVENT, nurse, id, NURSING)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.route(EVENT, ana, id, NURSING)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.route(EVENT, nobody, id, NURSING)).isInstanceOf(NotFoundException.class);
     assertThatThrownBy(() -> service.route(elsewhere, miguel, id, NURSING)).isInstanceOf(NotFoundException.class);
     var unknown = UUID.randomUUID();
     // An unknown request is 404 even with an unusable team: the request is read first (D8)

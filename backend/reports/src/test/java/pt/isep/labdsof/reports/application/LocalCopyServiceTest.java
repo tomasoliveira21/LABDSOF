@@ -105,7 +105,7 @@ class LocalCopyServiceTest {
 
     racing.apply(UUID.randomUUID(), new Team(TEAM, EVENT, "Nursing", List.of(), Set.of(), true, 2));
 
-    assertThat(listsEveryRequest.requests.get(moved.id())).isEqualTo(moved);
+    assertThat(listsEveryRequest.requests).containsEntry(moved.id(), moved);
     assertThat(listsEveryRequest.tasks).singleElement().extracting(InMemoryPorts.Task::status).isEqualTo("Open");
   }
 
@@ -136,8 +136,8 @@ class LocalCopyServiceTest {
       assertThat(returned.version()).isEqualTo(4);
       assertThat(returned.updatedAt()).isEqualTo(NOW);
     }
-    assertThat(ports.requests.get(resolved.id())).isEqualTo(resolved);
-    assertThat(ports.requests.get(elsewhere.id())).isEqualTo(elsewhere);
+    assertThat(ports.requests).containsEntry(resolved.id(), resolved);
+    assertThat(ports.requests).containsEntry(elsewhere.id(), elsewhere);
     assertThat(ports.tasks).extracting(InMemoryPorts.Task::requestId, InMemoryPorts.Task::status)
         .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple(submitted.id(), "Cancelled"),
             org.assertj.core.groups.Tuple.tuple(seen.id(), "Cancelled"),
@@ -145,7 +145,7 @@ class LocalCopyServiceTest {
             org.assertj.core.groups.Tuple.tuple(resolved.id(), "Resolved"),
             org.assertj.core.groups.Tuple.tuple(elsewhere.id(), "Open"),
             org.assertj.core.groups.Tuple.tuple(closed.id(), "Cancelled"));
-    assertThat(ports.requests.get(closed.id())).isEqualTo(closed);
+    assertThat(ports.requests).containsEntry(closed.id(), closed);
     // A system change: no history entry (US-28 D6)
     assertThat(ports.decisions).allSatisfy(d -> assertThat(d.changes()).isEmpty());
 
@@ -158,11 +158,11 @@ class LocalCopyServiceTest {
     var routedAgain = routed(TEAM, HelpRequestStatus.Seen);
     assertThat(service.apply(UUID.randomUUID(), new Team(TEAM, EVENT, "Nursing", List.of(), Set.of(), true, 2)))
         .isEqualTo(Outcome.STALE);
-    assertThat(ports.requests.get(routedAgain.id())).isEqualTo(routedAgain);
+    assertThat(ports.requests).containsEntry(routedAgain.id(), routedAgain);
     assertThat(ports.requests).containsAllEntriesOf(after);
     assertThat(ports.tasks).containsAll(tasks);
     // A team that is not deleted keeps its requests
     assertThat(service.apply(UUID.randomUUID(), team("Nursing", 3))).isEqualTo(Outcome.APPLIED);
-    assertThat(ports.requests.get(routedAgain.id())).isEqualTo(routedAgain);
+    assertThat(ports.requests).containsEntry(routedAgain.id(), routedAgain);
   }
 }
