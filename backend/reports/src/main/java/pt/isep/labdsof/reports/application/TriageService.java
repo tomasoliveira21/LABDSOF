@@ -66,7 +66,7 @@ public class TriageService {
       return logged(requestId, new Result(Outcome.NOT_FOUND, null, 0));
     }
     var request = found.get();
-    if (!request.triage().awaitsModel()) {
+    if (!request.awaitsModel()) {
       return logged(requestId, new Result(Outcome.ALREADY_TRIAGED, null, 0));
     }
     var start = clock.instant();

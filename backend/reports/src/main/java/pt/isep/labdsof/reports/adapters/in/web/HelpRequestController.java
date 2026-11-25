@@ -46,8 +46,8 @@ import pt.isep.labdsof.reports.domain.RequestConflictException;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
- * Help requests, the control room's triage decisions, acknowledge and history, and the triage status (API outline §4,
- * contracts/openapi.yaml). The caller is always the token's sub.
+ * Help requests, the control room's triage decisions, acknowledge, close and history, and the triage status (API
+ * outline §4, contracts/openapi.yaml). The caller is always the token's sub.
  */
 @RestController
 @RequestMapping("/api/v1/events/{eventId}")
@@ -155,6 +155,12 @@ class HelpRequestController {
   ControlRoomView acknowledge(@PathVariable UUID eventId, @PathVariable UUID requestId,
       @AuthenticationPrincipal Jwt jwt) {
     return controlRoom(service.acknowledge(eventId, actor(jwt), requestId));
+  }
+
+  /** The control room closes the request: it leaves the active list (US-30 AC-1, spec D1). */
+  @PostMapping(value = "/help-requests/{requestId}/close", produces = "application/json")
+  ControlRoomView close(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt) {
+    return controlRoom(service.close(eventId, actor(jwt), requestId));
   }
 
   /** Every recorded change of the request, oldest first (US-28 AC-2, spec D4). */

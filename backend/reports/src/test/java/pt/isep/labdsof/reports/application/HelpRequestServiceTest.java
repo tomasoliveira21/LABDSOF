@@ -282,8 +282,8 @@ class HelpRequestServiceTest {
     // At the 30 s deadline, the Pending requests come back as NotTriaged (D4)
     clock = Clock.fixed(NOW.plusSeconds(31), ZoneOffset.UTC);
     var late = service().list(EVENT, "rui", NOW.plusSeconds(26));
-    // The closed one too: harmless, the page drops closed requests
-    assertThat(late.items()).extracting(HelpRequest::id).containsExactly(first.id(), closed.id());
+    // Not the closed one: it awaits no triage, so it is sent once, when it is closed (spec US-30 D4, G8 review)
+    assertThat(late.items()).extracting(HelpRequest::id).containsExactly(first.id());
     assertThat(late.items().get(0).triage().state()).isEqualTo(TriageState.NotTriaged);
   }
 
@@ -849,6 +849,85 @@ class HelpRequestServiceTest {
       assertThat(appender.list).singleElement().satisfies(line -> {
         assertThat(line.getLevel()).isEqualTo(Level.INFO);
         assertThat(line.getFormattedMessage()).contains(request.id().toString(), "Submitted", "Seen")
+            .doesNotContain("miguel", "Friend", "fainted");
+      });
+    } finally {
+      logger.detachAppender(appender);
+    }
+  }
+
+  // US-30: close (spec US-30 D1 to D6)
+
+  @Test
+  @DisplayName("US-30 AC-1 a close is saved as the member's change with their name")
+  void closeSaved() {
+    var service = operatorService();
+    var request = stored(SUGGESTED);
+    service.acknowledge(EVENT, actor("miguel"), request.id());
+
+    var closed = service.close(EVENT, actor("miguel"), request.id());
+
+    var saved = ports.find(EVENT, request.id()).orElseThrow();
+    assertThat(closed).isEqualTo(saved.asSeenAt(DECIDED));
+    assertThat(saved.status()).isEqualTo(HelpRequestStatus.Closed);
+    assertThat(saved.triage().state()).isEqualTo(TriageState.Suggested);
+    assertThat(ports.decisions).hasSize(2).last().satisfies(d -> {
+      assertThat(d.actor()).isEqualTo(new Actor("miguel", "Name of miguel"));
+      assertThat(d.changes()).containsExactly(new HelpRequestChange("status", "Seen", "Closed"));
+    });
+    assertThat(service.history(EVENT, "miguel", request.id())).last()
+        .isEqualTo(new HistoryEntry("status", "Seen", "Closed", "miguel", "Name of miguel", DECIDED));
+    // Not a triage decision, and final: a second close and a later change write nothing
+    assertThat(metrics.counted).isEmpty();
+    var id = request.id();
+    var miguel = actor("miguel");
+    assertThatThrownBy(() -> service.close(EVENT, miguel, id))
+        .isInstanceOf(pt.isep.labdsof.reports.domain.RequestConflictException.class);
+    assertThatThrownBy(() -> service.change(EVENT, miguel, id, null, Priority.Low))
+        .isInstanceOf(pt.isep.labdsof.reports.domain.RequestConflictException.class);
+    assertThat(ports.decisions).hasSize(2);
+    // The participant reads it Closed
+    member("ana", Role.RegularUser);
+    assertThat(service.get(EVENT, "ana", id).request().status())
+        .isEqualTo(HelpRequestStatus.Closed);
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 only the control room closes")
+  void onlyTheControlRoomCloses() {
+    var service = operatorService();
+    member("ana", Role.RegularUser);
+    var id = stored(SUGGESTED).id();
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var ana = actor("ana");
+    var nobody = actor("nobody");
+    var miguel = actor("miguel");
+    var unknown = UUID.randomUUID();
+
+    assertThatThrownBy(() -> service.close(EVENT, ana, id)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.close(EVENT, nobody, id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.close(elsewhere, miguel, id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.close(EVENT, miguel, unknown)).isInstanceOf(NotFoundException.class);
+    assertThat(ports.find(EVENT, id).orElseThrow().status()).isEqualTo(HelpRequestStatus.Submitted);
+    assertThat(ports.decisions).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a close is logged without the description or the user")
+  void closeLogged() {
+    var logger = (Logger) LoggerFactory.getLogger(HelpRequestService.class);
+    var appender = new ListAppender<ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      var service = operatorService();
+      var request = stored(SUGGESTED);
+      service.close(EVENT, actor("miguel"), request.id());
+
+      assertThat(appender.list).singleElement().satisfies(line -> {
+        assertThat(line.getLevel()).isEqualTo(Level.INFO);
+        assertThat(line.getFormattedMessage()).contains(request.id().toString(), "Submitted", "Closed")
             .doesNotContain("miguel", "Friend", "fainted");
       });
     } finally {
