@@ -17,9 +17,6 @@ import pt.isep.labdsof.events.domain.EventNotDraftException;
 @Service
 public class EventService {
 
-  /** A join code already in the table is retried; a second collision is already beyond belief (D1). */
-  private static final int ATTEMPTS = 3;
-
   private final EventReader reader;
   private final Events events;
   private final JoinCodes joinCodes;
@@ -46,14 +43,8 @@ public class EventService {
   public EventView publish(UUID userId, UUID eventId) {
     var event = reader.administrator(userId, eventId).event();
     var at = clock.instant();
-    for (var attempt = 0; attempt < ATTEMPTS; attempt++) {
-      var published = event.published(joinCodes.next());
-      var outcome = events.publish(published, userId, at);
-      if (outcome != Events.Write.CODE_TAKEN) {
-        return stored(outcome, published, userId, at);
-      }
-    }
-    throw new IllegalStateException("no free join code after " + ATTEMPTS + " attempts");
+    var published = event.published(joinCodes.next());
+    return stored(events.publish(published, userId, at), published, userId, at);
   }
 
   /**

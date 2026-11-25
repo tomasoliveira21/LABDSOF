@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import pt.isep.labdsof.events.application.Events;
@@ -47,22 +46,19 @@ class JdbcEvents implements Events {
 
   @Override
   public Write publish(Event event, UUID actor, Instant at) {
-    try {
-      return jdbc.sql("""
-          UPDATE event SET status = 'Published', join_code = :code, version = :version, updated_at = :at,
-                           updated_by = :actor
-          WHERE event_id = :eventId AND status = 'Draft' AND version = :version - 1
-          """)
-          .param("code", event.joinCode())
-          .param(VERSION, event.version())
-          .param("at", Timestamp.from(at))
-          .param("actor", actor)
-          .param(EVENT_ID, event.eventId())
-          .update() == 1 ? Write.STORED : missed(event);
-    } catch (DuplicateKeyException e) {
-      // event_join_code_unique: the one code the table already holds (US-11 D1)
-      return Write.CODE_TAKEN;
-    }
+    // A join code already in the table (event_join_code_unique) lets the unique violation roll the transaction
+    // back, publishing nothing: at 2⁻¹⁶⁰ per publish it is not worth a savepoint (US-11 D1).
+    return jdbc.sql("""
+        UPDATE event SET status = 'Published', join_code = :code, version = :version, updated_at = :at,
+                         updated_by = :actor
+        WHERE event_id = :eventId AND status = 'Draft' AND version = :version - 1
+        """)
+        .param("code", event.joinCode())
+        .param(VERSION, event.version())
+        .param("at", Timestamp.from(at))
+        .param("actor", actor)
+        .param(EVENT_ID, event.eventId())
+        .update() == 1 ? Write.STORED : missed(event);
   }
 
   /**

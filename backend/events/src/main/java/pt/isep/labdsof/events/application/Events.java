@@ -11,11 +11,10 @@ public interface Events {
   /**
    * What a write did. As every write of this service (US-16 D3, decision 3 of 21 November 2026), the statement
    * carries the version it read, and the publish its status too: {@code NOT_DRAFT} means the row moved on and is
-   * no longer a draft, {@code CONFLICT} that it is still a draft at another version, {@code CODE_TAKEN} that the
-   * join code is already in the table (US-11 D1) and {@code GONE} that there is no such event. None of them
-   * writes anything.
+   * no longer a draft, {@code CONFLICT} that it is still a draft at another version, and {@code GONE} that there
+   * is no such event. None of them writes anything.
    */
-  enum Write { STORED, NOT_DRAFT, CONFLICT, CODE_TAKEN, GONE }
+  enum Write { STORED, NOT_DRAFT, CONFLICT, GONE }
 
   Optional<Event> findById(UUID eventId);
 

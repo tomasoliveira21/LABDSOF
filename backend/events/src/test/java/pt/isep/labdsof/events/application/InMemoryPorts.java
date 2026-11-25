@@ -52,14 +52,8 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
   /** Set to simulate another request changing the team, which is still live, between the read and the write. */
   boolean teamChangesOnWrite;
 
-  /** The join codes {@link #next()} hands out, in order; it repeats the last one once the list runs out. */
-  final List<String> codes = new ArrayList<>(List.of("JOIN-CODE-1"));
-
-  /** The codes asked for, so a refused publish can be shown to have asked for none of them twice. */
-  final List<String> codesAsked = new ArrayList<>();
-
-  /** The join codes the table already holds, as event_join_code_unique sees them (US-11 D1). */
-  final Set<String> takenCodes = new HashSet<>();
+  /** The one join code {@link #next()} hands out, so the published event is predictable. */
+  static final String JOIN_CODE = "JOIN-CODE-1";
 
   /** The publishes recorded by the {@link EventAudit} port. */
   final List<Published> publishes = new ArrayList<>();
@@ -77,17 +71,9 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
     return Optional.ofNullable(events.get(eventId));
   }
 
-  /** The join codes the port hands out, in order. */
-  void handOut(String... joinCodes) {
-    codes.clear();
-    codes.addAll(List.of(joinCodes));
-  }
-
   @Override
   public String next() {
-    var code = codes.get(Math.min(codesAsked.size(), codes.size() - 1));
-    codesAsked.add(code);
-    return code;
+    return JOIN_CODE;
   }
 
   @Override
@@ -98,9 +84,6 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
   /** The guard of the real adapter: the row must still be the draft the use case read (US-11 D4). */
   @Override
   public Events.Write publish(Event event, UUID actor, Instant at) {
-    if (takenCodes.contains(event.joinCode())) {
-      return Events.Write.CODE_TAKEN;
-    }
     if (publishOutcome != null) {
       return publishOutcome;
     }
@@ -115,7 +98,6 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
       return Events.Write.CONFLICT;
     }
     events.put(event.eventId(), event);
-    takenCodes.add(event.joinCode());
     eventWrites.add(new EventWrite(event.eventId(), actor, at, event.version()));
     return Events.Write.STORED;
   }

@@ -1,6 +1,7 @@
 package pt.isep.labdsof.events.adapters.out.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import pt.isep.labdsof.events.IntegrationTest;
 import pt.isep.labdsof.events.application.Events;
 import pt.isep.labdsof.events.application.Events.Write;
@@ -102,13 +104,16 @@ class JdbcEventsIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("US-11 AC-1 a join code already in the table is reported as taken")
-  void joinCodeAlreadyInTheTableIsTaken() {
+  @DisplayName("US-11 AC-1 a join code already in the table rolls the publish back instead of storing it")
+  void joinCodeAlreadyInTheTableRollsThePublishBack() {
     var taken = code();
     insertEvent("Published", null, taken);
     var draft = draft();
 
-    assertThat(events.publish(draft.published(taken), UUID.randomUUID(), AT)).isEqualTo(Write.CODE_TAKEN);
+    // event_join_code_unique: at 2⁻¹⁶⁰ per publish the collision is left to abort the transaction (US-11 D1),
+    // because inside one it would poison every later statement (SQLState 25P02), retry included.
+    assertThatThrownBy(() -> events.publish(draft.published(taken), UUID.randomUUID(), AT))
+        .isInstanceOf(DuplicateKeyException.class);
     assertThat(storedStatusAndCode(draft.eventId())).isEqualTo("Draft -");
   }
 

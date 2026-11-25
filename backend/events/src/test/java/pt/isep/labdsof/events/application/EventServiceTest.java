@@ -119,33 +119,6 @@ class EventServiceTest {
   }
 
   @Test
-  @DisplayName("US-11 AC-1 a join code that is already taken is retried")
-  void takenJoinCodeIsRetried() {
-    var event = draftOfAdmin();
-    ports.handOut("TAKEN", "FREE");
-    ports.takenCodes.add("TAKEN");
-
-    var view = service.publish(admin, event.eventId());
-
-    assertThat(view.joinCode()).isEqualTo("FREE");
-    assertThat(ports.codesAsked).containsExactly("TAKEN", "FREE");
-    assertThat(ports.published).hasSize(1);
-  }
-
-  @Test
-  @DisplayName("US-11 AC-1 a join code that is taken on every attempt stops the publish instead of storing it")
-  void joinCodeTakenOnEveryAttemptStopsThePublish() {
-    var event = draftOfAdmin();
-    ports.handOut("TAKEN");
-    ports.takenCodes.add("TAKEN");
-
-    assertThatThrownBy(() -> service.publish(admin, event.eventId()))
-        .isInstanceOf(IllegalStateException.class).hasMessage("no free join code after 3 attempts");
-    assertThat(ports.codesAsked).hasSize(3);
-    assertNothingHappened();
-  }
-
-  @Test
   @DisplayName("US-11 AC-1 an event changed between the read and the write is a conflict, and nothing is "
       + "published")
   void eventChangedBetweenTheReadAndTheWriteIsAConflict() {
