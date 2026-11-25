@@ -105,20 +105,27 @@ paths:
         Implemented (US-26): a member with HelpRequests.Triage gets every request of the event in the
         control-room view; a member without it gets 403. Without updatedSince, every request that is not
         Closed; with it, every request changed after it, Closed ones included so the page drops them, and a
-        request whose triage turned NotTriaged after it. Both in order of arrival. serverTime is 5 s before
+        request whose triage turned NotTriaged after it; after a team change of the event, every request that
+        is not Closed too, so its defaultTeamId is current (US-34 #81). In order of arrival. serverTime is 5 s before
         the server's time, so consecutive polls overlap and a request can come twice: keep one row per id.
         Poll every 2 s while the page is visible (SC2, spec US-26 D7).
-        Planned: own requests with mine=true (US-24); the requests routed to the caller's teams with
-        HelpRequests.Respond (US-31); the filters status and teamId (US-27, US-31). Until then those
-        parameters are ignored.
+        Implemented (US-24): with mine=true, any active member gets their own requests of the event in the
+        participant view, whatever their permissions (spec US-24 D1). Without updatedSince, every own
+        request, Closed ones included; with it, every own request changed after it. Same serverTime
+        overlap. Poll every 3 s while the request screen is open (spec US-24 D5).
+        Planned: the requests routed to the caller's teams with HelpRequests.Respond (US-31); the filters
+        status and teamId (US-27, US-31). Until then those parameters are ignored.
       x-farol-status: implemented
       parameters:
         - $ref: '#/components/parameters/UpdatedSince'
         - name: mine
           in: query
-          description: Planned (US-24); ignored for now.
+          description: >-
+            true: only the caller's own requests, in the participant view (US-24). false or absent: the
+            control-room list.
           schema:
             type: boolean
+            default: false
         - name: status
           in: query
           description: Planned (US-27, US-31); ignored for now.
@@ -142,8 +149,13 @@ paths:
                 properties:
                   items:
                     type: array
+                    description: >-
+                      Control-room items without mine (US-26); participant items with mine=true (US-24). One
+                      answer has only one kind.
                     items:
-                      $ref: '#/components/schemas/HelpRequestForControlRoom'
+                      oneOf:
+                        - $ref: '#/components/schemas/HelpRequestForControlRoom'
+                        - $ref: '#/components/schemas/HelpRequestForParticipant'
                   serverTime:
                     type: string
                     format: date-time
@@ -193,8 +205,9 @@ paths:
         suggestion and the NotTriaged reason stay visible, and a suggestion that arrives later is discarded
         (NFR-22). Each changed field is recorded with who, when, the old and the new value (the history entries
         of US-28); a change to the values the request already has records nothing, whatever the triage state.
-        At least one of the two is required, and neither may be null. Implemented by US-35 (#82, spec D2, D3);
-        US-28 adds the status.
+        At least one of the two is required, and neither may be null. Implemented by US-35 (#82, spec D2, D3). The
+        status is not set here: the control room changes it through acknowledge (US-28) and close (US-30), spec
+        US-28 D1.
       x-farol-status: implemented
       requestBody:
         required: true
@@ -229,8 +242,12 @@ paths:
       tags: [Help requests]
       operationId: acknowledgeHelpRequest
       summary: Mark the request Seen (US-28)
-      description: Requires HelpRequests.Triage. 409 when the request is no longer Submitted.
-      x-farol-status: planned
+      description: >-
+        Requires HelpRequests.Triage. Submitted becomes Seen, whatever the triage state, recorded as a status history
+        entry with who and when (US-28 #75, spec D2). 409 when the request is no longer Submitted. Not idempotent: a
+        retry after a lost response also gets 409, with the same detail as when another member acknowledged it
+        first, so the web app can treat a 409 here as benign and read the request again.
+      x-farol-status: implemented
       responses:
         '200':
           $ref: '#/components/responses/ControlRoomView'
@@ -291,8 +308,7 @@ paths:
         Requires HelpRequests.Triage. The request's category and priority become the suggested ones and the
         triage becomes Accepted, recorded as the member's decision (category, priority and triage history
         entries). 409 when the triage is not Suggested: no suggestion yet, NotTriaged, or a member already
-        accepted or set the values (NFR-22). Planned: the default team follows from the category (US-34 #81
-        AC-2); until then defaultTeamId stays null.
+        accepted or set the values (NFR-22). The default team follows from the category (US-34 #81 AC-2).
       x-farol-status: implemented
       responses:
         '200':
@@ -336,8 +352,11 @@ paths:
       tags: [Help requests]
       operationId: getHelpRequestHistory
       summary: Full change history of the request (US-28)
-      description: Requires HelpRequests.Triage.
-      x-farol-status: planned
+      description: >-
+        Requires HelpRequests.Triage. Every change a member made, oldest first: the category, priority and triage
+        decisions of US-35 and the status of acknowledge (US-28 #75, spec D4, D6). Empty items for a request nobody
+        changed.
+      x-farol-status: implemented
       responses:
         '200':
           description: Every change, oldest first.
@@ -353,7 +372,7 @@ paths:
                     items:
                       type: object
                       additionalProperties: false
-                      required: [field, oldValue, newValue, actorUserId, changedAt]
+                      required: [field, oldValue, newValue, actorUserId, actorName, changedAt]
                       properties:
                         field:
                           type: string
@@ -366,7 +385,15 @@ paths:
                           nullable: true
                         actorUserId:
                           type: string
-                          description: The sub of who changed it; empty for a system change.
+                          description: >-
+                            The sub of the member who changed it. Only a member's change is an entry (spec
+                            US-28 D6), so it is never empty.
+                        actorName:
+                          type: string
+                          nullable: true
+                          description: >-
+                            The name claim of their token when the change was recorded (spec US-28 D5); null when the
+                            token had none. Plain text, escaped when shown.
                         changedAt:
                           type: string
                           format: date-time
@@ -533,7 +560,8 @@ components:
       in: query
       description: >-
         Only what changed after this time (API outline §1.6). When absent, the first load the operation
-        describes (for help requests, every request that is not Closed).
+        describes (for the control room's help requests, every request that is not Closed; with mine=true,
+        every own request).
       schema:
         type: string
         format: date-time
@@ -650,7 +678,10 @@ components:
       type: object
       additionalProperties: false
       required: [id, description, status, updatedAt]
-      description: What the participant sees; never a category or a priority (US-24).
+      description: >-
+        What the participant sees; never a category or a priority (US-24). updatedAt is the time of the last
+        change of the request, of any field (spec US-24 D3). Statuses shown as Sent (Submitted), Seen,
+        On the way (OnTheWay), Resolved and Closed (spec US-24 D7).
       properties:
         id:
           type: string
@@ -697,7 +728,12 @@ components:
           type: string
           format: uuid
           nullable: true
-          description: The event's team that handles the category; null without a category or such a team.
+          description: >-
+            The event's team that handles the category and has HelpRequests.Respond (US-34 #81 AC-2): the
+            category a member set, else the AI's suggested one. Null without a category, with no such team, or
+            with several (the operator routes by hand). Read from the current copy of the event's teams, never
+            chosen by the AI and not stored. A poll with updatedSince after a team change of the event lists
+            every open request again, so the default team stays current.
         routedTeamId:
           type: string
           format: uuid

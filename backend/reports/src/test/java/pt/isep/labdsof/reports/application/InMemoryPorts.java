@@ -12,9 +12,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
+import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Membership;
 import pt.isep.labdsof.reports.domain.Team;
 import pt.isep.labdsof.reports.domain.TriageSuggestion;
@@ -30,7 +32,7 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   final List<Decision> decisions = new ArrayList<>();
 
   /** One member decision saved through {@link #saveDecision}. */
-  record Decision(UUID requestId, String actorUserId, Instant changedAt, List<HelpRequestChange> changes) {}
+  record Decision(UUID requestId, Actor actor, Instant changedAt, List<HelpRequestChange> changes) {}
 
   @Override
   public boolean insertIfNew(HelpRequest request) {
@@ -59,6 +61,11 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   }
 
   @Override
+  public List<HelpRequest> ofRequester(UUID eventId, String requesterId) {
+    return inArrivalOrder(eventId, r -> r.requesterId().equals(requesterId));
+  }
+
+  @Override
   public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
     var submittedAfter = since.minus(TriageSuggestion.TRIAGE_DEADLINE);
     return inArrivalOrder(eventId,
@@ -81,13 +88,21 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   }
 
   @Override
-  public void saveDecision(HelpRequest decided, String actorUserId, List<HelpRequestChange> changes) {
+  public void saveDecision(HelpRequest decided, Actor actor, List<HelpRequestChange> changes) {
     var current = find(decided.eventId(), decided.id()).orElseThrow();
     if (current.version() + 1 != decided.version()) {
       throw new IllegalStateException("lost update");
     }
     requests.put(decided.id(), decided);
-    decisions.add(new Decision(decided.id(), actorUserId, decided.updatedAt(), changes));
+    decisions.add(new Decision(decided.id(), actor, decided.updatedAt(), changes));
+  }
+
+  @Override
+  public List<HistoryEntry> history(UUID eventId, UUID requestId) {
+    return find(eventId, requestId).stream().flatMap(r -> decisions.stream().filter(d -> d.requestId().equals(r.id())))
+        .flatMap(d -> d.changes().stream().map(c -> new HistoryEntry(c.field(), c.oldValue(), c.newValue(),
+            d.actor().userId(), d.actor().name(), d.changedAt())))
+        .toList();
   }
 
   private List<HelpRequest> inArrivalOrder(UUID eventId, Predicate<HelpRequest> filter) {
@@ -104,6 +119,20 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   public List<Team> teams(UUID eventId, Collection<UUID> teamIds) {
     return teams.values().stream()
         .filter(t -> t.eventId().equals(eventId) && teamIds.contains(t.teamId())).toList();
+  }
+
+  /** When the copy of each event's teams last changed; the tests set it. */
+  final Map<UUID, Instant> teamsChangedAt = new HashMap<>();
+
+  @Override
+  public boolean teamsChangedSince(UUID eventId, Instant since) {
+    var at = teamsChangedAt.get(eventId);
+    return at != null && at.isAfter(since);
+  }
+
+  @Override
+  public List<Team> teams(UUID eventId) {
+    return teams.values().stream().filter(t -> t.eventId().equals(eventId)).toList();
   }
 
   @Override

@@ -228,11 +228,11 @@ class HelpRequestTest {
     var changed = withTriage(SUGGESTED).change(Category.Safety, null, LATER).request();
     for (var request : java.util.List.of(pending, stored, accepted, changed)) {
       assertThatThrownBy(() -> request.acceptSuggestion(LATER)).as(request.triage().toString())
-          .isInstanceOf(TriageConflictException.class);
+          .isInstanceOf(RequestConflictException.class);
     }
     // Pending past its deadline reads NotTriaged/Timeout: nothing to accept either
     assertThatThrownBy(() -> pending.acceptSuggestion(NOW.plusSeconds(31)))
-        .isInstanceOf(TriageConflictException.class);
+        .isInstanceOf(RequestConflictException.class);
   }
 
   @Test
@@ -307,5 +307,156 @@ class HelpRequestTest {
   void changeNeedsAValue() {
     var request = withTriage(SUGGESTED);
     assertThatThrownBy(() -> request.change(null, null, LATER)).isInstanceOf(InvalidHelpRequestException.class);
+  }
+
+  static Team team(UUID eventId, Category category, boolean deleted, Permission... permissions) {
+    return new Team(UUID.randomUUID(), eventId, "Team " + UUID.randomUUID(),
+        java.util.Arrays.stream(permissions).map(p -> new Team.TeamPermission(p, java.util.Set.of())).toList(),
+        java.util.Set.of(category), deleted, 1);
+  }
+
+  static Team responder(UUID eventId, Category category) {
+    return team(eventId, category, false, Permission.HELP_REQUESTS_TRIAGE, Permission.HELP_REQUESTS_RESPOND);
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 the event's only eligible team for the suggested category is the default team")
+  void defaultTeam() {
+    var request = withTriage(SUGGESTED);
+    var health = responder(request.eventId(), Category.Health);
+    var safety = responder(request.eventId(), Category.Safety);
+
+    var proposed = request.withDefaultTeam(java.util.List.of(safety, health));
+
+    assertThat(proposed.defaultTeamId()).isEqualTo(health.teamId());
+    // Only the default team is added: the request is otherwise the same, not a new version
+    assertThat(proposed).isEqualTo(new HelpRequest(request.id(), request.eventId(), request.requesterId(),
+        request.clientRequestId(), request.description(), request.location(), request.category(),
+        request.priority(), request.status(), health.teamId(), request.routedTeamId(), request.triage(),
+        request.submittedAt(), request.updatedAt(), request.version()));
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 no team for the category, or several, gives no default team")
+  void noDefaultTeam() {
+    var request = withTriage(SUGGESTED);
+    var event = request.eventId();
+
+    assertThat(request.withDefaultTeam(java.util.List.of()).defaultTeamId()).isNull();
+    assertThat(request.withDefaultTeam(java.util.List.of(responder(event, Category.Safety))).defaultTeamId())
+        .isNull();
+    assertThat(request.withDefaultTeam(java.util.List.of(responder(event, Category.Health),
+        responder(event, Category.Health))).defaultTeamId()).isNull();
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 a deleted team or a team without HelpRequests.Respond is never the default")
+  void ineligibleTeams() {
+    var request = withTriage(SUGGESTED);
+    var event = request.eventId();
+    var deleted = team(event, Category.Health, true, Permission.HELP_REQUESTS_RESPOND);
+    var triageOnly = team(event, Category.Health, false, Permission.HELP_REQUESTS_TRIAGE);
+    var eligible = responder(event, Category.Health);
+
+    assertThat(request.withDefaultTeam(java.util.List.of(deleted)).defaultTeamId()).isNull();
+    assertThat(request.withDefaultTeam(java.util.List.of(triageOnly)).defaultTeamId()).isNull();
+    assertThat(request.withDefaultTeam(java.util.List.of(deleted, triageOnly, eligible)).defaultTeamId())
+        .isEqualTo(eligible.teamId());
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 a team of another event is never the default")
+  void otherEventsTeam() {
+    var request = withTriage(SUGGESTED);
+    var elsewhere = responder(UUID.randomUUID(), Category.Health);
+    var own = responder(request.eventId(), Category.Health);
+
+    assertThat(request.withDefaultTeam(java.util.List.of(elsewhere)).defaultTeamId()).isNull();
+    assertThat(request.withDefaultTeam(java.util.List.of(elsewhere, own)).defaultTeamId()).isEqualTo(own.teamId());
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 without a category or a suggestion there is no default team")
+  void noCategory() {
+    var pending = submit("Friend fainted near the bar");
+    var teams = java.util.List.of(responder(pending.eventId(), Category.Health));
+    assertThat(pending.withDefaultTeam(teams).defaultTeamId()).isNull();
+    for (var triage : java.util.List.of(TriageSuggestion.notTriaged(NotTriagedReason.Timeout),
+        TriageSuggestion.notTriaged(NotTriagedReason.Abstained))) {
+      var request = pending.withTriage(triage, NOW.plusSeconds(4));
+      assertThat(request.withDefaultTeam(java.util.List.of(responder(request.eventId(), Category.Health)))
+          .defaultTeamId()).isNull();
+    }
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 a member's category wins over the suggested one")
+  void membersCategory() {
+    var request = withTriage(SUGGESTED);
+    var health = responder(request.eventId(), Category.Health);
+    var safety = responder(request.eventId(), Category.Safety);
+    var teams = java.util.List.of(health, safety);
+
+    assertThat(request.acceptSuggestion(LATER).request().withDefaultTeam(teams).defaultTeamId())
+        .isEqualTo(health.teamId());
+    assertThat(request.change(Category.Safety, null, LATER).request().withDefaultTeam(teams).defaultTeamId())
+        .isEqualTo(safety.teamId());
+    // Only the priority set: the suggested category still gives the team
+    assertThat(request.change(null, Priority.Low, LATER).request().withDefaultTeam(teams).defaultTeamId())
+        .isEqualTo(health.teamId());
+  }
+
+  static HelpRequest withStatus(HelpRequestStatus status) {
+    var r = submit("help");
+    return new HelpRequest(r.id(), r.eventId(), r.requesterId(), r.clientRequestId(), r.description(), r.location(),
+        r.category(), r.priority(), status, r.defaultTeamId(), r.routedTeamId(), r.triage(), r.submittedAt(),
+        r.updatedAt(), r.version());
+  }
+
+  @Test
+  @DisplayName("US-28 AC-1 acknowledging moves Submitted to Seen and records the status")
+  void acknowledge() {
+    // LATER is 60 s after NOW, past the triage deadline, so the first request reads NotTriaged when it is acknowledged
+    var requests = java.util.List.of(submit("help"), withTriage(SUGGESTED),
+        withTriage(SUGGESTED).acceptSuggestion(LATER).request(),
+        withTriage(SUGGESTED).change(Category.Safety, null, LATER).request());
+    for (var request : requests) {
+      var decision = request.acknowledge(LATER);
+      var seen = decision.request();
+
+      assertThat(seen.status()).isEqualTo(HelpRequestStatus.Seen);
+      assertThat(seen.version()).isEqualTo(request.version() + 1);
+      assertThat(seen.updatedAt()).isEqualTo(LATER.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+      // The triage keeps its stored state: the status and the triage are separate (#177)
+      assertThat(seen).usingRecursiveComparison().ignoringFields("status", "updatedAt", "version").isEqualTo(request);
+      assertThat(decision.changes()).containsExactly(new HelpRequestChange("status", "Submitted", "Seen"));
+    }
+    // Within the deadline: still Pending, and it stays Pending
+    var pending = submit("help").acknowledge(NOW.plusSeconds(1)).request();
+    assertThat(pending.status()).isEqualTo(HelpRequestStatus.Seen);
+    assertThat(pending.triage()).isEqualTo(TriageSuggestion.pending());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Seen", "OnTheWay", "Resolved", "Closed"})
+  @DisplayName("US-28 AC-1 only a Submitted request can be acknowledged")
+  void acknowledgeOnlySubmitted(String status) {
+    var request = withStatus(HelpRequestStatus.valueOf(status));
+    assertThatThrownBy(() -> request.acknowledge(LATER)).isInstanceOf(RequestConflictException.class)
+        .hasMessage("The request is no longer Submitted");
+  }
+
+  @Test
+  @DisplayName("US-28 AC-1 a change is made by a member with a user ID, the name may be missing")
+  void actor() {
+    assertThat(new Actor("operator", null).name()).isNull();
+    assertThat(new Actor("operator", "Ana").userId()).isEqualTo("operator");
+    // A blank name is no name; a long one is cut at 200 characters, code points, not UTF-16 units (G8 review)
+    assertThat(new Actor("operator", " \t").name()).isNull();
+    assertThat(new Actor("operator", "a".repeat(201)).name()).isEqualTo("a".repeat(200));
+    assertThat(new Actor("operator", "😀".repeat(201)).name()).isEqualTo("😀".repeat(200));
+    for (var userId : new String[] {null, "", " "}) {
+      assertThatThrownBy(() -> new Actor(userId, "Ana")).isInstanceOf(IllegalArgumentException.class);
+    }
   }
 }

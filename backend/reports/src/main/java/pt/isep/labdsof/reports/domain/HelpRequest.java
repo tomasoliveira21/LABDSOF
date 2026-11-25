@@ -91,7 +91,7 @@ public record HelpRequest(
    */
   public Decision acceptSuggestion(Instant now) {
     if (triage.state() != TriageState.Suggested) {
-      throw new TriageConflictException("There is no suggestion to accept");
+      throw new RequestConflictException("There is no suggestion to accept");
     }
     return decide(triage.suggestedCategory(), triage.suggestedPriority(), triage.decided(TriageState.Accepted),
         TriageState.Suggested, now);
@@ -115,6 +115,20 @@ public record HelpRequest(
     return decide(mergedCategory, mergedPriority, seen.decided(TriageState.Changed), seen.state(), now);
   }
 
+  /**
+   * The control room has seen the request (US-28, spec D2; decision 6): Submitted becomes Seen, whatever the triage;
+   * any other status is a conflict.
+   */
+  public Decision acknowledge(Instant now) {
+    if (status != HelpRequestStatus.Submitted) {
+      throw new RequestConflictException("The request is no longer Submitted");
+    }
+    return new Decision(new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,
+        priority, HelpRequestStatus.Seen, defaultTeamId, routedTeamId, triage, submittedAt,
+        now.truncatedTo(ChronoUnit.MICROS), version + 1),
+        List.of(new HelpRequestChange("status", status.name(), HelpRequestStatus.Seen.name())));
+  }
+
   private Decision decide(Category newCategory, Priority newPriority, TriageSuggestion newTriage, TriageState from,
       Instant now) {
     var changes = new ArrayList<HelpRequestChange>();
@@ -134,6 +148,19 @@ public record HelpRequest(
 
   private static String name(Enum<?> value) {
     return value == null ? null : value.name();
+  }
+
+  /**
+   * This request with its default team (spec US-34 AC-2, D1 to D3): the only team of {@code teams} in this event that
+   * handles the category (a member's, else the AI's) and responds; none or several give null and the operator routes
+   * by hand. Derived when read, never stored (D4).
+   */
+  public HelpRequest withDefaultTeam(List<Team> teams) {
+    var c = category != null ? category : triage.suggestedCategory();
+    var eligible = c == null ? List.<UUID>of() : teams.stream()
+        .filter(t -> t.eventId().equals(eventId) && t.canRespondTo(c)).map(Team::teamId).toList();
+    return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category, priority,
+        status, eligible.size() == 1 ? eligible.get(0) : null, routedTeamId, triage, submittedAt, updatedAt, version);
   }
 
   /** This request as a reader sees it at {@code now} (NotTriaged derived from Pending). */

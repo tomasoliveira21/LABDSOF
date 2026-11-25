@@ -20,10 +20,12 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
+import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.Membership.Role;
 import pt.isep.labdsof.reports.domain.Membership.Status;
@@ -145,6 +147,11 @@ class HelpRequestServiceTest {
       }
 
       @Override
+      public List<HelpRequest> ofRequester(UUID eventId, String requesterId) {
+        return List.of();
+      }
+
+      @Override
       public List<HelpRequest> candidatesSince(UUID eventId, Instant since) {
         return List.of();
       }
@@ -160,8 +167,13 @@ class HelpRequestServiceTest {
       }
 
       @Override
-      public void saveDecision(HelpRequest decided, String actorUserId, List<HelpRequestChange> changes) {
+      public void saveDecision(HelpRequest decided, Actor actor, List<HelpRequestChange> changes) {
         throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public List<HistoryEntry> history(UUID eventId, UUID requestId) {
+        return List.of();
       }
     };
     var service = new HelpRequestService(refusing, ports, ports, metrics, clock);
@@ -296,6 +308,70 @@ class HelpRequestServiceTest {
   }
 
   @Test
+  @DisplayName("US-24 AC-1 mine lists my requests and later polls list what changed")
+  void mine() {
+    member("ana", Role.RegularUser);
+    member("rui", Role.RegularUser);
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(elsewhere, "ana", Role.RegularUser, Status.Active, Set.of(), 1));
+    var second = submitAt(NOW.plusSeconds(2), "second");
+    var first = submitAt(NOW, "first");
+    var closed = submitAt(NOW.plusSeconds(1), "closed");
+    close(closed, NOW.plusSeconds(3));
+    service().submit(EVENT, "rui", UUID.randomUUID(), "rui's", POINT);
+    service().submit(elsewhere, "ana", UUID.randomUUID(), "other event", POINT);
+
+    clock = Clock.fixed(NOW.plusSeconds(10), ZoneOffset.UTC);
+    var load = service().mine(EVENT, "ana", null);
+    // Closed ones stay: the participant sees Closed (D2)
+    assertThat(load.items()).extracting(HelpRequest::id).containsExactly(first.id(), closed.id(), second.id());
+    assertThat(load.serverTime()).isEqualTo(NOW.plusSeconds(5));
+
+    assertThat(service().mine(EVENT, "ana", NOW.plusSeconds(1)).items()).extracting(HelpRequest::description)
+        .containsExactly("closed", "second");
+    // Strictly after updatedSince
+    assertThat(service().mine(EVENT, "ana", NOW.plusSeconds(2)).items()).extracting(HelpRequest::description)
+        .containsExactly("closed");
+
+    // The triage deadline changes nothing the participant sees, so nothing comes back (D2)
+    clock = Clock.fixed(NOW.plusSeconds(31), ZoneOffset.UTC);
+    assertThat(service().mine(EVENT, "ana", NOW.plusSeconds(26)).items()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-24 AC-1 a triage member asking mine gets only their own requests")
+  void mineForTriage() {
+    member("ana", Role.RegularUser);
+    member("rui", Role.RegularUser, CONTROL_ROOM);
+    member("sofia", Role.EventAdmin);
+    controlRoomTeam();
+    submitAt(NOW, "ana's");
+    var rui = service().submit(EVENT, "rui", UUID.randomUUID(), "rui's", POINT).request();
+
+    assertThat(service().mine(EVENT, "rui", null).items()).containsExactly(rui);
+    assertThat(service().mine(EVENT, "sofia", null).items()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-24 AC-1 a non-member asking mine gets 404")
+  void mineNotMember() {
+    member("ana", Role.RegularUser);
+    submitAt(NOW, "help");
+    ports.upsertIfNewer(new Membership(EVENT, "gone", Role.RegularUser, Status.Removed, Set.of(), 1));
+    var service = service();
+    assertThatThrownBy(() -> service.mine(EVENT, "nobody", null)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.mine(EVENT, "gone", null)).isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("US-24 AC-2 serverTime overlaps the polls by 5 s, to the microsecond")
+  void mineServerTime() {
+    member("ana", Role.RegularUser);
+    clock = Clock.fixed(NOW.plusNanos(1_700), ZoneOffset.UTC);
+    assertThat(service().mine(EVENT, "ana", null).serverTime()).isEqualTo(NOW.plusNanos(1_000).minusSeconds(5));
+  }
+
+  @Test
   @DisplayName("US-36 AC-2 only the control room reads the triage status")
   void triageStatusAccess() {
     controlRoomTeam();
@@ -342,13 +418,21 @@ class HelpRequestServiceTest {
 
   /** A request of the event, submitted at NOW, with this triage stored at NOW + 5 s. */
   HelpRequest stored(TriageSuggestion triage) {
-    var request = HelpRequest.submit(UUID.randomUUID(), EVENT, "ana", UUID.randomUUID(), "Friend fainted", POINT,
+    return stored(UUID.randomUUID(), triage);
+  }
+
+  HelpRequest stored(UUID id, TriageSuggestion triage) {
+    var request = HelpRequest.submit(id, EVENT, "ana", UUID.randomUUID(), "Friend fainted", POINT,
         NOW);
     ports.insertIfNew(request);
     if (!triage.equals(TriageSuggestion.pending())) {
       ports.saveTriage(request.withTriage(triage, NOW.plusSeconds(5)));
     }
     return ports.find(EVENT, request.id()).orElseThrow();
+  }
+
+  static Actor actor(String userId) {
+    return new Actor(userId, "Name of " + userId);
   }
 
   HelpRequestService operatorService() {
@@ -364,7 +448,7 @@ class HelpRequestServiceTest {
     var service = operatorService();
     var request = stored(SUGGESTED);
 
-    var accepted = service.acceptSuggestion(EVENT, "miguel", request.id());
+    var accepted = service.acceptSuggestion(EVENT, actor("miguel"), request.id());
 
     var saved = ports.find(EVENT, request.id()).orElseThrow();
     assertThat(accepted).isEqualTo(saved);
@@ -374,7 +458,7 @@ class HelpRequestServiceTest {
     assertThat(saved.updatedAt()).isEqualTo(DECIDED);
     assertThat(ports.decisions).singleElement().satisfies(d -> {
       assertThat(d.requestId()).isEqualTo(request.id());
-      assertThat(d.actorUserId()).isEqualTo("miguel");
+      assertThat(d.actor()).isEqualTo(actor("miguel"));
       assertThat(d.changes()).extracting(HelpRequestChange::field).containsExactly("category", "priority", "triage");
     });
     assertThat(metrics.counted).containsExactly("decided Accepted");
@@ -389,16 +473,19 @@ class HelpRequestServiceTest {
     var id = request.id();
     var elsewhere = UUID.randomUUID();
     ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var ana = actor("ana");
+    var nobody = actor("nobody");
+    var miguel = actor("miguel");
 
-    assertThatThrownBy(() -> service.acceptSuggestion(EVENT, "ana", id)).isInstanceOf(ForbiddenException.class);
-    assertThatThrownBy(() -> service.change(EVENT, "ana", id, Category.Safety, null))
+    assertThatThrownBy(() -> service.acceptSuggestion(EVENT, ana, id)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.change(EVENT, ana, id, Category.Safety, null))
         .isInstanceOf(ForbiddenException.class);
-    assertThatThrownBy(() -> service.acceptSuggestion(EVENT, "nobody", id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.acceptSuggestion(EVENT, nobody, id)).isInstanceOf(NotFoundException.class);
     // A control-room member of another event, or a request of another event, is not found
-    assertThatThrownBy(() -> service.acceptSuggestion(elsewhere, "miguel", id))
+    assertThatThrownBy(() -> service.acceptSuggestion(elsewhere, miguel, id))
         .isInstanceOf(NotFoundException.class);
     var unknown = UUID.randomUUID();
-    assertThatThrownBy(() -> service.change(EVENT, "miguel", unknown, Category.Safety, null))
+    assertThatThrownBy(() -> service.change(EVENT, miguel, unknown, Category.Safety, null))
         .isInstanceOf(NotFoundException.class);
     assertThat(ports.find(EVENT, id).orElseThrow()).isEqualTo(request);
     assertThat(ports.decisions).isEmpty();
@@ -410,11 +497,11 @@ class HelpRequestServiceTest {
   void changeThatChangesNothing() {
     var service = operatorService();
     var request = stored(SUGGESTED);
-    var changed = service.change(EVENT, "miguel", request.id(), Category.Safety, Priority.Critical);
+    var changed = service.change(EVENT, actor("miguel"), request.id(), Category.Safety, Priority.Critical);
     assertThat(changed.triage().state()).isEqualTo(TriageState.Changed);
     assertThat(ports.decisions).hasSize(1);
 
-    var same = service.change(EVENT, "miguel", request.id(), Category.Safety, null);
+    var same = service.change(EVENT, actor("miguel"), request.id(), Category.Safety, null);
     assertThat(same).isEqualTo(changed);
     assertThat(ports.decisions).hasSize(1);
     assertThat(metrics.counted).containsExactly("decided Changed");
@@ -426,7 +513,7 @@ class HelpRequestServiceTest {
     operatorService();
     var request = stored(TriageSuggestion.pending());
     clock = Clock.fixed(NOW.plusSeconds(2), ZoneOffset.UTC);
-    var changed = service().change(EVENT, "miguel", request.id(), Category.Safety, Priority.Medium);
+    var changed = service().change(EVENT, actor("miguel"), request.id(), Category.Safety, Priority.Medium);
     assertThat(changed.category()).isEqualTo(Category.Safety);
     assertThat(changed.priority()).isEqualTo(Priority.Medium);
 
@@ -449,12 +536,12 @@ class HelpRequestServiceTest {
   void decisionsCounted() {
     var service = operatorService();
     var accepted = stored(SUGGESTED);
-    service.acceptSuggestion(EVENT, "miguel", accepted.id());
-    service.change(EVENT, "miguel", accepted.id(), null, Priority.Critical);
+    service.acceptSuggestion(EVENT, actor("miguel"), accepted.id());
+    service.change(EVENT, actor("miguel"), accepted.id(), null, Priority.Critical);
     var changed = stored(SUGGESTED);
-    service.change(EVENT, "miguel", changed.id(), Category.Safety, null);
+    service.change(EVENT, actor("miguel"), changed.id(), Category.Safety, null);
     var withoutSuggestion = stored(TriageSuggestion.notTriaged(NotTriagedReason.Timeout));
-    service.change(EVENT, "miguel", withoutSuggestion.id(), Category.Safety, Priority.High);
+    service.change(EVENT, actor("miguel"), withoutSuggestion.id(), Category.Safety, Priority.High);
 
     assertThat(metrics.counted).containsExactly("decided Accepted", "decided Changed");
     assertThat(ports.decisions).hasSize(4);
@@ -467,7 +554,7 @@ class HelpRequestServiceTest {
     var request = stored(SUGGESTED);
     TransactionSynchronizationManager.initSynchronization();
     try {
-      service.acceptSuggestion(EVENT, "miguel", request.id());
+      service.acceptSuggestion(EVENT, actor("miguel"), request.id());
       assertThat(metrics.counted).isEmpty();
       TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
       assertThat(metrics.counted).containsExactly("decided Accepted");
@@ -486,11 +573,173 @@ class HelpRequestServiceTest {
     try {
       var service = operatorService();
       var request = stored(SUGGESTED);
-      service.acceptSuggestion(EVENT, "miguel", request.id());
+      service.acceptSuggestion(EVENT, actor("miguel"), request.id());
 
       assertThat(appender.list).singleElement().satisfies(line -> {
         assertThat(line.getLevel()).isEqualTo(Level.INFO);
         assertThat(line.getFormattedMessage()).contains(request.id().toString(), "Suggested", "Accepted")
+            .doesNotContain("miguel", "Friend", "fainted");
+      });
+    } finally {
+      logger.detachAppender(appender);
+    }
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 every control-room read and decision answers the default team")
+  void defaultTeamOnEveryControlRoomRead() {
+    var service = operatorService();
+    var nursing = UUID.randomUUID();
+    ports.upsertIfNewer(new Team(nursing, EVENT, "Nursing",
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(Category.Health), false, 1));
+    var security = UUID.randomUUID();
+    ports.upsertIfNewer(new Team(security, EVENT, "Security",
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(Category.Safety), false, 1));
+    member("ana", Role.RegularUser);
+    var request = stored(SUGGESTED);
+
+    assertThat(service.get(EVENT, "miguel", request.id()).request().defaultTeamId()).isEqualTo(nursing);
+    assertThat(service.list(EVENT, "miguel", null).items()).extracting(HelpRequest::defaultTeamId)
+        .containsExactly(nursing);
+    assertThat(service.list(EVENT, "miguel", NOW).items()).extracting(HelpRequest::defaultTeamId)
+        .containsExactly(nursing);
+    assertThat(service.change(EVENT, actor("miguel"), request.id(), Category.Safety, null).defaultTeamId())
+        .isEqualTo(security);
+    assertThat(service.acceptSuggestion(EVENT, actor("miguel"), stored(SUGGESTED).id()).defaultTeamId())
+        .isEqualTo(nursing);
+    // Nothing changed: the answer still carries the default team
+    assertThat(service.change(EVENT, actor("miguel"), request.id(), Category.Safety, null).defaultTeamId())
+        .isEqualTo(security);
+    // The acknowledge (US-28) answers the same control-room view
+    assertThat(service.acknowledge(EVENT, actor("miguel"), stored(SUGGESTED).id()).defaultTeamId())
+        .isEqualTo(nursing);
+    // The participant's own read is not the control room's, and the team is never stored
+    assertThat(service.get(EVENT, "ana", request.id()).request().defaultTeamId()).isNull();
+    assertThat(ports.find(EVENT, request.id()).orElseThrow().defaultTeamId()).isNull();
+  }
+
+  @Test
+  @DisplayName("US-34 AC-2 a poll after a team change lists the open requests again, with those that changed")
+  void pollAfterTeamChange() {
+    var service = operatorService();
+    // Fixed ids that a signed UUID.compareTo orders the other way round from the database (see below)
+    var quiet = stored(UUID.fromString("80000000-0000-4000-8000-000000000000"), SUGGESTED);
+    var since = NOW.plusSeconds(40);
+    // A request changed in the window (accepted at DECIDED), and one that did not change
+    var accepted = service.acceptSuggestion(EVENT, actor("miguel"),
+        stored(UUID.fromString("00000000-0000-4000-8000-000000000001"), SUGGESTED).id());
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactly(accepted.id());
+
+    ports.teamsChangedAt.put(EVENT, since);
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactly(accepted.id());
+    ports.teamsChangedAt.put(EVENT, since.plusNanos(1000));
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactlyInAnyOrder(quiet.id(), accepted.id());
+
+    // A request closed in the window is still sent, so the page drops it (US-26), and only once. It arrived
+    // before the open ones, so it comes first: the list stays in order of arrival, as the contract says
+    var c = stored(SUGGESTED);
+    var closed = new HelpRequest(c.id(), EVENT, c.requesterId(), c.clientRequestId(), c.description(), c.location(),
+        c.category(), c.priority(), HelpRequestStatus.Closed, null, null, c.triage(), NOW.minusSeconds(1), DECIDED,
+        c.version() + 1);
+    ports.requests.put(c.id(), closed);
+    // The two that arrived at the same time follow by id, compared as the database compares a uuid (by its bytes)
+    assertThat(service.list(EVENT, "miguel", since).items()).extracting(HelpRequest::id)
+        .containsExactly(closed.id(), accepted.id(), quiet.id());
+  }
+
+  // US-28: acknowledge and history (spec US-28 D2 to D8)
+
+  @Test
+  @DisplayName("US-28 AC-1 an acknowledge is saved as the member's change with their name")
+  void acknowledgeSaved() {
+    var service = operatorService();
+    var request = stored(SUGGESTED);
+
+    var seen = service.acknowledge(EVENT, actor("miguel"), request.id());
+
+    var saved = ports.find(EVENT, request.id()).orElseThrow();
+    assertThat(seen).isEqualTo(saved.asSeenAt(DECIDED));
+    assertThat(saved.status()).isEqualTo(HelpRequestStatus.Seen);
+    assertThat(saved.triage().state()).isEqualTo(TriageState.Suggested);
+    assertThat(saved.updatedAt()).isEqualTo(DECIDED);
+    assertThat(ports.decisions).singleElement().satisfies(d -> {
+      assertThat(d.actor()).isEqualTo(new Actor("miguel", "Name of miguel"));
+      assertThat(d.changes()).containsExactly(new HelpRequestChange("status", "Submitted", "Seen"));
+    });
+    // Not a triage decision: the suggestion counter is untouched
+    assertThat(metrics.counted).isEmpty();
+    assertThatThrownBy(() -> service.acknowledge(EVENT, actor("miguel"), request.id()))
+        .isInstanceOf(pt.isep.labdsof.reports.domain.RequestConflictException.class);
+    assertThat(ports.decisions).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("US-28 AC-1 only the control room acknowledges or reads the history")
+  void onlyTheControlRoomAcknowledges() {
+    var service = operatorService();
+    member("ana", Role.RegularUser);
+    var id = stored(SUGGESTED).id();
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var ana = actor("ana");
+    var nobody = actor("nobody");
+    var miguel = actor("miguel");
+
+    assertThatThrownBy(() -> service.acknowledge(EVENT, ana, id)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.history(EVENT, "ana", id)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.acknowledge(EVENT, nobody, id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.history(EVENT, "nobody", id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.acknowledge(elsewhere, miguel, id))
+        .isInstanceOf(NotFoundException.class);
+    var unknown = UUID.randomUUID();
+    assertThatThrownBy(() -> service.acknowledge(EVENT, miguel, unknown))
+        .isInstanceOf(NotFoundException.class);
+    assertThat(ports.find(EVENT, id).orElseThrow().status()).isEqualTo(HelpRequestStatus.Submitted);
+    assertThat(ports.decisions).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-28 AC-2 the history is read only for a request of the event")
+  void history() {
+    var service = operatorService();
+    var request = stored(SUGGESTED);
+    var other = stored(SUGGESTED);
+    assertThat(service.history(EVENT, "miguel", request.id())).isEmpty();
+
+    service.change(EVENT, actor("miguel"), request.id(), null, Priority.Critical);
+    service.acknowledge(EVENT, new Actor("miguel", null), request.id());
+    service.acknowledge(EVENT, actor("miguel"), other.id());
+
+    assertThat(service.history(EVENT, "miguel", request.id())).containsExactly(
+        new HistoryEntry("priority", null, "Critical", "miguel", "Name of miguel", DECIDED),
+        new HistoryEntry("triage", "Suggested", "Changed", "miguel", "Name of miguel", DECIDED),
+        new HistoryEntry("status", "Submitted", "Seen", "miguel", null, DECIDED));
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var id = request.id();
+    assertThatThrownBy(() -> service.history(elsewhere, "miguel", id)).isInstanceOf(NotFoundException.class);
+    var unknown = UUID.randomUUID();
+    assertThatThrownBy(() -> service.history(EVENT, "miguel", unknown)).isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("US-28 AC-1 an acknowledge is logged without the description or the user")
+  void acknowledgeLogged() {
+    var logger = (Logger) LoggerFactory.getLogger(HelpRequestService.class);
+    var appender = new ListAppender<ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      var service = operatorService();
+      var request = stored(SUGGESTED);
+      service.acknowledge(EVENT, actor("miguel"), request.id());
+
+      assertThat(appender.list).singleElement().satisfies(line -> {
+        assertThat(line.getLevel()).isEqualTo(Level.INFO);
+        assertThat(line.getFormattedMessage()).contains(request.id().toString(), "Submitted", "Seen")
             .doesNotContain("miguel", "Friend", "fainted");
       });
     } finally {
