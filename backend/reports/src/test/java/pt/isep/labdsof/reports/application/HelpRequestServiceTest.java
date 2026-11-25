@@ -8,6 +8,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -35,6 +36,7 @@ import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Priority;
 import pt.isep.labdsof.reports.domain.Team.TeamPermission;
 import pt.isep.labdsof.reports.domain.Team;
+import pt.isep.labdsof.reports.domain.SubmitLimit;
 import pt.isep.labdsof.reports.domain.TriageState;
 import pt.isep.labdsof.reports.domain.TriageSuggestion;
 
@@ -44,13 +46,14 @@ class HelpRequestServiceTest {
   static final UUID EVENT = UUID.randomUUID();
   static final UUID CONTROL_ROOM = UUID.randomUUID();
   static final Location POINT = new Location(3, 0.42, 0.77);
+  static final SubmitLimit LIMIT = new SubmitLimit(5, Duration.ofMinutes(10));
 
   final InMemoryPorts ports = new InMemoryPorts();
   final TriageServiceTest.FakeMetrics metrics = new TriageServiceTest.FakeMetrics();
   Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
   HelpRequestService service() {
-    return new HelpRequestService(ports, ports, ports, metrics, clock);
+    return new HelpRequestService(ports, ports, ports, metrics, LIMIT, clock);
   }
 
   void member(String user, Role role, UUID... teams) {
@@ -142,6 +145,16 @@ class HelpRequestServiceTest {
       }
 
       @Override
+      public void lockRequester(String requesterId) {
+        // nothing to lock
+      }
+
+      @Override
+      public List<Instant> submittedSince(String requesterId, Instant from) {
+        return List.of();
+      }
+
+      @Override
       public List<HelpRequest> open(UUID eventId) {
         return List.of();
       }
@@ -176,7 +189,7 @@ class HelpRequestServiceTest {
         return List.of();
       }
     };
-    var service = new HelpRequestService(refusing, ports, ports, metrics, clock);
+    var service = new HelpRequestService(refusing, ports, ports, metrics, LIMIT, clock);
     var clientRequestId = UUID.randomUUID();
     assertThatThrownBy(() -> service.submit(EVENT, "ana", clientRequestId, "help", POINT))
         .isInstanceOf(IllegalStateException.class);
@@ -583,6 +596,102 @@ class HelpRequestServiceTest {
     } finally {
       logger.detachAppender(appender);
     }
+  }
+
+  // US-23 AC-4: at most 5 help requests per account in 10 minutes (spec US-23 D1 to D6)
+
+  /** Five requests of ana in EVENT, saved at NOW. */
+  void fiveSaved() {
+    member("ana", Role.RegularUser);
+    for (int i = 0; i < 5; i++) {
+      assertThat(service().submit(EVENT, "ana", UUID.randomUUID(), "help " + i, POINT).created()).isTrue();
+    }
+  }
+
+  @Test
+  @DisplayName("US-23 AC-4 the account is locked before its requests are counted")
+  void lockedBeforeCounted() {
+    member("ana", Role.RegularUser);
+    service().submit(EVENT, "ana", UUID.randomUUID(), "help", POINT);
+    assertThat(ports.calls).containsExactly("lock ana", "count ana after " + NOW.minus(Duration.ofMinutes(10)));
+  }
+
+  @Test
+  @DisplayName("US-23 AC-4 a retry of a saved request passes at the limit and counts nothing")
+  void retryAtTheLimit() {
+    member("ana", Role.RegularUser);
+    var first = service().submit(EVENT, "ana", UUID.randomUUID(), "help", POINT).request();
+    for (int i = 0; i < 4; i++) {
+      service().submit(EVENT, "ana", UUID.randomUUID(), "help " + i, POINT);
+    }
+
+    var retried = service().submit(EVENT, "ana", first.clientRequestId(), "help", POINT);
+
+    assertThat(retried.created()).isFalse();
+    assertThat(retried.request()).isEqualTo(first);
+    assertThat(ports.requests).hasSize(5);
+    assertThat(ports.outbox).hasSize(5);
+    // A retry with other content is still a conflict, not a limit
+    var service = service();
+    var client = first.clientRequestId();
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", client, "other", POINT))
+        .isInstanceOf(ClientRequestConflictException.class);
+  }
+
+  @Test
+  @DisplayName("US-23 AC-4 refused requests are not counted")
+  void refusedNotCounted() {
+    fiveSaved();
+    var service = service();
+    var client = UUID.randomUUID();
+
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", client, "help", POINT))
+        .isInstanceOfSatisfying(TooManyHelpRequestsException.class,
+            e -> assertThat(e.retryAfter()).isEqualTo(Duration.ofMinutes(10)));
+    // Invalid first (400), and a non-member first (404), even at the limit
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", client, " ", POINT))
+        .isInstanceOf(pt.isep.labdsof.reports.domain.InvalidHelpRequestException.class);
+    var elsewhere = UUID.randomUUID();
+    assertThatThrownBy(() -> service.submit(elsewhere, "ana", client, "help", POINT))
+        .isInstanceOf(NotFoundException.class);
+    assertThat(ports.requests).hasSize(5);
+    assertThat(ports.outbox).hasSize(5);
+
+    // Ten minutes after the five, none of the refused ones counts: the next passes
+    clock = Clock.fixed(NOW.plus(Duration.ofMinutes(10)), ZoneOffset.UTC);
+    assertThat(service().submit(EVENT, "ana", client, "help", POINT).created()).isTrue();
+  }
+
+  @Test
+  @DisplayName("US-23 AC-4 the time of a request is read after the account lock")
+  void timeAfterTheLock() {
+    member("ana", Role.RegularUser);
+    var time = new java.util.concurrent.atomic.AtomicReference<>(NOW);
+    var moving = new Clock() {
+      @Override
+      public ZoneOffset getZone() {
+        return ZoneOffset.UTC;
+      }
+
+      @Override
+      public Clock withZone(java.time.ZoneId zone) {
+        return this;
+      }
+
+      @Override
+      public Instant instant() {
+        return time.get();
+      }
+    };
+    // The lock is held by another submission of the account for 7 s
+    ports.onLock = () -> time.set(NOW.plusSeconds(7));
+
+    var saved = new HelpRequestService(ports, ports, ports, metrics, LIMIT, moving)
+        .submit(EVENT, "ana", UUID.randomUUID(), "help", POINT).request();
+
+    assertThat(saved.submittedAt()).isEqualTo(NOW.plusSeconds(7));
+    assertThat(saved.updatedAt()).isEqualTo(NOW.plusSeconds(7));
+    assertThat(ports.calls).containsExactly("lock ana", "count ana after " + NOW.plusSeconds(7).minus(Duration.ofMinutes(10)));
   }
 
   @Test

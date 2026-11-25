@@ -49,6 +49,25 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
     return Optional.ofNullable(requests.get(requestId)).filter(r -> r.eventId().equals(eventId));
   }
 
+  /** The account locks and counts, in order (spec US-23 D5). */
+  final List<String> calls = new ArrayList<>();
+
+  /** Runs when an account is locked, as another transaction ending while this one waits. */
+  Runnable onLock = () -> { };
+
+  @Override
+  public void lockRequester(String requesterId) {
+    calls.add("lock " + requesterId);
+    onLock.run();
+  }
+
+  @Override
+  public List<Instant> submittedSince(String requesterId, Instant from) {
+    calls.add("count " + requesterId + " after " + from);
+    return requests.values().stream().filter(r -> r.requesterId().equals(requesterId))
+        .map(HelpRequest::submittedAt).filter(t -> t.isAfter(from)).toList();
+  }
+
   @Override
   public Optional<HelpRequest> findByClientRequestId(UUID eventId, String requesterId, UUID clientId) {
     return requests.values().stream().filter(r -> r.eventId().equals(eventId)

@@ -104,6 +104,23 @@ class JdbcHelpRequests implements HelpRequests {
   }
 
   @Override
+  public void lockRequester(String requesterId) {
+    // A lock per account, released at the end of the submit transaction (spec US-23 D5)
+    jdbc.sql("SELECT pg_advisory_xact_lock(hashtextextended(:requesterId, 0))").param(REQUESTER_ID, requesterId)
+        .query().singleRow();
+  }
+
+  @Override
+  public List<Instant> submittedSince(String requesterId, Instant from) {
+    // ponytail: no index on requester_id, a scan of the help requests; add one if the k6 runs (#43) show it
+    return jdbc.sql("SELECT submitted_at FROM help_request WHERE requester_id = :requesterId AND submitted_at > :from")
+        .param(REQUESTER_ID, requesterId)
+        .param("from", Timestamp.from(from))
+        .query((rs, row) -> rs.getTimestamp(1).toInstant())
+        .list();
+  }
+
+  @Override
   public Optional<HelpRequest> findByClientRequestId(UUID eventId, String requesterId,
       UUID clientRequestId) {
     return jdbc.sql(SELECT + """
