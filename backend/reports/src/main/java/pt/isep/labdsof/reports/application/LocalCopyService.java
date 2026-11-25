@@ -56,17 +56,22 @@ public class LocalCopyService {
 
   /**
    * After the team's copy, which the upsert keeps locked: each request routed to it, locked as a member's decision
-   * locks it, then its task (the route's order, D5). No history entry: a system change (D6).
+   * locks it, then its task (the route's order, D5). No history entry: a system change (D6). The task is cancelled
+   * even when the request stays (Resolved or Closed), so no live task is left with the deleted team (G8 review); a
+   * request routed elsewhere since it was listed is left alone.
    */
   private void returnToQueue(Team team) {
     var now = clock.instant();
     for (var id : helpRequests.routedTo(team.eventId(), team.teamId())) {
       var request = helpRequests.findForUpdate(team.eventId(), id).orElseThrow();
+      if (!team.teamId().equals(request.routedTeamId())) {
+        continue;
+      }
       var returned = request.returnFrom(team.teamId(), now);
       if (returned != request) {
         helpRequests.saveDecision(returned, null, List.of());
-        fieldTasks.cancelLive(team.eventId(), id, returned.updatedAt());
       }
+      fieldTasks.cancelLive(team.eventId(), id, now);
     }
   }
 }

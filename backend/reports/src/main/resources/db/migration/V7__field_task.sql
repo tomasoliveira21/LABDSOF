@@ -18,3 +18,6 @@ CREATE UNIQUE INDEX field_task_one_live_per_request ON field_task (help_request_
 
 -- The team's list of its tasks (US-31) and a team's deletion (spec D6) read by team
 CREATE INDEX field_task_event_team ON field_task (event_id, team_id, updated_at);
+
+-- A team's deletion finds the requests routed to it while it holds the team's copy locked (spec D5, D6; G8 review)
+CREATE INDEX help_request_routed_team ON help_request (event_id, routed_team_id) WHERE routed_team_id IS NOT NULL;

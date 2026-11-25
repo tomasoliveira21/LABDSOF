@@ -92,6 +92,10 @@ class LocalCopyServiceTest {
     var onTheWay = routed(TEAM, HelpRequestStatus.OnTheWay);
     var resolved = routed(TEAM, HelpRequestStatus.Resolved);
     var elsewhere = routed(other, HelpRequestStatus.Seen);
+    // A finished request whose task is still live (out of step, G8 review): the request stays, the task is cancelled
+    var closed = routed(TEAM, HelpRequestStatus.Closed);
+    ports.tasks.replaceAll(t -> t.requestId().equals(closed.id())
+        ? new InMemoryPorts.Task(t.id(), EVENT, t.requestId(), TEAM, "Accepted", t.at()) : t);
     var deleted = new Team(TEAM, EVENT, "Nursing", List.of(), Set.of(), true, 2);
 
     var message = UUID.randomUUID();
@@ -112,7 +116,9 @@ class LocalCopyServiceTest {
             org.assertj.core.groups.Tuple.tuple(seen.id(), "Cancelled"),
             org.assertj.core.groups.Tuple.tuple(onTheWay.id(), "Cancelled"),
             org.assertj.core.groups.Tuple.tuple(resolved.id(), "Resolved"),
-            org.assertj.core.groups.Tuple.tuple(elsewhere.id(), "Open"));
+            org.assertj.core.groups.Tuple.tuple(elsewhere.id(), "Open"),
+            org.assertj.core.groups.Tuple.tuple(closed.id(), "Cancelled"));
+    assertThat(ports.requests.get(closed.id())).isEqualTo(closed);
     // A system change: no history entry (US-28 D6)
     assertThat(ports.decisions).allSatisfy(d -> assertThat(d.changes()).isEmpty());
 
