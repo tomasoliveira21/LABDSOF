@@ -23,7 +23,10 @@ import pt.isep.labdsof.authusers.domain.EventRole;
 @Service
 public class JoinEventService {
 
-  /** The membership as the caller now has it, and whether this call is what created it (`201` against `200`). */
+  /**
+   * The membership as the caller now has it, and whether this call is what created it: {@code 201} when it did,
+   * {@code 200} when they were already a member (D3).
+   */
   public record Joined(EventMembership membership, String eventName, MyMemberships.Status eventStatus,
       boolean created) {}
 
