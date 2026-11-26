@@ -13,4 +13,13 @@ import pt.isep.labdsof.events.domain.EventStatus;
 public interface EventAudit {
 
   void published(UUID userId, UUID eventId, Instant at, EventStatus status, long version);
+
+  /** US-06: the FarolAdmin created an event. The name is never logged (M-10), only the id. */
+  void created(UUID userId, UUID eventId, Instant at);
+
+  /**
+   * US-06 AC-2 and US-07: a caller who is not the FarolAdmin was refused a platform operation. There is no event
+   * to key it on, so this is the one refusal {@link AccessAudit} cannot record.
+   */
+  void notPlatformAdmin(UUID userId, Instant at, String operation);
 }
