@@ -3,7 +3,8 @@
 Checks, through the API gateway, that Auth & Users validates real Keycloak tokens (ADR-006) and keeps accounts in
 its own database: no token and a tampered token get 401 Problem Details; Rita's real token creates her account at
 the first GET /api/v1/me and the second call returns the same one; the bootstrap account (#179) is FarolAdmin; an
-operation of a later story gets 501; the member list and the two team-assignment operations of US-18 answer 401
+no operation answers 501 any more, because US-06 was the last one; the member list and the two team-assignment
+operations of US-18 answer 401
 without a token and 404 to a caller who is not a member of the event, and the join of US-12 answers 404 because no
 event has a published copy before US-06, so the smoke still writes nothing; the X-Correlation-Id comes back. Then it reads the outbox in the `auth_users`
 database: the rows of those first calls must have `published_at`, which is set after the broker's confirm. The
@@ -66,11 +67,15 @@ def call(gateway: str, path: str, token: str | None = None,
     return status, {name.lower(): value for name, value in response_headers.items()}, body
 
 
-def send(gateway: str, method: str, path: str, token: str | None = None) -> tuple[int, dict[str, str], str]:
-    """A PUT or a DELETE, which `call` cannot send: the team assignment of US-18 uses both."""
-    request = urllib.request.Request(gateway + path, method=method)
+def send(gateway: str, method: str, path: str, token: str | None = None,
+         body: str | None = None) -> tuple[int, dict[str, str], str]:
+    """A PUT, DELETE or POST with a body, which `call` cannot send: US-18 uses two, US-06 the third."""
+    data = None if body is None else body.encode("utf-8")
+    request = urllib.request.Request(gateway + path, data=data, method=method)
     if token:
         request.add_header("Authorization", f"Bearer {token}")
+    if body is not None:
+        request.add_header("Content-Type", "application/json")
     try:
         with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 - fixed http://127.0.0.1 gateway
             headers, body = response.headers, response.read().decode("utf-8", "replace")
@@ -213,6 +218,30 @@ def main(env_path: str, project: str | None = None) -> int:
         idp.check(is_problem(status, headers, body, 404),
                   f"{method} a team assignment of an event Rita is not a member of gets the same 404 (US-18)"
                   + ("" if status == 404 else f" (got {status})"))
+
+    # US-06 (#61): the two platform operations. Rita is no FarolAdmin, so both refuse her — which is also what
+    # keeps the smoke writing nothing: the only FarolAdmin is the bootstrap account, and it is not driven here.
+    lookup = "/api/v1/accounts?email=ana%40farol.test"
+    status, headers, body = call(gateway, lookup)
+    idp.check(is_problem(status, headers, body, 401),
+              "GET /api/v1/accounts without a token gets 401 Problem Details"
+              + ("" if status == 401 else f" (got {status})"))
+    status, headers, body = call(gateway, lookup, rita)
+    idp.check(is_problem(status, headers, body, 403),
+              "GET /api/v1/accounts for a caller who is not the FarolAdmin gets 403 (US-06)"
+              + ("" if status == 403 else f" (got {status})"))
+    idp.check("ana@farol.test" not in body and "ana%40farol.test" not in body,
+              "the refused account lookup never echoes the e-mail it was asked about (US-06 D7, M-10)")
+
+    name_admin = f'{{"userId":"{uuid.uuid4()}","role":"EventAdmin"}}'
+    status, headers, body = send(gateway, "POST", members, None, name_admin)
+    idp.check(is_problem(status, headers, body, 401),
+              "POST /api/v1/events/{id}/members without a token gets 401 Problem Details"
+              + ("" if status == 401 else f" (got {status})"))
+    status, headers, body = send(gateway, "POST", members, rita, name_admin)
+    idp.check(is_problem(status, headers, body, 403),
+              "POST /api/v1/events/{id}/members for a caller who is not the FarolAdmin gets 403 (US-06)"
+              + ("" if status == 403 else f" (got {status})"))
 
     ok, out = psql(env_path, env, project,
                    "SELECT count(*) FROM flyway_schema_history WHERE version = '1' AND success")

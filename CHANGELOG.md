@@ -2,6 +2,36 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-26 · Create an event, name its first EventAdmin, and list events (US-06 and US-07, #61 and #89, Tiago Teixeira)
+
+**Why:** until this story no event could be created through the API at all, which is what every other Events and Auth & Users story has been noting as its one known limit since #192. US-07 comes with it because US-06 alone ships unusable: the FarolAdmin is not made a member of what they create, so the list is the only way they ever see it again. Specs: [`Docs/specs/US-06-create-event.md`](Docs/specs/US-06-create-event.md). The first story that spans **two services**, and the one that takes both of them to **zero `501`** for Sprint B except the map reads of US-20 (#69) and US-21 (#70).
+
+### Added
+- `POST /api/v1/events` (Events): the FarolAdmin creates an event as a **draft** — `name`, `organiserName`, `dates`, optional `description` — and gets it back with `201`. No join code and therefore no join link: only the publish of US-11 generates one.
+- `GET /api/v1/events` (Events), **new in the contract**, from [API outline](Docs/Technical/api-outline.md) §3, which specified it while `openapi.yaml` never declared it because US-07 sat in Sprint C. It answers an `EventSummary` array with the five fields `features.md` §4.1 allows the role — name, dates, organisation, EventAdmins, status — newest first, and **nothing else**: no description, no join link, no team, no map, no participant.
+- `GET /api/v1/accounts?email=` (Auth & Users): the account to name, found by an **exact** (case-insensitive) address. It answers the `userId` and the display name only, never the address back.
+- `POST /api/v1/events/{eventId}/members` (Auth & Users): names a user **EventAdmin** of the event, the first one or an existing member promoted, and publishes the `MembershipChanged` that makes them visible to Events, Reports and Transports.
+- A **local copy of the FarolAdmin role** in Events (`global_role_copy`, Flyway `V2`), because the role is never read from the token (ADR-006). The message already arrived — the binding `farol.auth-users → events.auth-users-events` with `global-role.changed` exists since #212 and `LocalCopyListener` acknowledged the type as *not handled yet* — so `GlobalRoleChanged` becomes its **second handled type**, applied by version exactly as the membership copy is.
+- The new draft publishes the **first `EventChanged` any event ever gets**, in the same transaction, which is what lets the name call stop answering `404`.
+- `CreateEventIT`, `ListEventsIT`, `JdbcGlobalRolesIT`, `AccountLookupIT` and `NameEventAdminIT`, the last of which drives the whole acceptance criterion: the event copy, the name call, and the named user then reading the event as theirs through `GET /me/memberships`. Both smokes gained the refusals of the four new operations.
+
+### Changed
+- **The FarolAdmin still gets no access to any event's data**, which is what `features.md` §4.1 — confirmed by the team on 15 November 2026 (#178) — and US-07 AC-2 require: opening an event, its teams or its map is the same `404` as for a stranger, and the two tests that assert it are untouched. Creating an event does **not** make the creator a member.
+- An event with no EventAdmin yet is listed with an **empty** `eventAdmins` rather than hidden: the normal state between the create and the name call, and what US-08 (#90) exists to fix.
+- Naming the same user EventAdmin again changes nothing, publishes nothing and still answers `201`, because the contract declares one success code and a retried call must not read as an error.
+- A caller who is not the FarolAdmin gets `403` *Only the FarolAdmin may do this.* on all four operations, through an exception of its own in each service: the existing `403` speaks of a permission *in an event*, and there is no event to speak of here.
+- The e-mail lookup is **audited with a SHA-256 hash of the address, never the address** (M-10), hit, miss or refusal, so an enumeration attempt is visible in the trail without the log pipeline of #148 holding anyone's e-mail.
+- Auth & Users now serves **every** operation of its contract: its `ContractIT` says so instead of listing later stories.
+
+### Fixed
+- **Two name calls arriving together published two `MembershipChanged` carrying one version.** `lockForUpdate` cannot serialise what has no row to lock yet, so the *first* EventAdmin of an event escaped the version guard of decision 3 of 21 November 2026, and a consumer applying only a strictly newer version would have silently kept one of the two. The create path now goes through `insertIfAbsent`, so the key serialises them as it does for the join of US-12, and the loser answers the winner's row without writing or publishing anything.
+- **A date range ending before it starts was a `500`.** The rule is cross-field, so the generated DTO cannot express it and `DateRange` refused it with an `IllegalArgumentException`; it is now the caller's `400`.
+
+### Known limits
+- **The e-mail lookup is not rate-limited.** It is FarolAdmin-only, exact and audited, but a `404` for a miss and a `200` for a hit still make it an existence oracle for one address at a time. Bounding how fast it can be asked is the gateway's (ADR-013, #202) and the gateway has no such filter today; the point is on #61.
+- **US-08 (#90) and US-15 (#94) share `POST …/members`** with this story. What is served is naming an EventAdmin; the `422` that protects the *last* EventAdmin of an event belongs to US-15 and is deliberately not implemented here.
+- The back-office pages are the web app's (decision 13); what they need is on #61 and #89.
+
 ## [Unreleased] · 2026-11-26 · Join an event by QR code or link (US-12, #63, Tiago Teixeira)
 
 **Why:** a participant's first contact with Farol is the QR code on a poster or the link a friend sends; until this story there was no way to become a member of an event at all (`features.md` US-12). Spec: [`Docs/specs/US-12-join-event.md`](Docs/specs/US-12-join-event.md). Built on US-18 (#67), whose `MembershipChanged` and audit port it reuses.

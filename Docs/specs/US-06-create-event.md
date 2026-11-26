@@ -111,12 +111,29 @@ Baselines this branch starts from (`13dd971`):
 
 ## 6. Handoff and changelog
 
-*(appended as the work goes)*
+**Done.** All seven features, both services, `mvn clean verify` green on each:
 
-**Known limits to record in the pull request**
+| Module | Unit | IT | JaCoCo (lines / branches) | PIT |
+|---|---|---|---|---|
+| `backend/events` | 319 | 647 | 1344/1349 · 324/328 | 232 killed, 0 uncovered, strength 99 % |
+| `backend/auth-users` | 211 | 318 | 965/972 · 220/222 | 145/148 killed, 0 uncovered, strength 98 % |
+
+**Two defects the tests found, both fixed:**
+
+1. **Two name calls arriving together published two `MembershipChanged` carrying one version.** `EventMemberships.lockForUpdate` cannot serialise what has no row to lock yet, so the *first* EventAdmin of an event escaped the version guard of decision 3 of 21 November 2026 — and a consumer applying only a strictly newer version would have silently kept one of the two. The create path now goes through `insertIfAbsent`, so the key serialises them exactly as it does for the join of US-12 D5, and the loser answers the winner's row without writing or publishing. Found by `NameEventAdminIT · two name calls for one user at once leave one version`; PIT then showed the loser's branch was only reachable from the integration test, so the forced-outcome knobs of `InMemoryPorts` cover it as unit tests too, as US-11 did for its unreachable write outcomes.
+2. **A date range ending before it starts was a `500`.** The rule is cross-field, so the generated bean validation cannot express it and `DateRange` refused it with an `IllegalArgumentException` that nothing mapped. It is now an `InvalidEventException` and the `400` the caller deserves (D8). Only a test through HTTP shows this.
+
+**Reusable findings, for the next spec:**
+
+- **A module's test schema is shared by every `*IT` in it.** `count(*)` over a table, or the size of a list endpoint's answer, is not a stable assertion: each case must compare against a baseline it took itself, or filter for its own id. Three of the new Events tests failed on this before it was understood.
+- **Implementing an operation breaks the tests that asserted its `501`**, in both services and in two more places than #192's spec recorded: `ContractIT`'s later-story list *and* its `@CsvSource` of method-not-allowed paths (`GET /api/v1/events` was a `405` row), plus `LoggingIT`, which drives those operations for their status codes. In both modules the fix was to make the test stronger rather than merely re-expect the new code: `LoggingIT` now grants the caller the role so the operation **really runs**, and the no-personal-data assertion covers a real create and a real lookup carrying a real name and address.
+- **`ContractIT.everyGeneratedClassIsCovered` catches a new schema with no model case**, which is exactly what it is for — `EventSummary` was caught by it.
+- **Jakarta's `@Email` caps the local part at 64 characters** (RFC 5321), so a long-address test must grow the domain, not the local part.
+
+**Known limits, recorded in the pull request**
 
 - **The FarolAdmin's whole view of an event is `GET /events`** (D3, D11). Opening the event itself, its teams or its map is the same `404` as for a stranger, by `features.md` §4.1 and US-07 AC-2. If the back office ever needs more than the five fields, that is a change to §4.1 and to #178, and it goes to a meeting note before any code.
 - **Reports, Transports and Badges know nothing of `FarolAdmin`** (zero references today): they refuse every non-member, which happens to give US-07 AC-2 for free on their endpoints, but it also means that if §4.1 is ever widened, three services owned by other people have to change too. Worth stating on #89 so the decision is not made by accident.
 - **The name call needs the `EventChanged` to have arrived**, so the back office's two steps are eventually consistent: the API outline's answer is a `404` and a retry, which this story implements rather than changes. A create followed immediately by a name call will usually need one retry.
 - **The e-mail lookup is not rate-limited.** D7 keeps it FarolAdmin-only, exact and audited, but bounding how fast it can be asked is the gateway's (#202, ADR-013) and the gateway has no such filter today. The point belongs on #61 and #202.
-- **US-08 (#90) and US-15 (#94) share `POST …/members`** with this story. What this PR serves is the *first* EventAdmin; the `422` that protects the last EventAdmin of an event belongs to US-15 and is deliberately not implemented here, so the endpoint is not yet complete for those stories.
+- **US-08 (#90) and US-15 (#94) share `POST …/members`** with this story. What this PR serves is naming an EventAdmin; the `422` that protects the last EventAdmin of an event belongs to US-15 and is deliberately not implemented here, so the endpoint is not yet complete for those stories.

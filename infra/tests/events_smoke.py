@@ -4,7 +4,8 @@ Checks, through the API gateway, that Events validates real Keycloak tokens (ADR
 who are not members: no token and a tampered token get 401 Problem Details; Rita's real token is accepted and gets
 404 for an event she is not a member of, and so does the bootstrap FarolAdmin, who is not a member either (same
 problem), including on the teams of US-16, the publish of US-11 and the map upload of US-19; a malformed id gets
-400; an operation of a later story gets 501; a map upload without its file part is refused; the X-Correlation-Id
+400; an operation of a later story gets 501; the create and the list of US-06 and US-07 refuse a caller who is
+not the FarolAdmin; a map upload without its file part is refused; the X-Correlation-Id
 comes back. Then it checks inside the stack that the `events` schema comes from Flyway, that the map directory of
 US-19 is writable by the service's user, and that Events consumes its queue as the `events` broker user.
 
@@ -66,6 +67,26 @@ def call(gateway: str, path: str, token: str | None = None, correlation_id: str 
     status, response_headers, body = idp.request(urllib.request.build_opener(idp.NoRedirect), gateway + path,
                                                  {} if post else None, headers)
     return status, {name.lower(): value for name, value in response_headers.items()}, body
+
+
+NEW_EVENT = ('{"name":"Queima das Fitas 2027","organiserName":"FAP",'
+             '"dates":{"start":"2027-05-02","end":"2027-05-09"}}')
+
+
+def post_json(gateway: str, path: str, token: str | None,
+              body: str) -> tuple[int, dict[str, str], str]:
+    """A POST with a JSON body, which `call` cannot send: US-06 creates an event with one."""
+    request = urllib.request.Request(gateway + path, data=body.encode("utf-8"), method="POST")
+    request.add_header("Content-Type", "application/json")
+    if token:
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 - fixed http://127.0.0.1 gateway
+            headers, read = response.headers, response.read().decode("utf-8", "replace")
+            status = response.status
+    except urllib.error.HTTPError as error:
+        headers, read, status = error.headers, error.read().decode("utf-8", "replace"), error.code
+    return status, {name.lower(): value for name, value in headers.items()}, read
 
 
 def upload(gateway: str, path: str, token: str | None = None) -> tuple[int, dict[str, str], str]:
@@ -245,6 +266,30 @@ def main(env_path: str, project: str | None = None) -> int:
     idp.check(is_problem(status, headers, body, 501) and "US-21" in str(problem(body).get("detail", "")),
               "an operation of a later story (GET /api/v1/events/{id}/map-versions/current) gets 501 Problem "
               "Details naming its story" + ("" if status == 501 else f" (got {status})"))
+
+    # US-06 and US-07 (#61, #89): the two platform operations. Rita is no FarolAdmin — the only one is the
+    # bootstrap account, which is not driven here — so both refuse her and the smoke still writes nothing.
+    status, headers, body = call(gateway, "/api/v1/events")
+    idp.check(is_problem(status, headers, body, 401) and headers.get("www-authenticate", "").startswith("Bearer"),
+              "GET /api/v1/events without a token gets 401 Problem Details with WWW-Authenticate: Bearer"
+              + ("" if status == 401 else f" (got {status})"))
+    status, headers, body = call(gateway, "/api/v1/events", rita)
+    idp.check(is_problem(status, headers, body, 403),
+              "GET /api/v1/events for a caller who is not the FarolAdmin gets 403 (US-07)"
+              + ("" if status == 403 else f" (got {status})"))
+
+    status, headers, body = post_json(gateway, "/api/v1/events", None, NEW_EVENT)
+    idp.check(is_problem(status, headers, body, 401),
+              "POST /api/v1/events without a token gets 401 Problem Details"
+              + ("" if status == 401 else f" (got {status})"))
+    status, headers, body = post_json(gateway, "/api/v1/events", rita, NEW_EVENT)
+    idp.check(is_problem(status, headers, body, 403),
+              "POST /api/v1/events for a caller who is not the FarolAdmin gets 403 (US-06)"
+              + ("" if status == 403 else f" (got {status})"))
+
+    ok, out = psql(env_path, env, project, "SELECT count(*) FROM event")
+    idp.check(ok and out == "0", "no event was created: the smoke still writes nothing (US-06)"
+              + ("" if ok and out == "0" else f" (got {out})"))
 
     # The upload writes on the events-maps volume as user 10001, and no story reaches that write before US-06, so
     # the only check the smoke can make is that the directory is there and writable (review of #253)
