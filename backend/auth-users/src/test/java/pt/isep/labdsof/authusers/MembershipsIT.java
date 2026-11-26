@@ -82,6 +82,11 @@ class MembershipsIT extends IntegrationTest {
     assertThat(entry.path("teamIds").size()).isEqualTo(1);
     assertThat(entry.path("teamIds").get(0).asString()).isEqualTo(team.toString());
     assertThat(api.get(PATH, otherToken).body()).contains(otherEvent.toString()).doesNotContain(event.toString());
+
+    // Events deletes the team: it is not one of my teams any more, though the assignment row stays (review of #255)
+    seedTeam(event, team, true);
+
+    assertThat(getEntries(api, token).get(0).path("teamIds")).isEmpty();
   }
 
   @Test

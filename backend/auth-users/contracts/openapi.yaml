@@ -109,7 +109,11 @@ paths:
     get:
       tags: [Members]
       operationId: listMembers
-      summary: List the event's members with role and teams (US-18)
+      summary: List the event's members with role and teams (US-18); EventAdmin only
+      description: >-
+        A member of the event who is not an EventAdmin gets 403; anyone outside the event, a
+        FarolAdmin who is not a member included, gets the same 404 as an unknown event
+        (API outline 1.7).
       parameters:
         - name: role
           in: query
@@ -133,6 +137,8 @@ paths:
                   $ref: '#/components/schemas/Member'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
     post:

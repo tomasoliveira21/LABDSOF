@@ -34,6 +34,8 @@ import pt.isep.labdsof.authusers.Infrastructure;
 import pt.isep.labdsof.authusers.IntegrationTest;
 import pt.isep.labdsof.authusers.adapters.out.persistence.JdbcOutbox;
 import pt.isep.labdsof.authusers.application.OutgoingEvent;
+import pt.isep.labdsof.authusers.domain.EventMembership;
+import pt.isep.labdsof.authusers.domain.EventRole;
 import pt.isep.labdsof.authusers.domain.GlobalRole;
 import pt.isep.labdsof.authusers.domain.UserAccount;
 import tools.jackson.databind.json.JsonMapper;
@@ -48,6 +50,7 @@ class EventContractIT extends IntegrationTest {
   static final RabbitTemplate ADMIN = Infrastructure.adminTemplate();
   static final String PROFILE = "user-profile.changed.schema.json";
   static final String ROLE = "global-role.changed.schema.json";
+  static final String MEMBERSHIP = "membership.changed.schema.json";
   static final String ENVELOPE = "envelope.schema.json";
 
   @Autowired JdbcOutbox outbox;
@@ -71,7 +74,11 @@ class EventContractIT extends IntegrationTest {
   }
 
   static String schemaOf(String type) {
-    return "UserProfileChanged".equals(type) ? PROFILE : ROLE;
+    return switch (type) {
+      case "UserProfileChanged" -> PROFILE;
+      case "MembershipChanged" -> MEMBERSHIP;
+      default -> ROLE;
+    };
   }
 
   /** The first GET /me of the bootstrap account, through the real HTTP path: it stores both events. */
@@ -138,6 +145,47 @@ class EventContractIT extends IntegrationTest {
     assertThat(schema(PROFILE).validate(text(reports.get(0)), InputFormat.JSON)).isEmpty();
   }
 
+  /** US-18 F4: one team assignment, through the real HTTP path, so the outbox holds a real MembershipChanged. */
+  private UUID assignATeam() {
+    var sofia = UUID.randomUUID();
+    var rita = UUID.randomUUID();
+    var event = UUID.randomUUID();
+    var team = UUID.randomUUID();
+    seedAccount(sofia, "Sofia Admin");
+    seedMembership(event, sofia, "EventAdmin");
+    seedAccount(rita, "Rita Participante");
+    seedMembership(event, rita, "RegularUser");
+    seedTeam(event, team, false);
+    assertThat(new ApiClient(port).send("PUT",
+        "/api/v1/events/" + event + "/members/" + rita + "/teams/" + team,
+        "Bearer " + JWKS.valid(sofia.toString())).statusCode()).isEqualTo(204);
+    return rita;
+  }
+
+  @Test
+  @DisplayName("US-18 AC-1 adding a member to a team publishes a MembershipChanged that matches its JSON Schema, "
+      + "stored and sent")
+  void theMembershipChangedOfATeamAssignmentMatchesItsSchema() {
+    var rita = assignATeam();
+
+    var stored = storedBody(rita, "MembershipChanged");
+    assertThat(schema(MEMBERSHIP).validate(stored, InputFormat.JSON)).isEmpty();
+    assertThat(schema(ENVELOPE).validate(stored, InputFormat.JSON)).isEmpty();
+
+    var published = new OutboxPublisher(outbox, rabbit, tx, Clock.systemUTC(), 50, Duration.ofSeconds(2))
+        .publishDue();
+    assertThat(published).isEqualTo(1);
+
+    var events = drain(EVENTS_QUEUE);
+    assertThat(events).hasSize(1);
+    assertThat(events.get(0).getMessageProperties().getType()).isEqualTo("MembershipChanged");
+    assertThat(schema(MEMBERSHIP).validate(text(events.get(0)), InputFormat.JSON)).isEmpty();
+    // Reports' queue is bound to membership.changed too (#212), so the same message reaches it
+    var reports = drain(REPORTS_QUEUE);
+    assertThat(reports).hasSize(1);
+    assertThat(schema(MEMBERSHIP).validate(text(reports.get(0)), InputFormat.JSON)).isEmpty();
+  }
+
   static Arguments broken(String label, String type, String schemaFile, Consumer<ObjectNode> breakIt) {
     return Arguments.of(label, type, schemaFile, breakIt);
   }
@@ -170,16 +218,34 @@ class EventContractIT extends IntegrationTest {
             tree -> payload(tree).put("granted", "true")),
         broken("GlobalRoleChanged without payload.version", "GlobalRoleChanged", ROLE,
             tree -> payload(tree).remove("version")),
+        broken("MembershipChanged without payload.teamIds", "MembershipChanged", MEMBERSHIP,
+            tree -> payload(tree).remove("teamIds")),
+        broken("MembershipChanged with the same team twice", "MembershipChanged", MEMBERSHIP,
+            tree -> payload(tree).putArray("teamIds")
+                .add("11111111-1111-1111-1111-111111111111").add("11111111-1111-1111-1111-111111111111")),
+        broken("MembershipChanged with a role that is not of an event", "MembershipChanged", MEMBERSHIP,
+            tree -> payload(tree).put("role", "FarolAdmin")),
+        broken("MembershipChanged with an unknown status", "MembershipChanged", MEMBERSHIP,
+            tree -> payload(tree).put("status", "Pending")),
+        broken("MembershipChanged with a display name in the payload (M-10)", "MembershipChanged", MEMBERSHIP,
+            tree -> payload(tree).put("displayName", "Rita")),
+        broken("MembershipChanged without an eventId", "MembershipChanged", MEMBERSHIP,
+            tree -> tree.putNull("eventId")),
         broken("envelope with schemaVersion 0", "UserProfileChanged", ENVELOPE,
             tree -> tree.put("schemaVersion", 0)));
   }
 
   private String validBody(String type) {
     var id = UUID.randomUUID();
-    var event = "UserProfileChanged".equals(type)
-        ? OutgoingEvent.userProfileChanged(UUID.randomUUID(),
-            UserAccount.provision(id, id + "@farol.test", true, "Ana Silva", Instant.now()), id.toString())
-        : OutgoingEvent.globalRoleChanged(UUID.randomUUID(), id, GlobalRole.FarolAdmin, true, 1, Instant.now(), "");
+    var event = switch (type) {
+      case "UserProfileChanged" -> OutgoingEvent.userProfileChanged(UUID.randomUUID(),
+          UserAccount.provision(id, id + "@farol.test", true, "Ana Silva", Instant.now()), id.toString());
+      case "MembershipChanged" -> OutgoingEvent.membershipChanged(UUID.randomUUID(),
+          new EventMembership(UUID.randomUUID(), id, EventRole.RegularUser, List.of(UUID.randomUUID()), 2),
+          Instant.now(), id.toString());
+      default -> OutgoingEvent.globalRoleChanged(UUID.randomUUID(), id, GlobalRole.FarolAdmin, true, 1,
+          Instant.now(), "");
+    };
     return json.writeValueAsString(event.envelope());
   }
 

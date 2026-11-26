@@ -173,6 +173,46 @@ class LoggingIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-18 AC-1 the team assignment is recorded with who made it and when, and never with a name")
+  void theTeamAssignmentIsRecordedWithoutAnyName(CapturedOutput output) {
+    var sofia = UUID.randomUUID();
+    var rita = UUID.randomUUID();
+    var event = UUID.randomUUID();
+    var team = UUID.randomUUID();
+    seedAccount(sofia, "Sofia Logged");
+    seedMembership(event, sofia, "EventAdmin");
+    seedAccount(rita, "Rita Logged");
+    seedMembership(event, rita, "RegularUser");
+    seedTeam(event, team, false);
+    var path = "/api/v1/events/" + event + "/members/" + rita + "/teams/" + team;
+    var correlationId = "assign-" + UUID.randomUUID();
+
+    api().send("PUT", path, "Bearer " + JWKS.valid(sofia.toString()), null, HEADER, correlationId);
+    api().send("DELETE", path, "Bearer " + JWKS.valid(sofia.toString()), null, HEADER, correlationId);
+    awaitAccessLine(output, correlationId, 204);
+
+    var mine = logLines(output).stream().filter(line -> correlationId.equals(line.get("correlationId"))).toList();
+    assertThat(mine).anyMatch(line -> "Added a member to a team (US-18)".equals(line.get("message"))
+        && sofia.toString().equals(line.get("actorUserId")) && rita.toString().equals(line.get("userId"))
+        && team.toString().equals(line.get("teamId")) && event.toString().equals(line.get("eventId")));
+    assertThat(mine).anyMatch(line -> "Removed a member from a team (US-18)".equals(line.get("message")));
+    assertThat(output.getAll()).doesNotContain("Sofia Logged").doesNotContain("Rita Logged");
+  }
+
+  @Test
+  @DisplayName("US-14 a refused call about an event's members is recorded with the reason")
+  void aRefusedCallAboutMembersIsRecorded(CapturedOutput output) {
+    var stranger = UUID.randomUUID();
+    var event = UUID.randomUUID();
+    var correlationId = awaitedRequest(output, "GET", "/api/v1/events/" + event + "/members",
+        JWKS.valid(stranger.toString()), null, 404);
+
+    assertThat(logLines(output)).anyMatch(line -> correlationId.equals(line.get("correlationId"))
+        && "Refused a call about an event's members (US-14)".equals(line.get("message"))
+        && "NOT_A_MEMBER".equals(line.get("refusal")) && event.toString().equals(line.get("eventId")));
+  }
+
+  @Test
   @DisplayName("191 AC-8 a rejected correlation id is not logged")
   void rejectedCorrelationIdIsNotLogged(CapturedOutput output) {
     var rejected = "reject me " + UUID.randomUUID();

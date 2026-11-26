@@ -138,6 +138,19 @@ class MeServiceTest {
     assertThat(ports.emailUpdates).isZero();
   }
 
+  @Test
+  @DisplayName("191 AC-5 an insert refused without any account for the subject is an error, not a silent answer")
+  void anInsertRefusedWithoutAnAccountIsAnError() {
+    // Only an e-mail conflict can do this, and an e-mail alone must never select an account (spec D5)
+    ports.insertConflictsWithoutAnAccount = true;
+
+    assertThatThrownBy(() -> service.me(identity("ana@farol.test", true, "Ana")))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("conflicted without a matching subject");
+    assertThat(ports.accounts).isEmpty();
+    assertThat(ports.outbox).isEmpty();
+  }
+
   @ParameterizedTest(name = "e-mail [{0}]")
   @NullAndEmptySource
   @ValueSource(strings = "  ")
