@@ -35,7 +35,6 @@ spring:
     listener:
       simple:
         missing-queues-fatal: false
-        default-requeue-rejected: false
         # Four attempts, with waits of 1 s, 2 s and 4 s before dead-lettering (ADR-004).
         retry:
           enabled: true

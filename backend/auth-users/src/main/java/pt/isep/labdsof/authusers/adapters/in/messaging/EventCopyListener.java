@@ -9,6 +9,7 @@ import org.slf4j.MDC;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import pt.isep.labdsof.authusers.Correlation;
 import pt.isep.labdsof.authusers.application.EventCopies;
 import pt.isep.labdsof.authusers.application.MyMemberships.Status;
 import tools.jackson.core.JacksonException;
@@ -18,7 +19,6 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 class EventCopyListener {
 
-  private static final String CORRELATION_ID = "correlationId";
   private static final Logger log = LoggerFactory.getLogger(EventCopyListener.class);
 
   private final EventCopies copies;
@@ -36,11 +36,11 @@ class EventCopyListener {
     var properties = message.getMessageProperties();
     try {
       if (properties.getCorrelationId() != null) {
-        MDC.put(CORRELATION_ID, properties.getCorrelationId());
+        MDC.put(Correlation.MDC_KEY, properties.getCorrelationId());
       }
       handle(message);
     } finally {
-      MDC.remove(CORRELATION_ID);
+      MDC.remove(Correlation.MDC_KEY);
     }
   }
 
@@ -56,13 +56,14 @@ class EventCopyListener {
       validateEnvelope(envelope);
       var eventId = UUID.fromString(text(envelope, "eventId"));
       var payload = envelope.path("payload");
-      long version = version(payload);
-      switch (text(envelope, "type")) {
+      var type = text(envelope, "type");
+      switch (type) {
         case "EventChanged" -> copies.event(eventId, text(payload, "name"),
-            Status.valueOf(text(payload, "status")), version);
+            Status.valueOf(text(payload, "status")), version(payload));
         case "TeamChanged" -> copies.team(eventId, UUID.fromString(text(payload, "teamId")),
-            json.writeValueAsString(payload), version);
-        default -> throw new IllegalArgumentException("Unsupported Events message type");
+            json.writeValueAsString(payload), version(payload));
+        default -> log.atInfo().addKeyValue("messageId", messageId).addKeyValue("type", type)
+            .log("Event type not handled by Auth & Users yet; acknowledged");
       }
     } catch (JacksonException | IllegalArgumentException | DateTimeParseException error) {
       log.atWarn()

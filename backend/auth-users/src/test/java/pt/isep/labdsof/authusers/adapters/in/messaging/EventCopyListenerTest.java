@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.MDC;
@@ -48,6 +49,18 @@ class EventCopyListenerTest {
     assertThat(MDC.get("correlationId")).isNull();
   }
 
+  @Test
+  void acknowledgesUnknownTypesWithoutRequiringAKnownPayloadVersion() {
+    var copies = mock(EventCopies.class);
+    var deadLetters = mock(DeadLetters.class);
+    var listener = new EventCopyListener(copies, deadLetters, JsonMapper.builder().build());
+    String unknown = VALID.replace("EventChanged", "FutureEvent").replace(",\"version\":1", "");
+
+    listener.onEvent(new Message(unknown.getBytes(StandardCharsets.UTF_8)));
+
+    verifyNoInteractions(copies, deadLetters);
+  }
+
   static Stream<String> invalidEnvelopes() {
     return Stream.of("[]", "{", VALID.replace("\"schemaVersion\":1", "\"schemaVersion\":2"),
         VALID.replace("\"schemaVersion\":1", "\"schemaVersion\":\"1\""),
@@ -57,7 +70,6 @@ class EventCopyListenerTest {
         VALID.replace("2026-11-21T00:00:00Z", "invalid"),
         VALID.replace("\"producer\":\"events\"", "\"producer\":\"reports\""),
         VALID.replace(",\"actorUserId\":\"\"", ""),
-        VALID.replace("EventChanged", "Unknown"),
         VALID.replace(",\"version\":1", ""),
         VALID.replace("\"version\":1", "\"version\":0"),
         VALID.replace("\"version\":1", "\"version\":\"1\""),
