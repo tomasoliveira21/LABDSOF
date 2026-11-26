@@ -64,6 +64,9 @@ public class TeamMemberService {
     var membership = locked(actorUserId, eventId, userId);
     var updated = membership.withoutTeam(teamId);
     if (updated == membership) {
+      // Nothing the member has changes, so nothing is published (D3). A team Events deleted is already out of
+      // their teams, and this is what clears the row it left behind (review of #255)
+      memberships.clearAssignment(eventId, userId, teamId);
       return;
     }
     var at = now();

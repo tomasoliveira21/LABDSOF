@@ -21,9 +21,23 @@ import pt.isep.labdsof.authusers.domain.EventRole;
 @Repository
 class JdbcEventMemberships implements EventMemberships {
 
+  /**
+   * The assignment {@code t} is to a team that is still <em>live</em> in the copy (D4). Events deletes a team by
+   * flipping {@code deleted} in its {@code TeamChanged}, and the assignment row survives that — nothing tells this
+   * service to delete it. Without this, the next {@code MembershipChanged} for the member would carry a team that
+   * no longer exists, against what {@code membership.changed.schema.json} promises its three consumers, and the
+   * back office's picker would still show it (review of #255). Every read of a membership's teams uses it.
+   */
+  private static final String LIVE_TEAM = """
+      AND EXISTS (SELECT 1 FROM event_team_copy c
+                  WHERE c.team_id = t.team_id AND c.event_id = t.event_id AND c.payload ->> 'deleted' = 'false')
+      """;
+
   private static final String TEAM_IDS = """
       ARRAY(SELECT t.team_id FROM team_assignment t
-            WHERE t.event_id = m.event_id AND t.user_id = m.user_id ORDER BY t.team_id) AS team_ids
+            WHERE t.event_id = m.event_id AND t.user_id = m.user_id
+      """ + LIVE_TEAM + """
+            ORDER BY t.team_id) AS team_ids
       """;
 
   private final JdbcClient jdbc;
@@ -74,6 +88,13 @@ class JdbcEventMemberships implements EventMemberships {
     version(updated, actorUserId, at);
   }
 
+  @Override
+  public void clearAssignment(UUID eventId, UUID userId, UUID teamId) {
+    jdbc.sql("DELETE FROM team_assignment WHERE event_id = :event AND user_id = :user AND team_id = :team")
+        .param("event", eventId).param("user", userId).param("team", teamId)
+        .update();
+  }
+
   /** The version the membership now carries, with who changed it and when (D6, D8). */
   private void version(EventMembership updated, UUID actorUserId, Instant at) {
     jdbc.sql("""
@@ -93,9 +114,13 @@ class JdbcEventMemberships implements EventMemberships {
         WHERE m.event_id = :event
           -- The casts are what lets a filter be left out: PostgreSQL cannot infer the type of a null parameter
           AND (CAST(:role AS text) IS NULL OR m.role = CAST(:role AS text))
-          AND (CAST(:team AS uuid) IS NULL OR EXISTS (SELECT 1 FROM team_assignment f
-                                        WHERE f.event_id = m.event_id AND f.user_id = m.user_id
-                                          AND f.team_id = CAST(:team AS uuid)))
+          -- The filter reads the teams by the same rule as TEAM_IDS, or a deleted team would still match the
+          -- members it used to have while the list showed them with no team at all
+          AND (CAST(:team AS uuid) IS NULL OR EXISTS (SELECT 1 FROM team_assignment t
+                                        WHERE t.event_id = m.event_id AND t.user_id = m.user_id
+                                          AND t.team_id = CAST(:team AS uuid)
+        """ + LIVE_TEAM + """
+                                        ))
         ORDER BY lower(a.display_name), m.user_id
         """)
         .param("event", eventId)

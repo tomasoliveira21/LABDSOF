@@ -78,6 +78,26 @@ class MemberListIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-18 AC-4 a team Events deleted is no longer shown, and the DELETE clears the row it left")
+  void aTeamEventsDeletedIsNoLongerShown() {
+    seedEvent();
+    var api = new ApiClient(port);
+    var assignment = "/api/v1/events/" + event + "/members/" + rita + "/teams/" + nursing;
+
+    seedTeam(event, nursing, true); // Events deletes the team; the assignment row stays behind
+
+    assertThat(list("", sofia).get(1).path("teamIds")).isEmpty();
+    assertThat(list("?teamId=" + nursing, sofia)).isEmpty();
+    // The DELETE is still accepted and clears the row, so the member cannot be put back in it by an undelete
+    assertThat(api.send("DELETE", assignment, "Bearer " + JWKS.valid(sofia.toString())).statusCode())
+        .isEqualTo(204);
+    assertThat(jdbc.sql("SELECT count(*) FROM team_assignment WHERE user_id = :user AND team_id = :team")
+        .param("user", rita).param("team", nursing).query(Integer.class).single()).isZero();
+    assertThat(jdbc.sql("SELECT version FROM event_membership WHERE event_id = :event AND user_id = :user")
+        .param("event", event).param("user", rita).query(Long.class).single()).isEqualTo(2);
+  }
+
+  @Test
   @DisplayName("US-18 AC-1 a disabled account is still a member of the event")
   void aDisabledAccountIsStillAMember() {
     seedEvent();

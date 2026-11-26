@@ -41,6 +41,8 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   /** What the repository stored, and what the audit logged: one list each, so a test can tell them apart. */
   final List<Assignment> assignments = new ArrayList<>();
   final List<Assignment> audited = new ArrayList<>();
+  /** The rows a {@code DELETE} cleared without a version (the leftovers of a deleted team; review of #255). */
+  final List<List<UUID>> cleared = new ArrayList<>();
   final List<Refused> refusals = new ArrayList<>();
   final List<UUID> locked = new ArrayList<>();
   int emailUpdates;
@@ -145,6 +147,11 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   public void removeFromTeam(EventMembership updated, UUID teamId, UUID actorUserId, Instant at) {
     member(updated);
     assignments.add(new Assignment(updated.eventId(), updated.userId(), teamId, actorUserId, at, false));
+  }
+
+  @Override
+  public void clearAssignment(UUID eventId, UUID userId, UUID teamId) {
+    cleared.add(List.of(eventId, userId, teamId));
   }
 
   @Override

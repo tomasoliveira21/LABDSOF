@@ -25,6 +25,13 @@ public interface EventMemberships {
   /** Removes the assignment and stores the membership's new version (D6, D8). */
   void removeFromTeam(EventMembership updated, UUID teamId, UUID actorUserId, Instant at);
 
+  /**
+   * Removes an assignment without touching the membership's version, which is what a {@code DELETE} of a team
+   * Events has already deleted does: the team is not in the member's teams any more (nothing to publish), but its
+   * row is still there and this is the only call that can clear it (review of #255).
+   */
+  void clearAssignment(UUID eventId, UUID userId, UUID teamId);
+
   /** The event's members for the back office (D10); {@code role} and {@code teamId} are optional filters. */
   List<Member> list(UUID eventId, EventRole role, UUID teamId);
 

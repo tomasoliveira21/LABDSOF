@@ -15,6 +15,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - A user who is not a member of the event cannot be put in a team (AC-2), and neither can a team of another event, a team Events has deleted or an unknown team: all four are the **same `404`** as an unknown event. A member of the event who is not an EventAdmin gets `403`, and `openapi.yaml` now declares that `403` for the member list too.
+- **A team Events deletes leaves its members' teams at once** (review of #255): a membership's teams — what `MembershipChanged` carries, what the member list and `GET /me/memberships` show, and what the `teamId` filter matches — are the assignments whose team is still live in the local copy, not every row ever written. Deleting a team therefore cannot make this service publish a team that no longer exists. The row the deletion leaves behind is cleared by a `DELETE` of that assignment, with no version change and nothing published.
 - The membership's row is **locked before its version is raised**, so two assignments of one member queue instead of both writing the same version — which would make a consumer drop one of the two `MembershipChanged` as a replay.
 - Three operations of the contract no longer answer `501` (five before): `openapi.yaml` and `local-delivery.md` §0 say what is served now.
 
