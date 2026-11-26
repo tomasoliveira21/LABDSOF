@@ -24,6 +24,7 @@ import org.springframework.core.NestedExceptionUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionOperations;
+import pt.isep.labdsof.authusers.Correlation;
 import pt.isep.labdsof.authusers.adapters.out.persistence.JdbcOutbox;
 import pt.isep.labdsof.authusers.adapters.out.persistence.JdbcOutbox.Pending;
 import pt.isep.labdsof.authusers.application.OutboxBackoff;
@@ -83,7 +84,7 @@ public class OutboxPublisher {
   /** Sends one row; false when the batch must stop (shutting down, or the broker is most likely down). */
   private boolean publish(Pending row, AtomicInteger sent) {
     if (row.correlationId() != null) {
-      MDC.put(JdbcOutbox.CORRELATION_ID_MDC_KEY, row.correlationId());
+      MDC.put(Correlation.MDC_KEY, row.correlationId());
     }
     try {
       try {
@@ -101,7 +102,7 @@ public class OutboxPublisher {
       sent.incrementAndGet();
       return true;
     } finally {
-      MDC.remove(JdbcOutbox.CORRELATION_ID_MDC_KEY);
+      MDC.remove(Correlation.MDC_KEY);
     }
   }
 

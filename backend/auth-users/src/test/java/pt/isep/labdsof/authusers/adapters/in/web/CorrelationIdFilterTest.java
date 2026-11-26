@@ -20,7 +20,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import pt.isep.labdsof.authusers.adapters.out.persistence.JdbcOutbox;
+import pt.isep.labdsof.authusers.Correlation;
 
 @ExtendWith(OutputCaptureExtension.class)
 class CorrelationIdFilterTest {
@@ -78,10 +78,10 @@ class CorrelationIdFilterTest {
     var seen = new AtomicReference<String>();
 
     filter.doFilter(request("abcdefgh"), response,
-        (req, res) -> seen.set(MDC.get(JdbcOutbox.CORRELATION_ID_MDC_KEY)));
+        (req, res) -> seen.set(MDC.get(Correlation.MDC_KEY)));
 
     assertThat(seen.get()).isEqualTo("abcdefgh");
-    assertThat(MDC.get(JdbcOutbox.CORRELATION_ID_MDC_KEY)).isNull();
+    assertThat(MDC.get(Correlation.MDC_KEY)).isNull();
   }
 
   @Test
@@ -93,7 +93,7 @@ class CorrelationIdFilterTest {
       throw failure;
     })).isSameAs(failure);
 
-    assertThat(MDC.get(JdbcOutbox.CORRELATION_ID_MDC_KEY)).isNull();
+    assertThat(MDC.get(Correlation.MDC_KEY)).isNull();
   }
 
   @Test

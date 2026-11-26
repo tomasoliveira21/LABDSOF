@@ -161,14 +161,8 @@ def main(env_path: str, project: str | None = None) -> int:
               "the bootstrap FarolAdmin (e-mail verified) gets FarolAdmin in globalRoles"
               + ("" if status == 200 else f" (got {status})"))
 
-    status, headers, body = call(gateway, "/api/v1/me/memberships", rita)
-    try:
-        detail = str(json.loads(body).get("detail", ""))
-    except (ValueError, AttributeError):
-        detail = ""
-    idp.check(is_problem(status, headers, body, 501) and "US-01" in detail,
-              "an operation of a later story (GET /api/v1/me/memberships) gets 501 Problem Details naming US-01"
-              + ("" if status == 501 else f" (got {status})"))
+    status, _, body = call(gateway, "/api/v1/me/memberships", rita)
+    idp.check(status == 200 and body.strip() == "[]", "The seeded user starts with no event memberships")
 
     ok, out = psql(env_path, env, project,
                    "SELECT count(*) FROM flyway_schema_history WHERE version = '1' AND success")

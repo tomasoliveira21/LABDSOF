@@ -123,6 +123,8 @@ services:
       FAROL_JWKS_URI: http://keycloak:8080/realms/farol/protocol/openid-connect/certs
       # US-34 (spec D7, D10): empty by default, so CI and the default stack never call or download a model
       FAROL_AI_URL: ${FAROL_AI_URL:-}
+      # L-2 (ADR-013, spec US-23 D6): help requests per account in 10 minutes; a measurement run may raise it
+      FAROL_HELPREQUESTS_LIMIT: ${FAROL_HELPREQUESTS_LIMIT:-5}
 
   # US-34 (spec D10): the local model, opt-in (--profile ai); same image and settings as the evaluation runs (#224,
   # #227). No published port: only Reports reaches it. Pull the model once: docker compose exec ai ollama pull qwen3:4b

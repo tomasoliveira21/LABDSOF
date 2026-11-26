@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -23,12 +24,14 @@ import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Priority;
+import pt.isep.labdsof.reports.domain.SubmitLimit;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
  * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), the control
- * room's triage decisions (US-35), the acknowledge and the change history (US-28). The control room's reads and
- * decisions answer the default team, derived from the current copy of the event's teams (spec US-34 AC-2, D4).
+ * room's triage decisions (US-35), the acknowledge and the change history (US-28), the close (US-30). The control
+ * room's reads and decisions answer the default team, derived from the current copy of the event's teams (spec US-34
+ * AC-2, D4).
  */
 @Service
 public class HelpRequestService {
@@ -39,14 +42,16 @@ public class HelpRequestService {
   private final LocalCopies copies;
   private final Outbox outbox;
   private final TriageMetrics metrics;
+  private final SubmitLimit limit;
   private final Clock clock;
 
   public HelpRequestService(HelpRequests helpRequests, LocalCopies copies, Outbox outbox, TriageMetrics metrics,
-      Clock clock) {
+      SubmitLimit limit, Clock clock) {
     this.helpRequests = helpRequests;
     this.copies = copies;
     this.outbox = outbox;
     this.metrics = metrics;
+    this.limit = limit;
     this.clock = clock;
   }
 
@@ -65,24 +70,43 @@ public class HelpRequestService {
    */
   static final Duration POLL_OVERLAP = Duration.ofSeconds(5);
 
-  /** Saves the request and its HelpRequestSubmitted in one transaction (ADR-004 outbox). */
+  /**
+   * Saves the request and its HelpRequestSubmitted in one transaction (ADR-004 outbox). Checks, in order: membership
+   * (404), then under a lock per account, so two submissions cannot both pass the limit: the description and point
+   * (400), a retry of a saved request (answered, never limited), then the account's limit (429, L-2) (spec US-23 D3,
+   * D5).
+   */
   @Transactional
   public Submitted submit(UUID eventId, String userId, UUID clientRequestId, String description,
       Location location) {
     access(eventId, userId);
+    // The lock first, then the clock: a submission that waited is stamped when it can commit (US-26 D3, G8 review)
+    helpRequests.lockRequester(userId);
     var request = HelpRequest.submit(UUID.randomUUID(), eventId, userId, clientRequestId, description,
         location, clock.instant());
+    var saved = helpRequests.findByClientRequestId(eventId, userId, clientRequestId);
+    if (saved.isPresent()) {
+      return retried(saved.get(), description, location);
+    }
+    var now = request.submittedAt();
+    var wait = limit.retryAfter(helpRequests.submittedSince(userId, limit.since(now)), now);
+    if (wait.isPresent()) {
+      throw new TooManyHelpRequestsException(wait.get());
+    }
     if (!helpRequests.insertIfNew(request)) {
-      var saved = helpRequests.findByClientRequestId(eventId, userId, clientRequestId)
-          .orElseThrow(() -> new IllegalStateException("conflicting submit not visible"));
-      // A reused id with other content is a client bug: refuse it rather than drop the new request.
-      if (!saved.description().equals(description) || !saved.location().equals(location)) {
-        throw new ClientRequestConflictException();
-      }
-      return new Submitted(saved, false);
+      // Not found above, yet taken: the account lock was not held, so no request is invented or dropped
+      throw new IllegalStateException("conflicting submit not visible");
     }
     outbox.add(OutgoingEvent.helpRequestSubmitted(UUID.randomUUID(), request));
     return new Submitted(request, true);
+  }
+
+  /** A reused id with other content is a client bug: refuse it rather than drop the new request. */
+  private static Submitted retried(HelpRequest saved, String description, Location location) {
+    if (!saved.description().equals(description) || !saved.location().equals(location)) {
+      throw new ClientRequestConflictException();
+    }
+    return new Submitted(saved, false);
   }
 
   /** The owner gets their request; HelpRequests.Triage gets any request of the event; others get 404. */
@@ -185,10 +209,22 @@ public class HelpRequestService {
   /** The control room has seen the request: Submitted becomes Seen, recorded as the member's change (US-28 D2, D8). */
   @Transactional
   public HelpRequest acknowledge(UUID eventId, Actor actor, UUID requestId) {
+    return moveStatus(eventId, actor, requestId, HelpRequest::acknowledge);
+  }
+
+  /** The control room closes the request: it leaves the active list, recorded as the member's change (US-30 D1). */
+  @Transactional
+  public HelpRequest close(UUID eventId, Actor actor, UUID requestId) {
+    return moveStatus(eventId, actor, requestId, HelpRequest::close);
+  }
+
+  /** One status action under the decisions' locks (US-28 D3, US-30 D3), logged with metadata only (D8, D6). */
+  private HelpRequest moveStatus(UUID eventId, Actor actor, UUID requestId,
+      BiFunction<HelpRequest, Instant, HelpRequest.Decision> action) {
     triageAccess(eventId, actor.userId());
     var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
-    var decision = request.acknowledge(now);
+    var decision = action.apply(request, now);
     helpRequests.saveDecision(decision.request(), actor, decision.changes());
     log.info("Status of request {}: {} -> {}", request.id(), request.status(), decision.request().status());
     // Same ControlRoomView as the list and the other decisions, so it carries the default team too (US-34 D4)

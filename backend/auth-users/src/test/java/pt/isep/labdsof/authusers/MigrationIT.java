@@ -29,7 +29,9 @@ class MigrationIT extends IntegrationTest {
         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
         """).query(String.class).list())
         .containsExactlyInAnyOrder("user_account", "user_tombstone", "global_role_grant", "event_membership",
-            "team_assignment", "outbox", "flyway_schema_history");
+            "team_assignment", "outbox", "flyway_schema_history", "event_copy", "event_team_copy");
+    assertThat(jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '2'")
+        .query(Boolean.class).single()).isTrue();
     assertThat(columnType("user_account", "user_id")).isEqualTo("uuid");
   }
 

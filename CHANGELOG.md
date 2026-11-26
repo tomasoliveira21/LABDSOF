@@ -2,6 +2,22 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-26 · Login and event memberships (US-01, #59)
+
+- The signed-in web app shows the caller’s event memberships, role and teams. Event name and status can appear once Auth & Users receives the event snapshot.
+- Auth & Users reads versioned Events snapshots from RabbitMQ and dead-letters invalid messages with a reason. See [US-01 login and memberships](Docs/specs/US-01-login-and-memberships.md).
+
+## [Unreleased] · 2026-11-24 · Close a request (US-30, #77, Bruno de Abreu Lopes)
+
+**Why:** finished cases must leave the control room's active queue (US-30). Spec: [`Docs/specs/US-30-close-help-request.md`](Docs/specs/US-30-close-help-request.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/close` (`HelpRequests.Triage`): `Submitted`, `Seen`, `OnTheWay` or `Resolved` becomes `Closed`, recorded as a `status` history entry with the member's ID and name; `409` when it is already `Closed`. The request leaves the first load of the live list (US-26) and the participant reads it `Closed` (US-24).
+- `CloseRequestIT`: the close over HTTP on the real database, two closes at the same time, and the security matrix of the endpoint. Two smoke checks through the gateway (`close` without a token → 401, for a non-member → 404).
+
+### Changed
+- A closed request is final for the control room: `PATCH …/help-requests/{requestId}`, `accept-suggestion` and `acknowledge` answer `409` (spec D2, proposed for the team's review). It takes no AI result either: the triage worker skips it, and a result that arrives after the close is not written nor counted, so a closed request is not sent to the live list again. `contracts/openapi.yaml`: `closeHelpRequest` implemented, `409` on the `PATCH`. Dated note in the API outline §4.1.
+
 ## [Unreleased] · 2026-11-24 · Publish an event (US-11, #62, Tiago Teixeira)
 
 **Why:** an event is a draft nobody can find until its EventAdmin publishes it, and the join link and QR code of US-12 only exist once it is published (`features.md` US-11, domain model `EventStatus`). Spec: [`Docs/specs/US-11-publish-event.md`](Docs/specs/US-11-publish-event.md).
@@ -47,6 +63,17 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - [`openapi.yaml`](backend/reports/contracts/openapi.yaml) of Reports: `mine` is implemented; the list answers the control-room shape without it and the participant shape with it. The participant view says what `updatedAt` means (any change, spec D3) and which page labels map to the statuses.
+## [Unreleased] · 2026-11-24 · Ask for help on the map (US-23, #71, Bruno de Abreu Lopes)
+
+**Why:** US-23 (#71): a participant asks for help with a short description and a point on the map, and cannot flood the control room (ADR-013 L-2). Spec: [`Docs/specs/US-23-ask-for-help.md`](Docs/specs/US-23-ask-for-help.md). The submission itself was built in #194; this adds the limit and the acceptance tests.
+
+### Added
+- L-2 in Reports: after 5 help requests of an account in 10 minutes, in any event, `POST …/help-requests` answers `429` `application/problem+json` with `Retry-After` (whole seconds until one more can be sent). Only saved requests count: a retry with the same `clientRequestId` is answered at the limit, and refused requests use nothing up. A lock per account keeps two submissions at once from both passing.
+- Settings `farol.help-requests.limit` (5) and `farol.help-requests.limit-window` (10 min), as ADR-013 asks. `infra/compose.yaml` passes `FAROL_HELPREQUESTS_LIMIT` (default 5); a measurement run of the AI end to end (#234), which sends exactly 5 per account in 10 minutes, raises it.
+- `AskForHelpIT`: the confirmation, the refused descriptions and points, who sees the location (control room and EventAdmin only), the 6th request, other events, another account, a retry at the limit, two submissions at once.
+
+### Changed
+- Decided on 24 November 2026 with the gateway's owner: L-2 moves from the gateway to Reports ([record](Docs/Meetings/2026-11-24-help-request-rate-limit.md)). Dated note in ADR-013; `openapi.yaml` (`429` of `submitHelpRequest`), the API outline §4 and the assessment's T15 follow it.
 
 ## [Unreleased] · 2026-11-22 · Import of the external transport source (US-40, #84, António Guerra)
 

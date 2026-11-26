@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import pt.isep.labdsof.authusers.Correlation;
 import pt.isep.labdsof.authusers.application.Outbox;
 import pt.isep.labdsof.authusers.application.OutgoingEvent;
 import tools.jackson.databind.json.JsonMapper;
@@ -19,7 +20,6 @@ import tools.jackson.databind.json.JsonMapper;
 public class JdbcOutbox implements Outbox {
 
   /** The MDC key of the request's correlation id (spec D8); the web filter uses the same one. */
-  public static final String CORRELATION_ID_MDC_KEY = "correlationId";
 
   /** Longest {@code last_error} stored, in characters (code points). */
   public static final int MAX_ERROR_LENGTH = 500;
@@ -49,7 +49,7 @@ public class JdbcOutbox implements Outbox {
         .param("routingKey", event.routingKey())
         .param("type", event.type())
         .param("body", json.writeValueAsString(event.envelope()))
-        .param("correlationId", MDC.get(CORRELATION_ID_MDC_KEY))
+        .param("correlationId", MDC.get(Correlation.MDC_KEY))
         .update();
   }
 

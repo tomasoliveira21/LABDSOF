@@ -87,6 +87,10 @@ def main(env_path: str) -> int:
               "acknowledging answers 404 to a user who is not a member of the event")
     idp.check(call(gateway, f"{request}/history", token) == 404,
               "the change history answers 404 to a user who is not a member of the event")
+    # US-30 (#77): the close goes through the gateway
+    idp.check(call(gateway, f"{request}/close", None, {}) == 401, "closing a request needs a token (401)")
+    idp.check(call(gateway, f"{request}/close", token, {}) == 404,
+              "closing a request answers 404 to a user who is not a member of the event")
 
     for failure in idp.failures:
         print(f"::error::{failure}")

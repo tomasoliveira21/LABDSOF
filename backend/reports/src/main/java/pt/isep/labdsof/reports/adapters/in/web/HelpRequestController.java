@@ -12,6 +12,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pt.isep.labdsof.reports.application.ClientRequestConflictException;
+import pt.isep.labdsof.reports.application.TooManyHelpRequestsException;
 import pt.isep.labdsof.reports.application.ForbiddenException;
 import pt.isep.labdsof.reports.application.HelpRequestService;
 import pt.isep.labdsof.reports.application.NotFoundException;
@@ -44,8 +46,8 @@ import pt.isep.labdsof.reports.domain.RequestConflictException;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
- * Help requests, the control room's triage decisions, acknowledge and history, and the triage status (API outline §4,
- * contracts/openapi.yaml). The caller is always the token's sub.
+ * Help requests, the control room's triage decisions, acknowledge, close and history, and the triage status (API
+ * outline §4, contracts/openapi.yaml). The caller is always the token's sub.
  */
 @RestController
 @RequestMapping("/api/v1/events/{eventId}")
@@ -155,6 +157,12 @@ class HelpRequestController {
     return controlRoom(service.acknowledge(eventId, actor(jwt), requestId));
   }
 
+  /** The control room closes the request: it leaves the active list (US-30 AC-1, spec D1). */
+  @PostMapping(value = "/help-requests/{requestId}/close", produces = "application/json")
+  ControlRoomView close(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt) {
+    return controlRoom(service.close(eventId, actor(jwt), requestId));
+  }
+
   /** Every recorded change of the request, oldest first (US-28 AC-2, spec D4). */
   record HistoryView(List<HistoryEntryView> items) {}
 
@@ -197,6 +205,14 @@ class HelpRequestController {
   ResponseEntity<ProblemDetail> invalid(InvalidHelpRequestException e) {
     return ResponseEntity.badRequest()
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage()));
+  }
+
+  /** L-2 (ADR-013, spec US-23 D4): 429 with Retry-After in seconds; the page says when to ask again. */
+  @ExceptionHandler(TooManyHelpRequestsException.class)
+  ResponseEntity<ProblemDetail> tooMany(TooManyHelpRequestsException e) {
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        .header(HttpHeaders.RETRY_AFTER, Long.toString(e.retryAfter().toSeconds()))
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage()));
   }
 
   @ExceptionHandler(ClientRequestConflictException.class)
