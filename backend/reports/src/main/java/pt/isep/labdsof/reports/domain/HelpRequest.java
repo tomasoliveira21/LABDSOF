@@ -154,6 +154,42 @@ public record HelpRequest(
         version + 1), List.of(new HelpRequestChange("status", status.name(), to.name())));
   }
 
+  /**
+   * The control room routes the request to {@code team} (US-29 D1 to D3): a team of this event, not deleted, with
+   * HelpRequests.Respond (else 422, checked first), while the request is Submitted or Seen, which is while its field
+   * task, if any, is still Open (else 409). The status is kept. The team it already has changes nothing.
+   */
+  public Decision route(Team team, Instant now) {
+    if (team == null || !team.eventId().equals(eventId) || !team.grants(Permission.HELP_REQUESTS_RESPOND)) {
+      throw new IneligibleTeamException();
+    }
+    if (status != HelpRequestStatus.Submitted && status != HelpRequestStatus.Seen) {
+      throw new RequestConflictException("The request can no longer be routed");
+    }
+    if (team.teamId().equals(routedTeamId)) {
+      return new Decision(this, List.of());
+    }
+    return new Decision(new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,
+        priority, status, defaultTeamId, team.teamId(), triage, submittedAt, now.truncatedTo(ChronoUnit.MICROS),
+        version + 1),
+        List.of(new HelpRequestChange("routedTeamId", routedTeamId == null ? null : routedTeamId.toString(),
+            team.teamId().toString())));
+  }
+
+  /**
+   * The request after its team {@code teamId} was deleted (US-29 D6, US-16): back in the control room's queue, with no
+   * team, and Seen if a member of that team was on the way. A finished request, or one routed elsewhere, is returned
+   * as it is.
+   */
+  public HelpRequest returnFrom(UUID teamId, Instant now) {
+    if (!teamId.equals(routedTeamId) || status == HelpRequestStatus.Resolved || status == HelpRequestStatus.Closed) {
+      return this;
+    }
+    return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category, priority,
+        status == HelpRequestStatus.OnTheWay ? HelpRequestStatus.Seen : status, defaultTeamId, null, triage,
+        submittedAt, now.truncatedTo(ChronoUnit.MICROS), version + 1);
+  }
+
   private Decision decide(Category newCategory, Priority newPriority, TriageSuggestion newTriage, TriageState from,
       Instant now) {
     var changes = new ArrayList<HelpRequestChange>();

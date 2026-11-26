@@ -7,6 +7,20 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The signed-in web app shows the caller’s event memberships, role and teams. Event name and status can appear once Auth & Users receives the event snapshot.
 - Auth & Users reads versioned Events snapshots from RabbitMQ and dead-letters invalid messages with a reason. See [US-01 login and memberships](Docs/specs/US-01-login-and-memberships.md).
 
+## [Unreleased] · 2026-11-25 · Route a request to a team (US-29, #76, Bruno de Abreu Lopes)
+
+**Why:** the control room sends each request to the team that deals with it (US-29), and #149 AC-3 asks that only an eligible team of the event can take it. Spec: [`Docs/specs/US-29-route-help-request.md`](Docs/specs/US-29-route-help-request.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/route` with `{ teamId }` (`HelpRequests.Triage`): sets `routedTeamId`, keeps the status, records a `routedTeamId` history entry with the member and their name, and dispatches an `Assist` field task, `Open`, to the team. Any responding team of the event can take it, the default team or not (routing by hand). An unknown team, another event's, a deleted one or one without `HelpRequests.Respond` get the same `422`; a request a member accepted, resolved or closed gets `409`.
+- Routing again to another team while the task is still `Open` cancels it and dispatches a new one; the same team again writes nothing (proposed, for the team's review: spec D2).
+- A deleted team (`TeamChanged`) sends the requests routed to it back to the control room's queue (`routedTeamId` null, `OnTheWay` back to `Seen`) and cancels their tasks, as US-16 and the domain model say. The route and the deletion lock the team's copy in the same order, so a route never leaves a task with a deleted team.
+- Flyway `V7`: `field_task`, one live task per request.
+- `RouteRequestIT`, and two smoke checks of the route through the gateway.
+
+### Changed
+- `contracts/openapi.yaml`: `routeHelpRequest` implemented, with its `409`; `routedTeamId` and the history describe the route. Dated note in the API outline §4.1. Closing a request (US-30) now cancels its live task too (proposed, for the team's review: spec D7); `closeHelpRequest` says so.
+
 ## [Unreleased] · 2026-11-24 · Close a request (US-30, #77, Bruno de Abreu Lopes)
 
 **Why:** finished cases must leave the control room's active queue (US-30). Spec: [`Docs/specs/US-30-close-help-request.md`](Docs/specs/US-30-close-help-request.md).

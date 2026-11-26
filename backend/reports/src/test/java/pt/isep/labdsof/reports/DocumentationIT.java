@@ -114,6 +114,16 @@ class DocumentationIT {
   }
 
   @Test
+  @DisplayName("US-29 AC-2 the changelog and the API outline have the story, and every test its spec names exists")
+  void us29SpecNamesRealTests() throws Exception {
+    assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
+        .contains("Route a request to a team (US-29, #76, Bruno de Abreu Lopes)");
+    assertThat(Files.readString(ROOT.resolve("Docs/Technical/api-outline.md")))
+        .contains("25 November 2026 (#76, US-29)");
+    specNamesRealTests(ROOT.resolve("Docs/specs/US-29-route-help-request.md"), "US-29", 20, 3);
+  }
+
+  @Test
   @DisplayName("US-30 AC-1 the changelog and the API outline have the story, and every test its spec names exists")
   void us30SpecNamesRealTests() throws Exception {
     assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
