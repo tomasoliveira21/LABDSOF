@@ -69,6 +69,21 @@ class JdbcEventMemberships implements EventMemberships {
   }
 
   @Override
+  public boolean insertIfAbsent(EventMembership membership, UUID actorUserId, Instant at) {
+    // ON CONFLICT DO NOTHING, not a lock: the loser of two joins at once reads the winner's row (US-12 D5)
+    return jdbc.sql("""
+        INSERT INTO event_membership (event_id, user_id, role, version, created_at, created_by, updated_at,
+                                      updated_by)
+        VALUES (:event, :user, :role, :version, :at, :actor, :at, :actor)
+        ON CONFLICT (event_id, user_id) DO NOTHING
+        """)
+        .param("event", membership.eventId()).param("user", membership.userId())
+        .param("role", membership.role().name()).param("version", membership.version())
+        .param("at", Timestamp.from(at)).param("actor", actorUserId)
+        .update() == 1;
+  }
+
+  @Override
   public void addToTeam(EventMembership updated, UUID teamId, UUID actorUserId, Instant at) {
     jdbc.sql("""
         INSERT INTO team_assignment (event_id, user_id, team_id, assigned_at, assigned_by)

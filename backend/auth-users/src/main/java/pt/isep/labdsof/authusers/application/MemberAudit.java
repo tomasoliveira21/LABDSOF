@@ -10,7 +10,10 @@ import java.util.UUID;
 public interface MemberAudit {
 
   /** Why a call about an event's members was refused, recorded as US-14 asks. */
-  enum Refusal { NOT_A_MEMBER, NOT_AN_EVENT_ADMIN, NO_SUCH_MEMBER, NO_SUCH_TEAM }
+  enum Refusal { NOT_A_MEMBER, NOT_AN_EVENT_ADMIN, NO_SUCH_MEMBER, NO_SUCH_TEAM, NOT_JOINABLE }
+
+  /** US-12: the caller became a member of the event by its QR code or link. */
+  void joined(UUID userId, UUID eventId, Instant at);
 
   void teamAssigned(UUID actorUserId, UUID eventId, UUID userId, UUID teamId, Instant at);
 

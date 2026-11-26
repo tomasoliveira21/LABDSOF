@@ -1,5 +1,6 @@
 package pt.isep.labdsof.authusers.adapters.out.persistence;
 
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -26,6 +27,15 @@ class JdbcEventCopies implements EventCopies {
         """)
         .param("id", eventId).param("name", name).param("status", status.name()).param("version", version)
         .update();
+  }
+
+  @Override
+  public Optional<Copy> find(UUID eventId) {
+    return jdbc.sql("SELECT event_id, name, status FROM event_copy WHERE event_id = :id")
+        .param("id", eventId)
+        .query((row, number) -> new Copy(row.getObject("event_id", UUID.class), row.getString("name"),
+            Status.valueOf(row.getString("status"))))
+        .optional();
   }
 
   @Override

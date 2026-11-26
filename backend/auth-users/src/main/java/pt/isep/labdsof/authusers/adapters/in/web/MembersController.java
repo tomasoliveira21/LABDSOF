@@ -4,13 +4,16 @@ import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.api.MembersApi;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.model.EventRole;
+import pt.isep.labdsof.authusers.adapters.in.web.generated.model.EventStatus;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.model.Member;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.model.Membership;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.model.NameEventAdmin;
+import pt.isep.labdsof.authusers.application.JoinEventService;
 import pt.isep.labdsof.authusers.application.MemberQueryService;
 import pt.isep.labdsof.authusers.application.TeamMemberService;
 
@@ -21,10 +24,12 @@ class MembersController implements MembersApi {
 
   private final MemberQueryService members;
   private final TeamMemberService teams;
+  private final JoinEventService join;
 
-  MembersController(MemberQueryService members, TeamMemberService teams) {
+  MembersController(MemberQueryService members, TeamMemberService teams, JoinEventService join) {
     this.members = members;
     this.teams = teams;
+    this.join = join;
   }
 
   @Override
@@ -48,9 +53,17 @@ class MembersController implements MembersApi {
     throw new NotYetImplementedException("US-06");
   }
 
+  /** US-12: {@code 201} when this call made the caller a member, {@code 200} when they already were (D3). */
   @Override
   public ResponseEntity<Membership> joinEvent(UUID eventId) {
-    throw new NotYetImplementedException("US-12");
+    var userId = TokenIdentity.current().userId();
+    log.info("POST /events/{}/members/me by userId={}", eventId, userId);
+    var joined = join.join(userId, eventId);
+    var membership = joined.membership();
+    var body = new Membership(membership.eventId(), joined.eventName(),
+        EventStatus.fromValue(joined.eventStatus().name()), EventRole.fromValue(membership.role().name()),
+        membership.teamIds());
+    return ResponseEntity.status(joined.created() ? HttpStatus.CREATED : HttpStatus.OK).body(body);
   }
 
   @Override

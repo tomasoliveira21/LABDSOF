@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
 import pt.isep.labdsof.authusers.IntegrationTest;
 import pt.isep.labdsof.authusers.application.EventMemberships;
+import pt.isep.labdsof.authusers.domain.EventMembership;
 import pt.isep.labdsof.authusers.domain.EventRole;
 
 /**
@@ -138,6 +139,33 @@ class JdbcEventMembershipsIT extends IntegrationTest {
 
     assertThat(versionOf(rita)).isEqualTo(2);
     assertThat(versionOf(pedro)).isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("US-12 AC-1 two joins of one event at once store one membership, and only one call created it")
+  void twoJoinsOfOneEventStoreOneMembership() throws Exception {
+    var rita = UUID.randomUUID();
+    seedAccount(rita, "Rita Participante");
+    var join = (Callable<Boolean>) () -> transactions.execute(status -> memberships.insertIfAbsent(
+        new EventMembership(event, rita, EventRole.RegularUser, List.of(), 1), rita, AT));
+
+    // ON CONFLICT DO NOTHING instead of a lock (US-12 D5): the key is what serialises the two scans
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var created = executor.invokeAll(List.of(join, join)).stream().map(result -> {
+        try {
+          return result.get(30, TimeUnit.SECONDS);
+        } catch (Exception e) { // NOPMD - a failed future is a failed test, whatever the cause
+          throw new IllegalStateException(e);
+        }
+      }).filter(Boolean::booleanValue).count();
+      assertThat(created).isEqualTo(1);
+    }
+
+    assertThat(jdbc.sql("""
+        SELECT count(*) FROM event_membership WHERE event_id = :event AND user_id = :user
+        """).param("event", event).param("user", rita).query(Long.class).single()).isEqualTo(1);
+    assertThat(versionOf(rita)).isEqualTo(1);
+    assertThat(memberships.find(event, rita)).isPresent();
   }
 
   @Test

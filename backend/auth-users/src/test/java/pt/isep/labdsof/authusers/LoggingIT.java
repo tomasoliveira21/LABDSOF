@@ -200,6 +200,26 @@ class LoggingIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-12 AC-1 the join is recorded with who joined and when, and never with a name")
+  void theJoinIsRecordedWithoutAnyName(CapturedOutput output) {
+    var rita = UUID.randomUUID();
+    var event = UUID.randomUUID();
+    seedAccount(rita, "Rita Joined");
+    jdbc.sql("INSERT INTO event_copy (event_id, name, status, version) VALUES (:id, 'Queima', 'Published', 1)")
+        .param("id", event).update();
+    var correlationId = "join-" + UUID.randomUUID();
+
+    api().send("POST", "/api/v1/events/" + event + "/members/me", "Bearer " + JWKS.valid(rita.toString()), null,
+        HEADER, correlationId);
+    awaitAccessLine(output, correlationId, 201);
+
+    assertThat(logLines(output)).anyMatch(line -> correlationId.equals(line.get("correlationId"))
+        && "Joined an event by its link (US-12)".equals(line.get("message"))
+        && rita.toString().equals(line.get("userId")) && event.toString().equals(line.get("eventId")));
+    assertThat(output.getAll()).doesNotContain("Rita Joined");
+  }
+
+  @Test
   @DisplayName("US-14 a refused call about an event's members is recorded with the reason")
   void aRefusedCallAboutMembersIsRecorded(CapturedOutput output) {
     var stranger = UUID.randomUUID();

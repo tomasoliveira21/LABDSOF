@@ -18,6 +18,15 @@ class LoggingMemberAudit implements MemberAudit {
   private static final Logger log = LoggerFactory.getLogger(LoggingMemberAudit.class);
 
   @Override
+  public void joined(UUID userId, UUID eventId, Instant at) {
+    log.atInfo()
+        .addKeyValue("userId", userId.toString())
+        .addKeyValue("eventId", eventId.toString())
+        .addKeyValue("at", at.toString())
+        .log("Joined an event by its link (US-12)");
+  }
+
+  @Override
   public void teamAssigned(UUID actorUserId, UUID eventId, UUID userId, UUID teamId, Instant at) {
     assignment(actorUserId, eventId, userId, teamId, at).log("Added a member to a team (US-18)");
   }

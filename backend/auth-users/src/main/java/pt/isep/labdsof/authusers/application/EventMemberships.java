@@ -19,6 +19,12 @@ public interface EventMemberships {
    */
   Optional<EventMembership> lockForUpdate(UUID eventId, UUID userId);
 
+  /**
+   * Stores a membership that is not there yet and answers true when it did (US-12 D5): a second join of the same
+   * event stores nothing, and two joins at once leave one row, because the key serialises them.
+   */
+  boolean insertIfAbsent(EventMembership membership, UUID actorUserId, Instant at);
+
   /** Stores the assignment and the membership's new version, with who made the change and when (D6, D8). */
   void addToTeam(EventMembership updated, UUID teamId, UUID actorUserId, Instant at);
 

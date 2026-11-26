@@ -163,6 +163,23 @@ class EventContractIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-12 AC-1 joining an event publishes a MembershipChanged that matches its JSON Schema")
+  void theMembershipChangedOfAJoinMatchesItsSchema() {
+    var rita = UUID.randomUUID();
+    var event = UUID.randomUUID();
+    seedAccount(rita, "Rita Participante");
+    jdbc.sql("INSERT INTO event_copy (event_id, name, status, version) VALUES (:id, 'Queima', 'Published', 1)")
+        .param("id", event).update();
+    assertThat(new ApiClient(port).send("POST", "/api/v1/events/" + event + "/members/me",
+        "Bearer " + JWKS.valid(rita.toString())).statusCode()).isEqualTo(201);
+
+    var stored = storedBody(rita, "MembershipChanged");
+    assertThat(schema(MEMBERSHIP).validate(stored, InputFormat.JSON)).isEmpty();
+    assertThat(schema(ENVELOPE).validate(stored, InputFormat.JSON)).isEmpty();
+    assertThat(stored).contains("\"version\": 1").contains("\"teamIds\": []");
+  }
+
+  @Test
   @DisplayName("US-18 AC-1 adding a member to a team publishes a MembershipChanged that matches its JSON Schema, "
       + "stored and sent")
   void theMembershipChangedOfATeamAssignmentMatchesItsSchema() {

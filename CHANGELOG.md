@@ -2,6 +2,25 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-26 · Join an event by QR code or link (US-12, #63, Tiago Teixeira)
+
+**Why:** a participant's first contact with Farol is the QR code on a poster or the link a friend sends; until this story there was no way to become a member of an event at all (`features.md` US-12). Spec: [`Docs/specs/US-12-join-event.md`](Docs/specs/US-12-join-event.md). Built on US-18 (#67), whose `MembershipChanged` and audit port it reuses.
+
+### Added
+- `POST /api/v1/events/{eventId}/members/me`: the logged-in caller becomes a **RegularUser** of the event and gets the membership back — `201` the first time, `200` when they were already in it, with no body sent either way, so a second scan of the same QR code is safe.
+- The event's name and status come back with the membership, read from this service's copy of `EventChanged` (#241), so the web app can go straight to the event's page.
+- `JoinEventServiceTest`, `JoinEventIT`, the two-scans-at-once case in `JdbcEventMembershipsIT`, and `EventContractIT`/`LoggingIT` cases for the event and the log line of a join.
+
+### Changed
+- **Only a `Published` event can be joined** (AC-3). A draft, suspended or closed event, an event whose copy has not arrived yet and an unknown event all answer the **same `404`**: saying *not published yet* would tell an outsider that the event exists.
+- An existing member **keeps their role**: an EventAdmin who opens their own event's link stays an EventAdmin, and nothing is published.
+- The join publishes `MembershipChanged` with the joiner as the actor, which is what makes the new member visible to Events, Reports and Transports (US-14).
+- One operation of the contract no longer answers `501` (two before): `openapi.yaml` and `local-delivery.md` §0 say what is served now.
+
+### Known limits
+- **The join code of US-11 is still checked by nobody.** The contract's join takes no body, so the event id alone is enough: anyone logged in who knows a published event's id can join it, and the secrecy of the link protects nothing. Making the code a credential needs it inside Auth & Users, and `EventChanged` deliberately does not carry it, so it is a **contract decision for the team** — recorded on #63 and in the spec (D1). US-11 keeps the code unguessable (160 bits) so the gap can be closed without touching Events.
+- **US-06 (#61) is still open**, so no event is published through the API yet: the story is complete and tested on event copies seeded in the database or delivered by a real `EventChanged`.
+
 ## [Unreleased] · 2026-11-26 · Add and remove team members (US-18, #67, Tiago Teixeira)
 
 **Why:** a team is only worth creating once the right people are in it — the permissions of US-16 and US-17 reach a person through their team (`features.md` US-18, API outline §2). Spec: [`Docs/specs/US-18-team-members.md`](Docs/specs/US-18-team-members.md). Built on US-01 (#59), whose local copies of the events and their teams this story reads.
