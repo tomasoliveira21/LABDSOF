@@ -25,6 +25,13 @@ public interface EventMemberships {
    */
   boolean insertIfAbsent(EventMembership membership, UUID actorUserId, Instant at);
 
+  /**
+   * Stores the membership with the role it must now have, and its next version, whether the member was there
+   * before or not (US-06): the first EventAdmin of a new event, or an existing member promoted. The teams are
+   * untouched, so a promoted member keeps them.
+   */
+  void upsertRole(EventMembership updated, UUID actorUserId, Instant at);
+
   /** Stores the assignment and the membership's new version, with who made the change and when (D6, D8). */
   void addToTeam(EventMembership updated, UUID teamId, UUID actorUserId, Instant at);
 

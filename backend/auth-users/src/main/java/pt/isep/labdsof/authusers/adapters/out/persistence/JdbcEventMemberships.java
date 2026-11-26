@@ -83,6 +83,27 @@ class JdbcEventMemberships implements EventMemberships {
         .update() == 1;
   }
 
+  /**
+   * The first EventAdmin of a new event, or an existing member promoted (US-06). One statement for both, so the
+   * two cases cannot drift: the role and the version are the use case's, and {@code team_assignment} is never
+   * touched, so a promoted member keeps the teams they were in.
+   */
+  @Override
+  public void upsertRole(EventMembership updated, UUID actorUserId, Instant at) {
+    jdbc.sql("""
+        INSERT INTO event_membership (event_id, user_id, role, version, created_at, created_by, updated_at,
+                                      updated_by)
+        VALUES (:event, :user, :role, :version, :at, :actor, :at, :actor)
+        ON CONFLICT (event_id, user_id) DO UPDATE
+          SET role = excluded.role, version = excluded.version, updated_at = excluded.updated_at,
+              updated_by = excluded.updated_by
+        """)
+        .param("event", updated.eventId()).param("user", updated.userId())
+        .param("role", updated.role().name()).param("version", updated.version())
+        .param("at", Timestamp.from(at)).param("actor", actorUserId)
+        .update();
+  }
+
   @Override
   public void addToTeam(EventMembership updated, UUID teamId, UUID actorUserId, Instant at) {
     jdbc.sql("""

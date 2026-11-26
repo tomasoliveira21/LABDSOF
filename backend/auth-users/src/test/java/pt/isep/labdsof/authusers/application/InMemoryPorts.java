@@ -54,6 +54,13 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   final Map<UUID, Copy> eventCopies = new HashMap<>();
   /** The joins the audit recorded (US-12). */
   final List<Refused> joins = new ArrayList<>();
+  /** US-06: the roles written, the e-mail lookups recorded and the EventAdmins named. */
+  final List<Assignment> roleWrites = new ArrayList<>();
+  final List<Lookup> lookups = new ArrayList<>();
+  final List<Assignment> namings = new ArrayList<>();
+
+  /** An e-mail lookup as US-06 D7 records it: the hash, never the address. */
+  record Lookup(UUID actorUserId, String emailHash, boolean found, Instant at) {}
   final List<UUID> locked = new ArrayList<>();
   int emailUpdates;
   int insertAttempts;
@@ -69,6 +76,13 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   @Override
   public Optional<UserAccount> findById(UUID userId) {
     return Optional.ofNullable(accounts.get(userId));
+  }
+
+  @Override
+  public Optional<UserAccount> findByEmail(String email) {
+    return accounts.values().stream()
+        .filter(account -> account.email() != null && account.email().equalsIgnoreCase(email))
+        .findFirst();
   }
 
   @Override
@@ -186,6 +200,12 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   }
 
   @Override
+  public void upsertRole(EventMembership updated, UUID actorUserId, Instant at) {
+    member(updated);
+    roleWrites.add(new Assignment(updated.eventId(), updated.userId(), null, actorUserId, at, true));
+  }
+
+  @Override
   public void addToTeam(EventMembership updated, UUID teamId, UUID actorUserId, Instant at) {
     member(updated);
     assignments.add(new Assignment(updated.eventId(), updated.userId(), teamId, actorUserId, at, true));
@@ -223,6 +243,16 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   @Override
   public void joined(UUID userId, UUID eventId, Instant at) {
     joins.add(new Refused(userId, eventId, null, at));
+  }
+
+  @Override
+  public void accountLookedUp(UUID actorUserId, String emailHash, boolean found, Instant at) {
+    lookups.add(new Lookup(actorUserId, emailHash, found, at));
+  }
+
+  @Override
+  public void namedEventAdmin(UUID actorUserId, UUID eventId, UUID userId, Instant at) {
+    namings.add(new Assignment(eventId, userId, null, actorUserId, at, true));
   }
 
   @Override
