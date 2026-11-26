@@ -3,15 +3,15 @@
 Checks, through the API gateway, that Events validates real Keycloak tokens (ADR-006) and hides events from users
 who are not members: no token and a tampered token get 401 Problem Details; Rita's real token is accepted and gets
 404 for an event she is not a member of, and so does the bootstrap FarolAdmin, who is not a member either (same
-problem), including on the teams of US-16 and the publish of US-11; a malformed id gets 400; an operation of a later story
-gets 501; the
-X-Correlation-Id comes back. Then it
-checks inside the stack that the `events` schema comes from Flyway and that Events consumes its queue as the
-`events` broker user.
+problem), including on the teams of US-16, the publish of US-11 and the map upload of US-19; a malformed id gets
+400; an operation of a later story gets 501; a map upload without its file part is refused; the X-Correlation-Id
+comes back. Then it checks inside the stack that the `events` schema comes from Flyway, that the map directory of
+US-19 is writable by the service's user, and that Events consumes its queue as the `events` broker user.
 
-The smoke writes nothing: no use case creates an event before US-06, so every event id is unknown, the team
-operations of US-16 and US-17 and the publish of US-11 cannot be reached past that 404, and a rerun gives the same
-result.
+The smoke writes nothing of its own (the map probe's file is removed again): no use case creates an event before
+US-06, so every event id is unknown, the team
+operations of US-16 and US-17, the publish of US-11 and the map upload of US-19 cannot be reached past that 404,
+and a rerun gives the same result.
 
 Standard library only; reuses the PKCE login of identity_smoke.py and `docker compose exec` for psql and
 rabbitmqctl. Values come from the Compose env file; the compose project is optional:
@@ -26,6 +26,7 @@ import os
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -65,6 +66,29 @@ def call(gateway: str, path: str, token: str | None = None, correlation_id: str 
     status, response_headers, body = idp.request(urllib.request.build_opener(idp.NoRedirect), gateway + path,
                                                  {} if post else None, headers)
     return status, {name.lower(): value for name, value in response_headers.items()}, body
+
+
+def upload(gateway: str, path: str, token: str | None = None) -> tuple[int, dict[str, str], str]:
+    """A multipart/form-data POST with one small PNG part, as the map upload of US-19 takes it."""
+    boundary = "farol-smoke-boundary"
+    png = bytes.fromhex("89504E470D0A1A0A") + b"only the signature: the refusals here come first"
+    lines = [f"--{boundary}",
+             'Content-Disposition: form-data; name="file"; filename="map.png"',
+             "Content-Type: image/png",
+             ""]
+    body = ("\r\n".join(lines) + "\r\n").encode() + png + f"\r\n--{boundary}--\r\n".encode()
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}", "Content-Length": str(len(body))}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(gateway + path, data=body, headers=headers, method="POST")
+    try:
+        response = urllib.request.build_opener(idp.NoRedirect).open(request, timeout=15)
+    except urllib.error.HTTPError as error:
+        response = error
+    with response:
+        status = response.status if hasattr(response, "status") else response.code
+        return (status, {name.lower(): value for name, value in dict(response.headers).items()},
+                response.read().decode("utf-8", "replace"))
 
 
 def is_problem(status: int, headers: dict[str, str], body: str, expected: int) -> bool:
@@ -200,10 +224,33 @@ def main(env_path: str, project: str | None = None) -> int:
               "POST /api/v1/events/{id}/publish of an event Rita is not a member of gets the same 404 (US-11)"
               + ("" if status == 404 else f" (got {status})"))
 
+    # US-19 uploads a map version; as the publish, it is only reachable on an event the caller is a member of
+    maps = f"/api/v1/events/{uuid.uuid4()}/map-versions"
+    status, headers, body = upload(gateway, maps)
+    idp.check(is_problem(status, headers, body, 401) and headers.get("www-authenticate", "").startswith("Bearer"),
+              "POST /api/v1/events/{id}/map-versions without a token gets 401 Problem Details with "
+              "WWW-Authenticate: Bearer" + ("" if status == 401 else f" (got {status})"))
+
+    status, headers, body = upload(gateway, maps, rita)
+    idp.check(is_problem(status, headers, body, 404) and problem(body).get("detail") == NOT_FOUND,
+              "POST /api/v1/events/{id}/map-versions of an event Rita is not a member of gets the same 404 "
+              "(US-19)" + ("" if status == 404 else f" (got {status})"))
+
+    status, headers, body = call(gateway, maps, rita, post=True)
+    idp.check(status in (400, 415),
+              "POST /api/v1/events/{id}/map-versions without a file part is refused before anything is stored "
+              "(US-19)" + ("" if status in (400, 415) else f" (got {status})"))
+
     status, headers, body = call(gateway, f"/api/v1/events/{uuid.uuid4()}/map-versions/current", rita)
     idp.check(is_problem(status, headers, body, 501) and "US-21" in str(problem(body).get("detail", "")),
               "an operation of a later story (GET /api/v1/events/{id}/map-versions/current) gets 501 Problem "
               "Details naming its story" + ("" if status == 501 else f" (got {status})"))
+
+    # The upload writes on the events-maps volume as user 10001, and no story reaches that write before US-06, so
+    # the only check the smoke can make is that the directory is there and writable (review of #253)
+    ok, out = exec_in(env_path, project, "events", "sh", "-c",
+                      "touch /var/lib/farol/maps/.probe && rm /var/lib/farol/maps/.probe")
+    idp.check(ok, "the events service can write on FAROL_MAP_DIRECTORY (US-19)" + ("" if ok else f" (got {out})"))
 
     ok, out = psql(env_path, env, project,
                    "SELECT count(*) FROM flyway_schema_history WHERE version = '1' AND success")

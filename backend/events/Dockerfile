@@ -14,6 +14,10 @@ RUN --mount=type=cache,id=farol-maven-events,target=/root/.m2/repository,sharing
 FROM eclipse-temurin:21-jre-alpine@sha256:82cf3d9ccbe1ed46252008d51b2f2329e6b9e8a2f4394c4bebefc3ea7f4b1372
 WORKDIR /app
 COPY --from=build /build/target/events.jar ./app.jar
+# The map directory has to exist in the image, and belong to the service's user: Docker copies the ownership of the
+# mount point into a new named volume, and a volume created from a missing path would be root-owned 0755, which the
+# unprivileged service cannot write (review of #253). A volume left by an earlier `up` keeps its owner, so `down -v`.
+RUN mkdir -p /var/lib/farol/maps && chown 10001:10001 /var/lib/farol/maps
 USER 10001:10001
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

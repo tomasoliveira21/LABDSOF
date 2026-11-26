@@ -35,7 +35,7 @@ class EventServiceTest {
 
   private final InMemoryPorts ports = new InMemoryPorts();
   private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-  private final EventService service = new EventService(new EventReader(ports, ports, ports, clock), ports, ports,
+  private final EventService service = new EventService(new EventReader(ports, ports, ports, ports, clock), ports, ports,
       ports, ports, clock);
   private final UUID admin = UUID.randomUUID();
 

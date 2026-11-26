@@ -7,7 +7,6 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.isep.labdsof.events.application.AccessAudit.Refusal;
-import pt.isep.labdsof.events.domain.EventStatus;
 import pt.isep.labdsof.events.domain.HelpCategory;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Team;
@@ -120,13 +119,9 @@ public class TeamService {
 
   /** An EventAdmin of an event that still accepts changes (D2); who may see it at all is {@link EventReader}. */
   private void administrator(UUID userId, UUID eventId) {
-    if (!open(reader.administrator(userId, eventId).event().status())) {
+    if (!reader.administrator(userId, eventId).event().status().acceptsChanges()) {
       throw new EventNotOpenException();
     }
-  }
-
-  private static boolean open(EventStatus status) {
-    return status == EventStatus.Draft || status == EventStatus.Published;
   }
 
   private Team live(UUID userId, UUID eventId, UUID teamId) {

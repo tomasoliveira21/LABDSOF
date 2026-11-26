@@ -2,15 +2,18 @@ package pt.isep.labdsof.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import tools.jackson.databind.json.JsonMapper;
 
 /** Plain HTTP client for the integration tests: it sends exactly what the test says, headers included. */
@@ -51,14 +54,76 @@ public final class ApiClient {
       }
       builder.method(method, HttpRequest.BodyPublishers.ofString(body));
     }
+    return send(builder.build());
+  }
+
+  private static HttpResponse<String> send(HttpRequest request) {
     try {
-      return CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+      return CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
     } catch (IOException e) {
       throw new IllegalStateException(e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IllegalStateException(e);
     }
+  }
+
+  /** One part of a multipart/form-data body; a {@code filename} makes it a file part (US-19's upload). */
+  public record Part(String name, String filename, String contentType, byte[] content) {
+
+    public static Part file(byte[] content) {
+      return file("map.bin", content);
+    }
+
+    public static Part file(String filename, byte[] content) {
+      return new Part("file", filename, "application/octet-stream", content);
+    }
+
+    public static Part field(String name, String value) {
+      return new Part(name, null, null, value.getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
+  /**
+   * A {@code multipart/form-data} POST, built here so a test can send exactly what it means: no part, two parts,
+   * a part whose name is not {@code file}, or a file whose name and {@code Content-Type} lie about its content.
+   */
+  public HttpResponse<String> upload(String path, String token, Part... parts) {
+    return upload(path, token, List.of(parts));
+  }
+
+  public HttpResponse<String> upload(String path, String token, List<Part> parts,
+      String... headerNameValuePairs) {
+    var boundary = "farol" + UUID.randomUUID();
+    var body = new ByteArrayOutputStream();
+    for (var part : parts) {
+      write(body, "--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + part.name() + "\"");
+      write(body, part.filename() == null ? "" : "; filename=\"" + part.filename() + "\"");
+      write(body, part.contentType() == null ? "" : "\r\nContent-Type: " + part.contentType());
+      write(body, "\r\n\r\n");
+      write(body, part.content());
+      write(body, "\r\n");
+    }
+    write(body, "--" + boundary + "--\r\n");
+    var builder = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1:" + port + path))
+        .timeout(Duration.ofSeconds(30))
+        .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+        .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()));
+    for (var i = 0; i < headerNameValuePairs.length; i += 2) {
+      builder.header(headerNameValuePairs[i], headerNameValuePairs[i + 1]);
+    }
+    if (token != null) {
+      builder.header("Authorization", "Bearer " + token);
+    }
+    return send(builder.build());
+  }
+
+  private static void write(ByteArrayOutputStream body, String text) {
+    write(body, text.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static void write(ByteArrayOutputStream body, byte[] bytes) {
+    body.write(bytes, 0, bytes.length);
   }
 
   public HttpResponse<String> get(String path, String token) {

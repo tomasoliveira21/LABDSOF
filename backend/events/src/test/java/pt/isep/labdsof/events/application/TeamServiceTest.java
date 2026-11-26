@@ -37,7 +37,7 @@ class TeamServiceTest {
 
   private final InMemoryPorts ports = new InMemoryPorts();
   private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-  private final TeamService service = new TeamService(new EventReader(ports, ports, ports, clock), ports, ports,
+  private final TeamService service = new TeamService(new EventReader(ports, ports, ports, ports, clock), ports, ports,
       ports, ports, clock);
   private final UUID user = UUID.randomUUID();
   private final UUID eventId = UUID.randomUUID();

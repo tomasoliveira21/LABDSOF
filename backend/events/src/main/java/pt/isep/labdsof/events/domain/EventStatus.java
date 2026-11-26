@@ -9,4 +9,9 @@ public enum EventStatus {
   public boolean visibleToParticipants() {
     return this == Published || this == Closed;
   }
+
+  /** US-16 D2, US-19 D6: a suspended or closed event takes no change to its teams or its map. */
+  public boolean acceptsChanges() {
+    return this == Draft || this == Published;
+  }
 }

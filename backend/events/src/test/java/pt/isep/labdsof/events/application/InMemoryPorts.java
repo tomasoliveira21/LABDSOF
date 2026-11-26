@@ -1,5 +1,8 @@
 package pt.isep.labdsof.events.application;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -14,13 +17,16 @@ import java.util.Set;
 import java.util.UUID;
 import pt.isep.labdsof.events.domain.Event;
 import pt.isep.labdsof.events.domain.EventStatus;
+import pt.isep.labdsof.events.domain.MapSourceType;
 import pt.isep.labdsof.events.domain.Membership;
+import pt.isep.labdsof.events.domain.PointOfInterest;
 import pt.isep.labdsof.events.domain.Team;
 import pt.isep.labdsof.events.domain.TeamPermission;
+import pt.isep.labdsof.events.domain.VenueMapVersion;
 
 /** Fakes of the ports, so the use cases are tested without a database. */
 class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAudit, Teams, Outbox,
-    TeamAudit, JoinCodes, EventAudit {
+    TeamAudit, JoinCodes, EventAudit, VenueMaps, MapImages, MapFiles, MapAudit {
 
   record Refused(UUID userId, UUID eventId, Instant at, Refusal refusal) {}
 
@@ -35,6 +41,13 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
 
   /** A permission change as US-17 AC-4 records it. */
   record Audited(UUID userId, UUID eventId, UUID teamId, Instant at, List<TeamPermission> permissions) {}
+
+  /** An upload as US-19 D11 records it. */
+  record Uploaded(UUID userId, UUID eventId, Instant at, int version, MapSourceType sourceType,
+      long sourceSizeBytes) {}
+
+  /** The points a map version started with, as point_of_interest's updated_by and updated_at record them. */
+  record PointWrite(int points, UUID actor, Instant at) {}
 
   final Map<UUID, Event> events = new HashMap<>();
   final Map<List<UUID>, Membership> memberships = new HashMap<>();
@@ -57,6 +70,21 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
 
   /** The publishes recorded by the {@link EventAudit} port. */
   final List<Published> publishes = new ArrayList<>();
+
+  /** US-19: the map versions stored, their points, the files written and the uploads recorded. */
+  final List<VenueMapVersion> mapVersions = new ArrayList<>();
+  final List<PointOfInterest> points = new ArrayList<>();
+  final List<PointWrite> pointWrites = new ArrayList<>();
+  final Map<String, byte[]> files = new LinkedHashMap<>();
+  final List<String> deletedFiles = new ArrayList<>();
+  final List<MapSourceType> rendered = new ArrayList<>();
+  final List<Uploaded> uploads = new ArrayList<>();
+
+  /** Set to simulate a volume that cannot be written (US-19 D9). */
+  boolean fileWriteFails;
+
+  /** Set to simulate the row failing after the file was written, which must leave no file behind (D9). */
+  boolean mapStoreFails;
 
   /**
    * Set to the outcome the adapter reports for a publish that matched no row, so the answer the use case gives to
@@ -178,6 +206,62 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
   public void permissionsReplaced(UUID userId, UUID eventId, UUID teamId, Instant at,
       List<TeamPermission> permissions) {
     audited.add(new Audited(userId, eventId, teamId, at, permissions));
+  }
+
+  // US-19: the venue map ports
+
+  @Override
+  public int nextVersionOf(UUID eventId) {
+    return mapVersions.stream().filter(version -> version.eventId().equals(eventId))
+        .mapToInt(VenueMapVersion::version).max().orElse(0) + 1;
+  }
+
+  @Override
+  public void add(VenueMapVersion version) {
+    if (mapStoreFails) {
+      throw new IllegalStateException("the version could not be stored");
+    }
+    mapVersions.add(version);
+  }
+
+  @Override
+  public List<PointOfInterest> livePointsOf(UUID eventId, int mapVersion) {
+    return points.stream()
+        .filter(point -> point.eventId().equals(eventId) && point.mapVersion() == mapVersion && !point.deleted())
+        .toList();
+  }
+
+  @Override
+  public void addPoints(List<PointOfInterest> added, UUID actor, Instant at) {
+    points.addAll(added);
+    pointWrites.add(new PointWrite(added.size(), actor, at));
+  }
+
+  /** The rendering adapter is tested on real files; here the PNG is a marker, so the use case is what is seen. */
+  @Override
+  public byte[] toPng(byte[] source, MapSourceType type) {
+    rendered.add(type);
+    return ("png of " + type.contentType() + " (" + source.length + " bytes)").getBytes(StandardCharsets.UTF_8);
+  }
+
+  @Override
+  public void write(String file, byte[] png) {
+    if (fileWriteFails) {
+      throw new UncheckedIOException(new IOException("the volume is not writable"));
+    }
+    files.put(file, png);
+  }
+
+  @Override
+  public void delete(String file) {
+    deletedFiles.add(file);
+    files.remove(file);
+  }
+
+  @Override
+  public void uploaded(UUID userId, UUID eventId, Instant at, int version, MapSourceType sourceType,
+      long sourceSizeBytes) {
+    uploads.add(new Uploaded(userId, eventId, at, version, sourceType, sourceSizeBytes));
   }
 
   /** As team_name_per_event: the name is free among the live teams of the event, this one apart. */

@@ -265,7 +265,8 @@ paths:
       description: >-
         The type is read from the content (PNG, JPEG or PDF; never SVG) and every upload is
         re-encoded to PNG (ADR-007). Any other file gets 400 and a file above 20 MB gets 413
-        (ADR-013 L-4); the current map stays.
+        (ADR-013 L-4); the current map stays. An event that no longer accepts changes (suspended
+        or closed) gets 409.
       requestBody:
         required: true
         content:
@@ -292,6 +293,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
   /api/v1/events/{eventId}/map-versions/current:

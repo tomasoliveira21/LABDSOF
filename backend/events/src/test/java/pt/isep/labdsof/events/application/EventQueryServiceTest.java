@@ -29,7 +29,7 @@ class EventQueryServiceTest {
 
   private final InMemoryPorts ports = new InMemoryPorts();
   private final EventQueryService service = new EventQueryService(
-      new EventReader(ports, ports, ports, Clock.fixed(NOW, ZoneOffset.UTC)));
+      new EventReader(ports, ports, ports, ports, Clock.fixed(NOW, ZoneOffset.UTC)));
   private final UUID user = UUID.randomUUID();
 
   private Event event(EventStatus status) {

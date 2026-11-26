@@ -7,6 +7,30 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The signed-in web app shows the caller’s event memberships, role and teams. Event name and status can appear once Auth & Users receives the event snapshot.
 - Auth & Users reads versioned Events snapshots from RabbitMQ and dead-letters invalid messages with a reason. See [US-01 login and memberships](Docs/specs/US-01-login-and-memberships.md).
 
+## [Unreleased] · 2026-11-25 · Upload the venue map (US-19, #68, Tiago Teixeira)
+
+**Why:** the venue map is the shared spatial reference of the product — points of interest, help requests and reports are all placed on it — and it starts with an EventAdmin uploading an image or a PDF (`features.md` US-19, ADR-007). Spec: [`Docs/specs/US-19-venue-map-upload.md`](Docs/specs/US-19-venue-map-upload.md). Built on US-11 (#62).
+
+### Added
+- `POST /api/v1/events/{eventId}/map-versions`: an EventAdmin, or a member of a team with `Map.Edit`, uploads the map as `multipart/form-data` (part `file`) and it becomes the event's current version, answered as a `MapVersion` with its number, its time and its points.
+- The upload hardening ADR-007 decision 2 and the [security assessment](Docs/Technical/security-and-privacy-assessment.md) (T9, finding 10, M-11) ask for: the type read from the **content** and never from the name or the `Content-Type` (PNG, JPEG or single-page PDF, **never SVG**); an image refused above **25 megapixels**, read from its header before it is decoded, which is the pixel limit the ADR left to this story; a PDF rendered by PDFBox 3 at 150 dpi, single page, not encrypted, inside a 20-second timeout; and **every upload re-encoded to a PNG** of at most 4096 px on its long side, so no EXIF, no PDF metadata and no active content survives.
+- The new version **starts with a copy of the live points** of the one before it (API outline D5), with new ids and the uploader as their author; the version before it keeps its own.
+- The first **`VenueMapVersionPublished`** the product publishes, through the outbox in the same transaction (ADR-004), with the new `venue-map-version.published.schema.json`. Reports needs it before a help request or a report can point at a map version (US-23, US-47).
+- The record of who uploaded and when: `venue_map_version.uploaded_by`/`uploaded_at` and one `INFO` log line with the correlation id, the pseudonymous `userId`, the version, the source type and its size — never the file name or the file itself.
+- The map files live on the new `events-maps` volume of the Events container (`FAROL_MAP_DIRECTORY`), with only their names in the database (API outline D6); the container's root file system stays read-only. The directory is created in the image and belongs to the service's user, which is the ownership Docker copies into a new volume — without it no upload could be written in the stack (review of #253), and `events_smoke.py` now probes that it is writable.
+- `PngMapImagesTest`, `VolumeMapFilesTest`, `JdbcVenueMapsIT`, `UploadMapVersionIT` and an `EventContractIT` case through the real broker; `events_smoke.py` checks the `401`, the `404` and the missing file part of the new path.
+
+### Changed
+- A file that is not a map is `400` *The map must be a PNG, JPEG or single-page PDF.* and a file above 20 MB is `413` *The map file must be at most 20 MB.* (ADR-013 L-4) — the detail names the limit, and in both cases **the current map stays**.
+- Versions are numbered per event and the event row is **locked for the transaction** before the next number is read, so two uploads of one event queue instead of racing (a unique violation could not be retried, as the review of #249 showed). Uploads of different events never wait for each other.
+- A suspended or closed event takes no map (`409`, as its teams since US-16), a `RegularUser` member of a draft gets the same `404` as a non-member, and a member without `Map.Edit` gets `403`. The permission check of #192 D5 is now one `EventReader.with(Permission)`, instead of being copied into a third service.
+- Seven operations of the contract still answer `501` (eight before): `openapi.yaml` and `local-delivery.md` §0 say what is served now, and the upload declares its `409` as the publish and the team operations do.
+- A PDF is rendered with **subsampling on**, so an image carried inside a page is decoded at the size it is drawn at: the page box alone does not bound the memory of a render, and a one-page PDF could still be a decompression bomb (review of #253).
+- The upload is **decoded before the transaction starts** (the write moved to `MapVersionStore`), so a render of up to 20 seconds no longer holds one of the service's five database connections; the permission and status check is made again under the event's lock, so an event suspended while the file renders takes no map.
+
+### Known limits
+- **US-06 (#61) is still open**, so no event can be created through the API: the upload is complete and tested on an event seeded in the database, and the end-to-end demo waits for US-06 and for the map component of the web app (ADR-007 decision 4, #44).
+- **ADR-013 L-4 also asks the gateway to cap the upload at 20 MB** and the gateway has no `RequestSize` filter: the service refuses the file itself, so the limit holds, but the body still reaches it. The gateway is #202's, and the point is on #68.
 ## [Unreleased] · 2026-11-25 · Route a request to a team (US-29, #76, Bruno de Abreu Lopes)
 
 **Why:** the control room sends each request to the team that deals with it (US-29), and #149 AC-3 asks that only an eligible team of the event can take it. Spec: [`Docs/specs/US-29-route-help-request.md`](Docs/specs/US-29-route-help-request.md).
