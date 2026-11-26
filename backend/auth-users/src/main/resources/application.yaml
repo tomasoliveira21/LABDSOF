@@ -32,6 +32,16 @@ spring:
     publisher-returns: true
     template:
       mandatory: true
+    listener:
+      simple:
+        missing-queues-fatal: false
+        # Four attempts, with waits of 1 s, 2 s and 4 s before dead-lettering (ADR-004).
+        retry:
+          enabled: true
+          max-retries: 3
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 4s
   security:
     oauth2:
       resourceserver:

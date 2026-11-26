@@ -21,6 +21,7 @@ Use the [domain lifecycles](../../Technical/domain-model.md#states-and-transitio
 
 | Story | Phone artboards |
 |---|---|
+| [US-01 · Log in and see my events](https://github.com/tomasoliveira21/LABDSOF/issues/59) | [Login and my events](US-01-login-events.svg) |
 | [US-12 · Join by QR or link](https://github.com/tomasoliveira21/LABDSOF/issues/63) | [Join an event](US-12-join-event.svg) |
 | [US-21 · Open the venue map](https://github.com/tomasoliveira21/LABDSOF/issues/70) | [Open the venue map](US-21-open-map.svg) |
 | [US-23 · Ask for help on the map](https://github.com/tomasoliveira21/LABDSOF/issues/71) | [Ask for help](US-23-ask-for-help.svg) |

@@ -2,6 +2,11 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-26 · Login and event memberships (US-01, #59)
+
+- The signed-in web app shows the caller’s event memberships, role and teams. Event name and status can appear once Auth & Users receives the event snapshot.
+- Auth & Users reads versioned Events snapshots from RabbitMQ and dead-letters invalid messages with a reason. See [US-01 login and memberships](Docs/specs/US-01-login-and-memberships.md).
+
 ## [Unreleased] · 2026-11-25 · Route a request to a team (US-29, #76, Bruno de Abreu Lopes)
 
 **Why:** the control room sends each request to the team that deals with it (US-29), and #149 AC-3 asks that only an eligible team of the event can take it. Spec: [`Docs/specs/US-29-route-help-request.md`](Docs/specs/US-29-route-help-request.md).

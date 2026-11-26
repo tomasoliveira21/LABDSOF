@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.web.filter.OncePerRequestFilter;
-import pt.isep.labdsof.authusers.adapters.out.persistence.JdbcOutbox;
+import pt.isep.labdsof.authusers.Correlation;
 
 /**
  * Gives every request a correlation id (spec D8): the {@code X-Correlation-Id} header when it is 8 to 64 letters,
@@ -31,7 +31,7 @@ final class CorrelationIdFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     var id = correlationId(request.getHeader(HEADER));
     response.setHeader(HEADER, id);
-    MDC.put(JdbcOutbox.CORRELATION_ID_MDC_KEY, id);
+    MDC.put(Correlation.MDC_KEY, id);
     long start = System.nanoTime();
     // When an exception escapes the chain the container has not set the error status yet, so the request is reported
     // as the 500 it becomes, never as the 200 the response still holds
@@ -48,7 +48,7 @@ final class CorrelationIdFilter extends OncePerRequestFilter {
       } else {
         log.info("{} {} -> {} in {} ms", request.getMethod(), path, status, millis);
       }
-      MDC.remove(JdbcOutbox.CORRELATION_ID_MDC_KEY);
+      MDC.remove(Correlation.MDC_KEY);
     }
   }
 

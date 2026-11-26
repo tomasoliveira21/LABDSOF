@@ -64,7 +64,7 @@ See [AccountStatus](domain-model.md#accountstatus) and [MembershipStatus](domain
 |---|---|---|---|---|
 | — | _identity provider_ | Sign up, log in and log out happen in Keycloak; the web app sends its token on every call (§1.4). Sign-up asks for the terms on Keycloak's form | — | US-01, US-02, US-03 |
 | `GET` | `/me` | My account: name, e-mail and global roles (`FarolAdmin`), so the web app knows what to show. The first call creates the account (§1.4) | Authenticated | US-01, US-03 |
-| `GET` | `/me/memberships` | The events I am a member of, with my role, my teams and each event's name and status | Authenticated | US-01 |
+| `GET` | `/me/memberships` | The events I am a member of, with my role and teams. Event name and status are omitted until the local projection is available | Authenticated | US-01 |
 | `PATCH` | `/me` | Change my display name. The password changes in Keycloak | Authenticated | US-04 |
 | `DELETE` | `/me` | Delete my account; `422` if I am the last EventAdmin of an event or the last `FarolAdmin`. `202` while the deletion is pending (flow below) | Authenticated | US-05 |
 | `GET` | `/accounts?email=` | Find the account to name as EventAdmin: exact match only, no partial search and no list; answers only the account id and display name; audited (assessment AC-9) | FarolAdmin | US-06, US-08 |
