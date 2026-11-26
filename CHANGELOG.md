@@ -12,14 +12,16 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The new version **starts with a copy of the live points** of the one before it (API outline D5), with new ids and the uploader as their author; the version before it keeps its own.
 - The first **`VenueMapVersionPublished`** the product publishes, through the outbox in the same transaction (ADR-004), with the new `venue-map-version.published.schema.json`. Reports needs it before a help request or a report can point at a map version (US-23, US-47).
 - The record of who uploaded and when: `venue_map_version.uploaded_by`/`uploaded_at` and one `INFO` log line with the correlation id, the pseudonymous `userId`, the version, the source type and its size — never the file name or the file itself.
-- The map files live on the new `events-maps` volume of the Events container (`FAROL_MAP_DIRECTORY`), with only their names in the database (API outline D6); the container's root file system stays read-only.
+- The map files live on the new `events-maps` volume of the Events container (`FAROL_MAP_DIRECTORY`), with only their names in the database (API outline D6); the container's root file system stays read-only. The directory is created in the image and belongs to the service's user, which is the ownership Docker copies into a new volume — without it no upload could be written in the stack (review of #253), and `events_smoke.py` now probes that it is writable.
 - `PngMapImagesTest`, `VolumeMapFilesTest`, `JdbcVenueMapsIT`, `UploadMapVersionIT` and an `EventContractIT` case through the real broker; `events_smoke.py` checks the `401`, the `404` and the missing file part of the new path.
 
 ### Changed
 - A file that is not a map is `400` *The map must be a PNG, JPEG or single-page PDF.* and a file above 20 MB is `413` *The map file must be at most 20 MB.* (ADR-013 L-4) — the detail names the limit, and in both cases **the current map stays**.
 - Versions are numbered per event and the event row is **locked for the transaction** before the next number is read, so two uploads of one event queue instead of racing (a unique violation could not be retried, as the review of #249 showed). Uploads of different events never wait for each other.
 - A suspended or closed event takes no map (`409`, as its teams since US-16), a `RegularUser` member of a draft gets the same `404` as a non-member, and a member without `Map.Edit` gets `403`. The permission check of #192 D5 is now one `EventReader.with(Permission)`, instead of being copied into a third service.
-- Seven operations of the contract still answer `501` (eight before): `openapi.yaml` and `local-delivery.md` §0 say what is served now.
+- Seven operations of the contract still answer `501` (eight before): `openapi.yaml` and `local-delivery.md` §0 say what is served now, and the upload declares its `409` as the publish and the team operations do.
+- A PDF is rendered with **subsampling on**, so an image carried inside a page is decoded at the size it is drawn at: the page box alone does not bound the memory of a render, and a one-page PDF could still be a decompression bomb (review of #253).
+- The upload is **decoded before the transaction starts** (the write moved to `MapVersionStore`), so a render of up to 20 seconds no longer holds one of the service's five database connections; the permission and status check is made again under the event's lock, so an event suspended while the file renders takes no map.
 
 ### Known limits
 - **US-06 (#61) is still open**, so no event can be created through the API: the upload is complete and tested on an event seeded in the database, and the end-to-end demo waits for US-06 and for the map component of the web app (ADR-007 decision 4, #44).

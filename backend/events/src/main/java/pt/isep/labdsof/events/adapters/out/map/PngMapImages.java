@@ -16,6 +16,7 @@ import java.util.concurrent.TimeoutException;
 import javax.imageio.ImageIO;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,8 @@ import pt.isep.labdsof.events.domain.MapSourceType;
  * EXIF (a photo's GPS position), no PDF metadata and no active content of the source survives.
  *
  * <p>The size of an image is read from its header <em>before</em> it is decoded, and a PDF page's is computed from
- * the page box, so a small file can never expand into a huge bitmap in memory (D3, assessment finding 10).
+ * the page box, so a small file can never expand into a huge bitmap in memory (D3, assessment finding 10). An image
+ * carried <em>inside</em> a page is bounded by the render itself, see {@link #renderer(PDDocument)}.
  */
 @Component
 class PngMapImages implements MapImages {
@@ -97,9 +99,22 @@ class PngMapImages implements MapImages {
         var box = document.getPage(0).getCropBox();
         var scale = (double) PDF_DPI / POINTS_PER_INCH;
         checkPixels((long) Math.ceil(box.getWidth() * scale) * (long) Math.ceil(box.getHeight() * scale));
-        return new PDFRenderer(document).renderImageWithDPI(0, PDF_DPI, ImageType.RGB);
+        return renderer(document).renderImageWithDPI(0, PDF_DPI, ImageType.RGB);
       }
     });
+  }
+
+  /**
+   * The renderer of D4, with subsampling on. The page's own size is bounded by {@link #checkPixels}, but an image
+   * drawn on it is not: PDFBox decodes an image XObject at its own resolution and only scales it while drawing, so
+   * an A4 page carrying a Flate image of 100 megapixels would ask for ~300 MB of heap out of the container's 384
+   * (review of #253). Subsampled, the image is decoded at the size it is drawn at, so D3's limit holds for what is
+   * really decoded. Package-private so a test can read the flag back, which no rendered PNG shows.
+   */
+  static PDFRenderer renderer(PDDocument document) {
+    var renderer = new PDFRenderer(document);
+    renderer.setSubsamplingAllowed(true);
+    return renderer;
   }
 
   /**

@@ -48,8 +48,9 @@ class MapServiceTest {
 
   private final InMemoryPorts ports = new InMemoryPorts();
   private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-  private final MapService service = new MapService(new EventReader(ports, ports, ports, ports, clock), ports,
-      ports, ports, ports, ports, clock);
+  private final EventReader reader = new EventReader(ports, ports, ports, ports, clock);
+  private final MapVersionStore store = new MapVersionStore(ports, ports, ports, ports);
+  private final MapService service = new MapService(reader, ports, store, clock);
   private final UUID admin = UUID.randomUUID();
 
   private Event event(EventStatus status) {
@@ -213,6 +214,8 @@ class MapServiceTest {
     assertThatThrownBy(() -> service.upload(rita, event.eventId(), PNG)).isInstanceOf(ForbiddenException.class);
     assertNothingStored();
     assertThat(ports.refusals).isEmpty();
+    // D6 is checked before D2 to D4: a caller who may not upload cannot make the service decode anything (D13)
+    assertThat(ports.rendered).isEmpty();
   }
 
   @Test
@@ -262,6 +265,24 @@ class MapServiceTest {
   }
 
   @Test
+  @DisplayName("US-19 AC-1 an event suspended while its map is rendered takes no map")
+  void anEventSuspendedDuringTheRenderTakesNoMap() {
+    var event = eventOfAdmin(EventStatus.Published);
+    // A PDF renders for up to 20 s, outside the transaction (review of #253), so D6 is checked again once the
+    // event's row is locked. Here the suspension lands while the file is being decoded
+    MapImages suspendsWhileRendering = (source, type) -> {
+      ports.events.put(event.eventId(), new Event(event.eventId(), event.name(), event.organiserName(),
+          event.dates(), event.description(), EventStatus.Suspended, event.joinCode(), event.version() + 1));
+      return ports.toPng(source, type);
+    };
+    var slowRender = new MapService(reader, suspendsWhileRendering, store, clock);
+
+    assertThatThrownBy(() -> slowRender.upload(admin, event.eventId(), PNG))
+        .isInstanceOf(EventNotOpenException.class);
+    assertNothingStored();
+  }
+
+  @Test
   @DisplayName("US-19 AC-1 every refusal is the same not-found and is recorded")
   void everyRefusalIsTheSameNotFoundAndIsRecorded() {
     var event = eventOfAdmin(EventStatus.Published);
@@ -284,6 +305,7 @@ class MapServiceTest {
     assertThat(ports.refusals).extracting(Refused::refusal).containsExactly(Refusal.NOT_A_MEMBER,
         Refusal.NOT_A_MEMBER, Refusal.NOT_A_MEMBER, Refusal.NO_SUCH_EVENT);
     assertNothingStored();
+    assertThat(ports.rendered).isEmpty(); // nobody outside the event can make the service decode a file (D13)
   }
 
   @Test

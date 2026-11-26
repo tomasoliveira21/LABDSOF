@@ -12,9 +12,14 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import javax.imageio.ImageIO;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.common.PDStream;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +60,35 @@ class PngMapImagesTest {
       }
       if (userPassword != null) {
         document.protect(new StandardProtectionPolicy("owner", userPassword, new AccessPermission()));
+      }
+      document.save(bytes);
+      return bytes.toByteArray();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  /**
+   * An A4 page carrying one Flate image of {@code side}x{@code side} pixels, drawn over the whole page. The image
+   * is built as a raw 1-bit XObject, not from a {@link BufferedImage}, so the test itself never holds the bitmap
+   * the service must not decode either (review of #253).
+   */
+  private static byte[] pdfWithImage(int side) {
+    try (var document = new PDDocument(); var bytes = new ByteArrayOutputStream()) {
+      var page = new PDPage(PDRectangle.A4);
+      document.addPage(page);
+      var stream = new PDStream(document, new ByteArrayInputStream(new byte[side / 8 * side]),
+          COSName.FLATE_DECODE);
+      var dictionary = stream.getCOSObject();
+      dictionary.setItem(COSName.TYPE, COSName.XOBJECT);
+      dictionary.setItem(COSName.SUBTYPE, COSName.IMAGE);
+      dictionary.setInt(COSName.WIDTH, side);
+      dictionary.setInt(COSName.HEIGHT, side);
+      dictionary.setInt(COSName.BITS_PER_COMPONENT, 1);
+      dictionary.setItem(COSName.COLORSPACE, COSName.DEVICEGRAY);
+      try (var content = new PDPageContentStream(document, page)) {
+        content.drawImage(new PDImageXObject(stream, null), 0, 0, PDRectangle.A4.getWidth(),
+            PDRectangle.A4.getHeight());
       }
       document.save(bytes);
       return bytes.toByteArray();
@@ -141,6 +175,26 @@ class PngMapImagesTest {
     var decoded = read(images.toPng(pdf(1, a0, null), MapSourceType.PDF));
 
     assertThat(decoded.getHeight()).isEqualTo(PngMapImages.MAX_SIDE);
+  }
+
+  @Test
+  @DisplayName("US-19 AC-2 a one-page PDF carrying a 100-megapixel image is rendered at the page's size")
+  void anImageInsideAPdfIsRenderedSubsampled() {
+    // 10000 x 10000 black pixels at 1 bit, which Flate takes down to a few kilobytes: the page passes D3's limit
+    // (A4 is 2.2 megapixels at 150 dpi) while the image it carries is 100 megapixels, ~300 MB of raster (#253)
+    var bomb = pdfWithImage(10_000);
+    assertThat(bomb.length).isLessThan(100_000);
+
+    var decoded = read(images.toPng(bomb, MapSourceType.PDF));
+
+    assertThat(decoded.getWidth()).isEqualTo(1240);
+    assertThat(decoded.getHeight()).isEqualTo(1753);
+    // What keeps the decode that size is the flag, and no PNG can show it
+    try (var document = Loader.loadPDF(bomb)) {
+      assertThat(PngMapImages.renderer(document).isSubsamplingAllowed()).isTrue();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   @Test
