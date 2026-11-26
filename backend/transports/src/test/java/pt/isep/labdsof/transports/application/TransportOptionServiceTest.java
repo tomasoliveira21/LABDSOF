@@ -7,9 +7,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -34,7 +32,7 @@ class TransportOptionServiceTest {
   private static final UUID TEAM = UUID.fromString("16fd2706-8baf-433b-82eb-8c7fada847da");
   private static final NewBusRoute ROUTE = new NewBusRoute("500", "Hospital S. João");
 
-  private final FakeCopies copies = new FakeCopies();
+  private final FakeLocalCopies copies = new FakeLocalCopies();
   private final FakeOptions options = new FakeOptions();
   private final TransportOptionService service =
       new TransportOptionService(copies, options, Clock.fixed(NOW, ZoneOffset.UTC));
@@ -116,43 +114,6 @@ class TransportOptionServiceTest {
     assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(BusRouteTakenException.class);
     options.answer = Added.FULL;
     assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(BusRouteLimitException.class);
-  }
-
-  /** The copies of one user in one event, and some teams. */
-  private static final class FakeCopies implements LocalCopies {
-    Optional<Membership> membership = Optional.empty();
-    Optional<EventCopy> event = Optional.empty();
-    final Map<UUID, Team> teams = new HashMap<>();
-
-    @Override
-    public Optional<Membership> membership(UUID eventId, UUID userId) {
-      return membership.filter(m -> m.eventId().equals(eventId) && m.userId().equals(userId));
-    }
-
-    @Override
-    public Optional<EventCopy> event(UUID eventId) {
-      return event.filter(e -> e.eventId().equals(eventId));
-    }
-
-    @Override
-    public Optional<Team> team(UUID teamId) {
-      return Optional.ofNullable(teams.get(teamId));
-    }
-
-    @Override
-    public boolean upsertIfNewer(Membership m) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean upsertIfNewer(EventCopy e) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean upsertIfNewer(Team t) {
-      throw new UnsupportedOperationException();
-    }
   }
 
   private static final class FakeOptions implements TransportOptions {

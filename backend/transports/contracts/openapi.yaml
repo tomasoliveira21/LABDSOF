@@ -42,9 +42,13 @@ paths:
       operationId: getBusObservations
       summary: The latest bus positions on the event's external routes (US-41, US-42); any member
       description: >-
-        Only the buses on the event's external routes near the venue, with the time of the data
-        (dataAsOf) and stale true when the source is down or the data is older than the freshness
-        limit (5 min, ADR-008). A suspended event, or a user who is not a member, gets 404.
+        Only the buses on the event's external routes near the venue, nearest first, with their
+        distance to the venue, the event's routes with how many of their buses are shown, the venue
+        (the centre of the map), the time of the data (dataAsOf) and stale: true when there is no
+        valid import yet or the last one is older than the freshness limit (5 min, ADR-008; US-41 D7,
+        which US-42 may refine). An EventAdmin reads a draft, published or closed event, a
+        RegularUser a published or closed one; anyone else, an unknown event and a suspended event
+        get the same 404 (US-41 D5).
       responses:
         '200':
           description: The buses, possibly none
@@ -212,11 +216,14 @@ components:
     BusObservation:
       type: object
       additionalProperties: false
-      required: [vehicleId, routeId, position, observedAt]
+      required: [vehicleId, routeId, position, observedAt, distanceMetres]
       properties:
         vehicleId:
           type: string
           description: The vehicle's id at the source
+        fleetVehicleId:
+          type: string
+          description: The number on the bus, when the source gives it
         routeId:
           type: string
         position:
@@ -225,11 +232,36 @@ components:
           type: string
           format: date-time
           description: When the source observed the bus, not when it was imported
+        distanceMetres:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Great-circle distance from the venue, rounded to the metre (US-41 D6)
+    BusRouteSummary:
+      type: object
+      additionalProperties: false
+      required: [externalRoute, busCount]
+      properties:
+        externalRoute:
+          type: string
+        name:
+          type: string
+        busCount:
+          type: integer
+          minimum: 0
+          description: How many of this route's buses are shown
     BusObservations:
       type: object
       additionalProperties: false
-      required: [stale, buses]
+      required: [venue, routes, stale, buses]
       properties:
+        venue:
+          $ref: '#/components/schemas/GeoPosition'
+        routes:
+          type: array
+          description: The event's external bus routes, in the order they were added
+          items:
+            $ref: '#/components/schemas/BusRouteSummary'
         dataAsOf:
           type: string
           format: date-time

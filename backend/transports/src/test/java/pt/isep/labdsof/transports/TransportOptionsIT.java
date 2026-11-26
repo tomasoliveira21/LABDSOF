@@ -142,7 +142,7 @@ class TransportOptionsIT extends IntegrationTest {
     var second = post(eventId, admin, ROUTE_500);
 
     assertThat(first.statusCode()).isEqualTo(201);
-    assertThat(ApiClient.json(first)).containsEntry("externalRoute", "500");
+    assertThat(ApiClient.json(first)).containsEntry("externalRoute", "500").doesNotContainKey("name");
     ApiClient.assertProblem(second, 409);
     assertThat(detail(second)).isEqualTo("This route is already on the event.");
   }

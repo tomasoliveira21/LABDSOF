@@ -30,6 +30,15 @@ class VenueTest {
   }
 
   @Test
+  @DisplayName("US-41 D8 the edges of the globe are a venue, just beyond them is not")
+  void edges() {
+    assertThat(new Venue(180, 90)).isEqualTo(Venue.parse("90,180"));
+    assertThat(new Venue(-180, -90)).isEqualTo(Venue.parse("-90,-180"));
+    assertThatIllegalArgumentException().isThrownBy(() -> new Venue(180.0001, 0));
+    assertThatIllegalArgumentException().isThrownBy(() -> new Venue(0, -90.0001));
+  }
+
+  @Test
   @DisplayName("US-41 D6 the distance is the great-circle distance in metres")
   void distance() {
     assertThat(QUEIMODROMO.distanceMetres(-8.6841, 41.1724)).isZero();
