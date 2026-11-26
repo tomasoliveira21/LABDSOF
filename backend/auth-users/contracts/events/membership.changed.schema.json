@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "membership.changed.schema.json",
+  "title": "MembershipChanged",
+  "description": "Published by Auth & Users to farol.auth-users with routing key membership.changed, through the outbox (ADR-004), whenever a membership of an event changes: its teams (US-18), and later its creation (US-06, US-12) and its role (US-15). Consumed from events.auth-users-events, reports.auth-users-events and transports.auth-users-events: each service keeps the copy it decides permissions from, and refuses a non-member (API outline 1.5, 7.3, 7.4; US-14). Full state with a version (7.3): every change carries the role and every team the member is in, so a consumer upserts its copy and ignores a version that is not newer than the one it has. eventId is the event the membership belongs to — the first event type of this service that has one. status is Active while MembershipStatus stands (#198); a membership that no longer exists is a row this service deletes. AMQP properties as GlobalRoleChanged, with type = MembershipChanged.",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "MembershipChanged" },
+    "schemaVersion": { "const": 1 },
+    "producer": { "const": "auth-users" },
+    "eventId": { "type": "string", "format": "uuid" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["userId", "role", "status", "teamIds", "version"],
+      "properties": {
+        "userId": { "type": "string", "format": "uuid", "description": "The member's sub (#191 D4)" },
+        "role": { "enum": ["EventAdmin", "RegularUser"] },
+        "status": { "enum": ["Active", "Removed"] },
+        "teamIds": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" },
+          "uniqueItems": true,
+          "description": "Every live team of this event the member is in, sorted; empty when they are in none"
+        },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

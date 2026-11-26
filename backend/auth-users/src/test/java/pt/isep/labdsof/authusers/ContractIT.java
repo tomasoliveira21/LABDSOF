@@ -205,14 +205,11 @@ class ContractIT extends IntegrationTest {
   private record LaterStory(String method, String path, String body, String story) {}
 
   private static Stream<Arguments> laterStories() {
-    var member = "/members/" + UUID.randomUUID() + "/teams/" + UUID.randomUUID();
+    // The three operations of US-18 (#67) are served now: they answer 404 to a caller who is not a member
     return Stream.of(
         new LaterStory("GET", "/api/v1/accounts?email=ana@farol.test", null, "US-06"),
-        new LaterStory("GET", eventPath("/members"), null, "US-18"),
         new LaterStory("POST", eventPath("/members"), NAME_ADMIN_BODY, "US-06"),
-        new LaterStory("POST", eventPath("/members/me"), null, "US-12"),
-        new LaterStory("PUT", eventPath(member), null, "US-18"),
-        new LaterStory("DELETE", eventPath(member), null, "US-18")).map(Arguments::of);
+        new LaterStory("POST", eventPath("/members/me"), null, "US-12")).map(Arguments::of);
   }
 
   @Test
@@ -263,7 +260,8 @@ class ContractIT extends IntegrationTest {
 
     var response = new ApiClient(port).get(path, JWKS.valid(UUID.randomUUID().toString()));
 
-    ApiClient.assertProblem(response, 501);
+    // Accepted and answered as US-18 D2 asks — not 400: the filters are the contract's (#67)
+    ApiClient.assertProblem(response, 404);
   }
 
   @ParameterizedTest(name = "[{index}] {0} {1}")

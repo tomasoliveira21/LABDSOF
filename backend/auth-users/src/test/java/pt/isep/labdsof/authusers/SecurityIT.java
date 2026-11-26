@@ -220,7 +220,7 @@ class SecurityIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("191 D9 an unknown JSON field gets 400 before the 501 (mass assignment)")
+  @DisplayName("191 D9 an unknown JSON field gets 400 before the use case (mass assignment)")
   void unknownJsonFieldIsRefused() {
     var response = post(membersPath(), "{\"userId\":\"" + UUID.randomUUID() + "\",\"role\":\"EventAdmin\","
         + "\"isFarolAdmin\":true}");
@@ -247,7 +247,7 @@ class SecurityIT extends IntegrationTest {
 
   @ParameterizedTest(name = "[{index}] {0} {1}")
   @MethodSource("malformedPaths")
-  @DisplayName("191 D9 a malformed UUID in a path gets 400 before the 501")
+  @DisplayName("191 D9 a malformed UUID in a path gets 400 before the use case")
   void malformedPathUuidIsRefused(String method, String path, String body) {
     ApiClient.assertProblem(api().send(method, path, "Bearer " + validToken(), body), 400);
   }
@@ -297,7 +297,7 @@ class SecurityIT extends IntegrationTest {
 
   @ParameterizedTest(name = "[{index}] {0} {1} {2}")
   @MethodSource("malformedInput")
-  @DisplayName("191 D9 a malformed body or query value gets 400 before the 501")
+  @DisplayName("191 D9 a malformed body or query value gets 400 before the use case")
   void malformedInputIsRefused(String method, String path, String body) {
     ApiClient.assertProblem(api().send(method, path, "Bearer " + validToken(), body), 400);
   }

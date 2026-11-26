@@ -3,7 +3,9 @@
 Checks, through the API gateway, that Auth & Users validates real Keycloak tokens (ADR-006) and keeps accounts in
 its own database: no token and a tampered token get 401 Problem Details; Rita's real token creates her account at
 the first GET /api/v1/me and the second call returns the same one; the bootstrap account (#179) is FarolAdmin; an
-operation of a later story gets 501; the X-Correlation-Id comes back. Then it reads the outbox in the `auth_users`
+operation of a later story gets 501; the member list and the two team-assignment operations of US-18 answer 401
+without a token and 404 to a caller who is not a member of the event, which is everyone before US-06 and US-12, so
+the smoke still writes nothing; the X-Correlation-Id comes back. Then it reads the outbox in the `auth_users`
 database: the rows of those first calls must have `published_at`, which is set after the broker's confirm. The
 queue is not counted, because Events (#192) will consume it.
 
@@ -20,6 +22,7 @@ import os
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -61,6 +64,20 @@ def call(gateway: str, path: str, token: str | None = None,
     status, response_headers, body = idp.request(urllib.request.build_opener(idp.NoRedirect), gateway + path,
                                                  None, headers)
     return status, {name.lower(): value for name, value in response_headers.items()}, body
+
+
+def send(gateway: str, method: str, path: str, token: str | None = None) -> tuple[int, dict[str, str], str]:
+    """A PUT or a DELETE, which `call` cannot send: the team assignment of US-18 uses both."""
+    request = urllib.request.Request(gateway + path, method=method)
+    if token:
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 - fixed http://127.0.0.1 gateway
+            headers, body = response.headers, response.read().decode("utf-8", "replace")
+            status = response.status
+    except urllib.error.HTTPError as error:
+        headers, body, status = error.headers, error.read().decode("utf-8", "replace"), error.code
+    return status, {name.lower(): value for name, value in headers.items()}, body
 
 
 def is_problem(status: int, headers: dict[str, str], body: str, expected: int) -> bool:
@@ -163,6 +180,28 @@ def main(env_path: str, project: str | None = None) -> int:
 
     status, _, body = call(gateway, "/api/v1/me/memberships", rita)
     idp.check(status == 200 and body.strip() == "[]", "The seeded user starts with no event memberships")
+
+    # US-18 (#67): the three member operations are served, and nobody is a member of an event before US-06/US-12,
+    # so each one answers the 404 of D2 — which is also what keeps this smoke from writing anything
+    members = f"/api/v1/events/{uuid.uuid4()}/members"
+    status, headers, body = call(gateway, members)
+    idp.check(is_problem(status, headers, body, 401) and headers.get("www-authenticate", "").startswith("Bearer"),
+              "GET /api/v1/events/{id}/members without a token gets 401 Problem Details with "
+              "WWW-Authenticate: Bearer" + ("" if status == 401 else f" (got {status})"))
+    status, headers, body = call(gateway, members, rita)
+    idp.check(is_problem(status, headers, body, 404),
+              "GET /api/v1/events/{id}/members of an event Rita is not a member of gets 404 Problem Details "
+              "(US-18)" + ("" if status == 404 else f" (got {status})"))
+    assignment = f"{members}/{uuid.uuid4()}/teams/{uuid.uuid4()}"
+    for method in ("PUT", "DELETE"):
+        status, headers, body = send(gateway, method, assignment)
+        idp.check(is_problem(status, headers, body, 401),
+                  f"{method} a team assignment without a token gets 401 Problem Details"
+                  + ("" if status == 401 else f" (got {status})"))
+        status, headers, body = send(gateway, method, assignment, rita)
+        idp.check(is_problem(status, headers, body, 404),
+                  f"{method} a team assignment of an event Rita is not a member of gets the same 404 (US-18)"
+                  + ("" if status == 404 else f" (got {status})"))
 
     ok, out = psql(env_path, env, project,
                    "SELECT count(*) FROM flyway_schema_history WHERE version = '1' AND success")

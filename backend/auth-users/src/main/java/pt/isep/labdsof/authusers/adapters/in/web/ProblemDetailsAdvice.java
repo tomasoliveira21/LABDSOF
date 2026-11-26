@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import pt.isep.labdsof.authusers.application.AccountDisabledException;
 import pt.isep.labdsof.authusers.application.AccountUnavailableException;
+import pt.isep.labdsof.authusers.application.EventNotFoundException;
 import pt.isep.labdsof.authusers.application.MissingEmailException;
+import pt.isep.labdsof.authusers.application.NotAnEventAdminException;
 
 /**
  * Problem Details for every error (spec D9, API outline 1.7). The standard MVC exceptions come from the superclass;
@@ -40,6 +42,19 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     log.info("Request refused with 403: {}", e.getMessage());
     return ResponseEntity.status(HttpStatus.FORBIDDEN)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "The account is disabled."));
+  }
+
+  /** The same 404 for an unknown event, a non-member, an unknown member and a team of another event (US-18 D2). */
+  @ExceptionHandler(EventNotFoundException.class)
+  ResponseEntity<ProblemDetail> notFound(EventNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Event not found."));
+  }
+
+  @ExceptionHandler(NotAnEventAdminException.class)
+  ResponseEntity<ProblemDetail> notAnEventAdmin(NotAnEventAdminException e) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "No permission in this event."));
   }
 
   /** Never the violation text: for {@code GET /accounts} it would hold the e-mail sent. */

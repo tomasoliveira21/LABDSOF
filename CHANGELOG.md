@@ -2,6 +2,26 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-26 · Add and remove team members (US-18, #67, Tiago Teixeira)
+
+**Why:** a team is only worth creating once the right people are in it — the permissions of US-16 and US-17 reach a person through their team (`features.md` US-18, API outline §2). Spec: [`Docs/specs/US-18-team-members.md`](Docs/specs/US-18-team-members.md). Built on US-01 (#59), whose local copies of the events and their teams this story reads.
+
+### Added
+- `PUT` and `DELETE` on `/api/v1/events/{eventId}/members/{userId}/teams/{teamId}`: the EventAdmin of the event puts one of its members in one of its teams, and takes them out again. Both answer `204`, both are **idempotent**, and the member may be a RegularUser or an EventAdmin.
+- `GET /api/v1/events/{eventId}/members`: the event's members with their display name, role and teams, ordered by name, with the contract's optional `role` and `teamId` filters — the picker the back office adds members from.
+- The first **`MembershipChanged`** the product publishes, through the outbox in the same transaction (ADR-004), with the new `membership.changed.schema.json`. It carries the **full state** of the membership — role, status, every team and the new version — because that is what Events, Reports and Transports upsert their copies from, and it is how a member gains or loses a team's permissions everywhere (AC-1, AC-3, AC-4).
+- The record of who changed what and when: `team_assignment.assigned_by`/`assigned_at`, `event_membership.updated_by`/`updated_at`, and one log line per change and per refusal with the correlation id and pseudonymous ids only — never a display name.
+- `EventMembershipTest`, `TeamMemberServiceTest`, `MemberQueryServiceTest`, `JdbcEventMembershipsIT` (with the two-at-once cases of the lock), `TeamMembersIT`, `MemberListIT` and an `EventContractIT` case through the real broker.
+
+### Changed
+- A user who is not a member of the event cannot be put in a team (AC-2), and neither can a team of another event, a team Events has deleted or an unknown team: all four are the **same `404`** as an unknown event. A member of the event who is not an EventAdmin gets `403`, and `openapi.yaml` now declares that `403` for the member list too.
+- The membership's row is **locked before its version is raised**, so two assignments of one member queue instead of both writing the same version — which would make a consumer drop one of the two `MembershipChanged` as a replay.
+- Three operations of the contract no longer answer `501` (five before): `openapi.yaml` and `local-delivery.md` §0 say what is served now.
+
+### Known limits
+- **US-06 (#61) and US-12 (#63) are still open**, so no membership is created through the API yet: the story is complete and tested on memberships seeded in the database, and the end-to-end demo waits for them and for the back-office screen (#67's front-end note).
+- **US-15 (#64) still owns the role change** (`PATCH …/members/{userId}`), which stays at `501`: this story changes teams, never roles.
+
 ## [Unreleased] · 2026-11-26 · Login and event memberships (US-01, #59)
 
 - The signed-in web app shows the caller’s event memberships, role and teams. Event name and status can appear once Auth & Users receives the event snapshot.
