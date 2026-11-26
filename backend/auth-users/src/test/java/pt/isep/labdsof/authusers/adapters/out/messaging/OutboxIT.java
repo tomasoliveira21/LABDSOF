@@ -35,6 +35,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.support.TransactionTemplate;
+import pt.isep.labdsof.authusers.Correlation;
 import pt.isep.labdsof.authusers.Infrastructure;
 import pt.isep.labdsof.authusers.IntegrationTest;
 import pt.isep.labdsof.authusers.adapters.out.persistence.JdbcOutbox;
@@ -146,9 +147,9 @@ class OutboxIT extends IntegrationTest {
     var c = addEvent("user-profile.changed");
     var d = UUID.randomUUID();
     var dEvent = event(d, "global-role.changed");
-    MDC.put(JdbcOutbox.CORRELATION_ID_MDC_KEY, "c-27");
+    MDC.put(Correlation.MDC_KEY, "c-27");
     tx.executeWithoutResult(status -> outbox.add(dEvent));
-    MDC.remove(JdbcOutbox.CORRELATION_ID_MDC_KEY);
+    MDC.remove(Correlation.MDC_KEY);
     jdbc.sql("UPDATE outbox SET published_at = now() WHERE message_id = :id").param("id", b).update();
     jdbc.sql("UPDATE outbox SET next_attempt_at = now() + interval '1 hour' WHERE message_id = :id")
         .param("id", c).update();
@@ -255,9 +256,9 @@ class OutboxIT extends IntegrationTest {
   void correlationIdReachesTheBroker() {
     var withId = UUID.randomUUID();
     var without = UUID.randomUUID();
-    MDC.put(JdbcOutbox.CORRELATION_ID_MDC_KEY, "c-17");
+    MDC.put(Correlation.MDC_KEY, "c-17");
     service.me(identity(withId));
-    MDC.remove(JdbcOutbox.CORRELATION_ID_MDC_KEY);
+    MDC.remove(Correlation.MDC_KEY);
     service.me(identity(without));
 
     assertThat(publisher(rabbit).publishDue()).isEqualTo(2);

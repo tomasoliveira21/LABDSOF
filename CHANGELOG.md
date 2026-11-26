@@ -2,6 +2,11 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-26 · Login and event memberships (US-01, #59)
+
+- The signed-in web app shows the caller’s event memberships, role and teams. Event name and status can appear once Auth & Users receives the event snapshot.
+- Auth & Users reads versioned Events snapshots from RabbitMQ and dead-letters invalid messages with a reason. See [US-01 login and memberships](Docs/specs/US-01-login-and-memberships.md).
+
 ## [Unreleased] · 2026-11-24 · Close a request (US-30, #77, Bruno de Abreu Lopes)
 
 **Why:** finished cases must leave the control room's active queue (US-30). Spec: [`Docs/specs/US-30-close-help-request.md`](Docs/specs/US-30-close-help-request.md).

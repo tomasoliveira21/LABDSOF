@@ -207,7 +207,6 @@ class ContractIT extends IntegrationTest {
   private static Stream<Arguments> laterStories() {
     var member = "/members/" + UUID.randomUUID() + "/teams/" + UUID.randomUUID();
     return Stream.of(
-        new LaterStory("GET", "/api/v1/me/memberships", null, "US-01"),
         new LaterStory("GET", "/api/v1/accounts?email=ana@farol.test", null, "US-06"),
         new LaterStory("GET", eventPath("/members"), null, "US-18"),
         new LaterStory("POST", eventPath("/members"), NAME_ADMIN_BODY, "US-06"),
