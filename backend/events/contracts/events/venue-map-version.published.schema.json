@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "venue-map-version.published.schema.json",
+  "title": "VenueMapVersionPublished",
+  "description": "Published by Events to farol.events with routing key venue-map-version.published, through the outbox (ADR-004), whenever a member with Map.Edit uploads a new version of an event's venue map (US-19, the first and so far only story that publishes it, from MapEvents.versionPublished). Consumed from reports.events-events (API outline §7.4, §7.5): a help request or a report must point at a map version that exists in its event (US-23, US-47). Only the version and the time it was published: the image itself is read with GET /api/v1/events/{eventId}/map-versions/{version}/image (US-21), and the points of the version change on their own afterwards (US-20, PointOfInterestChanged). Versions are numbered per event, start at 1 and only grow, and an older one stays readable for the requests and reports that name it (US-27). eventId is the event; actorUserId is the sub of the member who uploaded it. AMQP properties: message_id = messageId, type = VenueMapVersionPublished, app_id = events, correlation_id = the request's X-Correlation-Id, content_type application/json, persistent.",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "properties": {
+    "type": { "const": "VenueMapVersionPublished" },
+    "schemaVersion": { "const": 1 },
+    "producer": { "const": "events" },
+    "eventId": { "type": "string", "format": "uuid", "description": "Every Events event belongs to a Farol event (ADR-003)" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mapVersion", "publishedAt"],
+      "properties": {
+        "mapVersion": { "type": "integer", "minimum": 1, "description": "The number of the new version, the current one of the event" },
+        "publishedAt": { "type": "string", "format": "date-time", "description": "When it was uploaded, the same instant as the row's uploaded_at" }
+      }
+    }
+  }
+}

@@ -22,7 +22,7 @@ import pt.isep.labdsof.reports.domain.Team;
 import pt.isep.labdsof.reports.domain.TriageSuggestion;
 
 /** Test doubles of the ports, with the same rules as the JDBC adapters (checked by the *IT tests). */
-class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessages {
+class InMemoryPorts implements HelpRequests, FieldTasks, LocalCopies, Outbox, ProcessedMessages {
 
   final Map<UUID, HelpRequest> requests = new HashMap<>();
   final Map<String, Membership> memberships = new HashMap<>();
@@ -30,6 +30,10 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   final List<OutgoingEvent> outbox = new ArrayList<>();
   final Set<UUID> processed = new HashSet<>();
   final List<Decision> decisions = new ArrayList<>();
+  final List<Task> tasks = new ArrayList<>();
+
+  /** One field task, in the order dispatched (US-29 D4). */
+  record Task(UUID id, UUID eventId, UUID requestId, UUID teamId, String status, Instant at) {}
 
   /** One member decision saved through {@link #saveDecision}. */
   record Decision(UUID requestId, Actor actor, Instant changedAt, List<HelpRequestChange> changes) {}
@@ -124,6 +128,29 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
         .toList();
   }
 
+  @Override
+  public List<UUID> routedTo(UUID eventId, UUID teamId) {
+    return inArrivalOrder(eventId, r -> teamId.equals(r.routedTeamId())).stream().map(HelpRequest::id).toList();
+  }
+
+  @Override
+  public void dispatch(UUID taskId, UUID eventId, UUID requestId, UUID teamId, Instant at) {
+    if (tasks.stream().anyMatch(t -> t.requestId().equals(requestId) && live(t))) {
+      throw new IllegalStateException("one live task per request");
+    }
+    tasks.add(new Task(taskId, eventId, requestId, teamId, "Open", at));
+  }
+
+  @Override
+  public void cancelLive(UUID eventId, UUID requestId, Instant at) {
+    tasks.replaceAll(t -> t.eventId().equals(eventId) && t.requestId().equals(requestId) && live(t)
+        ? new Task(t.id(), t.eventId(), t.requestId(), t.teamId(), "Cancelled", at) : t);
+  }
+
+  private static boolean live(Task task) {
+    return task.status().equals("Open") || task.status().equals("Accepted");
+  }
+
   private List<HelpRequest> inArrivalOrder(UUID eventId, Predicate<HelpRequest> filter) {
     return requests.values().stream().filter(r -> r.eventId().equals(eventId)).filter(filter)
         .sorted(Comparator.comparing(HelpRequest::submittedAt).thenComparing(HelpRequest::id)).toList();
@@ -138,6 +165,11 @@ class InMemoryPorts implements HelpRequests, LocalCopies, Outbox, ProcessedMessa
   public List<Team> teams(UUID eventId, Collection<UUID> teamIds) {
     return teams.values().stream()
         .filter(t -> t.eventId().equals(eventId) && teamIds.contains(t.teamId())).toList();
+  }
+
+  @Override
+  public Optional<Team> teamForShare(UUID eventId, UUID teamId) {
+    return Optional.ofNullable(teams.get(teamId)).filter(t -> t.eventId().equals(eventId));
   }
 
   /** When the copy of each event's teams last changed; the tests set it. */

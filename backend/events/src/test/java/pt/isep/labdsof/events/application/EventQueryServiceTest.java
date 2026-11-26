@@ -28,8 +28,8 @@ class EventQueryServiceTest {
   private static final String CODE = "JOIN2027";
 
   private final InMemoryPorts ports = new InMemoryPorts();
-  private final EventQueryService service = new EventQueryService(ports, ports, ports,
-      Clock.fixed(NOW, ZoneOffset.UTC));
+  private final EventQueryService service = new EventQueryService(
+      new EventReader(ports, ports, ports, ports, Clock.fixed(NOW, ZoneOffset.UTC)));
   private final UUID user = UUID.randomUUID();
 
   private Event event(EventStatus status) {

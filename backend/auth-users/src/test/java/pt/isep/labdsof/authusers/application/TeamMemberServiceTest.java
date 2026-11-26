@@ -142,18 +142,24 @@ class TeamMemberServiceTest {
     assertThat(ports.assignments).isEmpty();
     assertThat(ports.outbox).isEmpty();
     assertThat(ports.audited).isEmpty();
+    // The row is cleared whether or not there is one: the call cannot tell a leftover from a team nobody was in
+    assertThat(ports.cleared).containsExactly(List.of(event, rita, nursing));
   }
 
   @Test
-  @DisplayName("US-18 AC-4 a removal needs no team copy: a team deleted meanwhile can still be left")
+  @DisplayName("US-18 AC-4 a removal needs no team copy, and the teams the member keeps are untouched")
   void aRemovalNeedsNoTeamCopy() {
     admin(sofia);
-    regular(rita, nursing); // the team is gone from the copy, the assignment is not
+    var security = UUID.randomUUID();
+    // Events deleted nursing, so D4 leaves it out of the member's teams; security is live and must not move
+    regular(rita, security);
 
     service.remove(sofia, event, rita, nursing);
 
-    assertThat(stored(rita).teamIds()).isEmpty();
-    assertThat(ports.outbox).hasSize(1);
+    assertThat(stored(rita).teamIds()).containsExactly(security);
+    assertThat(stored(rita).version()).isEqualTo(1);
+    assertThat(ports.cleared).containsExactly(List.of(event, rita, nursing));
+    assertThat(ports.outbox).isEmpty();
   }
 
   @Test

@@ -5,9 +5,9 @@ info:
   description: >-
     Events, teams with their permissions and help categories, venue map versions and points of
     interest (API outline §3). Contract-first (C7): the server interfaces and DTOs are generated
-    from this file. Sprint B endpoints only; #192 implements GET /events/{eventId}, US-16 the teams
-    and US-17 their permissions, the other operations answer 501 until their stories (US-06, US-11,
-    US-19, US-20, US-21, US-27). The members of an event are served by Auth & Users (ADR-013). Every /api/v1 call needs
+    from this file. Sprint B endpoints only; #192 implements GET /events/{eventId}, US-16 the teams,
+    US-17 their permissions and US-11 the publish, the other operations answer 501 until their
+    stories (US-06, US-19, US-20, US-21, US-27). The members of an event are served by Auth & Users (ADR-013). Every /api/v1 call needs
     a valid access token issued by Keycloak to the web app (audience farol-api); /api/v1/status is
     the only diagnostic exception. The point type codes are proposed until US-20; the report type codes
     are confirmed (features.md §6.1, 21 November 2026) and the report stories use the same list.
@@ -93,6 +93,11 @@ paths:
       tags: [Events]
       operationId: publishEvent
       summary: Publish a draft and generate its join link (US-11); EventAdmin only
+      description: >-
+        Only a draft publishes: every other status, a second publish of the same event included, is 409, and so is
+        a publish that lost a race with another one. The join code is generated here, once, and the answer is the
+        whole event exactly as GET /events/{eventId} returns it. A RegularUser member of a draft gets the same 404
+        as a non-member, because a draft is not visible to participants (US-11 D2, D3, D6).
       responses:
         '200':
           description: The published event, with its join link
@@ -260,7 +265,8 @@ paths:
       description: >-
         The type is read from the content (PNG, JPEG or PDF; never SVG) and every upload is
         re-encoded to PNG (ADR-007). Any other file gets 400 and a file above 20 MB gets 413
-        (ADR-013 L-4); the current map stays.
+        (ADR-013 L-4); the current map stays. An event that no longer accepts changes (suspended
+        or closed) gets 409.
       requestBody:
         required: true
         content:
@@ -287,6 +293,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
   /api/v1/events/{eventId}/map-versions/current:

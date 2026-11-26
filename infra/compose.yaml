@@ -100,6 +100,10 @@ services:
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_EVENTS_PASSWORD:?set RABBITMQ_EVENTS_PASSWORD in infra/.env}
       FAROL_ISSUER_URI: http://${PUBLIC_HOST:-localhost}:${KEYCLOAK_PORT:-8180}/realms/farol
       FAROL_JWKS_URI: http://keycloak:8080/realms/farol/protocol/openid-connect/certs
+      # US-19: the venue map images live on this volume, and only their names in the database (API outline D6)
+      FAROL_MAP_DIRECTORY: /var/lib/farol/maps
+    volumes:
+      - events-maps:/var/lib/farol/maps
 
   reports:
     <<: *spring
@@ -412,6 +416,7 @@ services:
       retries: 12
 
 volumes:
+  events-maps:
   rabbitmq-data:
   postgres-data:
   ai-models:

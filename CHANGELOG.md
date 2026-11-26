@@ -34,6 +34,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - A user who is not a member of the event cannot be put in a team (AC-2), and neither can a team of another event, a team Events has deleted or an unknown team: all four are the **same `404`** as an unknown event. A member of the event who is not an EventAdmin gets `403`, and `openapi.yaml` now declares that `403` for the member list too.
+- **A team Events deletes leaves its members' teams at once** (review of #255): a membership's teams — what `MembershipChanged` carries, what the member list and `GET /me/memberships` show, and what the `teamId` filter matches — are the assignments whose team is still live in the local copy, not every row ever written. Deleting a team therefore cannot make this service publish a team that no longer exists. The row the deletion leaves behind is cleared by a `DELETE` of that assignment, with no version change and nothing published.
 - The membership's row is **locked before its version is raised**, so two assignments of one member queue instead of both writing the same version — which would make a consumer drop one of the two `MembershipChanged` as a replay.
 - Three operations of the contract no longer answer `501` (five before): `openapi.yaml` and `local-delivery.md` §0 say what is served now.
 
@@ -46,6 +47,44 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - The signed-in web app shows the caller’s event memberships, role and teams. Event name and status can appear once Auth & Users receives the event snapshot.
 - Auth & Users reads versioned Events snapshots from RabbitMQ and dead-letters invalid messages with a reason. See [US-01 login and memberships](Docs/specs/US-01-login-and-memberships.md).
 
+## [Unreleased] · 2026-11-25 · Upload the venue map (US-19, #68, Tiago Teixeira)
+
+**Why:** the venue map is the shared spatial reference of the product — points of interest, help requests and reports are all placed on it — and it starts with an EventAdmin uploading an image or a PDF (`features.md` US-19, ADR-007). Spec: [`Docs/specs/US-19-venue-map-upload.md`](Docs/specs/US-19-venue-map-upload.md). Built on US-11 (#62).
+
+### Added
+- `POST /api/v1/events/{eventId}/map-versions`: an EventAdmin, or a member of a team with `Map.Edit`, uploads the map as `multipart/form-data` (part `file`) and it becomes the event's current version, answered as a `MapVersion` with its number, its time and its points.
+- The upload hardening ADR-007 decision 2 and the [security assessment](Docs/Technical/security-and-privacy-assessment.md) (T9, finding 10, M-11) ask for: the type read from the **content** and never from the name or the `Content-Type` (PNG, JPEG or single-page PDF, **never SVG**); an image refused above **25 megapixels**, read from its header before it is decoded, which is the pixel limit the ADR left to this story; a PDF rendered by PDFBox 3 at 150 dpi, single page, not encrypted, inside a 20-second timeout; and **every upload re-encoded to a PNG** of at most 4096 px on its long side, so no EXIF, no PDF metadata and no active content survives.
+- The new version **starts with a copy of the live points** of the one before it (API outline D5), with new ids and the uploader as their author; the version before it keeps its own.
+- The first **`VenueMapVersionPublished`** the product publishes, through the outbox in the same transaction (ADR-004), with the new `venue-map-version.published.schema.json`. Reports needs it before a help request or a report can point at a map version (US-23, US-47).
+- The record of who uploaded and when: `venue_map_version.uploaded_by`/`uploaded_at` and one `INFO` log line with the correlation id, the pseudonymous `userId`, the version, the source type and its size — never the file name or the file itself.
+- The map files live on the new `events-maps` volume of the Events container (`FAROL_MAP_DIRECTORY`), with only their names in the database (API outline D6); the container's root file system stays read-only. The directory is created in the image and belongs to the service's user, which is the ownership Docker copies into a new volume — without it no upload could be written in the stack (review of #253), and `events_smoke.py` now probes that it is writable.
+- `PngMapImagesTest`, `VolumeMapFilesTest`, `JdbcVenueMapsIT`, `UploadMapVersionIT` and an `EventContractIT` case through the real broker; `events_smoke.py` checks the `401`, the `404` and the missing file part of the new path.
+
+### Changed
+- A file that is not a map is `400` *The map must be a PNG, JPEG or single-page PDF.* and a file above 20 MB is `413` *The map file must be at most 20 MB.* (ADR-013 L-4) — the detail names the limit, and in both cases **the current map stays**.
+- Versions are numbered per event and the event row is **locked for the transaction** before the next number is read, so two uploads of one event queue instead of racing (a unique violation could not be retried, as the review of #249 showed). Uploads of different events never wait for each other.
+- A suspended or closed event takes no map (`409`, as its teams since US-16), a `RegularUser` member of a draft gets the same `404` as a non-member, and a member without `Map.Edit` gets `403`. The permission check of #192 D5 is now one `EventReader.with(Permission)`, instead of being copied into a third service.
+- Seven operations of the contract still answer `501` (eight before): `openapi.yaml` and `local-delivery.md` §0 say what is served now, and the upload declares its `409` as the publish and the team operations do.
+- A PDF is rendered with **subsampling on**, so an image carried inside a page is decoded at the size it is drawn at: the page box alone does not bound the memory of a render, and a one-page PDF could still be a decompression bomb (review of #253).
+- The upload is **decoded before the transaction starts** (the write moved to `MapVersionStore`), so a render of up to 20 seconds no longer holds one of the service's five database connections; the permission and status check is made again under the event's lock, so an event suspended while the file renders takes no map.
+
+### Known limits
+- **US-06 (#61) is still open**, so no event can be created through the API: the upload is complete and tested on an event seeded in the database, and the end-to-end demo waits for US-06 and for the map component of the web app (ADR-007 decision 4, #44).
+- **ADR-013 L-4 also asks the gateway to cap the upload at 20 MB** and the gateway has no `RequestSize` filter: the service refuses the file itself, so the limit holds, but the body still reaches it. The gateway is #202's, and the point is on #68.
+## [Unreleased] · 2026-11-25 · Route a request to a team (US-29, #76, Bruno de Abreu Lopes)
+
+**Why:** the control room sends each request to the team that deals with it (US-29), and #149 AC-3 asks that only an eligible team of the event can take it. Spec: [`Docs/specs/US-29-route-help-request.md`](Docs/specs/US-29-route-help-request.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/route` with `{ teamId }` (`HelpRequests.Triage`): sets `routedTeamId`, keeps the status, records a `routedTeamId` history entry with the member and their name, and dispatches an `Assist` field task, `Open`, to the team. Any responding team of the event can take it, the default team or not (routing by hand). An unknown team, another event's, a deleted one or one without `HelpRequests.Respond` get the same `422`; a request a member accepted, resolved or closed gets `409`.
+- Routing again to another team while the task is still `Open` cancels it and dispatches a new one; the same team again writes nothing (proposed, for the team's review: spec D2).
+- A deleted team (`TeamChanged`) sends the requests routed to it back to the control room's queue (`routedTeamId` null, `OnTheWay` back to `Seen`) and cancels their tasks, as US-16 and the domain model say. The route and the deletion lock the team's copy in the same order, so a route never leaves a task with a deleted team.
+- Flyway `V7`: `field_task`, one live task per request.
+- `RouteRequestIT`, and two smoke checks of the route through the gateway.
+
+### Changed
+- `contracts/openapi.yaml`: `routeHelpRequest` implemented, with its `409`; `routedTeamId` and the history describe the route. Dated note in the API outline §4.1. Closing a request (US-30) now cancels its live task too (proposed, for the team's review: spec D7); `closeHelpRequest` says so.
+
 ## [Unreleased] · 2026-11-24 · Close a request (US-30, #77, Bruno de Abreu Lopes)
 
 **Why:** finished cases must leave the control room's active queue (US-30). Spec: [`Docs/specs/US-30-close-help-request.md`](Docs/specs/US-30-close-help-request.md).
@@ -56,6 +95,28 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - A closed request is final for the control room: `PATCH …/help-requests/{requestId}`, `accept-suggestion` and `acknowledge` answer `409` (spec D2, proposed for the team's review). It takes no AI result either: the triage worker skips it, and a result that arrives after the close is not written nor counted, so a closed request is not sent to the live list again. `contracts/openapi.yaml`: `closeHelpRequest` implemented, `409` on the `PATCH`. Dated note in the API outline §4.1.
+
+## [Unreleased] · 2026-11-24 · Publish an event (US-11, #62, Tiago Teixeira)
+
+**Why:** an event is a draft nobody can find until its EventAdmin publishes it, and the join link and QR code of US-12 only exist once it is published (`features.md` US-11, domain model `EventStatus`). Spec: [`Docs/specs/US-11-publish-event.md`](Docs/specs/US-11-publish-event.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/publish`: an EventAdmin turns a draft into a published event and gets the whole event with its `joinLink`, the same body `GET /events/{eventId}` answers. A participant who got `404` on the draft reads it right after.
+- The join code the link and the QR code carry: 160 bits from `SecureRandom`, Base64 URL-safe without padding (27 characters, no percent-encoding), unique in the table, **never logged** and never carried in `EventChanged`. A collision (2⁻¹⁶⁰ per publish) rolls the transaction back and stores nothing, instead of being retried inside it, which Postgres does not allow.
+- The **first `EventChanged` this service publishes**, through the outbox in the same transaction (ADR-004), from the new `EventEvents.changed` factory that replaces the payload helper `EventContractIT` had carried since #192. Auth & Users needs it before it can accept a join (US-12), and Reports, Transports and Badges read it too.
+- The record of who published and when: `event.updated_by`/`updated_at`, the published event, and one `INFO` log line with the correlation id and the pseudonymous `userId` (no name, no e-mail, no join code), through a new `EventAudit` port.
+- `JdbcEventsIT`, `PublishEventIT` and an `EventContractIT` case through the real broker; `events_smoke.py` checks the `401` and the `404` of the new path.
+
+### Changed
+- Only a draft publishes: every other status, a second publish of the same event included, is `409` *This event is not a draft.* — the join code is issued once, so no printed link or QR code is ever invalidated. A publish that lost a race with another one is `409` *This event is not a draft.* too, and a draft that moved to another version meanwhile is `409` *This event changed meanwhile; read it again.*: as every write of this service since decision 3 of 21 November 2026, the `UPDATE` carries the status and the version it read, so no event can get two join codes or publish two `EventChanged` with one version.
+- A `RegularUser` member of a draft gets the same `404` as a non-member, not `403`: a draft is not visible to participants, and the role is only checked after that.
+- The visibility check of #192 D5 (event exists → active membership → status the member may see, each refusal recorded for US-14) is now one `EventReader` shared by `EventQueryService`, `TeamService` and the new `EventService`, instead of a copy in each.
+- No migration: `V1__events.sql` already held the join code, its unique index and `event_join_code_once_published`, written for this story.
+- Eight operations of the contract still answer `501` (nine before): `openapi.yaml`, `event.changed.schema.json` and `local-delivery.md` §0 say what is served now.
+
+### Known limits
+- **US-06 (#61) is still open**, so no event can be created through the API: the publish is complete and tested on an event seeded in the database, and the end-to-end demo and the Compose smoke wait for US-06.
+- **Open point left to US-12 (#63):** the join code is in the link and the QR code, but nothing checks it — Auth & Users joins a published event by its `eventId` alone (API outline §2). The code is unguessable so either reading stays open; the choice is on #63.
 
 ## [Unreleased] · 2026-11-24 · Propose the event's team for the AI category (US-34 AC-2, #81, Bruno de Abreu Lopes)
 

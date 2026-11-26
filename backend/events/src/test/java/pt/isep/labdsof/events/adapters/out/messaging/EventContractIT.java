@@ -10,6 +10,10 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.SpecVersion;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
@@ -23,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,7 +43,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import pt.isep.labdsof.events.Infrastructure;
 import pt.isep.labdsof.events.IntegrationTest;
 import pt.isep.labdsof.events.adapters.out.persistence.JdbcOutbox;
+import pt.isep.labdsof.events.application.EventEvents;
+import pt.isep.labdsof.events.application.EventService;
 import pt.isep.labdsof.events.application.Events;
+import pt.isep.labdsof.events.application.MapService;
 import pt.isep.labdsof.events.application.OutgoingEvent;
 import pt.isep.labdsof.events.application.TeamEvents;
 import pt.isep.labdsof.events.application.Teams;
@@ -65,6 +73,7 @@ class EventContractIT extends IntegrationTest {
   static final String ENVELOPE = "envelope.schema.json";
   static final String EVENT = "event.changed.schema.json";
   static final String TEAM = "team.changed.schema.json";
+  static final String MAP_VERSION = "venue-map-version.published.schema.json";
   static final String MEMBERSHIP = "consumed/membership.changed.schema.json";
   static final List<String> QUEUES = List.of("auth-users.events-events", "reports.events-events",
       "transports.events-events", "badges.events-events");
@@ -77,6 +86,11 @@ class EventContractIT extends IntegrationTest {
   @Autowired JsonMapper json;
   @Autowired Events events;
   @Autowired Teams teamsPort;
+  @Autowired EventService eventService;
+  @Autowired MapService mapService;
+
+  /** The smallest real PNG: US-19's adapter re-encodes it, so what it draws does not matter. */
+  static final byte[] PNG_FILE = smallPng();
 
   @BeforeEach
   void cleanSlate() {
@@ -97,13 +111,11 @@ class EventContractIT extends IntegrationTest {
   }
 
   /**
-   * Until US-06/US-16 add {@code OutgoingEvent} factories, this is the payload an Events row produces; the
-   * factories must keep this test green.
+   * The payload of an event row, now from the service's own factory (US-11 D5), which is what #192 asked of the
+   * first story to publish EventChanged: {@code EventEvents.changed} must keep this test green.
    */
   static Map<String, Object> eventChanged(Event e) {
-    return Map.of("name", e.name(), "organiserName", e.organiserName(),
-        "dates", Map.of("start", e.dates().start().toString(), "end", e.dates().end().toString()),
-        "status", e.status().name(), "version", e.version());
+    return EventEvents.payload(e);
   }
 
   /**
@@ -189,6 +201,16 @@ class EventContractIT extends IntegrationTest {
         .formatted(user, role, statusField, ids, version);
   }
 
+  private static byte[] smallPng() {
+    var bytes = new ByteArrayOutputStream();
+    try {
+      ImageIO.write(new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB), "png", bytes);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return bytes.toByteArray();
+  }
+
   static Stream<Arguments> eventRows() {
     return Stream.of(
         Arguments.of("Draft", null, false),
@@ -253,6 +275,64 @@ class EventContractIT extends IntegrationTest {
         assertThat(message.getMessageProperties().getAppId()).isEqualTo("events");
         assertThat(schema(schemaOf(type)).validate(text(message), InputFormat.JSON)).as(queue + " " + type)
             .isEmpty();
+      }
+    }
+  }
+
+  @Test
+  @DisplayName("US-11 AC-1 publishing an event publishes an EventChanged that matches its JSON Schema, with no "
+      + "join code, in every queue bound to event.changed")
+  void publishingAnEventSendsAValidEventChanged() {
+    var eventId = insertEvent("Draft", null, null);
+    var actor = UUID.randomUUID();
+    member(eventId, actor, Membership.Role.EventAdmin, Membership.Status.Active, 1);
+    eventService.publish(actor, eventId);
+
+    var sent = new OutboxPublisher(outbox, rabbit, tx, Clock.systemUTC(), 50, Duration.ofSeconds(2)).publishDue();
+
+    assertThat(sent).isEqualTo(1);
+    for (var queue : QUEUES) {
+      var messages = drain(queue);
+      assertThat(messages).as(queue).hasSize(1);
+      var message = messages.get(0);
+      assertThat(message.getMessageProperties().getType()).isEqualTo("EventChanged");
+      assertThat(message.getMessageProperties().getAppId()).isEqualTo("events");
+      assertThat(schema(EVENT).validate(text(message), InputFormat.JSON)).as(queue).isEmpty();
+      assertThat(schema(ENVELOPE).validate(text(message), InputFormat.JSON)).as(queue + " envelope").isEmpty();
+      var payload = json.readTree(text(message)).get("payload");
+      assertThat(payload.get("status").asString()).isEqualTo("Published");
+      assertThat(payload.get("version").asInt()).isEqualTo(2);
+      assertThat(payload.has("joinCode")).isFalse();
+    }
+  }
+
+  @Test
+  @DisplayName("US-19 AC-1 uploading a map publishes a VenueMapVersionPublished that matches its JSON Schema")
+  void uploadingAMapSendsAValidVenueMapVersionPublished() {
+    var eventId = insertEvent("Published", null, "map-" + UUID.randomUUID());
+    var actor = UUID.randomUUID();
+    member(eventId, actor, Membership.Role.EventAdmin, Membership.Status.Active, 1);
+    var uploaded = mapService.upload(actor, eventId, PNG_FILE);
+
+    var sent = new OutboxPublisher(outbox, rabbit, tx, Clock.systemUTC(), 50, Duration.ofSeconds(2)).publishDue();
+
+    assertThat(sent).isEqualTo(1);
+    // Only Reports is bound to venue-map-version.published (#212, API outline §7.5)
+    var messages = drain("reports.events-events");
+    assertThat(messages).hasSize(1);
+    var message = messages.get(0);
+    assertThat(message.getMessageProperties().getType()).isEqualTo("VenueMapVersionPublished");
+    assertThat(message.getMessageProperties().getAppId()).isEqualTo("events");
+    assertThat(schema(MAP_VERSION).validate(text(message), InputFormat.JSON)).isEmpty();
+    assertThat(schema(ENVELOPE).validate(text(message), InputFormat.JSON)).as("envelope").isEmpty();
+    var body = json.readTree(text(message));
+    assertThat(body.get("eventId").asString()).isEqualTo(eventId.toString());
+    assertThat(body.get("actorUserId").asString()).isEqualTo(actor.toString());
+    assertThat(body.get("payload").get("mapVersion").asInt()).isEqualTo(uploaded.version());
+    assertThat(body.get("payload").get("publishedAt").asString()).isEqualTo(uploaded.uploadedAt().toString());
+    for (var queue : QUEUES) {
+      if (!"reports.events-events".equals(queue)) {
+        assertThat(drain(queue)).as(queue).isEmpty();
       }
     }
   }

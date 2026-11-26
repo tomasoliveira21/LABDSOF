@@ -37,6 +37,16 @@ class JdbcEventMembershipsIT extends IntegrationTest {
     return userId;
   }
 
+  /**
+   * A live team of this event in the copy. The aggregate reads the copy (D4), so a test that wants a team in a
+   * member's teams has to have Events' {@code TeamChanged} for it, exactly as the use case needs one to assign.
+   */
+  private UUID team() {
+    var teamId = UUID.randomUUID();
+    seedTeam(event, teamId, false);
+    return teamId;
+  }
+
   private List<UUID> teamsOf(UUID userId) {
     return jdbc.sql("""
         SELECT team_id FROM team_assignment WHERE event_id = :event AND user_id = :user ORDER BY team_id
@@ -61,7 +71,7 @@ class JdbcEventMembershipsIT extends IntegrationTest {
   @DisplayName("US-18 AC-1 a membership is read back with its role, its version and its teams")
   void aMembershipIsReadBackWhole() {
     var rita = member("Rita Participante", EventRole.RegularUser);
-    var nursing = UUID.randomUUID();
+    var nursing = team();
     var actor = UUID.randomUUID();
 
     transactions.executeWithoutResult(status -> {
@@ -95,8 +105,8 @@ class JdbcEventMembershipsIT extends IntegrationTest {
   @DisplayName("US-18 AC-3 two assignments of one member at once get consecutive versions")
   void twoAssignmentsOfOneMemberGetConsecutiveVersions() throws Exception {
     var rita = member("Rita Participante", EventRole.RegularUser);
-    var nursing = UUID.randomUUID();
-    var security = UUID.randomUUID();
+    var nursing = team();
+    var security = team();
     var actor = UUID.randomUUID();
 
     // Both transactions raise the version at the same time: without the FOR UPDATE of D7 they would both read 1,
@@ -117,7 +127,7 @@ class JdbcEventMembershipsIT extends IntegrationTest {
   void assignmentsOfDifferentMembersDoNotBlockEachOther() throws Exception {
     var rita = member("Rita Participante", EventRole.RegularUser);
     var pedro = member("Pedro Voluntario", EventRole.RegularUser);
-    var nursing = UUID.randomUUID();
+    var nursing = team();
     var actor = UUID.randomUUID();
 
     try (var executor = Executors.newFixedThreadPool(2)) {
@@ -162,7 +172,7 @@ class JdbcEventMembershipsIT extends IntegrationTest {
   @DisplayName("US-18 AC-4 an assignment is removed and the membership's version follows")
   void anAssignmentIsRemoved() {
     var rita = member("Rita Participante", EventRole.RegularUser);
-    var nursing = UUID.randomUUID();
+    var nursing = team();
     var actor = UUID.randomUUID();
     transactions.executeWithoutResult(status -> {
       var membership = memberships.find(event, rita).orElseThrow();
@@ -179,11 +189,45 @@ class JdbcEventMembershipsIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-18 AC-4 a team Events deletes after the assignment leaves the member's teams and the list")
+  void aTeamDeletedAfterTheAssignmentLeavesTheMembersTeams() {
+    var rita = member("Rita Participante", EventRole.RegularUser);
+    var nursing = team();
+    var security = team();
+    var actor = UUID.randomUUID();
+    transactions.executeWithoutResult(status -> {
+      var membership = memberships.find(event, rita).orElseThrow();
+      memberships.addToTeam(membership.withTeam(nursing), nursing, actor, AT);
+    });
+
+    // Events deletes the team: the TeamChanged consumer only flips `deleted` in the copy, the assignment row stays
+    seedTeam(event, nursing, true);
+
+    assertThat(teamsOf(rita)).containsExactly(nursing); // the row is still there
+    assertThat(memberships.find(event, rita).orElseThrow().teamIds()).isEmpty();
+    assertThat(memberships.list(event, null, null)).singleElement()
+        .satisfies(member -> assertThat(member.teamIds()).isEmpty());
+    assertThat(memberships.list(event, null, nursing)).isEmpty(); // nor does the filter match its old members
+    // What the next MembershipChanged for this member would carry: the live team only, never the deleted one
+    transactions.executeWithoutResult(status -> {
+      var membership = memberships.lockForUpdate(event, rita).orElseThrow();
+      memberships.addToTeam(membership.withTeam(security), security, actor, AT);
+    });
+    assertThat(memberships.find(event, rita).orElseThrow().teamIds()).containsExactly(security);
+    assertThat(versionOf(rita)).isEqualTo(3);
+
+    // The DELETE of the assignment clears the row the deleted team left behind, without a version
+    transactions.executeWithoutResult(status -> memberships.clearAssignment(event, rita, nursing));
+    assertThat(teamsOf(rita)).containsExactly(security);
+    assertThat(versionOf(rita)).isEqualTo(3);
+  }
+
+  @Test
   @DisplayName("US-18 AC-1 the list holds this event's members only, with their teams and display names")
   void theListHoldsThisEventsMembersOnly() {
     var sofia = member("Sofia Admin", EventRole.EventAdmin);
     var rita = member("Rita Participante", EventRole.RegularUser);
-    var nursing = UUID.randomUUID();
+    var nursing = team();
     var elsewhere = UUID.randomUUID();
     seedAccount(elsewhere, "Admin Elsewhere");
     seedMembership(UUID.randomUUID(), elsewhere, "EventAdmin");

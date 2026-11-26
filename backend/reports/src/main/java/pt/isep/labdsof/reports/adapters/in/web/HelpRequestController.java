@@ -38,6 +38,7 @@ import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
 import pt.isep.labdsof.reports.domain.HistoryEntry;
+import pt.isep.labdsof.reports.domain.IneligibleTeamException;
 import pt.isep.labdsof.reports.domain.InvalidHelpRequestException;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
@@ -46,8 +47,8 @@ import pt.isep.labdsof.reports.domain.RequestConflictException;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
- * Help requests, the control room's triage decisions, acknowledge, close and history, and the triage status (API
- * outline §4, contracts/openapi.yaml). The caller is always the token's sub.
+ * Help requests, the control room's triage decisions, acknowledge, route, close and history, and the triage status
+ * (API outline §4, contracts/openapi.yaml). The caller is always the token's sub.
  */
 @RestController
 @RequestMapping("/api/v1/events/{eventId}")
@@ -157,6 +158,15 @@ class HelpRequestController {
     return controlRoom(service.acknowledge(eventId, actor(jwt), requestId));
   }
 
+  record RouteBody(@NotNull UUID teamId) {}
+
+  /** The control room routes the request to a team and a field task is dispatched (US-29 AC-2, spec D1). */
+  @PostMapping(value = "/help-requests/{requestId}/route", consumes = "application/json", produces = "application/json")
+  ControlRoomView route(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt,
+      @Valid @RequestBody RouteBody body) {
+    return controlRoom(service.route(eventId, actor(jwt), requestId, body.teamId()));
+  }
+
   /** The control room closes the request: it leaves the active list (US-30 AC-1, spec D1). */
   @PostMapping(value = "/help-requests/{requestId}/close", produces = "application/json")
   ControlRoomView close(@PathVariable UUID eventId, @PathVariable UUID requestId, @AuthenticationPrincipal Jwt jwt) {
@@ -225,6 +235,13 @@ class HelpRequestController {
   ResponseEntity<ProblemDetail> requestConflict(RequestConflictException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage()));
+  }
+
+  /** US-29 AC-3, spec D1: one answer for every team that cannot take the request. */
+  @ExceptionHandler(IneligibleTeamException.class)
+  ResponseEntity<ProblemDetail> ineligibleTeam(IneligibleTeamException e) {
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, e.getMessage()));
   }
 
   @ExceptionHandler(ForbiddenException.class)
