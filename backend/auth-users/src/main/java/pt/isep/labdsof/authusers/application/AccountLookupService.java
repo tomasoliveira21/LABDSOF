@@ -68,7 +68,7 @@ public class AccountLookupService {
    * an address nobody guesses; the point is that two calls about one address are the same line in the trail
    * while the address itself never leaves the database.
    */
-  static String hash(String email) {
+  public static String hash(String email) {
     try {
       var digest = MessageDigest.getInstance("SHA-256")
           .digest(String.valueOf(email).toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8));

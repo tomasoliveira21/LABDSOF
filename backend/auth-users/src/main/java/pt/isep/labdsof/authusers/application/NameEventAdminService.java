@@ -66,18 +66,48 @@ public class NameEventAdminService {
 
     // The lock of US-18 D7: two name calls for one user queue instead of both writing the same version
     var existing = memberships.lockForUpdate(eventId, userId);
-    if (existing.isPresent() && existing.get().role() == EventRole.EventAdmin) {
+    if (existing.isEmpty()) {
+      return firstAdmin(actorUserId, eventId, userId, account.displayName(), at);
+    }
+    if (existing.get().role() == EventRole.EventAdmin) {
       // Already an EventAdmin: nothing changes, nothing is published, and the answer is still a 201 (D6)
       return new Named(existing.get(), account.displayName(), false);
     }
-    var membership = existing
-        .map(held -> new EventMembership(eventId, userId, EventRole.EventAdmin, held.teamIds(),
-            held.version() + 1))
-        .orElseGet(() -> new EventMembership(eventId, userId, EventRole.EventAdmin, List.of(), 1));
-    memberships.upsertRole(membership, actorUserId, at);
+    // The row exists and is locked, so the version it carries cannot move under this write (US-18 D7)
+    var promoted = new EventMembership(eventId, userId, EventRole.EventAdmin, existing.get().teamIds(),
+        existing.get().version() + 1);
+    memberships.upsertRole(promoted, actorUserId, at);
+    return published(actorUserId, eventId, userId, promoted, account.displayName(), at);
+  }
+
+  /**
+   * The first EventAdmin of an event that has no membership for this user yet. There is <em>no row to lock</em>
+   * here, so {@link EventMemberships#lockForUpdate} cannot serialise two calls arriving together: the key does,
+   * through an insert that stores nothing when the row is already there (the same reasoning as US-12 D5).
+   *
+   * <p>Without this, two name calls at once both inserted version 1 and both published a
+   * {@code MembershipChanged} carrying it — two messages with one version, which decision 3 of 21 November 2026
+   * exists to prevent, and which a consumer applying only a strictly newer version would silently halve. Found by
+   * {@code NameEventAdminIT · two name calls for one user at once leave one version}.
+   *
+   * <p>The loser writes nothing and publishes nothing: it answers the row the winner left, which is already the
+   * EventAdmin the caller asked for, so {@code changed} is false (D6).
+   */
+  private Named firstAdmin(UUID actorUserId, UUID eventId, UUID userId, String displayName, Instant at) {
+    var membership = new EventMembership(eventId, userId, EventRole.EventAdmin, List.of(), 1);
+    if (!memberships.insertIfAbsent(membership, actorUserId, at)) {
+      var held = memberships.find(eventId, userId).orElseThrow(EventNotFoundException::new);
+      return new Named(held, displayName, false);
+    }
+    return published(actorUserId, eventId, userId, membership, displayName, at);
+  }
+
+  /** One {@code MembershipChanged} and one record for a write that happened, in the same transaction (D5). */
+  private Named published(UUID actorUserId, UUID eventId, UUID userId, EventMembership membership,
+      String displayName, Instant at) {
     outbox.add(OutgoingEvent.membershipChanged(UUID.randomUUID(), membership, at, actorUserId.toString()));
     audit.namedEventAdmin(actorUserId, eventId, userId, at);
-    return new Named(membership, account.displayName(), true);
+    return new Named(membership, displayName, true);
   }
 
   /**

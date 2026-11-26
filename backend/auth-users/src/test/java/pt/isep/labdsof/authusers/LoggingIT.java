@@ -38,22 +38,6 @@ class LoggingIT extends IntegrationTest {
         correlationId == null ? new String[0] : new String[] {HEADER, correlationId});
   }
 
-  /** The JSON log lines written so far (other lines, such as the banner, are skipped). */
-  @SuppressWarnings("unchecked")
-  private static List<Map<String, Object>> logLines(CapturedOutput output) {
-    var lines = new ArrayList<Map<String, Object>>();
-    for (var line : output.getOut().split("\\R")) {
-      if (line.startsWith("{")) {
-        try {
-          lines.add(JSON.readValue(line, Map.class));
-        } catch (RuntimeException e) {
-          // not a complete JSON line
-        }
-      }
-    }
-    return lines;
-  }
-
   private static boolean accessLine(Map<String, Object> line, String correlationId, int status) {
     return correlationId.equals(line.get("correlationId")) && line.get("message") instanceof String message
         && message.contains(" -> " + status + " in ");
@@ -163,7 +147,11 @@ class LoggingIT extends IntegrationTest {
     awaitedRequest(output, "GET", "/api/v1/me", disabledToken, null, 403);
     awaitedRequest(output, "GET", "/api/v1/accounts?email=" + badEmail, valid, null, 400);
     awaitedRequest(output, "POST", members, valid, unknownField, 400);
-    awaitedRequest(output, "GET", "/api/v1/accounts?email=" + goodEmail, valid, null, 501);
+    // GET /me above created this caller's account with that very e-mail, so making them a FarolAdmin lets the
+    // lookup below really find it: the no-personal-data assertion then runs over a hit, not over a refusal
+    jdbc.sql("INSERT INTO global_role_grant (user_id, role, granted_at, version) "
+        + "VALUES (:u, 'FarolAdmin', now(), 1)").param("u", user).update();
+    awaitedRequest(output, "GET", "/api/v1/accounts?email=" + goodEmail, valid, null, 200);
 
     var logged = output.getAll();
     for (var secret : List.of(email, name, valid, expired, tampered, disabledToken, "Leaky Name",

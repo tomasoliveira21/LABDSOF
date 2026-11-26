@@ -60,8 +60,10 @@ class NameEventAdminServiceTest {
     assertThat(named.displayName()).isEqualTo("Sofia Organiser");
     assertThat(named.membership())
         .isEqualTo(new EventMembership(event, sofia, EventRole.EventAdmin, List.of(), 1));
-    assertThat(ports.roleWrites).singleElement()
+    // The first EventAdmin goes in through the key, not the lock: there is no row to lock yet
+    assertThat(ports.insertedMemberships).singleElement()
         .satisfies(write -> assertThat(write.actorUserId()).isEqualTo(admin));
+    assertThat(ports.roleWrites).isEmpty();
     assertThat(ports.outbox).singleElement()
         .satisfies(sent -> assertThat(sent.type()).isEqualTo("MembershipChanged"));
     assertThat(ports.namings).singleElement()
@@ -80,9 +82,46 @@ class NameEventAdminServiceTest {
 
     assertThat(again.changed()).isFalse();
     assertThat(again.membership().version()).isEqualTo(1); // the version does not move (D6)
-    assertThat(ports.roleWrites).hasSize(1);
+    assertThat(ports.insertedMemberships).hasSize(1);
+    assertThat(ports.roleWrites).isEmpty();
     assertThat(ports.outbox).hasSize(1);
     assertThat(ports.namings).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("US-06 AC-1 the loser of two name calls at once writes nothing and answers the winner's row")
+  void theLoserOfTheRaceAnswersTheWinnersRow() {
+    farolAdmin();
+    account(sofia, AccountStatus.Active);
+    eventCopy();
+    // There is no row to lock before the first insert, so the key is what serialises the two calls: this is the
+    // losing one, and the outcome is not reachable with a sequential request (the real race is in the IT)
+    ports.concurrentJoinWinner = new EventMembership(event, sofia, EventRole.EventAdmin, List.of(), 1);
+
+    var named = service.name(admin, event, sofia);
+
+    assertThat(named.changed()).isFalse();
+    assertThat(named.membership())
+        .isEqualTo(new EventMembership(event, sofia, EventRole.EventAdmin, List.of(), 1));
+    assertThat(named.displayName()).isEqualTo("Sofia Organiser");
+    // The winner published its MembershipChanged; this call must not publish a second one with the same version
+    assertThat(ports.outbox).isEmpty();
+    assertThat(ports.namings).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-06 AC-1 a lost race that leaves no row at all is the same 404, and still writes nothing")
+  void aLostRaceWithNoRowIsNotFound() {
+    farolAdmin();
+    account(sofia, AccountStatus.Active);
+    eventCopy();
+    ports.joinConflictsWithoutAMembership = true;
+
+    assertThatThrownBy(() -> service.name(admin, event, sofia))
+        .isInstanceOf(EventNotFoundException.class);
+
+    assertThat(ports.outbox).isEmpty();
+    assertThat(ports.namings).isEmpty();
   }
 
   @Test
@@ -114,6 +153,7 @@ class NameEventAdminServiceTest {
         .isInstanceOf(EventNotFoundException.class);
 
     assertThat(ports.roleWrites).isEmpty();
+    assertThat(ports.insertedMemberships).isEmpty();
     assertThat(ports.outbox).isEmpty();
     assertThat(ports.refusals).containsExactly(
         new InMemoryPorts.Refused(admin, event, Refusal.NO_SUCH_EVENT_COPY, NOW));
@@ -130,6 +170,7 @@ class NameEventAdminServiceTest {
         .isInstanceOf(NotAFarolAdminException.class);
 
     assertThat(ports.roleWrites).isEmpty();
+    assertThat(ports.insertedMemberships).isEmpty();
     assertThat(ports.outbox).isEmpty();
     assertThat(ports.refusals).containsExactly(
         new InMemoryPorts.Refused(user, event, Refusal.NOT_A_FAROL_ADMIN, NOW));
