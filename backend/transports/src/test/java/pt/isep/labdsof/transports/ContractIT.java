@@ -227,12 +227,10 @@ class ContractIT extends IntegrationTest {
 
   private static final Map<String, String> STORIES = Map.of(
       "GET /api/v1/events/{eventId}/bus-observations", "US-41",
-      "GET /api/v1/events/{eventId}/transport-source-status", "US-43",
-      "POST /api/v1/events/{eventId}/transport-options", "US-41");
+      "GET /api/v1/events/{eventId}/transport-source-status", "US-43");
 
   private static final Map<String, String> BODIES = Map.of(
-      "POST /api/v1/events/{eventId}/transport-options",
-      "{\"mode\":\"ExternalBus\",\"externalRoute\":\"205\",\"stopPoiIds\":[\"" + ID + "\"]}");
+      "POST /api/v1/events/{eventId}/transport-options", "{\"mode\":\"ExternalBus\",\"externalRoute\":\"205\"}");
 
   /** The sample request of an operation ("METHOD path" of the contract), with a fresh event id. */
   static SampleRequest sampleRequest(String operation) {
@@ -275,9 +273,9 @@ class ContractIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("193 AC-4 three operations of the contract belong to later stories")
+  @DisplayName("193 AC-4 two operations of the contract belong to later stories (US-41 adds routes)")
   void laterStoriesAreTheContractOperationsButStatus() {
-    assertThat(laterStoryOperations().toList()).hasSize(3).doesNotContain("GET /api/v1/status");
+    assertThat(laterStoryOperations().toList()).hasSize(2).doesNotContain("GET /api/v1/status");
   }
 
   @ParameterizedTest(name = "[{index}] {0} {1}")

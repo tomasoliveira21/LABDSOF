@@ -87,11 +87,15 @@ paths:
     post:
       tags: [TransportOptions]
       operationId: createTransportOption
-      summary: Add a shuttle (US-37) or an external bus route (US-41); Transport.Edit
+      summary: Add a shuttle (US-37) or an external bus route (US-41); EventAdmin or Transport.Edit
       description: >-
         A shuttle has a name, its stops and departures; an external bus route has its route reference
-        (the routeId of the Porto Digital vehicles) and its stops. Stops are transport-stop points of
-        interest of the event (API outline D8).
+        (the routeId of the Porto Digital vehicles), an optional name and its stops. Stops are
+        transport-stop points of interest of the event (API outline D8). Until US-37, only an external
+        bus route is accepted, without stops or departures (400); a shuttle answers 501. The route and
+        the name are trimmed; the same route twice in an event, a 21st route or a closed event answer
+        409. A user who is not a member, an unknown event and a suspended event get the same 404
+        (US-41 D2 to D4).
       requestBody:
         required: true
         content:
@@ -101,6 +105,11 @@ paths:
       responses:
         '201':
           description: The transport option
+          headers:
+            Location:
+              description: The path of the new transport option
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -113,6 +122,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
 components:
   securitySchemes:
     bearerAuth:
@@ -148,6 +161,18 @@ components:
             $ref: '#/components/schemas/Problem'
     NotFound:
       description: Not found, or not a member of the event (API outline §1.7)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: The event's state refuses the change (closed, the route already there, the limit reached)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotImplemented:
+      description: The operation arrives with a later story, named in the detail
       content:
         application/problem+json:
           schema:
