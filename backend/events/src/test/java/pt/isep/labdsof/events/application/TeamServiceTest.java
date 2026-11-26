@@ -36,8 +36,9 @@ class TeamServiceTest {
   private static final Instant NOW = Instant.parse("2027-05-08T23:14:05Z");
 
   private final InMemoryPorts ports = new InMemoryPorts();
-  private final TeamService service = new TeamService(ports, ports, ports, ports, ports, ports,
-      Clock.fixed(NOW, ZoneOffset.UTC));
+  private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
+  private final TeamService service = new TeamService(new EventReader(ports, ports, ports, clock), ports, ports,
+      ports, ports, clock);
   private final UUID user = UUID.randomUUID();
   private final UUID eventId = UUID.randomUUID();
 

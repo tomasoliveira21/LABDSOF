@@ -306,7 +306,6 @@ class ContractIT extends IntegrationTest {
 
   private static final Map<String, String> STORIES = Map.ofEntries(
       Map.entry("POST /api/v1/events", "US-06"),
-      Map.entry("POST /api/v1/events/{eventId}/publish", "US-11"),
       Map.entry("POST /api/v1/events/{eventId}/map-versions", "US-19"),
       Map.entry("GET /api/v1/events/{eventId}/map-versions/current", "US-21 and US-22"),
       Map.entry("GET /api/v1/events/{eventId}/map-versions/{version}", "US-27"),
@@ -373,10 +372,11 @@ class ContractIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("192 AC-4 nine operations of the contract belong to later stories, none of the Teams tag among "
-      + "them")
+  @DisplayName("192 AC-4 eight operations of the contract belong to later stories, none of the Events or Teams "
+      + "tags among them")
   void laterStoriesAreTheContractOperationsButWhatIsImplemented() {
-    assertThat(laterStoryOperations().toList()).hasSize(9).doesNotContain("GET /api/v1/status",
+    assertThat(laterStoryOperations().toList()).hasSize(8).doesNotContain("GET /api/v1/status",
+        "POST /api/v1/events/{eventId}/publish",
         "GET /api/v1/events/{eventId}", "GET /api/v1/events/{eventId}/teams",
         "POST /api/v1/events/{eventId}/teams", "PATCH /api/v1/events/{eventId}/teams/{teamId}",
         "DELETE /api/v1/events/{eventId}/teams/{teamId}",

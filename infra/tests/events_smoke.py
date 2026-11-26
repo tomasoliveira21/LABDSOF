@@ -3,13 +3,15 @@
 Checks, through the API gateway, that Events validates real Keycloak tokens (ADR-006) and hides events from users
 who are not members: no token and a tampered token get 401 Problem Details; Rita's real token is accepted and gets
 404 for an event she is not a member of, and so does the bootstrap FarolAdmin, who is not a member either (same
-problem), including on the teams of US-16; a malformed id gets 400; an operation of a later story gets 501; the
+problem), including on the teams of US-16 and the publish of US-11; a malformed id gets 400; an operation of a later story
+gets 501; the
 X-Correlation-Id comes back. Then it
 checks inside the stack that the `events` schema comes from Flyway and that Events consumes its queue as the
 `events` broker user.
 
 The smoke writes nothing: no use case creates an event before US-06, so every event id is unknown, the team
-operations of US-16 and US-17 cannot be reached past that 404, and a rerun gives the same result.
+operations of US-16 and US-17 and the publish of US-11 cannot be reached past that 404, and a rerun gives the same
+result.
 
 Standard library only; reuses the PKCE login of identity_smoke.py and `docker compose exec` for psql and
 rabbitmqctl. Values come from the Compose env file; the compose project is optional:
@@ -52,8 +54,8 @@ def token_for(env: dict[str, str], email: str) -> str | None:
     return json.loads(body).get("access_token") if status == 200 else None
 
 
-def call(gateway: str, path: str, token: str | None = None,
-         correlation_id: str | None = None) -> tuple[int, dict[str, str], str]:
+def call(gateway: str, path: str, token: str | None = None, correlation_id: str | None = None,
+         post: bool = False) -> tuple[int, dict[str, str], str]:
     # No Accept header on purpose: with `Accept: application/json` Spring writes a Problem Details as application/json.
     headers = {}
     if token:
@@ -61,7 +63,7 @@ def call(gateway: str, path: str, token: str | None = None,
     if correlation_id:
         headers["X-Correlation-Id"] = correlation_id
     status, response_headers, body = idp.request(urllib.request.build_opener(idp.NoRedirect), gateway + path,
-                                                 None, headers)
+                                                 {} if post else None, headers)
     return status, {name.lower(): value for name, value in response_headers.items()}, body
 
 
@@ -183,6 +185,19 @@ def main(env_path: str, project: str | None = None) -> int:
     status, headers, body = call(gateway, f"/api/v1/events/{uuid.uuid4()}/teams", rita)
     idp.check(is_problem(status, headers, body, 404) and problem(body).get("detail") == NOT_FOUND,
               "GET /api/v1/events/{id}/teams of an event Rita is not a member of gets the same 404 (US-16)"
+              + ("" if status == 404 else f" (got {status})"))
+
+    # US-11 publishes a draft, so this path now hides an event Rita is not a member of too; no event can be
+    # created yet (US-06), so a publish that goes through is only reachable in the integration tests
+    publish = f"/api/v1/events/{uuid.uuid4()}/publish"
+    status, headers, body = call(gateway, publish, post=True)
+    idp.check(is_problem(status, headers, body, 401) and headers.get("www-authenticate", "").startswith("Bearer"),
+              "POST /api/v1/events/{id}/publish without a token gets 401 Problem Details with "
+              "WWW-Authenticate: Bearer" + ("" if status == 401 else f" (got {status})"))
+
+    status, headers, body = call(gateway, publish, rita, post=True)
+    idp.check(is_problem(status, headers, body, 404) and problem(body).get("detail") == NOT_FOUND,
+              "POST /api/v1/events/{id}/publish of an event Rita is not a member of gets the same 404 (US-11)"
               + ("" if status == 404 else f" (got {status})"))
 
     status, headers, body = call(gateway, f"/api/v1/events/{uuid.uuid4()}/map-versions/current", rita)

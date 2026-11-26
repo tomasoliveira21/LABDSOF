@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import pt.isep.labdsof.events.application.EventChangedConcurrentlyException;
 import pt.isep.labdsof.events.application.EventNotFoundException;
 import pt.isep.labdsof.events.application.TeamChangedConcurrentlyException;
 
@@ -36,6 +37,22 @@ class ProblemDetailsAdviceTest {
     assertThat(problem).isNotNull();
     assertThat(problem.getStatus()).isEqualTo(409);
     assertThat(problem.getDetail()).isEqualTo("This team changed meanwhile; read it again.");
+  }
+
+  /**
+   * As the team conflict above: two publishes racing on one row is an outcome only {@code JdbcEventsIT} can
+   * produce, so the answer it turns into is tested here (US-11 D4).
+   */
+  @Test
+  @DisplayName("US-11 AC-1 an event changed between the read and the write answers 409 with a fixed detail")
+  void eventChangedConcurrentlyIsAConflict() {
+    var response = new ProblemDetailsAdvice().eventChangedConcurrently(new EventChangedConcurrentlyException());
+
+    assertThat(response.getStatusCode().value()).isEqualTo(409);
+    var problem = response.getBody();
+    assertThat(problem).isNotNull();
+    assertThat(problem.getStatus()).isEqualTo(409);
+    assertThat(problem.getDetail()).isEqualTo("This event changed meanwhile; read it again.");
   }
 
   @Test

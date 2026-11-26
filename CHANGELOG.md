@@ -18,6 +18,28 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - A closed request is final for the control room: `PATCH …/help-requests/{requestId}`, `accept-suggestion` and `acknowledge` answer `409` (spec D2, proposed for the team's review). It takes no AI result either: the triage worker skips it, and a result that arrives after the close is not written nor counted, so a closed request is not sent to the live list again. `contracts/openapi.yaml`: `closeHelpRequest` implemented, `409` on the `PATCH`. Dated note in the API outline §4.1.
 
+## [Unreleased] · 2026-11-24 · Publish an event (US-11, #62, Tiago Teixeira)
+
+**Why:** an event is a draft nobody can find until its EventAdmin publishes it, and the join link and QR code of US-12 only exist once it is published (`features.md` US-11, domain model `EventStatus`). Spec: [`Docs/specs/US-11-publish-event.md`](Docs/specs/US-11-publish-event.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/publish`: an EventAdmin turns a draft into a published event and gets the whole event with its `joinLink`, the same body `GET /events/{eventId}` answers. A participant who got `404` on the draft reads it right after.
+- The join code the link and the QR code carry: 160 bits from `SecureRandom`, Base64 URL-safe without padding (27 characters, no percent-encoding), unique in the table, **never logged** and never carried in `EventChanged`. A collision (2⁻¹⁶⁰ per publish) rolls the transaction back and stores nothing, instead of being retried inside it, which Postgres does not allow.
+- The **first `EventChanged` this service publishes**, through the outbox in the same transaction (ADR-004), from the new `EventEvents.changed` factory that replaces the payload helper `EventContractIT` had carried since #192. Auth & Users needs it before it can accept a join (US-12), and Reports, Transports and Badges read it too.
+- The record of who published and when: `event.updated_by`/`updated_at`, the published event, and one `INFO` log line with the correlation id and the pseudonymous `userId` (no name, no e-mail, no join code), through a new `EventAudit` port.
+- `JdbcEventsIT`, `PublishEventIT` and an `EventContractIT` case through the real broker; `events_smoke.py` checks the `401` and the `404` of the new path.
+
+### Changed
+- Only a draft publishes: every other status, a second publish of the same event included, is `409` *This event is not a draft.* — the join code is issued once, so no printed link or QR code is ever invalidated. A publish that lost a race with another one is `409` *This event is not a draft.* too, and a draft that moved to another version meanwhile is `409` *This event changed meanwhile; read it again.*: as every write of this service since decision 3 of 21 November 2026, the `UPDATE` carries the status and the version it read, so no event can get two join codes or publish two `EventChanged` with one version.
+- A `RegularUser` member of a draft gets the same `404` as a non-member, not `403`: a draft is not visible to participants, and the role is only checked after that.
+- The visibility check of #192 D5 (event exists → active membership → status the member may see, each refusal recorded for US-14) is now one `EventReader` shared by `EventQueryService`, `TeamService` and the new `EventService`, instead of a copy in each.
+- No migration: `V1__events.sql` already held the join code, its unique index and `event_join_code_once_published`, written for this story.
+- Eight operations of the contract still answer `501` (nine before): `openapi.yaml`, `event.changed.schema.json` and `local-delivery.md` §0 say what is served now.
+
+### Known limits
+- **US-06 (#61) is still open**, so no event can be created through the API: the publish is complete and tested on an event seeded in the database, and the end-to-end demo and the Compose smoke wait for US-06.
+- **Open point left to US-12 (#63):** the join code is in the link and the QR code, but nothing checks it — Auth & Users joins a published event by its `eventId` alone (API outline §2). The code is unguessable so either reading stays open; the choice is on #63.
+
 ## [Unreleased] · 2026-11-24 · Propose the event's team for the AI category (US-34 AC-2, #81, Bruno de Abreu Lopes)
 
 **Why:** the last acceptance criterion of US-34 (#81) and #149 AC-3: when the AI suggests a category, the control room sees the event's team that handles it as the default team; the AI never chooses the team (meeting of 15 November 2026, decision 1). Spec: [`Docs/specs/US-34-default-team.md`](Docs/specs/US-34-default-team.md).
