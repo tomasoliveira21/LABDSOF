@@ -56,7 +56,9 @@ paths:
         clientRequestId again returns the request already saved (200) and publishes nothing new; sending it
         with another description or location is refused (409), so a reused id never drops a request.
         Planned with US-23: 422 when the event is closed or suspended or the map version does not exist.
-        The gateway answers 429 after 5 requests in 10 minutes (ADR-013 L-2).
+        After 5 help requests of the account in 10 minutes, in any event, Reports answers 429 with
+        Retry-After (ADR-013 L-2, enforced by Reports since 24 November 2026, spec US-23): only saved requests
+        count, so a retry with the same clientRequestId is answered at the limit and uses nothing up.
       x-farol-status: implemented
       requestBody:
         required: true
@@ -207,7 +209,7 @@ paths:
         of US-28); a change to the values the request already has records nothing, whatever the triage state.
         At least one of the two is required, and neither may be null. Implemented by US-35 (#82, spec D2, D3). The
         status is not set here: the control room changes it through acknowledge (US-28) and close (US-30), spec
-        US-28 D1.
+        US-28 D1. 409 when the request is Closed (spec US-30 D2).
       x-farol-status: implemented
       requestBody:
         required: true
@@ -233,6 +235,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /api/v1/events/{eventId}/help-requests/{requestId}/acknowledge:
     parameters:
@@ -268,8 +272,16 @@ paths:
       tags: [Help requests]
       operationId: routeHelpRequest
       summary: Route the request to a team; creates a field task and keeps the status (US-29)
-      description: Requires HelpRequests.Triage. 422 when the team has no HelpRequests.Respond.
-      x-farol-status: planned
+      description: >-
+        Requires HelpRequests.Triage. The team must be a team of the event, not deleted, with
+        HelpRequests.Respond; it need not handle the request's category (routing by hand). An unknown team,
+        another event's, a deleted one or one without HelpRequests.Respond all get the same 422. Allowed while
+        the request is Submitted or Seen, that is while its field task is still Open: routedTeamId is set, the
+        status is kept, a routedTeamId history entry records the member, and an Assist field task, Open, is
+        dispatched to the team; routing to another team cancels the Open task first. Routing to the team it
+        already has writes nothing. 409 once a member accepted the task (OnTheWay), and when it is Resolved or
+        Closed (US-29 #76, spec D1 to D3).
+      x-farol-status: implemented
       requestBody:
         required: true
         content:
@@ -293,6 +305,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
 
@@ -308,7 +322,8 @@ paths:
         Requires HelpRequests.Triage. The request's category and priority become the suggested ones and the
         triage becomes Accepted, recorded as the member's decision (category, priority and triage history
         entries). 409 when the triage is not Suggested: no suggestion yet, NotTriaged, or a member already
-        accepted or set the values (NFR-22). The default team follows from the category (US-34 #81 AC-2).
+        accepted or set the values (NFR-22), or the request is Closed (spec US-30 D2). The default team follows
+        from the category (US-34 #81 AC-2).
       x-farol-status: implemented
       responses:
         '200':
@@ -330,8 +345,15 @@ paths:
       tags: [Help requests]
       operationId: closeHelpRequest
       summary: Close the request; it leaves the active list (US-30)
-      description: Requires HelpRequests.Triage. 409 when it is already Closed.
-      x-farol-status: planned
+      description: >-
+        Requires HelpRequests.Triage. Submitted, Seen, OnTheWay or Resolved becomes Closed, whatever the triage state,
+        recorded as a status history entry with who and when (US-30 #77, spec D1). The request leaves the first load
+        of the control room's live list and is sent once, Closed, in the next poll; the participant keeps it, Closed.
+        No body. 409 when it is already Closed, with the same detail after a retry as when another member closed it
+        first. A closed request is final: acknowledge, accept-suggestion and the PATCH answer 409, and an AI result that
+        arrives after the close is not written (spec D2). The request's live field task, if any, is cancelled in the
+        same transaction (US-29 #76, spec D7, proposed for the team's review).
+      x-farol-status: implemented
       responses:
         '200':
           $ref: '#/components/responses/ControlRoomView'
@@ -354,8 +376,8 @@ paths:
       summary: Full change history of the request (US-28)
       description: >-
         Requires HelpRequests.Triage. Every change a member made, oldest first: the category, priority and triage
-        decisions of US-35 and the status of acknowledge (US-28 #75, spec D4, D6). Empty items for a request nobody
-        changed.
+        decisions of US-35, the status of acknowledge (US-28 #75, spec D4, D6) and the routedTeamId of a route
+        (US-29 #76). Empty items for a request nobody changed.
       x-farol-status: implemented
       responses:
         '200':
@@ -612,11 +634,19 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     TooManyRequests:
-      description: Answered by the gateway (ADR-013 L-2).
+      description: >-
+        The account already sent the most help requests the window allows (ADR-013 L-2, spec US-23 D4);
+        nothing is saved. Retry-After is the whole number of seconds, at least 1, until it can ask again.
+        The gateway's own limit (L-1) answers 429 the same way.
       headers:
         Retry-After:
           schema:
             type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
 
   schemas:
     Category:
@@ -738,6 +768,9 @@ components:
           type: string
           format: uuid
           nullable: true
+          description: >-
+            The team the control room routed the request to (US-29 #76); null until then, and again when that
+            team is deleted, which sends the request back to the queue (OnTheWay becomes Seen).
         triage:
           type: object
           additionalProperties: false

@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import pt.isep.labdsof.reports.application.HelpRequests;
 import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
@@ -39,6 +40,7 @@ class JdbcHelpRequests implements HelpRequests {
   private static final String PRIORITY = "priority";
   private static final String TRIAGE = "triage";
   private static final String STATUS = "status";
+  private static final String ROUTED_TEAM_ID = "routedTeamId";
 
   private final JdbcClient jdbc;
 
@@ -68,7 +70,7 @@ class JdbcHelpRequests implements HelpRequests {
         .param(PRIORITY, name(r.priority()))
         .param(STATUS, r.status().name())
         .param("defaultTeamId", r.defaultTeamId())
-        .param("routedTeamId", r.routedTeamId())
+        .param(ROUTED_TEAM_ID, r.routedTeamId())
         .param("submittedAt", Timestamp.from(r.submittedAt()))
         .param("updatedAt", Timestamp.from(r.updatedAt()))
         .param("version", r.version())
@@ -101,6 +103,23 @@ class JdbcHelpRequests implements HelpRequests {
         .param("id", requestId)
         .query(JdbcHelpRequests::map)
         .optional();
+  }
+
+  @Override
+  public void lockRequester(String requesterId) {
+    // A lock per account, released at the end of the submit transaction (spec US-23 D5)
+    jdbc.sql("SELECT pg_advisory_xact_lock(hashtextextended(:requesterId, 0))").param(REQUESTER_ID, requesterId)
+        .query().singleRow();
+  }
+
+  @Override
+  public List<Instant> submittedSince(String requesterId, Instant from) {
+    // ponytail: no index on requester_id, a scan of the help requests; add one if the k6 runs (#43) show it
+    return jdbc.sql("SELECT submitted_at FROM help_request WHERE requester_id = :requesterId AND submitted_at > :from")
+        .param(REQUESTER_ID, requesterId)
+        .param("from", Timestamp.from(from))
+        .query((rs, row) -> rs.getTimestamp(1).toInstant())
+        .list();
   }
 
   @Override
@@ -150,9 +169,17 @@ class JdbcHelpRequests implements HelpRequests {
   }
 
   @Override
+  @Transactional
   public boolean saveTriage(HelpRequest r) {
-    // One statement: the triage is written only while it still awaits the model, and only then does the request's
-    // updated_at move, so the live list shows it (spec US-34 D6, D8; US-26 D5)
+    // The members' locks first, in their order, and the status read after them: a request closed while the model
+    // answered takes no result. A condition in the UPDATE alone would read the status as it was before it waited on
+    // the close (spec US-30 G8 review)
+    var current = findForUpdate(r.eventId(), r.id());
+    if (current.isEmpty() || current.get().status() == HelpRequestStatus.Closed) {
+      return false;
+    }
+    // The triage is written only while it still awaits the model, and only then does the request's updated_at move,
+    // so the live list shows it (spec US-34 D6, D8; US-26 D5)
     var t = r.triage();
     return jdbc.sql("""
         WITH saved AS (
@@ -198,7 +225,7 @@ class JdbcHelpRequests implements HelpRequests {
     var at = Timestamp.from(r.updatedAt());
     int updated = jdbc.sql("""
         UPDATE help_request SET category = :category, priority = :priority, status = :status,
-            updated_at = :updatedAt, version = :version
+            routed_team_id = :routedTeamId, updated_at = :updatedAt, version = :version
         WHERE id = :id AND event_id = :eventId AND version = :version - 1
         """)
         .param("id", r.id())
@@ -206,6 +233,7 @@ class JdbcHelpRequests implements HelpRequests {
         .param(CATEGORY, name(r.category()))
         .param(PRIORITY, name(r.priority()))
         .param(STATUS, r.status().name())
+        .param(ROUTED_TEAM_ID, r.routedTeamId())
         .param("updatedAt", at)
         .param("version", r.version())
         .update();
@@ -242,6 +270,15 @@ class JdbcHelpRequests implements HelpRequests {
           .param("newValue", change.newValue())
           .update();
     }
+  }
+
+  @Override
+  public List<UUID> routedTo(UUID eventId, UUID teamId) {
+    return jdbc.sql("SELECT id FROM help_request WHERE event_id = :eventId AND routed_team_id = :teamId ORDER BY id")
+        .param(EVENT_ID, eventId)
+        .param("teamId", teamId)
+        .query(UUID.class)
+        .list();
   }
 
   @Override

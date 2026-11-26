@@ -8,6 +8,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -35,6 +36,7 @@ import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Priority;
 import pt.isep.labdsof.reports.domain.Team.TeamPermission;
 import pt.isep.labdsof.reports.domain.Team;
+import pt.isep.labdsof.reports.domain.SubmitLimit;
 import pt.isep.labdsof.reports.domain.TriageState;
 import pt.isep.labdsof.reports.domain.TriageSuggestion;
 
@@ -44,13 +46,14 @@ class HelpRequestServiceTest {
   static final UUID EVENT = UUID.randomUUID();
   static final UUID CONTROL_ROOM = UUID.randomUUID();
   static final Location POINT = new Location(3, 0.42, 0.77);
+  static final SubmitLimit LIMIT = new SubmitLimit(5, Duration.ofMinutes(10));
 
   final InMemoryPorts ports = new InMemoryPorts();
   final TriageServiceTest.FakeMetrics metrics = new TriageServiceTest.FakeMetrics();
   Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
   HelpRequestService service() {
-    return new HelpRequestService(ports, ports, ports, metrics, clock);
+    return new HelpRequestService(ports, ports, ports, ports, metrics, LIMIT, clock);
   }
 
   void member(String user, Role role, UUID... teams) {
@@ -142,6 +145,16 @@ class HelpRequestServiceTest {
       }
 
       @Override
+      public void lockRequester(String requesterId) {
+        // nothing to lock
+      }
+
+      @Override
+      public List<Instant> submittedSince(String requesterId, Instant from) {
+        return List.of();
+      }
+
+      @Override
       public List<HelpRequest> open(UUID eventId) {
         return List.of();
       }
@@ -172,11 +185,16 @@ class HelpRequestServiceTest {
       }
 
       @Override
+      public List<UUID> routedTo(UUID eventId, UUID teamId) {
+        return List.of();
+      }
+
+      @Override
       public List<HistoryEntry> history(UUID eventId, UUID requestId) {
         return List.of();
       }
     };
-    var service = new HelpRequestService(refusing, ports, ports, metrics, clock);
+    var service = new HelpRequestService(refusing, ports, ports, ports, metrics, LIMIT, clock);
     var clientRequestId = UUID.randomUUID();
     assertThatThrownBy(() -> service.submit(EVENT, "ana", clientRequestId, "help", POINT))
         .isInstanceOf(IllegalStateException.class);
@@ -269,8 +287,8 @@ class HelpRequestServiceTest {
     // At the 30 s deadline, the Pending requests come back as NotTriaged (D4)
     clock = Clock.fixed(NOW.plusSeconds(31), ZoneOffset.UTC);
     var late = service().list(EVENT, "rui", NOW.plusSeconds(26));
-    // The closed one too: harmless, the page drops closed requests
-    assertThat(late.items()).extracting(HelpRequest::id).containsExactly(first.id(), closed.id());
+    // Not the closed one: it awaits no triage, so it is sent once, when it is closed (spec US-30 D4, G8 review)
+    assertThat(late.items()).extracting(HelpRequest::id).containsExactly(first.id());
     assertThat(late.items().get(0).triage().state()).isEqualTo(TriageState.NotTriaged);
   }
 
@@ -585,6 +603,102 @@ class HelpRequestServiceTest {
     }
   }
 
+  // US-23 AC-4: at most 5 help requests per account in 10 minutes (spec US-23 D1 to D6)
+
+  /** Five requests of ana in EVENT, saved at NOW. */
+  void fiveSaved() {
+    member("ana", Role.RegularUser);
+    for (int i = 0; i < 5; i++) {
+      assertThat(service().submit(EVENT, "ana", UUID.randomUUID(), "help " + i, POINT).created()).isTrue();
+    }
+  }
+
+  @Test
+  @DisplayName("US-23 AC-4 the account is locked before its requests are counted")
+  void lockedBeforeCounted() {
+    member("ana", Role.RegularUser);
+    service().submit(EVENT, "ana", UUID.randomUUID(), "help", POINT);
+    assertThat(ports.calls).containsExactly("lock ana", "count ana after " + NOW.minus(Duration.ofMinutes(10)));
+  }
+
+  @Test
+  @DisplayName("US-23 AC-4 a retry of a saved request passes at the limit and counts nothing")
+  void retryAtTheLimit() {
+    member("ana", Role.RegularUser);
+    var first = service().submit(EVENT, "ana", UUID.randomUUID(), "help", POINT).request();
+    for (int i = 0; i < 4; i++) {
+      service().submit(EVENT, "ana", UUID.randomUUID(), "help " + i, POINT);
+    }
+
+    var retried = service().submit(EVENT, "ana", first.clientRequestId(), "help", POINT);
+
+    assertThat(retried.created()).isFalse();
+    assertThat(retried.request()).isEqualTo(first);
+    assertThat(ports.requests).hasSize(5);
+    assertThat(ports.outbox).hasSize(5);
+    // A retry with other content is still a conflict, not a limit
+    var service = service();
+    var client = first.clientRequestId();
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", client, "other", POINT))
+        .isInstanceOf(ClientRequestConflictException.class);
+  }
+
+  @Test
+  @DisplayName("US-23 AC-4 refused requests are not counted")
+  void refusedNotCounted() {
+    fiveSaved();
+    var service = service();
+    var client = UUID.randomUUID();
+
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", client, "help", POINT))
+        .isInstanceOfSatisfying(TooManyHelpRequestsException.class,
+            e -> assertThat(e.retryAfter()).isEqualTo(Duration.ofMinutes(10)));
+    // Invalid first (400), and a non-member first (404), even at the limit
+    assertThatThrownBy(() -> service.submit(EVENT, "ana", client, " ", POINT))
+        .isInstanceOf(pt.isep.labdsof.reports.domain.InvalidHelpRequestException.class);
+    var elsewhere = UUID.randomUUID();
+    assertThatThrownBy(() -> service.submit(elsewhere, "ana", client, "help", POINT))
+        .isInstanceOf(NotFoundException.class);
+    assertThat(ports.requests).hasSize(5);
+    assertThat(ports.outbox).hasSize(5);
+
+    // Ten minutes after the five, none of the refused ones counts: the next passes
+    clock = Clock.fixed(NOW.plus(Duration.ofMinutes(10)), ZoneOffset.UTC);
+    assertThat(service().submit(EVENT, "ana", client, "help", POINT).created()).isTrue();
+  }
+
+  @Test
+  @DisplayName("US-23 AC-4 the time of a request is read after the account lock")
+  void timeAfterTheLock() {
+    member("ana", Role.RegularUser);
+    var time = new java.util.concurrent.atomic.AtomicReference<>(NOW);
+    var moving = new Clock() {
+      @Override
+      public ZoneOffset getZone() {
+        return ZoneOffset.UTC;
+      }
+
+      @Override
+      public Clock withZone(java.time.ZoneId zone) {
+        return this;
+      }
+
+      @Override
+      public Instant instant() {
+        return time.get();
+      }
+    };
+    // The lock is held by another submission of the account for 7 s
+    ports.onLock = () -> time.set(NOW.plusSeconds(7));
+
+    var saved = new HelpRequestService(ports, ports, ports, ports, metrics, LIMIT, moving)
+        .submit(EVENT, "ana", UUID.randomUUID(), "help", POINT).request();
+
+    assertThat(saved.submittedAt()).isEqualTo(NOW.plusSeconds(7));
+    assertThat(saved.updatedAt()).isEqualTo(NOW.plusSeconds(7));
+    assertThat(ports.calls).containsExactly("lock ana", "count ana after " + NOW.plusSeconds(7).minus(Duration.ofMinutes(10)));
+  }
+
   @Test
   @DisplayName("US-34 AC-2 every control-room read and decision answers the default team")
   void defaultTeamOnEveryControlRoomRead() {
@@ -745,5 +859,252 @@ class HelpRequestServiceTest {
     } finally {
       logger.detachAppender(appender);
     }
+  }
+
+  // US-30: close (spec US-30 D1 to D6)
+
+  @Test
+  @DisplayName("US-30 AC-1 a close is saved as the member's change with their name")
+  void closeSaved() {
+    var service = operatorService();
+    var request = stored(SUGGESTED);
+    service.acknowledge(EVENT, actor("miguel"), request.id());
+
+    var closed = service.close(EVENT, actor("miguel"), request.id());
+
+    var saved = ports.find(EVENT, request.id()).orElseThrow();
+    assertThat(closed).isEqualTo(saved.asSeenAt(DECIDED));
+    assertThat(saved.status()).isEqualTo(HelpRequestStatus.Closed);
+    assertThat(saved.triage().state()).isEqualTo(TriageState.Suggested);
+    assertThat(ports.decisions).hasSize(2).last().satisfies(d -> {
+      assertThat(d.actor()).isEqualTo(new Actor("miguel", "Name of miguel"));
+      assertThat(d.changes()).containsExactly(new HelpRequestChange("status", "Seen", "Closed"));
+    });
+    assertThat(service.history(EVENT, "miguel", request.id())).last()
+        .isEqualTo(new HistoryEntry("status", "Seen", "Closed", "miguel", "Name of miguel", DECIDED));
+    // Not a triage decision, and final: a second close and a later change write nothing
+    assertThat(metrics.counted).isEmpty();
+    var id = request.id();
+    var miguel = actor("miguel");
+    assertThatThrownBy(() -> service.close(EVENT, miguel, id))
+        .isInstanceOf(pt.isep.labdsof.reports.domain.RequestConflictException.class);
+    assertThatThrownBy(() -> service.change(EVENT, miguel, id, null, Priority.Low))
+        .isInstanceOf(pt.isep.labdsof.reports.domain.RequestConflictException.class);
+    assertThat(ports.decisions).hasSize(2);
+    // The participant reads it Closed
+    member("ana", Role.RegularUser);
+    assertThat(service.get(EVENT, "ana", id).request().status())
+        .isEqualTo(HelpRequestStatus.Closed);
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 only the control room closes")
+  void onlyTheControlRoomCloses() {
+    var service = operatorService();
+    member("ana", Role.RegularUser);
+    var id = stored(SUGGESTED).id();
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var ana = actor("ana");
+    var nobody = actor("nobody");
+    var miguel = actor("miguel");
+    var unknown = UUID.randomUUID();
+
+    assertThatThrownBy(() -> service.close(EVENT, ana, id)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.close(EVENT, nobody, id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.close(elsewhere, miguel, id)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.close(EVENT, miguel, unknown)).isInstanceOf(NotFoundException.class);
+    assertThat(ports.find(EVENT, id).orElseThrow().status()).isEqualTo(HelpRequestStatus.Submitted);
+    assertThat(ports.decisions).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a close is logged without the description or the user")
+  void closeLogged() {
+    var logger = (Logger) LoggerFactory.getLogger(HelpRequestService.class);
+    var appender = new ListAppender<ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      var service = operatorService();
+      var request = stored(SUGGESTED);
+      service.close(EVENT, actor("miguel"), request.id());
+
+      assertThat(appender.list).singleElement().satisfies(line -> {
+        assertThat(line.getLevel()).isEqualTo(Level.INFO);
+        assertThat(line.getFormattedMessage()).contains(request.id().toString(), "Submitted", "Closed")
+            .doesNotContain("miguel", "Friend", "fainted");
+      });
+    } finally {
+      logger.detachAppender(appender);
+    }
+  }
+
+  static final UUID NURSING = UUID.randomUUID();
+  static final UUID SECURITY = UUID.randomUUID();
+
+  void respondingTeam(UUID teamId, Category category) {
+    ports.upsertIfNewer(new Team(teamId, EVENT, "Team " + teamId,
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(category), false, 1));
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 a route dispatches an open task to the team and is saved as the member's change")
+  void routeSaved() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    var request = stored(SUGGESTED);
+
+    var routed = service.route(EVENT, actor("miguel"), request.id(), NURSING);
+
+    var saved = ports.find(EVENT, request.id()).orElseThrow();
+    assertThat(saved.routedTeamId()).isEqualTo(NURSING);
+    assertThat(saved.status()).isEqualTo(HelpRequestStatus.Submitted);
+    assertThat(saved.updatedAt()).isEqualTo(DECIDED);
+    // The control-room view, default team included (D9)
+    assertThat(routed).isEqualTo(saved.asSeenAt(DECIDED).withDefaultTeam(ports.teams(EVENT)));
+    assertThat(routed.defaultTeamId()).isEqualTo(NURSING);
+    assertThat(ports.decisions).singleElement().satisfies(d -> {
+      assertThat(d.actor()).isEqualTo(new Actor("miguel", "Name of miguel"));
+      assertThat(d.changes()).containsExactly(new HelpRequestChange("routedTeamId", null, NURSING.toString()));
+    });
+    assertThat(ports.tasks).singleElement().satisfies(task -> {
+      assertThat(task.eventId()).isEqualTo(EVENT);
+      assertThat(task.requestId()).isEqualTo(request.id());
+      assertThat(task.teamId()).isEqualTo(NURSING);
+      assertThat(task.status()).isEqualTo("Open");
+      assertThat(task.at()).isEqualTo(DECIDED);
+    });
+    assertThat(metrics.counted).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 routing again cancels the open task and dispatches a new one")
+  void routeAgain() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    respondingTeam(SECURITY, Category.Safety);
+    var request = stored(SUGGESTED);
+
+    service.route(EVENT, actor("miguel"), request.id(), NURSING);
+    service.route(EVENT, actor("miguel"), request.id(), SECURITY);
+
+    assertThat(ports.find(EVENT, request.id()).orElseThrow().routedTeamId()).isEqualTo(SECURITY);
+    assertThat(ports.tasks).extracting(InMemoryPorts.Task::teamId, InMemoryPorts.Task::status)
+        .containsExactly(org.assertj.core.groups.Tuple.tuple(NURSING, "Cancelled"),
+            org.assertj.core.groups.Tuple.tuple(SECURITY, "Open"));
+    assertThat(ports.decisions).extracting(InMemoryPorts.Decision::changes).containsExactly(
+        List.of(new HelpRequestChange("routedTeamId", null, NURSING.toString())),
+        List.of(new HelpRequestChange("routedTeamId", NURSING.toString(), SECURITY.toString())));
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 routing to the same team again writes nothing")
+  void routeToTheSameTeam() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    var request = stored(SUGGESTED);
+    service.route(EVENT, actor("miguel"), request.id(), NURSING);
+    var saved = ports.find(EVENT, request.id()).orElseThrow();
+
+    var again = service.route(EVENT, actor("miguel"), request.id(), NURSING);
+
+    assertThat(again.version()).isEqualTo(saved.version());
+    assertThat(ports.find(EVENT, request.id()).orElseThrow()).isEqualTo(saved);
+    assertThat(ports.decisions).hasSize(1);
+    assertThat(ports.tasks).singleElement().extracting(InMemoryPorts.Task::status).isEqualTo("Open");
+  }
+
+  @Test
+  @DisplayName("US-29 AC-3 a team that cannot respond gets 422 and nothing is written")
+  void routeToATeamThatCannotRespond() {
+    var service = operatorService();
+    var request = stored(SUGGESTED);
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Team(elsewhere, UUID.randomUUID(), "Elsewhere",
+        List.of(new TeamPermission(Permission.HELP_REQUESTS_RESPOND, Set.of())), Set.of(Category.Health), false, 1));
+    var miguel = actor("miguel");
+    var id = request.id();
+
+    for (var team : List.of(CONTROL_ROOM, elsewhere, UUID.randomUUID())) {
+      assertThatThrownBy(() -> service.route(EVENT, miguel, id, team))
+          .isInstanceOf(pt.isep.labdsof.reports.domain.IneligibleTeamException.class);
+    }
+    assertThat(ports.find(EVENT, id).orElseThrow()).isEqualTo(request);
+    assertThat(ports.decisions).isEmpty();
+    assertThat(ports.tasks).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 only the control room routes")
+  void onlyTheControlRoomRoutes() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    member("nurse", Role.RegularUser, NURSING);
+    member("ana", Role.RegularUser);
+    var id = stored(SUGGESTED).id();
+    var elsewhere = UUID.randomUUID();
+    ports.upsertIfNewer(new Membership(elsewhere, "miguel", Role.EventAdmin, Status.Active, Set.of(), 1));
+    var miguel = actor("miguel");
+    var nurse = actor("nurse");
+    var ana = actor("ana");
+    var nobody = actor("nobody");
+
+    assertThatThrownBy(() -> service.route(EVENT, nurse, id, NURSING)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.route(EVENT, ana, id, NURSING)).isInstanceOf(ForbiddenException.class);
+    assertThatThrownBy(() -> service.route(EVENT, nobody, id, NURSING)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.route(elsewhere, miguel, id, NURSING)).isInstanceOf(NotFoundException.class);
+    var unknown = UUID.randomUUID();
+    // An unknown request is 404 even with an unusable team: the request is read first (D8)
+    assertThatThrownBy(() -> service.route(EVENT, miguel, unknown, NURSING)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.route(EVENT, miguel, unknown, CONTROL_ROOM))
+        .isInstanceOf(NotFoundException.class);
+    assertThat(ports.find(EVENT, id).orElseThrow().routedTeamId()).isNull();
+    assertThat(ports.decisions).isEmpty();
+    assertThat(ports.tasks).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 a route is logged without the description or the user")
+  void routeLogged() {
+    var logger = (Logger) LoggerFactory.getLogger(HelpRequestService.class);
+    var appender = new ListAppender<ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      var service = operatorService();
+      respondingTeam(NURSING, Category.Health);
+      var request = stored(SUGGESTED);
+      service.route(EVENT, actor("miguel"), request.id(), NURSING);
+      // The same team again writes nothing, so it logs nothing
+      service.route(EVENT, actor("miguel"), request.id(), NURSING);
+
+      assertThat(appender.list).singleElement().satisfies(line -> {
+        assertThat(line.getLevel()).isEqualTo(Level.INFO);
+        assertThat(line.getFormattedMessage()).contains(request.id().toString(), "null", NURSING.toString())
+            .doesNotContain("miguel", "Friend", "fainted");
+      });
+    } finally {
+      logger.detachAppender(appender);
+    }
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 a close cancels the request's live task")
+  void closeCancelsTheTask() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    var routed = stored(SUGGESTED);
+    var unrouted = stored(SUGGESTED);
+    service.route(EVENT, actor("miguel"), routed.id(), NURSING);
+
+    service.close(EVENT, actor("miguel"), routed.id());
+    service.close(EVENT, actor("miguel"), unrouted.id());
+
+    assertThat(ports.tasks).singleElement().satisfies(task -> {
+      assertThat(task.requestId()).isEqualTo(routed.id());
+      assertThat(task.status()).isEqualTo("Cancelled");
+      assertThat(task.at()).isEqualTo(DECIDED);
+    });
   }
 }

@@ -459,4 +459,189 @@ class HelpRequestTest {
       assertThatThrownBy(() -> new Actor(userId, "Ana")).isInstanceOf(IllegalArgumentException.class);
     }
   }
+
+  // US-30: close (spec US-30 D1, D2)
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Submitted", "Seen", "OnTheWay", "Resolved"})
+  @DisplayName("US-30 AC-1 closing moves any open status to Closed and records it")
+  void close(String status) {
+    var open = withStatus(HelpRequestStatus.valueOf(status));
+    var suggested = open.withTriage(SUGGESTED, NOW.plusSeconds(4));
+    // Pending (read NotTriaged at LATER, past the deadline), Suggested, Accepted, Changed and a stored NotTriaged
+    for (var request : java.util.List.of(open, suggested, suggested.acceptSuggestion(LATER).request(),
+        suggested.change(Category.Safety, null, LATER).request(),
+        open.withTriage(TriageSuggestion.notTriaged(NotTriagedReason.Abstained), NOW.plusSeconds(4)))) {
+      var decision = request.close(LATER);
+      var closed = decision.request();
+
+      assertThat(closed.status()).isEqualTo(HelpRequestStatus.Closed);
+      assertThat(closed.version()).isEqualTo(request.version() + 1);
+      assertThat(closed.updatedAt()).isEqualTo(LATER.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+      // The triage, the values and the times of the request stay as they were (#177)
+      assertThat(closed).usingRecursiveComparison().ignoringFields("status", "updatedAt", "version")
+          .isEqualTo(request);
+      assertThat(decision.changes()).containsExactly(new HelpRequestChange("status", status, "Closed"));
+    }
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a closed request cannot be closed again")
+  void closeOnce() {
+    var closed = submit("help").close(LATER).request();
+    assertThatThrownBy(() -> closed.close(LATER)).isInstanceOf(RequestConflictException.class)
+        .hasMessage("The request is closed");
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a closed request refuses the control room's changes")
+  void closedIsFinal() {
+    var closed = withTriage(SUGGESTED).close(LATER).request();
+    var later = LATER.plusSeconds(1);
+    assertThatThrownBy(() -> closed.acceptSuggestion(later)).isInstanceOf(RequestConflictException.class)
+        .hasMessage("The request is closed");
+    assertThatThrownBy(() -> closed.change(Category.Safety, Priority.Low, later))
+        .isInstanceOf(RequestConflictException.class).hasMessage("The request is closed");
+    assertThatThrownBy(() -> closed.acknowledge(later)).isInstanceOf(RequestConflictException.class);
+    // Even a change to the values it already has: the answer does not depend on the values sent
+    var accepted = withTriage(SUGGESTED).acceptSuggestion(LATER).request().close(later).request();
+    assertThatThrownBy(() -> accepted.change(Category.Health, Priority.High, later))
+        .isInstanceOf(RequestConflictException.class).hasMessage("The request is closed");
+    // A body that is invalid in itself is invalid whatever the status (G8 review)
+    assertThatThrownBy(() -> closed.change(null, null, later)).isInstanceOf(InvalidHelpRequestException.class);
+  }
+
+  @Test
+  @DisplayName("US-30 AC-1 a closed request awaits no triage and is not listed again at its deadline")
+  void closedAwaitsNoTriage() {
+    var open = submit("help");
+    var closed = open.close(NOW.plusSeconds(3)).request();
+    assertThat(open.awaitsModel()).isTrue();
+    assertThat(closed.awaitsModel()).isFalse();
+    assertThat(withTriage(SUGGESTED).awaitsModel()).isFalse();
+    // A poll whose window holds the triage deadline lists a Pending open request again (US-26), never a closed one
+    var since = NOW.plusSeconds(10);
+    var now = NOW.plusSeconds(40);
+    assertThat(open.changedAfter(since, now)).isTrue();
+    assertThat(closed.changedAfter(since, now)).isFalse();
+    assertThat(closed.changedAfter(NOW.plusSeconds(2), now)).isTrue();
+  }
+
+  static HelpRequest routedTo(UUID teamId, HelpRequestStatus status) {
+    var r = withStatus(status);
+    return new HelpRequest(r.id(), r.eventId(), r.requesterId(), r.clientRequestId(), r.description(), r.location(),
+        r.category(), r.priority(), status, r.defaultTeamId(), teamId, r.triage(), r.submittedAt(), r.updatedAt(),
+        r.version());
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 routing sets the team, keeps the status and records it")
+  void route() {
+    // Without a category, and to a team that handles another one: routing by hand (D1)
+    for (var request : java.util.List.of(submit("help"), withStatus(HelpRequestStatus.Seen),
+        withTriage(SUGGESTED).acceptSuggestion(LATER).request())) {
+      var nursing = responder(request.eventId(), Category.Safety);
+
+      var decision = request.route(nursing, LATER);
+      var routed = decision.request();
+
+      assertThat(routed.routedTeamId()).isEqualTo(nursing.teamId());
+      assertThat(routed.status()).isEqualTo(request.status());
+      assertThat(routed.version()).isEqualTo(request.version() + 1);
+      assertThat(routed.updatedAt()).isEqualTo(LATER.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+      assertThat(routed).usingRecursiveComparison().ignoringFields("routedTeamId", "updatedAt", "version")
+          .isEqualTo(request);
+      assertThat(decision.changes())
+          .containsExactly(new HelpRequestChange("routedTeamId", null, nursing.teamId().toString()));
+    }
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 routing again to another team records the change")
+  void routeAgain() {
+    var request = submit("help");
+    var first = responder(request.eventId(), Category.Health);
+    var second = responder(request.eventId(), Category.Health);
+
+    var decision = request.route(first, LATER).request().route(second, LATER.plusSeconds(1));
+
+    assertThat(decision.request().routedTeamId()).isEqualTo(second.teamId());
+    assertThat(decision.request().version()).isEqualTo(request.version() + 2);
+    assertThat(decision.changes()).containsExactly(
+        new HelpRequestChange("routedTeamId", first.teamId().toString(), second.teamId().toString()));
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 routing to the team it already has changes nothing")
+  void routeToTheSameTeam() {
+    var request = submit("help");
+    var nursing = responder(request.eventId(), Category.Health);
+    var routed = request.route(nursing, LATER).request();
+
+    var again = routed.route(nursing, LATER.plusSeconds(1));
+
+    assertThat(again.request()).isSameAs(routed);
+    assertThat(again.changes()).isEmpty();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"OnTheWay", "Resolved", "Closed"})
+  @DisplayName("US-29 AC-2 a request a member accepted, resolved or closed cannot be routed")
+  void routeOnlyWhileTheTaskIsOpen(String status) {
+    var request = withStatus(HelpRequestStatus.valueOf(status));
+    var nursing = responder(request.eventId(), Category.Health);
+    assertThatThrownBy(() -> request.route(nursing, LATER)).isInstanceOf(RequestConflictException.class)
+        .hasMessage("The request can no longer be routed");
+    // Not even to the team it already has
+    var routed = routedTo(nursing.teamId(), HelpRequestStatus.valueOf(status));
+    var own = new Team(nursing.teamId(), routed.eventId(), nursing.name(), nursing.permissions(),
+        nursing.handledCategories(), false, 1);
+    assertThatThrownBy(() -> routed.route(own, LATER)).isInstanceOf(RequestConflictException.class);
+  }
+
+  @Test
+  @DisplayName("US-29 AC-3 only a team of the event that responds can take the request")
+  void routeOnlyToARespondingTeamOfTheEvent() {
+    var request = submit("help");
+    var event = request.eventId();
+    var closed = withStatus(HelpRequestStatus.Closed);
+    var unusable = new java.util.ArrayList<Team>();
+    unusable.add(null);
+    unusable.add(team(event, Category.Health, false, Permission.HELP_REQUESTS_TRIAGE));
+    unusable.add(team(event, Category.Health, false));
+    unusable.add(team(event, Category.Health, true, Permission.HELP_REQUESTS_RESPOND));
+    unusable.add(responder(UUID.randomUUID(), Category.Health));
+    for (var team : unusable) {
+      assertThatThrownBy(() -> request.route(team, LATER)).isInstanceOf(IneligibleTeamException.class)
+          .hasMessage("The team cannot take help requests");
+      // The team is checked before the status (D8)
+      assertThatThrownBy(() -> closed.route(team, LATER)).isInstanceOf(IneligibleTeamException.class);
+    }
+  }
+
+  @Test
+  @DisplayName("US-29 AC-2 a request goes back to the queue when its team is deleted")
+  void returnFromADeletedTeam() {
+    var nursing = UUID.randomUUID();
+    for (var status : java.util.List.of(HelpRequestStatus.Submitted, HelpRequestStatus.Seen,
+        HelpRequestStatus.OnTheWay)) {
+      var request = routedTo(nursing, status);
+
+      var returned = request.returnFrom(nursing, LATER);
+
+      assertThat(returned.routedTeamId()).isNull();
+      assertThat(returned.status())
+          .isEqualTo(status == HelpRequestStatus.OnTheWay ? HelpRequestStatus.Seen : status);
+      assertThat(returned.version()).isEqualTo(request.version() + 1);
+      assertThat(returned.updatedAt()).isEqualTo(LATER.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+      assertThat(returned).usingRecursiveComparison()
+          .ignoringFields("routedTeamId", "status", "updatedAt", "version").isEqualTo(request);
+    }
+    // Finished requests keep the team that handled them; another team's or an unrouted request is not touched
+    for (var request : java.util.List.of(routedTo(nursing, HelpRequestStatus.Resolved),
+        routedTo(nursing, HelpRequestStatus.Closed), routedTo(UUID.randomUUID(), HelpRequestStatus.Seen),
+        submit("help"))) {
+      assertThat(request.returnFrom(nursing, LATER)).isSameAs(request);
+    }
+  }
 }

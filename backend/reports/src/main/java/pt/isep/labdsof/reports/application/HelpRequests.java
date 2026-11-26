@@ -19,6 +19,12 @@ public interface HelpRequests {
 
   Optional<HelpRequest> findByClientRequestId(UUID eventId, String requesterId, UUID clientRequestId);
 
+  /** Holds the account's submissions back until the transaction ends (spec US-23 D5). */
+  void lockRequester(String requesterId);
+
+  /** When the account's requests, in every event, were submitted, for those submitted after {@code from} (D2). */
+  List<Instant> submittedSince(String requesterId, Instant from);
+
   /** The event's requests that are not Closed, in order of arrival (submittedAt, then id). */
   List<HelpRequest> open(UUID eventId);
 
@@ -47,11 +53,15 @@ public interface HelpRequests {
   Optional<HelpRequest> findForUpdate(UUID eventId, UUID requestId);
 
   /**
-   * Saves a member's change read with {@link #findForUpdate}: the request's category, priority, status, triage state,
-   * updated_at and version, and one history row per change, by {@code actor} (user ID and name) at the request's
-   * updatedAt (spec US-35 D3, US-28 D2, D5).
+   * Saves a member's change read with {@link #findForUpdate}: the request's category, priority, status, routed team,
+   * triage state, updated_at and version, and one history row per change, by {@code actor} (user ID and name) at the
+   * request's updatedAt (spec US-35 D3, US-28 D2, D5, US-29 D3). A system change (US-29 D6) has no changes and no
+   * actor: only a member's change is a history entry (US-28 D6).
    */
   void saveDecision(HelpRequest decided, Actor actor, List<HelpRequestChange> changes);
+
+  /** The IDs of the event's requests routed to the team, whatever their status (US-29 D6). */
+  List<UUID> routedTo(UUID eventId, UUID teamId);
 
   /** The request's history rows, oldest first (in the order written); empty for an unknown request (US-28 D4). */
   List<HistoryEntry> history(UUID eventId, UUID requestId);

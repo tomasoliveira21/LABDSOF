@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" role="img" aria-labelledby="title description">
+<title id="title">US-01 · Entrar e ver os meus eventos</title>
+<desc id="description">Seis ecrãs móveis com erro de autenticação, carregamento, lista vazia, eventos com detalhes, detalhes pendentes e recuperação de erro.</desc>
+<style>
+text{font-family:system-ui,sans-serif;fill:#15304a}.title{font-size:28px;font-weight:700}.label{font-size:15px;font-weight:700}.heading{font-size:20px;font-weight:700}.body{font-size:14px}.white{fill:#fff;font-size:14px;font-weight:700}
+</style>
+<rect width="1000" height="800" fill="#edf3f7"/>
+
+<text x="36" y="50" class="title">Entrar e ver os meus eventos</text>
+<g transform="translate(36,82)">
+<text x="0" y="16" class="label">Credenciais inválidas</text>
+<rect y="28" width="280" height="291" rx="12" fill="#fff" stroke="#c3d0db"/>
+<rect y="29" width="280" height="50" rx="12" fill="#10243a"/>
+<text x="20" y="59" class="white">Farol</text>
+<text x="20" y="116" class="heading">Iniciar sessão</text>
+<text x="20" y="147" class="body">Nome de utilizador ou palavra-passe</text>
+<text x="20" y="174" class="body">inválidos. Tenta novamente.</text>
+<rect x="20" y="255" width="240" height="40" rx="8" fill="#17374f"/>
+<text x="34" y="280" class="white">Iniciar sessão</text>
+</g>
+<g transform="translate(360,82)">
+<text x="0" y="16" class="label">A carregar</text>
+<rect y="28" width="280" height="291" rx="12" fill="#fff" stroke="#c3d0db"/>
+<rect y="29" width="280" height="50" rx="12" fill="#10243a"/>
+<text x="20" y="59" class="white">Farol</text>
+<text x="20" y="116" class="heading">Os meus eventos</text>
+<text x="20" y="147" class="body">A carregar os teus eventos…</text>
+</g>
+<g transform="translate(684,82)">
+<text x="0" y="16" class="label">Sem adesões</text>
+<rect y="28" width="280" height="291" rx="12" fill="#fff" stroke="#c3d0db"/>
+<rect y="29" width="280" height="50" rx="12" fill="#10243a"/>
+<text x="20" y="59" class="white">Farol</text>
+<text x="20" y="116" class="heading">Os meus eventos</text>
+<text x="20" y="147" class="body">Ainda não pertences a nenhum evento.</text>
+</g>
+<g transform="translate(36,432)">
+<text x="0" y="16" class="label">Eventos disponíveis</text>
+<rect y="28" width="280" height="291" rx="12" fill="#fff" stroke="#c3d0db"/>
+<rect y="29" width="280" height="50" rx="12" fill="#10243a"/>
+<text x="20" y="59" class="white">Farol</text>
+<text x="20" y="116" class="heading">Os meus eventos</text>
+<text x="20" y="147" class="body">Queima do Porto · Publicado</text>
+<text x="20" y="174" class="body">Festival de Verão · Rascunho</text>
+<text x="20" y="201" class="body">Festival Académico · Suspenso</text>
+<text x="20" y="228" class="body">Semana Cultural · Encerrado</text>
+</g>
+<g transform="translate(360,432)">
+<text x="0" y="16" class="label">Projeção pendente</text>
+<rect y="28" width="280" height="291" rx="12" fill="#fff" stroke="#c3d0db"/>
+<rect y="29" width="280" height="50" rx="12" fill="#10243a"/>
+<text x="20" y="59" class="white">Farol</text>
+<text x="20" y="116" class="heading">Os meus eventos</text>
+<text x="20" y="147" class="body">Evento sem detalhes disponíveis</text>
+<text x="20" y="174" class="body">Estado indisponível · Participação</text>
+</g>
+<g transform="translate(684,432)">
+<text x="0" y="16" class="label">Erro ao carregar</text>
+<rect y="28" width="280" height="291" rx="12" fill="#fff" stroke="#c3d0db"/>
+<rect y="29" width="280" height="50" rx="12" fill="#10243a"/>
+<text x="20" y="59" class="white">Farol</text>
+<text x="20" y="116" class="heading">Os meus eventos</text>
+<text x="20" y="147" class="body">Não foi possível carregar</text>
+<text x="20" y="174" class="body">os teus eventos.</text>
+<rect x="20" y="255" width="240" height="40" rx="8" fill="#17374f"/>
+<text x="34" y="280" class="white">Tentar novamente</text>
+</g>
+</svg>

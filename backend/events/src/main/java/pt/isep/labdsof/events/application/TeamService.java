@@ -7,7 +7,6 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.isep.labdsof.events.application.AccessAudit.Refusal;
-import pt.isep.labdsof.events.domain.EventStatus;
 import pt.isep.labdsof.events.domain.HelpCategory;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Team;
