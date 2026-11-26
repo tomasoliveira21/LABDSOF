@@ -13,11 +13,17 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import pt.isep.labdsof.reports.application.LocalCopies;
 import pt.isep.labdsof.reports.domain.Membership;
 
-/** One Spring context on the shared containers, reused by every *IT that extends this class. */
+/**
+ * One Spring context on the shared containers, reused by every *IT that extends this class. Its tests send many help
+ * requests from one account, so the account limit (L-2) is lifted here; AskForHelpIT tests it with the production
+ * values in its own context (spec US-23 D6).
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = "farol.help-requests.limit=1000000")
 public abstract class IntegrationTest {
 
   @DynamicPropertySource
@@ -42,6 +48,11 @@ public abstract class IntegrationTest {
   protected HttpResponse<String> post(String path, String token, String json) throws Exception {
     return send(builder(path, token).header("Content-Type", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(json)));
+  }
+
+  protected HttpResponse<String> patch(String path, String token, String json) throws Exception {
+    return send(builder(path, token).header("Content-Type", "application/json")
+        .method("PATCH", HttpRequest.BodyPublishers.ofString(json)));
   }
 
   protected static String submitBody(UUID clientRequestId, String description) {

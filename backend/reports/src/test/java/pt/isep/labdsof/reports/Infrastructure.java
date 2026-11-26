@@ -63,6 +63,8 @@ public final class Infrastructure {
     properties.put("spring.security.oauth2.resourceserver.jwt.issuer-uri", Jwks.ISSUER);
     properties.put("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", JWKS.uri());
     properties.put("farol.outbox.enabled", "false");
+    // OutboxIT reads reports.reports-events: the triage consumer runs only in TriageIT's own process (spec US-34 D1)
+    properties.put("farol.triage.enabled", "false");
     properties.put("farol.outbox.confirm-timeout", "2s");
     // Short backoff keeps the retry tests fast; the production values are in application.properties.
     properties.put("spring.rabbitmq.listener.simple.retry.initial-interval", "50ms");
@@ -77,6 +79,8 @@ public final class Infrastructure {
   public static ConfigurableApplicationContext startReports(Map<String, Object> overrides) {
     var all = properties();
     all.put("server.port", "0");
+    // As in IntegrationTest: these contexts send many help requests from one account (spec US-23 D6)
+    all.put("farol.help-requests.limit", "1000000");
     all.putAll(overrides);
     var args = all.entrySet().stream().map(e -> "--" + e.getKey() + "=" + e.getValue())
         .toArray(String[]::new);

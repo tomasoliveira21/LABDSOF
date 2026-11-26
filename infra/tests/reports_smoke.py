@@ -22,12 +22,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import identity_smoke as idp  # noqa: E402 - path set above (python -I leaves the script's folder out)
 
 
-def call(gateway: str, path: str, token: str | None, body: dict | None = None) -> int:
+def call(gateway: str, path: str, token: str | None, body: dict | None = None, method: str | None = None) -> int:
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(gateway + path, data=data, headers=headers)
+    req = urllib.request.Request(gateway + path, data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(req, timeout=15) as response:
             return response.status
@@ -64,6 +64,33 @@ def main(env_path: str) -> int:
               "Reports accepts the Keycloak token and answers 404 to a user who is not a member of the event")
     idp.check(call(gateway, f"{path}/{uuid.uuid4()}", token) == 404,
               "Reports reads its database and does not reveal another event's request (404)")
+    # US-24 (#72): the participant's own requests go through the gateway with the query string
+    idp.check(call(gateway, f"{path}?mine=true", None) == 401, "following my requests needs a token (401)")
+    idp.check(call(gateway, f"{path}?mine=true", token) == 404,
+              "following my requests answers 404 to a user who is not a member of the event")
+    # US-36 (#83): the triage status of scenario D1, on the default stack, which has no `ai` service
+    status = path.replace("/help-requests", "/triage-status")
+    idp.check(call(gateway, status, None) == 401, "the triage status needs a token (401)")
+    idp.check(call(gateway, status, token) == 404,
+              "the triage status answers 404 to a user who is not a member of the event")
+    # US-35 (#82): the control room's decisions go through the gateway, PATCH included
+    request = f"{path}/{uuid.uuid4()}"
+    idp.check(call(gateway, request, None, {"priority": "High"}, "PATCH") == 401,
+              "setting the category or priority needs a token (401)")
+    idp.check(call(gateway, request, token, {"priority": "High"}, "PATCH") == 404,
+              "setting the category or priority answers 404 to a user who is not a member of the event")
+    idp.check(call(gateway, f"{request}/accept-suggestion", token, {}) == 404,
+              "accepting a suggestion answers 404 to a user who is not a member of the event")
+    # US-28 (#75): the acknowledge and the change history go through the gateway
+    idp.check(call(gateway, f"{request}/acknowledge", None, {}) == 401, "acknowledging needs a token (401)")
+    idp.check(call(gateway, f"{request}/acknowledge", token, {}) == 404,
+              "acknowledging answers 404 to a user who is not a member of the event")
+    idp.check(call(gateway, f"{request}/history", token) == 404,
+              "the change history answers 404 to a user who is not a member of the event")
+    # US-30 (#77): the close goes through the gateway
+    idp.check(call(gateway, f"{request}/close", None, {}) == 401, "closing a request needs a token (401)")
+    idp.check(call(gateway, f"{request}/close", token, {}) == 404,
+              "closing a request answers 404 to a user who is not a member of the event")
 
     for failure in idp.failures:
         print(f"::error::{failure}")

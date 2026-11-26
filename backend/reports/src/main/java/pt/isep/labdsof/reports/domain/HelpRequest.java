@@ -2,6 +2,8 @@ package pt.isep.labdsof.reports.domain;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -67,7 +69,123 @@ public record HelpRequest(
       return true;
     }
     var deadline = submittedAt.plus(TriageSuggestion.TRIAGE_DEADLINE);
-    return triage.state() == TriageState.Pending && deadline.isAfter(since) && !deadline.isAfter(now);
+    return awaitsModel() && deadline.isAfter(since) && !deadline.isAfter(now);
+  }
+
+  /** Whether the AI's result may still be written: the triage awaits it and the request is not closed (US-30 G8). */
+  public boolean awaitsModel() {
+    return status != HelpRequestStatus.Closed && triage.awaitsModel();
+  }
+
+  /**
+   * This request with a new triage (US-34): only the triage and {@code updatedAt} change, so the live list shows it
+   * (spec US-26 D5) and the request's own category and priority stay as a member set them (NFR-22).
+   */
+  public HelpRequest withTriage(TriageSuggestion triage, Instant now) {
+    return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,
+        priority, status, defaultTeamId, routedTeamId, triage, submittedAt, now.truncatedTo(ChronoUnit.MICROS),
+        version);
+  }
+
+  /** A member's triage decision: the request after it, and the fields it changed (empty: nothing to write). */
+  public record Decision(HelpRequest request, List<HelpRequestChange> changes) {}
+
+  /**
+   * The member takes the suggestion (US-35 AC-1, spec D1): its category and priority become the request's, the
+   * triage becomes Accepted and the suggestion stays visible. Only a Suggested triage can be accepted.
+   */
+  public Decision acceptSuggestion(Instant now) {
+    requireOpen();
+    if (triage.state() != TriageState.Suggested) {
+      throw new RequestConflictException("There is no suggestion to accept");
+    }
+    return decide(triage.suggestedCategory(), triage.suggestedPriority(), triage.decided(TriageState.Accepted),
+        TriageState.Suggested, now);
+  }
+
+  /**
+   * The member sets the category, the priority or both (US-35 AC-2, spec D2): from any triage state the triage
+   * becomes Changed, keeping the suggestion or the NotTriaged reason as read at {@code now}; a null is not sent.
+   */
+  public Decision change(Category newCategory, Priority newPriority, Instant now) {
+    if (newCategory == null && newPriority == null) {
+      throw new InvalidHelpRequestException("category or priority is required");
+    }
+    requireOpen();
+    var mergedCategory = newCategory == null ? category : newCategory;
+    var mergedPriority = newPriority == null ? priority : newPriority;
+    if (mergedCategory == category && mergedPriority == priority) {
+      // The values the request already has: nothing is decided, so an Accepted triage stays Accepted
+      return new Decision(this, List.of());
+    }
+    var seen = triage.asSeenAt(submittedAt, now);
+    return decide(mergedCategory, mergedPriority, seen.decided(TriageState.Changed), seen.state(), now);
+  }
+
+  /**
+   * The control room has seen the request (US-28, spec D2; decision 6): Submitted becomes Seen, whatever the triage;
+   * any other status is a conflict.
+   */
+  public Decision acknowledge(Instant now) {
+    if (status != HelpRequestStatus.Submitted) {
+      throw new RequestConflictException("The request is no longer Submitted");
+    }
+    return moveTo(HelpRequestStatus.Seen, now);
+  }
+
+  /**
+   * The control room closes the request (US-30, spec D1; decision 6): any other status becomes Closed, whatever the
+   * triage. Closed is final (D2).
+   */
+  public Decision close(Instant now) {
+    requireOpen();
+    return moveTo(HelpRequestStatus.Closed, now);
+  }
+
+  private void requireOpen() {
+    if (status == HelpRequestStatus.Closed) {
+      throw new RequestConflictException("The request is closed");
+    }
+  }
+
+  private Decision moveTo(HelpRequestStatus to, Instant now) {
+    return new Decision(new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category,
+        priority, to, defaultTeamId, routedTeamId, triage, submittedAt, now.truncatedTo(ChronoUnit.MICROS),
+        version + 1), List.of(new HelpRequestChange("status", status.name(), to.name())));
+  }
+
+  private Decision decide(Category newCategory, Priority newPriority, TriageSuggestion newTriage, TriageState from,
+      Instant now) {
+    var changes = new ArrayList<HelpRequestChange>();
+    if (newCategory != category) {
+      changes.add(new HelpRequestChange("category", name(category), name(newCategory)));
+    }
+    if (newPriority != priority) {
+      changes.add(new HelpRequestChange("priority", name(priority), name(newPriority)));
+    }
+    if (newTriage.state() != from) {
+      changes.add(new HelpRequestChange("triage", from.name(), newTriage.state().name()));
+    }
+    return new Decision(new HelpRequest(id, eventId, requesterId, clientRequestId, description, location,
+        newCategory, newPriority, status, defaultTeamId, routedTeamId, newTriage, submittedAt,
+        now.truncatedTo(ChronoUnit.MICROS), version + 1), List.copyOf(changes));
+  }
+
+  private static String name(Enum<?> value) {
+    return value == null ? null : value.name();
+  }
+
+  /**
+   * This request with its default team (spec US-34 AC-2, D1 to D3): the only team of {@code teams} in this event that
+   * handles the category (a member's, else the AI's) and responds; none or several give null and the operator routes
+   * by hand. Derived when read, never stored (D4).
+   */
+  public HelpRequest withDefaultTeam(List<Team> teams) {
+    var c = category != null ? category : triage.suggestedCategory();
+    var eligible = c == null ? List.<UUID>of() : teams.stream()
+        .filter(t -> t.eventId().equals(eventId) && t.canRespondTo(c)).map(Team::teamId).toList();
+    return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category, priority,
+        status, eligible.size() == 1 ? eligible.get(0) : null, routedTeamId, triage, submittedAt, updatedAt, version);
   }
 
   /** This request as a reader sees it at {@code now} (NotTriaged derived from Pending). */

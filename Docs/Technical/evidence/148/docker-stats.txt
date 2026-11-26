@@ -1,0 +1,13 @@
+# 2026-11-20T10:35:31Z docker stats --no-stream, stack with --profile observability
+farol-148-auth-users-1	0.48%	202.9MiB / 512MiB
+farol-148-badges-1	0.14%	110.4MiB / 512MiB
+farol-148-events-1	2.36%	138.6MiB / 512MiB
+farol-148-frontend-1	0.00%	10.26MiB / 64MiB
+farol-148-gateway-1	5.15%	169.6MiB / 512MiB
+farol-148-grafana-1	1.04%	109.4MiB / 256MiB
+farol-148-keycloak-1	0.51%	622.4MiB / 1GiB
+farol-148-postgres-1	0.57%	99.3MiB / 512MiB
+farol-148-prometheus-1	1.44%	30.48MiB / 256MiB
+farol-148-rabbitmq-1	0.25%	114.8MiB / 512MiB
+farol-148-reports-1	5.29%	223.8MiB / 512MiB
+farol-148-transports-1	0.16%	109.7MiB / 512MiB

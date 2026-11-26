@@ -10,10 +10,14 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import pt.isep.labdsof.reports.application.HelpRequests;
+import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
+import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
+import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Location;
 import pt.isep.labdsof.reports.domain.NotTriagedReason;
 import pt.isep.labdsof.reports.domain.Priority;
@@ -31,8 +35,11 @@ class JdbcHelpRequests implements HelpRequests {
 
   private static final String ARRIVAL_ORDER = " ORDER BY r.submitted_at, r.id";
   private static final String EVENT_ID = "eventId";
+  private static final String REQUESTER_ID = "requesterId";
   private static final String CATEGORY = "category";
   private static final String PRIORITY = "priority";
+  private static final String TRIAGE = "triage";
+  private static final String STATUS = "status";
 
   private final JdbcClient jdbc;
 
@@ -52,7 +59,7 @@ class JdbcHelpRequests implements HelpRequests {
         """)
         .param("id", r.id())
         .param(EVENT_ID, r.eventId())
-        .param("requesterId", r.requesterId())
+        .param(REQUESTER_ID, r.requesterId())
         .param("clientRequestId", r.clientRequestId())
         .param("description", r.description())
         .param("mapVersion", r.location().mapVersion())
@@ -60,7 +67,7 @@ class JdbcHelpRequests implements HelpRequests {
         .param("y", r.location().y())
         .param(CATEGORY, name(r.category()))
         .param(PRIORITY, name(r.priority()))
-        .param("status", r.status().name())
+        .param(STATUS, r.status().name())
         .param("defaultTeamId", r.defaultTeamId())
         .param("routedTeamId", r.routedTeamId())
         .param("submittedAt", Timestamp.from(r.submittedAt()))
@@ -98,6 +105,23 @@ class JdbcHelpRequests implements HelpRequests {
   }
 
   @Override
+  public void lockRequester(String requesterId) {
+    // A lock per account, released at the end of the submit transaction (spec US-23 D5)
+    jdbc.sql("SELECT pg_advisory_xact_lock(hashtextextended(:requesterId, 0))").param(REQUESTER_ID, requesterId)
+        .query().singleRow();
+  }
+
+  @Override
+  public List<Instant> submittedSince(String requesterId, Instant from) {
+    // ponytail: no index on requester_id, a scan of the help requests; add one if the k6 runs (#43) show it
+    return jdbc.sql("SELECT submitted_at FROM help_request WHERE requester_id = :requesterId AND submitted_at > :from")
+        .param(REQUESTER_ID, requesterId)
+        .param("from", Timestamp.from(from))
+        .query((rs, row) -> rs.getTimestamp(1).toInstant())
+        .list();
+  }
+
+  @Override
   public Optional<HelpRequest> findByClientRequestId(UUID eventId, String requesterId,
       UUID clientRequestId) {
     return jdbc.sql(SELECT + """
@@ -105,7 +129,7 @@ class JdbcHelpRequests implements HelpRequests {
            AND r.client_request_id = :clientRequestId
         """)
         .param(EVENT_ID, eventId)
-        .param("requesterId", requesterId)
+        .param(REQUESTER_ID, requesterId)
         .param("clientRequestId", clientRequestId)
         .query(JdbcHelpRequests::map)
         .optional();
@@ -115,6 +139,16 @@ class JdbcHelpRequests implements HelpRequests {
   public List<HelpRequest> open(UUID eventId) {
     return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.status <> 'Closed'" + ARRIVAL_ORDER)
         .param(EVENT_ID, eventId)
+        .query(JdbcHelpRequests::map)
+        .list();
+  }
+
+  @Override
+  public List<HelpRequest> ofRequester(UUID eventId, String requesterId) {
+    // Served by the unique index (event_id, requester_id, client_request_id)
+    return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.requester_id = :requesterId" + ARRIVAL_ORDER)
+        .param(EVENT_ID, eventId)
+        .param(REQUESTER_ID, requesterId)
         .query(JdbcHelpRequests::map)
         .list();
   }
@@ -130,6 +164,123 @@ class JdbcHelpRequests implements HelpRequests {
         .param("since", Timestamp.from(from))
         .param("submittedAfter", Timestamp.from(from.minus(TriageSuggestion.TRIAGE_DEADLINE)))
         .query(JdbcHelpRequests::map)
+        .list();
+  }
+
+  @Override
+  @Transactional
+  public boolean saveTriage(HelpRequest r) {
+    // The members' locks first, in their order, and the status read after them: a request closed while the model
+    // answered takes no result. A condition in the UPDATE alone would read the status as it was before it waited on
+    // the close (spec US-30 G8 review)
+    var current = findForUpdate(r.eventId(), r.id());
+    if (current.isEmpty() || current.get().status() == HelpRequestStatus.Closed) {
+      return false;
+    }
+    // The triage is written only while it still awaits the model, and only then does the request's updated_at move,
+    // so the live list shows it (spec US-34 D6, D8; US-26 D5)
+    var t = r.triage();
+    return jdbc.sql("""
+        WITH saved AS (
+            UPDATE triage_suggestion SET state = :state, suggested_category = :category,
+                suggested_priority = :priority, suggested_reason = :reason, not_triaged_reason = :notTriagedReason,
+                updated_at = :updatedAt
+            WHERE request_id = :id AND event_id = :eventId AND state = 'Pending' AND not_triaged_reason IS NULL
+              AND clock_timestamp() <= :deadline
+            RETURNING request_id)
+        UPDATE help_request SET updated_at = :updatedAt WHERE id IN (SELECT request_id FROM saved)
+        """)
+        .param("id", r.id())
+        .param(EVENT_ID, r.eventId())
+        .param("state", t.state().name())
+        .param(CATEGORY, name(t.suggestedCategory()))
+        .param(PRIORITY, name(t.suggestedPriority()))
+        .param("reason", t.suggestedReason())
+        .param("notTriagedReason", name(t.notTriagedReason()))
+        .param("updatedAt", Timestamp.from(r.updatedAt()))
+        // A result written after the deadline would turn a NotTriaged/Timeout the operator saw into a suggestion
+        .param("deadline", Timestamp.from(r.submittedAt().plus(TriageSuggestion.TRIAGE_DEADLINE)))
+        .update() == 1;
+  }
+
+  @Override
+  public Optional<HelpRequest> findForUpdate(UUID eventId, UUID requestId) {
+    // Locks both rows in the worker's order (saveTriage: triage_suggestion, then help_request), or each would wait
+    // on the other: the worker's conditional UPDATE waits, then re-reads the decided triage (spec US-35 D4)
+    jdbc.sql("SELECT 1 FROM triage_suggestion WHERE request_id = :id AND event_id = :eventId FOR UPDATE")
+        .param(EVENT_ID, eventId)
+        .param("id", requestId)
+        .query()
+        .listOfRows();
+    return jdbc.sql(SELECT + " WHERE r.event_id = :eventId AND r.id = :id FOR UPDATE")
+        .param(EVENT_ID, eventId)
+        .param("id", requestId)
+        .query(JdbcHelpRequests::map)
+        .optional();
+  }
+
+  @Override
+  public void saveDecision(HelpRequest r, Actor actor, List<HelpRequestChange> changes) {
+    var at = Timestamp.from(r.updatedAt());
+    int updated = jdbc.sql("""
+        UPDATE help_request SET category = :category, priority = :priority, status = :status,
+            updated_at = :updatedAt, version = :version
+        WHERE id = :id AND event_id = :eventId AND version = :version - 1
+        """)
+        .param("id", r.id())
+        .param(EVENT_ID, r.eventId())
+        .param(CATEGORY, name(r.category()))
+        .param(PRIORITY, name(r.priority()))
+        .param(STATUS, r.status().name())
+        .param("updatedAt", at)
+        .param("version", r.version())
+        .update();
+    if (updated != 1) {
+      // The row is locked by findForUpdate, so this is a caller that skipped it
+      throw new IllegalStateException("help request changed without its lock");
+    }
+    // A status change (acknowledge) leaves the triage row and its time alone (G8 review of US-28)
+    if (changes.stream().anyMatch(change -> TRIAGE.equals(change.field()))) {
+      jdbc.sql("""
+          UPDATE triage_suggestion SET state = :state, not_triaged_reason = :notTriagedReason, updated_at = :updatedAt
+          WHERE request_id = :id AND event_id = :eventId
+          """)
+          .param("id", r.id())
+          .param(EVENT_ID, r.eventId())
+          .param("state", r.triage().state().name())
+          .param("notTriagedReason", name(r.triage().notTriagedReason()))
+          .param("updatedAt", at)
+          .update();
+    }
+    for (var change : changes) {
+      jdbc.sql("""
+          INSERT INTO help_request_change (request_id, event_id, actor_user_id, actor_name, changed_at, field,
+              old_value, new_value)
+          VALUES (:id, :eventId, :actor, :actorName, :changedAt, :field, :oldValue, :newValue)
+          """)
+          .param("id", r.id())
+          .param(EVENT_ID, r.eventId())
+          .param("actor", actor.userId())
+          .param("actorName", actor.name())
+          .param("changedAt", at)
+          .param("field", change.field())
+          .param("oldValue", change.oldValue())
+          .param("newValue", change.newValue())
+          .update();
+    }
+  }
+
+  @Override
+  public List<HistoryEntry> history(UUID eventId, UUID requestId) {
+    return jdbc.sql("""
+        SELECT field, old_value, new_value, actor_user_id, actor_name, changed_at FROM help_request_change
+        WHERE event_id = :eventId AND request_id = :id ORDER BY id
+        """)
+        .param(EVENT_ID, eventId)
+        .param("id", requestId)
+        .query((rs, row) -> new HistoryEntry(rs.getString("field"), rs.getString("old_value"),
+            rs.getString("new_value"), rs.getString("actor_user_id"), rs.getString("actor_name"),
+            rs.getTimestamp("changed_at").toInstant()))
         .list();
   }
 
@@ -149,7 +300,7 @@ class JdbcHelpRequests implements HelpRequests {
         new Location(rs.getInt("map_version"), rs.getDouble("x"), rs.getDouble("y")),
         value(Category.class, rs.getString(CATEGORY)),
         value(Priority.class, rs.getString(PRIORITY)),
-        HelpRequestStatus.valueOf(rs.getString("status")),
+        HelpRequestStatus.valueOf(rs.getString(STATUS)),
         rs.getObject("default_team_id", UUID.class),
         rs.getObject("routed_team_id", UUID.class),
         triage,

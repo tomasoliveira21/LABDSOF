@@ -2,6 +2,141 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-24 · Close a request (US-30, #77, Bruno de Abreu Lopes)
+
+**Why:** finished cases must leave the control room's active queue (US-30). Spec: [`Docs/specs/US-30-close-help-request.md`](Docs/specs/US-30-close-help-request.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/close` (`HelpRequests.Triage`): `Submitted`, `Seen`, `OnTheWay` or `Resolved` becomes `Closed`, recorded as a `status` history entry with the member's ID and name; `409` when it is already `Closed`. The request leaves the first load of the live list (US-26) and the participant reads it `Closed` (US-24).
+- `CloseRequestIT`: the close over HTTP on the real database, two closes at the same time, and the security matrix of the endpoint. Two smoke checks through the gateway (`close` without a token → 401, for a non-member → 404).
+
+### Changed
+- A closed request is final for the control room: `PATCH …/help-requests/{requestId}`, `accept-suggestion` and `acknowledge` answer `409` (spec D2, proposed for the team's review). It takes no AI result either: the triage worker skips it, and a result that arrives after the close is not written nor counted, so a closed request is not sent to the live list again. `contracts/openapi.yaml`: `closeHelpRequest` implemented, `409` on the `PATCH`. Dated note in the API outline §4.1.
+
+## [Unreleased] · 2026-11-24 · Propose the event's team for the AI category (US-34 AC-2, #81, Bruno de Abreu Lopes)
+
+**Why:** the last acceptance criterion of US-34 (#81) and #149 AC-3: when the AI suggests a category, the control room sees the event's team that handles it as the default team; the AI never chooses the team (meeting of 15 November 2026, decision 1). Spec: [`Docs/specs/US-34-default-team.md`](Docs/specs/US-34-default-team.md).
+
+### Added
+- `defaultTeamId` in every control-room read and decision (`GET …/help-requests`, `GET …/help-requests/{requestId}`, `POST …/accept-suggestion`, `POST …/acknowledge`, `PATCH …/help-requests/{requestId}`): the only team of the event, not deleted, with `HelpRequests.Respond`, that handles the category a member set, else the suggested one. None or several give `null` and the operator routes by hand (the tie-break is an open product decision; spec D2 proposed for the team's review).
+- Derived on each read from Reports' current copy of the teams (`TeamChanged`), not stored, so a team change after the suggestion shows on the next read; no call to Events and nothing read from the participant's text.
+- Flyway `V6`: `team_copy.changed_at`. A poll of the live list after a team change answers every open request again, so the default team on screen follows the change.
+- `DefaultTeamIT`: two events, no team, two teams, a team losing `Respond`, a new team and a deleted team after the suggestion, accept and change of the category, a description naming a team.
+
+### Changed
+- `contracts/openapi.yaml`: `defaultTeamId` described, and `acceptTriageSuggestion` no longer says it is planned. Dated notes in the API outline §4.1, ADR-005 and the local AI decisions (routing scenarios).
+
+## [Unreleased] · 2026-11-23 · Follow my help request (US-24, #72, Bruno de Abreu Lopes)
+
+**Why:** a participant who asked for help needs to know whether help is coming (US-24). Spec: [`Docs/specs/US-24-follow-help-request.md`](Docs/specs/US-24-follow-help-request.md).
+
+### Added
+- `GET /api/v1/events/{eventId}/help-requests?mine=true&updatedSince=`: any active member gets their own requests of the event in the participant view (description, status, time of the last change), `Closed` ones included; later polls return only what changed, with the same 5 s overlap as the control room's list. A member with `HelpRequests.Triage` asking `mine` also gets only their own. Recommended polling: every 3 s while the request screen is open, so a status change shows within 5 s.
+- Acceptance tests for the participant view of one request (`GET …/help-requests/{requestId}`, already served since #194).
+
+### Changed
+- [`openapi.yaml`](backend/reports/contracts/openapi.yaml) of Reports: `mine` is implemented; the list answers the control-room shape without it and the participant shape with it. The participant view says what `updatedAt` means (any change, spec D3) and which page labels map to the statuses.
+## [Unreleased] · 2026-11-24 · Ask for help on the map (US-23, #71, Bruno de Abreu Lopes)
+
+**Why:** US-23 (#71): a participant asks for help with a short description and a point on the map, and cannot flood the control room (ADR-013 L-2). Spec: [`Docs/specs/US-23-ask-for-help.md`](Docs/specs/US-23-ask-for-help.md). The submission itself was built in #194; this adds the limit and the acceptance tests.
+
+### Added
+- L-2 in Reports: after 5 help requests of an account in 10 minutes, in any event, `POST …/help-requests` answers `429` `application/problem+json` with `Retry-After` (whole seconds until one more can be sent). Only saved requests count: a retry with the same `clientRequestId` is answered at the limit, and refused requests use nothing up. A lock per account keeps two submissions at once from both passing.
+- Settings `farol.help-requests.limit` (5) and `farol.help-requests.limit-window` (10 min), as ADR-013 asks. `infra/compose.yaml` passes `FAROL_HELPREQUESTS_LIMIT` (default 5); a measurement run of the AI end to end (#234), which sends exactly 5 per account in 10 minutes, raises it.
+- `AskForHelpIT`: the confirmation, the refused descriptions and points, who sees the location (control room and EventAdmin only), the 6th request, other events, another account, a retry at the limit, two submissions at once.
+
+### Changed
+- Decided on 24 November 2026 with the gateway's owner: L-2 moves from the gateway to Reports ([record](Docs/Meetings/2026-11-24-help-request-rate-limit.md)). Dated note in ADR-013; `openapi.yaml` (`429` of `submitHelpRequest`), the API outline §4 and the assessment's T15 follow it.
+
+## [Unreleased] · 2026-11-22 · Import of the external transport source (US-40, #84, António Guerra)
+
+**Why:** participants need the buses near the venue from the Porto Digital source, imported regularly and validated (assignment §6.5, ADR-008). Spec: [`Docs/specs/US-40-import-transport-source.md`](Docs/specs/US-40-import-transport-source.md). Built on #193.
+
+### Added
+- The import stores the buses within 2 km of the venue and each one's latest position; a valid import replaces the buses in use, and positions older than 5 minutes are left out.
+- Validation: one broken bus (no id or a duplicate one, no provider, no position or one out of range or at 0,0, no route, no or a future observation time) rejects the whole import, recorded `Invalid` with the bus and the reason; the previous buses stay in use. So does an answer whose buses are all late, so the data in use shows its real age (decided by the owner on 22 November 2026).
+- Retry (3 attempts, 1 s and 2 s apart) and circuit breaker (last 6 calls, opens at 50 % failed, 60 s) of J1 with Resilience4j 2.4.0's Spring Boot 4 starter, as architecture §9.1 agreed, set under `resilience4j.*` in `application.yaml`; a failure is retried only while the circuit lets calls through; while open, runs record `circuit open` and call nothing. The circuit breaker is in the health check and never makes Transports unhealthy.
+- Metrics: `farol.transport.import{result}` (each result from 0), `farol.transport.data.age` (kept in memory, so a scrape never waits for the database and the age keeps growing while it is down), and Resilience4j's `transport-source` circuit breaker and retry.
+- The CI smoke checks that the last import's buses are stored.
+
+### Changed
+- The query asks for up to 1000 buses (`limit=1000`); the real API sends 20 without it.
+- `GET …/transport-source-status` answers `501` naming US-43, which will build it (US-40 D9).
+- The *Transport data age* panel of #148 now has data: [`local-observability.md`](Docs/Technical/plans/local-observability.md) and the #148 entry below say so.
+
+## [Unreleased] · 2026-11-21 · Transports service (#193, António Guerra)
+
+**Why:** Transports was a skeleton; its Sprint B stories (US-40 #84, US-41 #85) need its own database, token validation, the copies it decides with, its contract and a first read of the bus source (ADR-008). Spec: [`Docs/specs/193-transports-service.md`](Docs/specs/193-transports-service.md).
+
+### Added
+- `backend/transports`: Flyway `V1` with TransportOption, TransportDeparture, BusVehicle, BusObservation, one `source_import` row per read of the source, and copies of memberships, event statuses and teams; Keycloak JWT validation (`401` Problem Details, a `sub` that is not a UUID refused), Problem Details, correlation id on requests, messages and import runs.
+- Consumers of `transports.auth-users-events` and `transports.events-events` as the `transports` broker user: `MembershipChanged`, `EventChanged` and `TeamChanged` upserted by version and applied once per `messageId`; invalid messages to their dead-letter queue with the reason; `PointOfInterestChanged`, `UserStatusChanged` and `UserDeleted` acknowledged and logged until their stories. The schemas it reads are in `backend/transports/contracts/events/`.
+- [`contracts/openapi.yaml`](backend/transports/contracts/openapi.yaml), contract-first with `openapi-generator`: the Sprint B operations of API outline §5 (bus observations, source status, adding a transport option), each answering `501` with its story (US-40, US-41).
+- A scheduled job that reads the bus source every 30 s with the 2 km geo-query and the J1 timeouts and records `Succeeded` (with the number of buses), `Unavailable` or `Invalid`. Storing the buses, validation, freshness, retry and the circuit breaker stay in US-40.
+- `wiremock` in `infra/compose.yaml` (`wiremock/wiremock:3.13.2`, pinned, unprivileged, admin API on `127.0.0.1:8090`) with the recorded Porto Digital stubs; Transports reads it through `TRANSPORT_SOURCE_URL`.
+- Health and metrics on the private management port of #148 (`/actuator/health` and `/actuator/prometheus` without a token, never published), as for the other services; the calls to the bus source are measured (`http.client.requests`).
+- [`infra/tests/transports_smoke.py`](infra/tests/transports_smoke.py) and its CI step: tokens through the gateway, `501` naming US-41, Flyway, a successful read through WireMock, both queues consumed.
+- Quality gates of the [specs README](Docs/specs/README.md) adopted for `backend/transports`: JaCoCo 90 % lines and branches, generated code included; PIT 80 % on domain and application; Testcontainers with the Compose images.
+
+### Changed
+- No outbox, although the issue listed one: Transports publishes nothing (API outline §5, §7.4) and its broker user may write only dead letters (spec D2).
+- `local-delivery.md` §0 and `infra/wiremock/README.md` describe Transports and WireMock in the stack; `Docs/README.md` lists the Transports spec.
+
+## [Unreleased] · 2026-11-21 · A team's permissions (US-17, #66, Tiago Teixeira)
+
+**Why:** US-16 (#65) gives an event its teams; until each team has permissions, no member can do anything beyond the participant features (`features.md` §4.2). This completes the *Teams* tag of the Events contract: every one of its five operations is now served. Spec, decisions and edge-case matrix: [`Docs/specs/US-17-team-permissions.md`](Docs/specs/US-17-team-permissions.md). **Stacked on #65 (PR #242).**
+
+### Added
+- `PUT /api/v1/events/{eventId}/teams/{teamId}/permissions` in Events: the EventAdmin of a `Draft` or `Published` event replaces the team's whole permission set from the fixed list of `features.md` §4.2. An empty array takes every permission away, which is how a permission is removed; the answer and `GET …/teams` show the new set at once.
+- `Reports.Review` carries the report types the team reviews, and only it: another permission with report types, a repeated permission, a repeated or null report type, an unknown code and more than eight permissions are all `400`. A `Reports.Review` with no type is accepted and reviews nothing (`features.md` §4.2 chooses the types per team; API outline §4 gives `Reports.Review` *for its type*).
+- The change is recorded with who made it and when: the team's `updated_by` and `updated_at`, one `TeamChanged` with the new set and a higher version, and one `INFO` log line with the correlation id, the pseudonymous `userId`, the team and the permissions — never a name or an e-mail (M-10).
+- Domain: `Team.withPermissions`, `Team.permissionsOf` and `TeamPermission.reportTypesOf` keep the rules where the tests can see them, and a deleted team still grants nothing.
+
+### Changed
+- `backend/events/contracts/openapi.yaml`: the `PUT` declares `409` (a suspended or closed event does not change its teams, as every other team write) and says what the body refuses; US-17 is no longer listed among the stories still to come, and the report type codes are stored, published and **described as confirmed** — `ReportType` and `team.changed.schema.json` no longer call them a proposal, which the header of the contract already stated.
+- **The permission write matches the version it read** (`… AND version = :version - 1`), as the three team writes of #65 now do: two `PUT`s that start from the same read cannot both store a version, so the second is `409` and publishes nothing. Without it both committed and published **two `TeamChanged` carrying one version**, and a consumer that applies only a strictly newer version kept the first — a permission taken away stayed in force in Reports' copy, which is AC-4 failing in the consumer. Found in the review of this PR on 22 November 2026.
+
+### Notes
+- **Several teams may handle the same help category, and several may review the same report type: this PR does not refuse it** (**confirmed on 21 November 2026**). *Which team is the default when two teams handle the same category* stays an open product decision (domain model), where it belongs: Reports picks the default team from `TeamChanged` and answers `defaultTeamId: null` when no team handles the category.
+- **The seven report type codes are confirmed** (`QueueAtEntrance`, `CrowdedArea`, `WcProblem`, `NoWater`, `Hazard`, `TransportProblem`, `WrongInformation`) and written into [`features.md` §6.1](Docs/Product/features.md#61-what-can-be-reported), which had labels only; they were Events' proposal since #192 D6. `openapi.yaml` and `team.changed.schema.json` no longer call them a proposal, and the report stories (US-47 onwards) use the same list. Decided on 21 November 2026 and recorded in [the meeting record of 21 November 2026](Docs/Meetings/2026-11-21-report-type-codes-and-team-writes.md), agreed by the owner of the Reports stories, who consumes them.
+- AC-3 (*the team becomes the default for the categories it handles*) is met in Events by storing and publishing the categories; the routing itself is US-29 (#76) in Reports.
+- Sending the same set twice is recorded twice, each with a new version: every call is an EventAdmin's decision and AC-4 asks for it to be recorded (confirmed on 21 November 2026, over skipping a no-op).
+
+## [Unreleased] · 2026-11-21 · Teams of an event (US-16, #65, Tiago Teixeira)
+
+**Why:** #192 created the `team` and `team_permission` tables, the `TeamChanged` contract and the four team paths, but every one of them answered `501`. US-16 is the first story an EventAdmin needs before giving a team its permissions (US-17, #66, stacked on this branch) or putting members in it (US-18). Spec, decisions and edge-case matrix: [`Docs/specs/US-16-teams.md`](Docs/specs/US-16-teams.md).
+
+### Added
+- `GET`, `POST`, `PATCH` and `DELETE` on `/api/v1/events/{eventId}/teams[/{teamId}]` in Events: an EventAdmin creates a team (`201`, no members, no permissions, no categories), renames it and sets the help categories it handles, and deletes it (`204`, soft delete). A name repeated in the event, ignoring case and blanks, is `409`; the name of a deleted team is free again.
+- Reading the list is open to an EventAdmin or a member of a team with `HelpRequests.Triage` or `Reports.Review` (API outline §3); a member without one gets `403`, and a non-member, a removed member, a member of another event and a team of another event get the same `404` as an unknown event, recorded with the user, the event and the time (US-14).
+- `TeamChanged` through the outbox on every change, with the team's full state and a higher version, as `contracts/events/team.changed.schema.json` requires: the consumers only apply a copy whose version is strictly newer. A deleted team is published with `deleted: true` and the permissions it had, which is what lets Reports return its routed help requests to the control-room queue and cancel its field tasks (AC-3).
+- Domain: `Team`, `TeamPermission`, `Permission` (the fixed list of `features.md` §4.2), `HelpCategory` and `ReportType`, with the name bounds of the `team_name` check, the handled categories as a set in a stable order, and a deleted team granting nothing.
+
+### Changed
+- **Every team write matches the version it read** (`… AND version = :version - 1`), so two requests that start from the same read cannot both store a version: the second is `409` (*This team changed meanwhile; read it again.*), or `404` if the team was deleted in between, and it publishes nothing. Without it, a rename and a delete arriving together both committed and published **two `TeamChanged` carrying one version**; a consumer that applies only a strictly newer version kept the first and dropped the second for good, so a lost `DELETE` left the team active in Reports' copy for ever and AC-3 failed in the consumer. Found in the review of this PR on 22 November 2026.
+- `backend/events/contracts/openapi.yaml`: `DELETE …/teams/{teamId}` declares `409` (a suspended or closed event does not change its teams, spec D2), the `Conflict` response says so — now including a team another request changed between a read and a write — `TeamChange.handledCategories` documents that a repeated category is `400`, and the description no longer lists US-16 among the stories still to come.
+- `EventContractIT` now builds `TeamChanged` with the service's own factory instead of its hand-written payload, which is what #192 asked of this story.
+
+### Notes
+- **No product document said whether a suspended or closed event may still have its teams changed.** This PR refuses it with `409`, reading US-09 (*cannot be used*) and US-10 (edits on *a draft or published event*); reading the teams is unchanged. **Confirmed on 21 November 2026** by the owner of the story; to be noted in the next meeting record.
+- `uniqueItems: true` on `handledCategories` was tried and dropped: openapi-generator 7.27 then reads the array into a `Set` and deduplicates a repeated category silently instead of refusing it (spec D7).
+- The CI smoke test is not extended: nothing can create an event until US-06 (#61), so no team can be created through the gateway yet.
+
+## [Unreleased] · 2026-11-22 · Set priority and status, with history (US-28, #75, Bruno de Abreu Lopes)
+
+**Why:** US-28 (#75): every change the control room makes to a request is recorded with who, when, the old and the new value (SC9, NFR-16), and the control room can read that history and mark a request as seen. Spec: [`Docs/specs/US-28-priority-status-history.md`](Docs/specs/US-28-priority-status-history.md).
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/acknowledge` (`HelpRequests.Triage`): `Submitted → Seen` (decision 6 of 15 November 2026), recorded as a `status` history entry; `409` when the request is no longer `Submitted`.
+- `GET /api/v1/events/{eventId}/help-requests/{requestId}/history` (`HelpRequests.Triage`): every recorded change, oldest first, with `actorUserId`, `actorName` and `changedAt`.
+- Flyway `V5`: column `help_request_change.actor_name`, the token's `name` claim copied when the change is recorded (also for the `PATCH` and `accept-suggestion` of US-35).
+- `ChangeHistoryIT`: both endpoints with the security matrix, two acknowledges at once, and the full history after an accept, a change and an acknowledge; `infra/tests/reports_smoke.py`: both endpoints through the gateway.
+
+### Changed
+- `contracts/openapi.yaml`: `acknowledgeHelpRequest` and `getHelpRequestHistory` are implemented; the history entry has `actorName`. The `PATCH` keeps the category and the priority only: the status changes through `acknowledge` and `close` (spec D1), which corrects *US-28 adds the status* written by US-35.
+- The 409 of a triage or status conflict is one `RequestConflictException`. Decisions D5 (the copied name) and D6 (only member changes are history entries) are accepted with the approval of this PR (22 November 2026) and recorded in [`Docs/Meetings/2026-11-22-help-request-history-names.md`](Docs/Meetings/2026-11-22-help-request-history-names.md).
+- After the review of #245: the [security and privacy assessment](Docs/Technical/security-and-privacy-assessment.md) says where Reports keeps the name (§3, M-7) and that account deletion does not remove it yet (§7, §12); `GET …/history` answers with its own view record; the contract no longer promises system entries and says a `409` on acknowledge is benign for a retry.
+
 ## [Unreleased] · 2026-11-21 · Badges service foundation (#201)
 
 - Badges starts in Compose with its own PostgreSQL database, Flyway migrations, Keycloak JWT validation,
@@ -22,6 +157,66 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
   and Vite development origins are allowed by default; Compose can override the origin list.
 - The gateway limits API traffic to 120 requests per minute per account by default and returns a Problem Details
   response with `Retry-After` when the quota is exhausted.
+
+## [Unreleased] · 2026-11-21 · Measure the AI triage end to end (#234, Bruno de Abreu Lopes)
+
+**Why:** #149 AC-5 asks for SC3 and SC5 measured on the running system, not by direct model calls, and its AC-2 needs an independent label review. Spec: [`Docs/specs/234-ai-triage-end-to-end.md`](Docs/specs/234-ai-triage-end-to-end.md). Part of #149. Stacked on PR #233.
+
+### Added
+- `Docs/Research/architecture-investigation/evaluation/e2e_triage.py`: submits the 72 holdout texts through the gateway as participants, one every 30 s (an arrival profile proposed for the team's review), polls the control room's list as an operator every 2 s, and reads Reports' database once every deadline has passed; `--verify` and `--self-test`.
+- `runs/2026-11-21-e2e/`: the manifest, with the profile and the pass rules committed before the first measured submission, plus per-request rows (no text), summaries and triage-status changes. **SC3 failed:** 61 of 66 non-abstention cases valid within 30 s (0.924 against 0.95). Stored suggestions took 14.0 s at p50, 18.3 s at p95 and 20.1 s at most. 4 model calls were cut at 20 s, and 1 request was refused while the circuit was open. The rest of the system added 0.3 s. **SC5 passed:** with the model stopped, 72 of 72 requests were shown in order and read `NotTriaged` within 4.1 s. How to read it (review of PR #235): this profile measures the serial path, with at most one model call in flight, so 0.924 is an optimistic bound, not a worst case. Under concurrent arrivals the runtime (OLLAMA_NUM_PARALLEL=1, OLLAMA_MAX_QUEUE=1, admission only with 23 s left) queues a second request behind a 14 s call or refuses it, turning latency misses into Unavailable ones: the gap to 0.95 is not three points, and 0.924 is not the number to close.
+- `label_review.py` and `label-review/labels.md`: one line per case of the three case files (217), urgent and abstention cases first, without model output; `label-review/README.md` is the reviewer's guide (rubric, how to comment per line, the sentence that makes a review count).
+
+### Changed
+- Dated notes in `product-vision.md` (SC3, SC5), ADR-005 (status unchanged), `responsible-ai.md`, the local AI decisions (release gate step 7), the evaluation README, guide K2 and `Docs/README.md`.
+
+## [Unreleased] · 2026-11-21 · Accept or change the AI suggestion (US-35, #82, Bruno de Abreu Lopes)
+
+**Why:** US-35 (#82): the control room must stay in control of the AI triage: accept the suggestion as its own decision, or set its own values, which a later suggestion never overwrites (NFR-22). Spec: [`Docs/specs/US-35-accept-or-change-suggestion.md`](Docs/specs/US-35-accept-or-change-suggestion.md). Stacked on PR #232.
+
+### Added
+- `POST /api/v1/events/{eventId}/help-requests/{requestId}/accept-suggestion` (`HelpRequests.Triage`): the suggested category and priority become the request's values and the triage becomes `Accepted`; `409` when the triage is not `Suggested`.
+- `PATCH /api/v1/events/{eventId}/help-requests/{requestId}` for the category and the priority (the operation planned for US-28; US-28 adds the status): the member's values make the triage `Changed`, from any triage state; the suggestion and the `NotTriaged` reason stay visible.
+- Flyway `V3`: table `help_request_change`, one row per changed field with who, when, the old and the new value, in the fields of the planned history entry (`GET …/history`, US-28 #75). The member's write locks the request, so the triage worker's save waits and then writes nothing.
+- Counter `farol.triage.decision{decision}` (`Accepted`, `Changed`): the first member decision on each stored suggestion.
+- `TriageDecisionIT`: both endpoints with the security matrix, the history rows, two accepts at once, and the worker's save refused after a member's values; `infra/tests/reports_smoke.py`: both endpoints through the gateway (401 without a token, 404 for a non-member).
+
+### Changed
+- `contracts/openapi.yaml`: `setHelpRequestCategoryAndPriority` and `acceptTriageSuggestion` are implemented; the default team after an accept stays planned (#81 AC-2).
+- Dated notes in the domain model (proposed transitions `Pending → Changed` and `Accepted → Changed`), the API outline §4.1, ADR-005 and `responsible-ai.md`. Decisions D2, D3 and D6 of the spec are proposed for the team's review.
+- Spec US-35 D6 (review of PR #233): `farol.triage.decision` counts only decisions on a `Suggested` request, so it measures the AI suggestions, not manual triage; most requests of a burst never get a suggestion (US-36 capacity limit).
+
+## [Unreleased] · 2026-11-21 · Requests without AI (US-36, #83, Bruno de Abreu Lopes)
+
+**Why:** US-36 (#83, scenario D1): help requests must keep reaching the control room when the AI is down, slow or wrong, the back office must know when triage is unavailable, and each fallback must be logged and counted. Part of #149 (AC-5, SC5). Spec: [`Docs/specs/US-36-requests-without-ai.md`](Docs/specs/US-36-requests-without-ai.md). Stacked on PR #230.
+
+### Added
+- Circuit breaker in front of the AI with Resilience4j 2.4 (`resilience4j-spring-boot4`), instance `ai-provider`, with the J1 values of `architecture.md` §9.1 (last 10 calls, at least 4, 50 % failed or slow over 16 s, open 30 s, one probe). Timeouts, provider errors and invalid outputs count as failures; while it is open a request is `Unavailable` without a call.
+- `GET /api/v1/events/{eventId}/triage-status` (`HelpRequests.Triage`; 403 without it, 404 outside the event): `available` only when an AI is configured and the circuit is closed, otherwise the reason (`Unavailable` or the last failure). The banner is the web app's (hand-off on #83).
+- Counters `farol.triage.fallback{reason}` and `farol.triage.suggested` (Micrometer, through `spring-boot-starter-actuator`; only Boot's default `/actuator/health` on the API port, behind the API chain's token), and a `WARN` log line per fallback with the request ID and the reason.
+- `TriageFallbackIT` (SC5): with the AI stopped, slower than the timeout, answering 503, dropping the connection or answering invalid data, 20 requests each reach the control room at once, in order of arrival, without category or priority, `NotTriaged` with their reason; the circuit opens after 4 calls and the AI gets no more; the status reads unavailable and, after a successful probe, available again.
+- `infra/tests/reports_smoke.py`: the triage status through the gateway on the default stack (no `ai` service): 401 without a token, 404 for a non-member.
+
+### Changed
+- `contracts/openapi.yaml`: `getTriageStatus` is implemented; `reason` is always present and null when available.
+- Spec US-36 (review of PR #232): the capacity limit (one consumer, about one triage every 12 s, 7 s of queue wait before `Unavailable`), and that the banner covers provider failures, not saturation; D8 says which actuator endpoint the API port has.
+- SC5 note in `product-vision.md`, ADR-005 (*Acceptance evidence pending*), `responsible-ai.md` (K2 outage row) and the local AI decisions, with dated notes: SC5 has test evidence with a stub AI; the run on the deployed stack with the real model stays for #149.
+
+## [Unreleased] · 2026-11-20 · AI triage suggestion (US-34 part, #229, Bruno de Abreu Lopes)
+
+**Why:** US-34 (#81): each new help request should arrive with a suggested category and priority, and only its description may reach the model. Part of #81; the default team (#81 AC-2) waits for US-17 (#66). Spec: [`Docs/specs/US-34-ai-triage-suggestion.md`](Docs/specs/US-34-ai-triage-suggestion.md).
+
+### Added
+- Reports' triage consumer of its own `HelpRequestSubmitted` (queue `reports.reports-events`): one request at a time, the local Ollama through the JDK HTTP client with the runtime contract (connect 2 s, one attempt, the call capped at 20 s and by the time left, admission with at least 23 s of the 30 s left, late results discarded), and the model's output validated in the domain, never repaired.
+- The prompt (`prompts/v8.txt`, frozen by #227) and the output schema of the evaluation package, copied to `backend/reports/src/main/resources/triage/` and checked by SHA-256 against the package; kept in LF by `.gitattributes`.
+- A suggestion is stored as `triage.state: Suggested` with the category, priority and reason, and never written to the request's own category or priority (NFR-22). A timeout, provider error, invalid output, abstention or missing AI reads `NotTriaged` with its reason at once (stored as `Pending` with the reason: `NotTriaged` is never stored, decision 6), and the request stays in the control room's list.
+- `infra/compose.yaml`: the opt-in `ai` service (`--profile ai`, `ollama/ollama:0.40.16` by digest, model volume, no published port); Reports gets `FAROL_AI_URL`, empty by default (`infra/.env.example`).
+- Tests: domain and service tests, the adapter against a local stub HTTP server, and `TriageIT` end to end (HTTP submit, outbox, RabbitMQ, stub model, PostgreSQL).
+
+### Changed
+- Flyway `V2`: `triage_suggestion.suggested_reason` holds 240 characters, as the output schema and the production contract say (#194 had 200); `suggestedReason` in `contracts/openapi.yaml` too.
+- The envelope check of the local-copy listener is shared with the triage consumer.
+- `local-delivery.md` (`ai` row) and the local AI decisions record the consumer with dated notes. The model's offline gate fails (#224, #227): its suggestions are an operator aid, not release evidence; SC3 and SC5 are not claimed.
 
 ## [Unreleased] · 2026-11-20 · Critical over-rating on a fresh holdout (#227, Bruno de Abreu Lopes)
 
@@ -52,6 +247,30 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - Spec 224 §6 said *six* `--verify` checks: there are eight.
 - `--resume` never retries a case already written, even as `output: null` (a failure stays a failure): now said in the flag's help, the runner's docstring and the evaluation README.
 - The manifest and `--verify` show integrity, not bit-for-bit reproducibility: seed 42 and temperature 0 do not fix the output across batch size, threads or backend (spec 224 §1, evaluation README). A prompt change for the five ceiling failures must be tuned on the development split or new cases, never on the test split (spec 224 §6).
+
+## [Unreleased] · 2026-11-20 · Local observability with Prometheus and Grafana (#148)
+
+**Why:** ADR-012 and the [local observability plan](Docs/Technical/plans/local-observability.md) were accepted as architecture, but no telemetry had ever run (#148 was reopened on 31 October). This adds the runtime part: an optional Compose profile, metrics, correlated JSON logs, one dashboard and the three core alerts, with a trigger/resolve drill. Evidence: [`Docs/Technical/evidence/148/`](Docs/Technical/evidence/148/README.md).
+
+### Added
+- `infra/compose.yaml`, profile `observability`: Prometheus `v3.5.0` and Grafana `12.2.1`, pinned by digest, published on `127.0.0.1` only (`9090`, `3001`), hardened like the other containers, Prometheus kept 1 day or 512 MB. Without `--profile observability` the stack is unchanged.
+- `infra/observability/`: the Prometheus scrape list (every 15 s), the Grafana data source, the dashboard *Farol local operations* (the four groups of plan §4) and the three core alert rules: service or telemetry down (2 min), outbox oldest pending row > 60 s (2 min), useful triage < 95 % of the mature one-hour cohort with at least 20 eligible (5 min). No code emits `farol_triage_window_eligible` and `farol_triage_window_valid_on_time`, so the triage rule shows *No data*, still none after #81–#83 (PRs #230, #232, #233) merge: they emit `farol.triage.fallback`, `farol.triage.suggested` and `farol.triage.decision`, not these gauges, which come with SC3 (#149). The *Transport data age* panel (`farol_transport_data_age_seconds`) has data since US-40 (#84): Transports emits the seconds since its last valid import (`NaN` before the first one).
+- Health and metrics on a private management port, `8081`, never published (`/actuator/health`, `/actuator/prometheus`), and JSON console logs (`logstash`) for every Spring service, through `infra/compose.yaml`. Actuator and the Prometheus registry in Reports, the gateway, Events, Transports and Badges; the registry in Auth & Users (which had actuator). Every Spring service is scraped. Each owner agreed to the change in their module and reviews it.
+- Reports and Auth & Users: a `SecurityFilterChain` that serves only `health` and `prometheus` without a token, and only when the management port is separate (`@ConditionalOnManagementPort(DIFFERENT)`); on the API port the actuator still needs a token. The Auth & Users change was agreed with its owner, who reviews it. Events and Badges, which got Spring Security on `main` while this was open (#192, #201), have the same chain and a `ManagementPortIT` since 22 November 2026, for their owners to review.
+- Gateway: `X-Correlation-Id` kept when it is 8 to 64 letters, digits or hyphens, otherwise a new UUID; forwarded to the service, returned to the caller and logged with one line per request, as Auth & Users already does. Events keeps its own `CorrelationIdFilter` (#192), registered once in `WebConfiguration`, with two additions: an exception that escapes the chain is logged as `500`, not the response's default `200`, and the health check's status request is not logged.
+- Reports: the same correlation id in its logs, stored with the outbox row (Flyway `V4`: `V2` and `V3` are taken by PRs #230 and #233) and sent as the AMQP `correlation_id`; a consumed message's correlation id is in the log context while it is handled; gauge `farol_outbox_oldest_pending_seconds`; the management port answers health and metrics without a token, nothing else.
+- `infra/tests/observability_smoke.py` and a CI step that starts the profile on the CI stack, runs it and checks that Prometheus and Grafana are on `127.0.0.1` and hardened.
+- README: *Run with observability*.
+
+### Changed
+- The CI stack is stopped with `--profile observability`, or `down` leaves Prometheus and Grafana running.
+- The gateway, Events and Badges, which replace the anchor's `environment`, repeat the management port and log settings; Badges' Compose health check reads readiness on the management port `8081`.
+- `infra/.env.example`: `PROMETHEUS_PORT`, `GRAFANA_PORT`, `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD` (example value only). Grafana refuses to start with an empty password, only when the profile is used.
+- ADR-012 status and the plan: what is implemented and measured and the limitations, in dated notes.
+
+### Not done here
+- PostgreSQL: no exporter (it would be a third container); the outbox age comes from Reports itself.
+- SC3/SC5 measurement moved to #149.
 
 ## [Unreleased] · 2026-11-19 · Auth & Users service (#191, Tiago Teixeira)
 

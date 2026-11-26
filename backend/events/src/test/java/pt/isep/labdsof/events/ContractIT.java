@@ -307,11 +307,6 @@ class ContractIT extends IntegrationTest {
   private static final Map<String, String> STORIES = Map.ofEntries(
       Map.entry("POST /api/v1/events", "US-06"),
       Map.entry("POST /api/v1/events/{eventId}/publish", "US-11"),
-      Map.entry("GET /api/v1/events/{eventId}/teams", "US-16"),
-      Map.entry("POST /api/v1/events/{eventId}/teams", "US-16"),
-      Map.entry("PATCH /api/v1/events/{eventId}/teams/{teamId}", "US-16 and US-17"),
-      Map.entry("DELETE /api/v1/events/{eventId}/teams/{teamId}", "US-16"),
-      Map.entry("PUT /api/v1/events/{eventId}/teams/{teamId}/permissions", "US-17"),
       Map.entry("POST /api/v1/events/{eventId}/map-versions", "US-19"),
       Map.entry("GET /api/v1/events/{eventId}/map-versions/current", "US-21 and US-22"),
       Map.entry("GET /api/v1/events/{eventId}/map-versions/{version}", "US-27"),
@@ -378,10 +373,15 @@ class ContractIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("192 AC-4 fourteen operations of the contract belong to later stories")
-  void laterStoriesAreTheContractOperationsButStatusAndGetEvent() {
-    assertThat(laterStoryOperations().toList()).hasSize(14).doesNotContain("GET /api/v1/status",
-        "GET /api/v1/events/{eventId}");
+  @DisplayName("192 AC-4 nine operations of the contract belong to later stories, none of the Teams tag among "
+      + "them")
+  void laterStoriesAreTheContractOperationsButWhatIsImplemented() {
+    assertThat(laterStoryOperations().toList()).hasSize(9).doesNotContain("GET /api/v1/status",
+        "GET /api/v1/events/{eventId}", "GET /api/v1/events/{eventId}/teams",
+        "POST /api/v1/events/{eventId}/teams", "PATCH /api/v1/events/{eventId}/teams/{teamId}",
+        "DELETE /api/v1/events/{eventId}/teams/{teamId}",
+        "PUT /api/v1/events/{eventId}/teams/{teamId}/permissions");
+    assertThat(laterStoryOperations().toList()).noneMatch(operation -> operation.contains("/teams"));
   }
 
   @ParameterizedTest(name = "[{index}] {0} {1}")

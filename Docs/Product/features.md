@@ -213,15 +213,17 @@ Decided on 15 November 2026 ([record](../Meetings/2026-11-15-sprint-a-review-and
 
 Each report is a type, a point on the venue map and a time. It is not a help request: anything urgent or about a person goes through *Ask for help*.
 
-| Report type | Example | Field team in the pilot set-up (§4.4) | Expires after |
-|---|---|---|---|
-| Queue at an entrance | "Gate 2: long queue (> 15 min)" · short / medium / long | Security | 30 min |
-| Crowded area | "Very crowded in front of the main stage" | Security | 20 min |
-| WC problem | Out of service, no water, … | Logistics | 60 min |
-| Water point or bar out of water | "No water at bar 3" | PCR | 60 min |
-| Hazard | Broken glass, spill, dark area, broken fence, … | Logistics | Until the team closes it |
-| Transport problem | "Shuttle stop moved", "shuttle full", "shuttle not passing" | Logistics | 30 min |
-| Wrong information | A map point or announcement that is no longer true | Logistics | Until the team closes it |
+| Report type | Code | Example | Field team in the pilot set-up (§4.4) | Expires after |
+|---|---|---|---|---|
+| Queue at an entrance | `QueueAtEntrance` | "Gate 2: long queue (> 15 min)" · short / medium / long | Security | 30 min |
+| Crowded area | `CrowdedArea` | "Very crowded in front of the main stage" | Security | 20 min |
+| WC problem | `WcProblem` | Out of service, no water, … | Logistics | 60 min |
+| Water point or bar out of water | `NoWater` | "No water at bar 3" | PCR | 60 min |
+| Hazard | `Hazard` | Broken glass, spill, dark area, broken fence, … | Logistics | Until the team closes it |
+| Transport problem | `TransportProblem` | "Shuttle stop moved", "shuttle full", "shuttle not passing" | Logistics | 30 min |
+| Wrong information | `WrongInformation` | A map point or announcement that is no longer true | Logistics | Until the team closes it |
+
+**Codes confirmed on 21 November 2026** (US-17, #66), by the owner of the Events stories and to be noted in the next meeting record. They were Events' proposal since [#192](../specs/192-events-service.md) D6, because this section had labels only; US-17 now stores them in `team_permission.report_types` and publishes them in `TeamChanged`, so the teams that review each type are already set with these codes. **The report stories (US-47 onwards, Reports) must use the same list**, and a change to it from now on is a change to a published contract. The expiry times above are still open (§6.1 was listed as open on 9 October 2026).
 
 ### 6.2 How a report behaves
 

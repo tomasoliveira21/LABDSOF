@@ -8,6 +8,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import tools.jackson.databind.json.JsonMapper;
@@ -71,6 +72,18 @@ public final class ApiClient {
   /** The body parsed as a JSON object. */
   public static Map<String, Object> json(HttpResponse<String> response) {
     return JSON.readValue(response.body(), Map.class);
+  }
+
+  /** The body parsed as a JSON array of objects (US-16's team list). */
+  @SuppressWarnings("unchecked")
+  public static List<Map<String, Object>> jsonList(HttpResponse<String> response) {
+    return JSON.readValue(response.body(), List.class);
+  }
+
+  /** Any JSON object, such as a message body read from the outbox. */
+  @SuppressWarnings("unchecked")
+  public static Map<String, Object> readJson(String body) {
+    return JSON.readValue(body, Map.class);
   }
 
   /**

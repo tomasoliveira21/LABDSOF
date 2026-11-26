@@ -51,6 +51,8 @@ Each route's target comes from an environment variable (e.g. `FAROL_ROUTE_REPORT
 
 Counters are kept in memory (Bucket4j with Caffeine) while there is one gateway instance. The values are settings, tuned with the k6 results in Sprint C.
 
+*24 November 2026 (#71, US-23): L-2 is enforced by Reports, not by the gateway ([record](../../Meetings/2026-11-24-help-request-rate-limit.md)). Reports counts the help requests it saved for the account in every event, under a lock per account, so a retry with the same `clientRequestId` or a refused request uses nothing up, the count survives a restart and `Retry-After` is exact ([spec US-23](../../specs/US-23-ask-for-help.md)). Key and values are unchanged; the values are the Reports settings `farol.help-requests.limit` and `farol.help-requests.limit-window`. The table above is kept as written.*
+
 ### CORS and edge settings
 
 - **Allowed origins:** the web container's origin and `http://localhost:5173` (Vite dev server), from configuration.

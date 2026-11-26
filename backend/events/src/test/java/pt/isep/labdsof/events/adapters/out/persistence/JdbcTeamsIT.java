@@ -1,0 +1,196 @@
+package pt.isep.labdsof.events.adapters.out.persistence;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import pt.isep.labdsof.events.IntegrationTest;
+import pt.isep.labdsof.events.application.Teams;
+import pt.isep.labdsof.events.application.Teams.Write;
+import pt.isep.labdsof.events.domain.HelpCategory;
+import pt.isep.labdsof.events.domain.Permission;
+import pt.isep.labdsof.events.domain.ReportType;
+import pt.isep.labdsof.events.domain.Team;
+import pt.isep.labdsof.events.domain.TeamPermission;
+
+/**
+ * The team table through its port. The use cases read the team before they write it, so the outcomes of a lost
+ * race (US-16 D3) can only be reached here: by writing a row that is already deleted, or by writing twice from
+ * the same read, which is what two requests arriving together do.
+ */
+class JdbcTeamsIT extends IntegrationTest {
+
+  private static final Instant AT = Instant.parse("2027-05-08T23:14:05Z");
+
+  @Autowired Teams teams;
+
+  private UUID event() {
+    return insertEvent("Published", null, "jt-" + UUID.randomUUID().toString().substring(0, 8));
+  }
+
+  private Team stored(UUID eventId, String name) {
+    var team = Team.created(UUID.randomUUID(), eventId, name);
+    assertThat(teams.add(team, UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+    return team;
+  }
+
+  @Test
+  @DisplayName("US-16 AC-3 a rename or a delete of a team another request already deleted reports it gone")
+  void writingADeletedRowIsGone() {
+    var eventId = event();
+    var team = stored(eventId, "Nursing");
+    assertThat(teams.delete(team.asDeleted(), UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+
+    assertThat(teams.delete(team.asDeleted(), UUID.randomUUID(), AT)).isEqualTo(Write.GONE);
+    assertThat(teams.replace(team.renamed("Medical", Set.of()), UUID.randomUUID(), AT)).isEqualTo(Write.GONE);
+    assertThat(teams.liveOfEvent(eventId)).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-16 AC-3 the second write from the same read is refused, so no two versions can be published")
+  void secondWriteFromTheSameReadIsRefused() {
+    var eventId = event();
+    var read = stored(eventId, "Nursing");
+
+    // Both writes start from the same read, as two requests arriving together do: the rename commits first.
+    assertThat(teams.replace(read.renamed("Medical", Set.of()), UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+    assertThat(teams.delete(read.asDeleted(), UUID.randomUUID(), AT)).isEqualTo(Write.CONFLICT);
+
+    // The delete changed nothing: without the guard it would have stored version 2 a second time, and Reports
+    // would have dropped it and kept the team active for ever.
+    var live = teams.liveOfEvent(eventId, read.teamId()).orElseThrow();
+    assertThat(live.name()).isEqualTo("Medical");
+    assertThat(live.version()).isEqualTo(2);
+    assertThat(live.deleted()).isFalse();
+
+    // The same the other way round, and between two renames.
+    assertThat(teams.replace(read.renamed("Triage", Set.of()), UUID.randomUUID(), AT)).isEqualTo(Write.CONFLICT);
+    assertThat(teams.liveOfEvent(eventId, read.teamId()).orElseThrow().name()).isEqualTo("Medical");
+
+    // A write that does hold the current version still goes through.
+    assertThat(teams.delete(live.asDeleted(), UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+    assertThat(teams.liveOfEvent(eventId)).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-16 AC-2 the unique index reports a name taken on an insert and on a rename")
+  void takenNameIsReported() {
+    var eventId = event();
+    stored(eventId, "Control room");
+    var other = stored(eventId, "Nursing");
+
+    assertThat(teams.add(Team.created(UUID.randomUUID(), eventId, "control ROOM"), UUID.randomUUID(), AT))
+        .isEqualTo(Write.NAME_TAKEN);
+    assertThat(teams.replace(other.renamed("CONTROL ROOM", Set.of()), UUID.randomUUID(), AT))
+        .isEqualTo(Write.NAME_TAKEN);
+    assertThat(teams.liveOfEvent(eventId)).extracting(Team::name).containsExactly("Control room", "Nursing");
+  }
+
+  @Test
+  @DisplayName("US-16 AC-1 a team is read back with its categories, its permissions and its report types")
+  void teamIsReadBackWhole() {
+    var eventId = event();
+    var team = stored(eventId, "Control room");
+    assertThat(teams.replace(team.renamed("Control room", Set.of(HelpCategory.Other, HelpCategory.Health)),
+        UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+    jdbc.sql("""
+        INSERT INTO team_permission (event_id, team_id, permission, report_types) VALUES
+          (:event, :team, 'Reports.Review', CAST('{Hazard,NoWater}' AS text[])),
+          (:event, :team, 'HelpRequests.Triage', '{}')
+        """).param("event", eventId).param("team", team.teamId()).update();
+
+    var read = teams.liveOfEvent(eventId, team.teamId()).orElseThrow();
+
+    assertThat(read.name()).isEqualTo("Control room");
+    assertThat(read.version()).isEqualTo(2);
+    assertThat(read.deleted()).isFalse();
+    assertThat(read.handledCategories()).containsExactly(HelpCategory.Health, HelpCategory.Other);
+    assertThat(read.permissions()).containsExactly(
+        TeamPermission.of(Permission.HELP_REQUESTS_TRIAGE),
+        new TeamPermission(Permission.REPORTS_REVIEW, Set.of(ReportType.NoWater, ReportType.Hazard)));
+    assertThat(read.grants(Permission.HELP_REQUESTS_TRIAGE)).isTrue();
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 replacing the permissions writes the new set and nothing of the old one")
+  void permissionsAreReplaced() {
+    var eventId = event();
+    var team = stored(eventId, "Control room");
+    assertThat(teams.replacePermissions(team.withPermissions(List.of(
+        TeamPermission.of(Permission.MAP_EDIT),
+        new TeamPermission(Permission.REPORTS_REVIEW, Set.of(ReportType.Hazard)))),
+        UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+
+    // Each call starts from the team as it now stands, which is what the use case does: one read, one version.
+    var current = teams.liveOfEvent(eventId, team.teamId()).orElseThrow();
+    var replaced = current.withPermissions(List.of(TeamPermission.of(Permission.ENTRANCES_UPDATE)));
+    assertThat(teams.replacePermissions(replaced, UUID.randomUUID(), AT)).isEqualTo(Write.STORED);
+
+    var read = teams.liveOfEvent(eventId, team.teamId()).orElseThrow();
+    assertThat(read.permissions()).containsExactly(TeamPermission.of(Permission.ENTRANCES_UPDATE));
+    assertThat(read.version()).isEqualTo(3);
+    assertThat(teams.replacePermissions(read.withPermissions(List.of()), UUID.randomUUID(), AT))
+        .isEqualTo(Write.STORED);
+    assertThat(teams.liveOfEvent(eventId, team.teamId()).orElseThrow().permissions()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-17 AC-4 the second permission write from the same read is refused, and the set it wrote stands")
+  void secondPermissionWriteFromTheSameReadIsRefused() {
+    var eventId = event();
+    var read = stored(eventId, "Control room");
+    var reviewing = new TeamPermission(Permission.REPORTS_REVIEW, Set.of(ReportType.Hazard));
+
+    // Two PUTs that both read version 1: the first stores version 2 and publishes it.
+    assertThat(teams.replacePermissions(read.withPermissions(List.of(reviewing)), UUID.randomUUID(), AT))
+        .isEqualTo(Write.STORED);
+
+    // The second would store version 2 again and publish a second TeamChanged for it. Reports applies only a
+    // strictly newer version, so it would keep the first and go on reviewing Hazard after the permission was
+    // taken away: AC-4 failing in the consumer. It is refused instead.
+    assertThat(teams.replacePermissions(read.withPermissions(List.of()), UUID.randomUUID(), AT))
+        .isEqualTo(Write.CONFLICT);
+
+    // The refused write is refused before the permission rows are touched, so it takes nothing away either.
+    var current = teams.liveOfEvent(eventId, read.teamId()).orElseThrow();
+    assertThat(current.version()).isEqualTo(2);
+    assertThat(current.permissions()).containsExactly(reviewing);
+  }
+
+  @Test
+  @DisplayName("US-17 AC-1 replacing the permissions of a team another request deleted reports it gone")
+  void permissionsOfADeletedRowAreGone() {
+    var eventId = event();
+    var team = stored(eventId, "Control room");
+    teams.delete(team.asDeleted(), UUID.randomUUID(), AT);
+
+    assertThat(teams.replacePermissions(team.withPermissions(List.of(TeamPermission.of(Permission.MAP_EDIT))),
+        UUID.randomUUID(), AT)).isEqualTo(Write.GONE);
+    assertThat(jdbc.sql("SELECT count(*) FROM team_permission WHERE team_id = :id").param("id", team.teamId())
+        .query(Integer.class).single()).isZero();
+  }
+
+  @Test
+  @DisplayName("US-16 AC-1 a team of another event, a deleted team and an unknown id are not read")
+  void otherEventsAndDeletedTeamsAreNotRead() {
+    var mine = event();
+    var other = event();
+    var elsewhere = stored(other, "Theirs");
+    var deleted = stored(mine, "Gone");
+    teams.delete(deleted.asDeleted(), UUID.randomUUID(), AT);
+    var live = stored(mine, "Mine");
+
+    assertThat(teams.liveOfEvent(mine, elsewhere.teamId())).isEmpty();
+    assertThat(teams.liveOfEvent(mine, deleted.teamId())).isEmpty();
+    assertThat(teams.liveOfEvent(mine, UUID.randomUUID())).isEmpty();
+    assertThat(teams.liveOfEvent(UUID.randomUUID())).isEmpty();
+    assertThat(teams.liveOfEvent(mine)).extracting(Team::teamId).containsExactly(live.teamId());
+    assertThat(teams.liveOfEvent(mine, live.teamId())).isPresent();
+    assertThat(teams.liveOfEvent(other)).extracting(Team::teamId).containsExactly(elsewhere.teamId());
+  }
+}

@@ -1,6 +1,6 @@
 # WireMock: simulator of the Porto Digital API
 
-WireMock is the simulator of the Porto Digital urban platform (guide J4, [ADR-008](../../Docs/Technical/adr/0008-transport-data-source.md)). This folder is its root: the `wiremock` container, added to `infra/compose.yaml` in Sprint B (today the file has only `reports`), mounts it at `/home/wiremock` ([`local-delivery.md`](../../Docs/Technical/local-delivery.md) §1). It replays real bus positions recorded on 25 October 2026, so the tests and the demo do not depend on the real API.
+WireMock is the simulator of the Porto Digital urban platform (guide J4, [ADR-008](../../Docs/Technical/adr/0008-transport-data-source.md)). This folder is its root: the `wiremock` service of `infra/compose.yaml` (#193) mounts it read-only at `/home/wiremock`, with its admin API on `127.0.0.1:8090` ([`local-delivery.md`](../../Docs/Technical/local-delivery.md) §0 and §1). Transports reads it every 30 s (`TRANSPORT_SOURCE_URL`, `http://wiremock:8080` in Compose), and its integration tests start the same image with the same stubs. It replays real bus positions recorded on 25 October 2026, so the tests and the demo do not depend on the real API.
 
 | Path | What |
 |---|---|
@@ -40,7 +40,7 @@ python infra/wiremock/scripts/convert_porto_digital.py --zip infra/wiremock/reco
 
 `--calls-per-snapshot` (default 2) and `--max-distance` (default 2000 m) change the pace and the radius; `--coords` must be what Transports sends.
 
-Until the `wiremock` service is in `infra/compose.yaml` (Sprint B), WireMock runs on its own, published only on this machine like the admin API in `local-delivery.md` §1 (in Git Bash on Windows, prefix the command with `MSYS_NO_PATHCONV=1`):
+With the Compose stack running, WireMock is already on `http://127.0.0.1:8090`. Without the stack, it runs on its own, published only on this machine (in Git Bash on Windows, prefix the command with `MSYS_NO_PATHCONV=1`):
 
 ```bash
 docker run --rm -p 127.0.0.1:8090:8080 -v "$PWD/infra/wiremock:/home/wiremock:ro" wiremock/wiremock:3.13.2

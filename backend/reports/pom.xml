@@ -60,6 +60,23 @@
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>3.0.3</version>
     </dependency>
+    <!-- US-36: the meter registry for the triage counters and the circuit's state (spec US-36 D7, D8); #148 health and metrics -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <!-- US-36: the circuit breaker in front of the AI (J1, architecture.md §9.1; spec US-36 D1) -->
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-spring-boot4</artifactId>
+      <version>2.4.0</version>
+    </dependency>
+    <!-- #148: /actuator/prometheus for the local Prometheus (management port 8081, set in infra/compose.yaml) -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
