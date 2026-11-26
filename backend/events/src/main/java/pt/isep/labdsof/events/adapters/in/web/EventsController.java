@@ -11,7 +11,6 @@ import pt.isep.labdsof.events.adapters.in.web.generated.model.EventSummary;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.NewEvent;
 import pt.isep.labdsof.events.application.EventQueryService;
 import pt.isep.labdsof.events.application.EventService;
-import pt.isep.labdsof.events.domain.DateRange;
 
 @RestController
 class EventsController implements EventsApi {
@@ -36,7 +35,7 @@ class EventsController implements EventsApi {
   @Override
   public ResponseEntity<Event> createEvent(NewEvent newEvent) {
     var created = service.create(TokenIdentity.currentUserId(), newEvent.name(), newEvent.organiserName(),
-        new DateRange(newEvent.dates().start(), newEvent.dates().end()), newEvent.description());
+        newEvent.dates().start(), newEvent.dates().end(), newEvent.description());
     return ResponseEntity.status(HttpStatus.CREATED).body(EventResponse.of(created));
   }
 

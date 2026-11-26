@@ -284,10 +284,10 @@ class LocalCopiesIT extends IntegrationTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @CsvSource({"GlobalRoleChanged,global-role.changed", "UserProfileChanged,user-profile.changed",
+  @CsvSource({"UserProfileChanged,user-profile.changed",
       "UserStatusChanged,user-status.changed", "UserDeleted,user.deleted", "SomethingNew,membership.changed"})
   @DisplayName("192 AC-6 the other Auth & Users events and unknown types are acknowledged and logged, not "
-      + "stored")
+      + "stored (GlobalRoleChanged left this list in US-06: it is handled now)")
   void otherTypesAreAcknowledged(String type, String routingKey, CapturedOutput output) {
     var messageId = UUID.randomUUID();
     publish(routingKey, messageId, envelope(messageId, type, null,

@@ -27,6 +27,7 @@ import pt.isep.labdsof.events.domain.EventNotDraftException;
 import pt.isep.labdsof.events.domain.EventStatus;
 import pt.isep.labdsof.events.domain.GlobalRole;
 import pt.isep.labdsof.events.domain.GlobalRoleGrant;
+import pt.isep.labdsof.events.domain.InvalidEventException;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Membership.Role;
 import pt.isep.labdsof.events.domain.Membership.Status;
@@ -73,7 +74,7 @@ class EventServiceTest {
     var farolAdmin = UUID.randomUUID();
     ports.farolAdmin(farolAdmin);
 
-    var created = service.create(farolAdmin, "Queima das Fitas 2027", "FAP", DATES, "Semana academica");
+    var created = service.create(farolAdmin, "Queima das Fitas 2027", "FAP", DATES.start(), DATES.end(), "Semana academica");
 
     assertThat(created.status()).isEqualTo(EventStatus.Draft);
     assertThat(created.joinCode()).isNull(); // only the publish generates one (US-11 D1)
@@ -94,7 +95,7 @@ class EventServiceTest {
   void aCallerWhoIsNotTheFarolAdminCreatesNothing() {
     var user = UUID.randomUUID();
 
-    assertThatThrownBy(() -> service.create(user, "Queima", "FAP", DATES, null))
+    assertThatThrownBy(() -> service.create(user, "Queima", "FAP", DATES.start(), DATES.end(), null))
         .isInstanceOf(NotPlatformAdminException.class).hasMessage("not the FarolAdmin");
 
     assertThat(ports.inserted).isEmpty();
@@ -112,13 +113,33 @@ class EventServiceTest {
     ports.upsertIfNewer(new GlobalRoleGrant(revoked, GlobalRole.FarolAdmin, false, 2));
 
     // The EventAdmin of the draft above holds no platform role: being an admin somewhere is not one
-    assertThatThrownBy(() -> service.create(admin, "Queima", "FAP", DATES, null))
+    assertThatThrownBy(() -> service.create(admin, "Queima", "FAP", DATES.start(), DATES.end(), null))
         .isInstanceOf(NotPlatformAdminException.class);
-    assertThatThrownBy(() -> service.create(revoked, "Queima", "FAP", DATES, null))
+    assertThatThrownBy(() -> service.create(revoked, "Queima", "FAP", DATES.start(), DATES.end(), null))
         .isInstanceOf(NotPlatformAdminException.class);
 
     assertThat(event.status()).isEqualTo(EventStatus.Draft);
     assertThat(ports.inserted).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-06 AC-1 a range that ends before it starts, or a missing date, is the caller's mistake")
+  void anInvalidDateRangeIsTheCallersMistake() {
+    var farolAdmin = UUID.randomUUID();
+    ports.farolAdmin(farolAdmin);
+    var start = LocalDate.of(2027, 5, 9);
+    var end = LocalDate.of(2027, 5, 2);
+
+    // Not an IllegalArgumentException, which would leave the request a 500 (D8)
+    assertThatThrownBy(() -> service.create(farolAdmin, "Queima", "FAP", start, end, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("an event cannot end before it starts");
+    assertThatThrownBy(() -> service.create(farolAdmin, "Queima", "FAP", null, end, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("dates are required");
+    assertThatThrownBy(() -> service.create(farolAdmin, "Queima", "FAP", start, null, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("dates are required");
+
+    assertThat(service.create(farolAdmin, "Queima", "FAP", end, end, null).dates().start()).isEqualTo(end);
+    assertThat(ports.inserted).hasSize(1); // only the single-day event above
   }
 
   @Test

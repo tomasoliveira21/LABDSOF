@@ -32,6 +32,7 @@ import org.yaml.snakeyaml.Yaml;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.DateRange;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.Event;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.EventStatus;
+import pt.isep.labdsof.events.adapters.in.web.generated.model.EventSummary;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.HelpCategory;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.MapPosition;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.MapVersion;
@@ -145,6 +146,8 @@ class ContractIT extends IntegrationTest {
         model(new Event(ID, "Queima das Fitas", "FAP", DATES, "Semana academica", EventStatus.PUBLISHED,
             "https://farol.test/join/ABC"),
             "eventId", "name", "organiserName", "dates", "description", "status", "joinLink"),
+        model(new EventSummary(ID, "Queima das Fitas", "FAP", DATES, EventStatus.DRAFT, List.of(OTHER)),
+            "eventId", "name", "organiserName", "dates", "status", "eventAdmins"),
         model(REVIEW, "permission", "reportTypes"),
         model(new Team(OTHER, "Nursing", List.of(REVIEW), List.of(HelpCategory.HEALTH, HelpCategory.SAFETY)),
             "teamId", "name", "permissions", "handledCategories"),
@@ -278,6 +281,7 @@ class ContractIT extends IntegrationTest {
   void contractHoldsTheSprintBEndpoints() {
     assertThat(contractOperations()).containsExactlyInAnyOrder(
         "GET /api/v1/status",
+        "GET /api/v1/events",
         "POST /api/v1/events",
         "GET /api/v1/events/{eventId}",
         "POST /api/v1/events/{eventId}/publish",
@@ -305,7 +309,6 @@ class ContractIT extends IntegrationTest {
       + "Content-Type: image/png\r\n\r\nnot really a png\r\n--farol-boundary--\r\n";
 
   private static final Map<String, String> STORIES = Map.ofEntries(
-      Map.entry("POST /api/v1/events", "US-06"),
       Map.entry("GET /api/v1/events/{eventId}/map-versions/current", "US-21 and US-22"),
       Map.entry("GET /api/v1/events/{eventId}/map-versions/{version}", "US-27"),
       Map.entry("GET /api/v1/events/{eventId}/map-versions/{version}/image", "US-21"),
@@ -371,10 +374,11 @@ class ContractIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("192 AC-4 seven operations of the contract belong to later stories, none of the Events, Teams or "
+  @DisplayName("192 AC-4 six operations of the contract belong to later stories, none of the Events, Teams or "
       + "map upload among them")
   void laterStoriesAreTheContractOperationsButWhatIsImplemented() {
-    assertThat(laterStoryOperations().toList()).hasSize(7).doesNotContain("GET /api/v1/status",
+    assertThat(laterStoryOperations().toList()).hasSize(6).doesNotContain("GET /api/v1/status",
+        "POST /api/v1/events", "GET /api/v1/events",
         "POST /api/v1/events/{eventId}/publish", "POST /api/v1/events/{eventId}/map-versions",
         "GET /api/v1/events/{eventId}", "GET /api/v1/events/{eventId}/teams",
         "POST /api/v1/events/{eventId}/teams", "PATCH /api/v1/events/{eventId}/teams/{teamId}",
@@ -384,7 +388,7 @@ class ContractIT extends IntegrationTest {
   }
 
   @ParameterizedTest(name = "[{index}] {0} {1}")
-  @CsvSource({"GET,/api/v1/nothing-here,404", "GET,/api/v1/events,405", "PUT,/api/v1/events/{id},405",
+  @CsvSource({"GET,/api/v1/nothing-here,404", "DELETE,/api/v1/events,405", "PUT,/api/v1/events/{id},405",
       "DELETE,/api/v1/status,405"})
   @DisplayName("192 AC-4 a path or method outside the contract answers 404 or 405 Problem Details")
   void pathsOutsideTheContractAreRefused(String method, String path, int status) {

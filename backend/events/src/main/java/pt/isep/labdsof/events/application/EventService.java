@@ -2,6 +2,7 @@ package pt.isep.labdsof.events.application;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import pt.isep.labdsof.events.application.AccessAudit.Refusal;
 import pt.isep.labdsof.events.domain.DateRange;
 import pt.isep.labdsof.events.domain.Event;
 import pt.isep.labdsof.events.domain.EventNotDraftException;
+import pt.isep.labdsof.events.domain.InvalidEventException;
 
 /**
  * The writes and the platform reads of an event. US-06 creates the draft and US-07 lists every event with its
@@ -49,10 +51,11 @@ public class EventService {
    * never from the token (D1).
    */
   @Transactional
-  public EventView create(UUID userId, String name, String organiserName, DateRange dates, String description) {
+  public EventView create(UUID userId, String name, String organiserName, LocalDate start, LocalDate end,
+      String description) {
     var at = clock.instant();
     platformAdmin(userId, at, "createEvent");
-    var event = Event.created(UUID.randomUUID(), name, organiserName, dates, description);
+    var event = Event.created(UUID.randomUUID(), name, organiserName, dateRange(start, end), description);
     events.insert(event, userId, at);
     outbox.add(EventEvents.changed(event, userId, at));
     audit.created(userId, event.eventId(), at);
@@ -67,6 +70,22 @@ public class EventService {
   public List<EventSummaryView> list(UUID userId) {
     platformAdmin(userId, clock.instant(), "listEvents");
     return events.summaries();
+  }
+
+  /**
+   * The one rule of the body the generated bean validation cannot express (D8): a range that ends before it
+   * starts. {@code DateRange} refuses it with an {@code IllegalArgumentException}, which would leave the request
+   * as a {@code 500}; the caller described the event wrongly, so it is an {@link InvalidEventException} and a
+   * {@code 400}.
+   */
+  private static DateRange dateRange(LocalDate start, LocalDate end) {
+    if (start == null || end == null) {
+      throw new InvalidEventException("dates are required");
+    }
+    if (end.isBefore(start)) {
+      throw new InvalidEventException("an event cannot end before it starts");
+    }
+    return new DateRange(start, end);
   }
 
   /** The gate of D1, recorded when it refuses, as every refusal of this service is (US-14, #192 D8). */

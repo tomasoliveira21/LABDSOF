@@ -25,12 +25,16 @@ class MigrationIT extends IntegrationTest {
     assertThat(jdbc.sql("SELECT current_database()").query(String.class).single()).isEqualTo("events");
     assertThat(jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '1'")
         .query(Boolean.class).single()).isTrue();
+    // V2 brings the global role copy US-06 reads to recognise a FarolAdmin
+    assertThat(jdbc.sql("SELECT success FROM flyway_schema_history WHERE version = '2'")
+        .query(Boolean.class).single()).isTrue();
     assertThat(jdbc.sql("""
         SELECT table_name FROM information_schema.tables
         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
         """).query(String.class).list())
         .containsExactlyInAnyOrder("event", "team", "team_permission", "venue_map_version",
-            "point_of_interest", "membership_copy", "processed_message", "outbox", "flyway_schema_history");
+            "point_of_interest", "membership_copy", "global_role_copy", "processed_message", "outbox",
+            "flyway_schema_history");
   }
 
   @Test

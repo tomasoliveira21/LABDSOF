@@ -211,6 +211,10 @@ class LoggingIT extends IntegrationTest {
         .claim("name", name).build()));
     var event = insertEvent("Draft", null, null);
     member(event, user, Role.EventAdmin, Status.Active, 1);
+    // A FarolAdmin too, so the create below really runs and the organiser name it carries is checked (M-10).
+    // Holding the role changes none of the reads: it gives no access to an event's data (features.md 4.1).
+    jdbc.sql("INSERT INTO global_role_copy (user_id, role, granted, version) VALUES (:u, 'FarolAdmin', true, 1)")
+        .param("u", user).update();
     var path = "/api/v1/events/" + event;
     var secondEvent = "/api/v1/events/" + UUID.randomUUID();
 
@@ -224,7 +228,7 @@ class LoggingIT extends IntegrationTest {
     awaitedRequest(output, "POST", "/api/v1/events", valid, "hello", 415, "Content-Type", "text/plain");
     awaitedRequest(output, "POST", "/api/v1/events", valid,
         "{\"name\":\"Queima\",\"organiserName\":\"" + name + "\",\"dates\":{\"start\":\"2027-05-02\","
-            + "\"end\":\"2027-05-09\"}}", 501, "Content-Type", "application/json");
+            + "\"end\":\"2027-05-09\"}}", 201, "Content-Type", "application/json");
 
     var logged = output.getAll();
     for (var secret : List.of(email, name, valid, expired, tampered, "Leaky Name", valid.split("\\.")[1])) {
