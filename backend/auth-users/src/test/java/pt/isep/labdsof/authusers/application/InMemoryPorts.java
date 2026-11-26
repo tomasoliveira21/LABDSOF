@@ -15,13 +15,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import pt.isep.labdsof.authusers.application.EventCopies.Copy;
+import pt.isep.labdsof.authusers.application.MyMemberships.Status;
 import pt.isep.labdsof.authusers.domain.EventMembership;
 import pt.isep.labdsof.authusers.domain.GlobalRole;
 import pt.isep.labdsof.authusers.domain.UserAccount;
 
 /** Fakes of every port, for the use-case tests. */
 final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants, Outbox, EventMemberships,
-    TeamCopies, MemberAudit, MyMemberships {
+    TeamCopies, MemberAudit, MyMemberships, EventCopies {
 
   /** What a test asserts about a team assignment that was stored (US-18 D8). */
   record Assignment(UUID eventId, UUID userId, UUID teamId, UUID actorUserId, Instant at, boolean added) {}
@@ -40,8 +42,16 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   final Map<UUID, UUID> liveTeams = new HashMap<>();
   /** What the repository stored, and what the audit logged: one list each, so a test can tell them apart. */
   final List<Assignment> assignments = new ArrayList<>();
+  /** Every insertIfAbsent that was attempted (US-12), whether it stored anything or not. */
+  final List<Assignment> insertedMemberships = new ArrayList<>();
   final List<Assignment> audited = new ArrayList<>();
   final List<Refused> refusals = new ArrayList<>();
+  /** What {@code GET /me/memberships} answers, whoever asks (US-01). */
+  final List<Entry> myMemberships = new ArrayList<>();
+  /** The event copies, as the EventChanged consumer keeps them (US-12 reads them, #241 writes them). */
+  final Map<UUID, Copy> eventCopies = new HashMap<>();
+  /** The joins the audit recorded (US-12). */
+  final List<Refused> joins = new ArrayList<>();
   final List<UUID> locked = new ArrayList<>();
   int emailUpdates;
   int insertAttempts;
@@ -49,6 +59,10 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   UserAccount concurrentWinner;
   /** When set, the next insert is refused but stores nothing: the conflict was on the e-mail, not the subject. */
   boolean insertConflictsWithoutAnAccount;
+  /** When set, the next join loses the race: this membership is stored as if another scan had just committed it. */
+  EventMembership concurrentJoinWinner;
+  /** When set, the next join is refused and stores nothing — the row the use case then looks for is not there. */
+  boolean joinConflictsWithoutAMembership;
 
   @Override
   public Optional<UserAccount> findById(UUID userId) {
@@ -106,9 +120,6 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
     outbox.add(event);
   }
 
-  /** What {@code GET /me/memberships} answers, whoever asks (US-01). */
-  final List<Entry> myMemberships = new ArrayList<>();
-
   @Override
   public List<Entry> findForUser(UUID userId) {
     return List.copyOf(myMemberships);
@@ -122,6 +133,43 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
 
   void liveTeam(UUID eventId, UUID teamId) {
     liveTeams.put(teamId, eventId);
+  }
+
+  void eventCopy(UUID eventId, String name, Status status) {
+    eventCopies.put(eventId, new Copy(eventId, name, status));
+  }
+
+  @Override
+  public void event(UUID eventId, String name, Status status, long version) {
+    eventCopy(eventId, name, status);
+  }
+
+  @Override
+  public void team(UUID eventId, UUID teamId, String payload, long version) {
+    // Not read by any use-case test: the team copies are queried through TeamCopies
+  }
+
+  @Override
+  public Optional<Copy> find(UUID eventId) {
+    return Optional.ofNullable(eventCopies.get(eventId));
+  }
+
+  @Override
+  public boolean insertIfAbsent(EventMembership membership, UUID actorUserId, Instant at) {
+    insertedMemberships.add(new Assignment(membership.eventId(), membership.userId(), null, actorUserId, at, true));
+    if (joinConflictsWithoutAMembership) {
+      return false;
+    }
+    if (concurrentJoinWinner != null) {
+      member(concurrentJoinWinner);
+      concurrentJoinWinner = null;
+      return false;
+    }
+    if (memberships.containsKey(List.of(membership.eventId(), membership.userId()))) {
+      return false;
+    }
+    member(membership);
+    return true;
   }
 
   @Override
@@ -163,6 +211,11 @@ final class InMemoryPorts implements UserAccounts, Tombstones, GlobalRoleGrants,
   @Override
   public boolean isLiveTeamOf(UUID eventId, UUID teamId) {
     return eventId.equals(liveTeams.get(teamId));
+  }
+
+  @Override
+  public void joined(UUID userId, UUID eventId, Instant at) {
+    joins.add(new Refused(userId, eventId, null, at));
   }
 
   @Override

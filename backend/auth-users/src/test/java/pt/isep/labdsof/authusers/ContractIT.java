@@ -205,11 +205,10 @@ class ContractIT extends IntegrationTest {
   private record LaterStory(String method, String path, String body, String story) {}
 
   private static Stream<Arguments> laterStories() {
-    // The three operations of US-18 (#67) are served now: they answer 404 to a caller who is not a member
+    // US-18 (#67) and US-12 (#63) are served now: they answer 404 on an event the caller cannot reach
     return Stream.of(
         new LaterStory("GET", "/api/v1/accounts?email=ana@farol.test", null, "US-06"),
-        new LaterStory("POST", eventPath("/members"), NAME_ADMIN_BODY, "US-06"),
-        new LaterStory("POST", eventPath("/members/me"), null, "US-12")).map(Arguments::of);
+        new LaterStory("POST", eventPath("/members"), NAME_ADMIN_BODY, "US-06")).map(Arguments::of);
   }
 
   @Test

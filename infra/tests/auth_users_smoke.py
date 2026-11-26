@@ -4,8 +4,8 @@ Checks, through the API gateway, that Auth & Users validates real Keycloak token
 its own database: no token and a tampered token get 401 Problem Details; Rita's real token creates her account at
 the first GET /api/v1/me and the second call returns the same one; the bootstrap account (#179) is FarolAdmin; an
 operation of a later story gets 501; the member list and the two team-assignment operations of US-18 answer 401
-without a token and 404 to a caller who is not a member of the event, which is everyone before US-06 and US-12, so
-the smoke still writes nothing; the X-Correlation-Id comes back. Then it reads the outbox in the `auth_users`
+without a token and 404 to a caller who is not a member of the event, and the join of US-12 answers 404 because no
+event has a published copy before US-06, so the smoke still writes nothing; the X-Correlation-Id comes back. Then it reads the outbox in the `auth_users`
 database: the rows of those first calls must have `published_at`, which is set after the broker's confirm. The
 queue is not counted, because Events (#192) will consume it.
 
@@ -192,6 +192,17 @@ def main(env_path: str, project: str | None = None) -> int:
     idp.check(is_problem(status, headers, body, 404),
               "GET /api/v1/events/{id}/members of an event Rita is not a member of gets 404 Problem Details "
               "(US-18)" + ("" if status == 404 else f" (got {status})"))
+    # US-12 (#63): the join needs a published event in the local copy, and no event is published before US-06
+    join = f"{members}/me"
+    status, headers, body = send(gateway, "POST", join)
+    idp.check(is_problem(status, headers, body, 401),
+              "POST /api/v1/events/{id}/members/me without a token gets 401 Problem Details"
+              + ("" if status == 401 else f" (got {status})"))
+    status, headers, body = send(gateway, "POST", join, rita)
+    idp.check(is_problem(status, headers, body, 404),
+              "POST /api/v1/events/{id}/members/me for an event with no published copy gets 404 Problem Details "
+              "(US-12)" + ("" if status == 404 else f" (got {status})"))
+
     assignment = f"{members}/{uuid.uuid4()}/teams/{uuid.uuid4()}"
     for method in ("PUT", "DELETE"):
         status, headers, body = send(gateway, method, assignment)
