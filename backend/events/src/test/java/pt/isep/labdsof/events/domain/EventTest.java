@@ -62,6 +62,75 @@ class EventTest {
   }
 
   @Test
+  @DisplayName("US-06 AC-1 a created event is a draft at version 1, with no join code and the details given")
+  void createdEventIsADraftAtVersionOne() {
+    var eventId = UUID.randomUUID();
+    var dates = new DateRange(LocalDate.of(2027, 5, 2), LocalDate.of(2027, 5, 9));
+
+    var created = Event.created(eventId, "Queima das Fitas 2027", "FAP", dates, "Semana academica");
+
+    assertThat(created).isEqualTo(new Event(eventId, "Queima das Fitas 2027", "FAP", dates, "Semana academica",
+        EventStatus.Draft, null, 1));
+    assertThat(created.status().visibleToParticipants()).isFalse(); // a draft participants cannot see
+  }
+
+  @Test
+  @DisplayName("US-06 AC-1 a created event takes no description as the empty one, and trims what it is given")
+  void createdEventTakesNoDescriptionAsEmptyAndTrims() {
+    var dates = new DateRange(LocalDate.of(2027, 5, 2), LocalDate.of(2027, 5, 9));
+
+    assertThat(Event.created(UUID.randomUUID(), "Queima", "FAP", dates, null).description()).isEmpty();
+    assertThat(Event.created(UUID.randomUUID(), "  Queima  ", "  FAP  ", dates, "").name()).isEqualTo("Queima");
+    assertThat(Event.created(UUID.randomUUID(), "  Queima  ", "  FAP  ", dates, "").organiserName())
+        .isEqualTo("FAP");
+  }
+
+  @ParameterizedTest(name = "{0} characters")
+  @CsvSource({"1", "100"})
+  @DisplayName("US-06 AC-1 a name and an organiser name of 1 and of 100 characters are both accepted")
+  void nameBoundsAreInclusive(int length) {
+    var dates = new DateRange(LocalDate.of(2027, 5, 2), LocalDate.of(2027, 5, 9));
+    var value = "x".repeat(length);
+
+    assertThat(Event.created(UUID.randomUUID(), value, value, dates, null).name()).hasSize(length);
+  }
+
+  @Test
+  @DisplayName("US-06 AC-1 a blank or over-long name, organiser name or description is refused in the domain")
+  void boundsAreRefusedInTheDomain() {
+    var eventId = UUID.randomUUID();
+    var dates = new DateRange(LocalDate.of(2027, 5, 2), LocalDate.of(2027, 5, 9));
+    var tooLong = "x".repeat(101);
+
+    assertThatThrownBy(() -> Event.created(eventId, "   ", "FAP", dates, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("a name has 1 to 100 characters");
+    assertThatThrownBy(() -> Event.created(eventId, tooLong, "FAP", dates, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("a name has 1 to 100 characters");
+    assertThatThrownBy(() -> Event.created(eventId, "Queima", "", dates, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("an organiser name has 1 to 100 characters");
+    assertThatThrownBy(() -> Event.created(eventId, "Queima", tooLong, dates, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("an organiser name has 1 to 100 characters");
+    assertThatThrownBy(() -> Event.created(eventId, "Queima", "FAP", dates, "x".repeat(2001)))
+        .isInstanceOf(InvalidEventException.class).hasMessage("a description has at most 2000 characters");
+    assertThat(Event.created(eventId, "Queima", "FAP", dates, "x".repeat(2000)).description()).hasSize(2000);
+  }
+
+  @Test
+  @DisplayName("US-06 AC-1 a created event needs an id, a name, an organiser name and dates")
+  void createdEventNeedsItsParts() {
+    var dates = new DateRange(LocalDate.of(2027, 5, 2), LocalDate.of(2027, 5, 9));
+
+    assertThatThrownBy(() -> Event.created(null, "Queima", "FAP", dates, null))
+        .isInstanceOf(NullPointerException.class).hasMessage("eventId");
+    assertThatThrownBy(() -> Event.created(UUID.randomUUID(), null, "FAP", dates, null))
+        .isInstanceOf(NullPointerException.class).hasMessage("a name");
+    assertThatThrownBy(() -> Event.created(UUID.randomUUID(), "Queima", null, dates, null))
+        .isInstanceOf(NullPointerException.class).hasMessage("an organiser name");
+    assertThatThrownBy(() -> Event.created(UUID.randomUUID(), "Queima", "FAP", null, null))
+        .isInstanceOf(NullPointerException.class).hasMessage("dates");
+  }
+
+  @Test
   @DisplayName("192 AC-5 an event's dates may be a single day but never end before they start")
   void datesMayBeOneDayButNeverEndBeforeTheyStart() {
     var day = LocalDate.of(2027, 5, 2);
