@@ -91,3 +91,5 @@ The gates of the [specs README](README.md) apply to `backend/transports`, as in 
 ## 7. Handoff and changelog
 
 - **26 November 2026 · Spec.** Written before the code, from the design conversation with the owner (D1, D2, D10, D11 decided on 26 November 2026; Tomás Oliveira agreed to D1 the same day). A fresh reader checked it could be planned from; its one open question was D1, and the builder's calls it found are recorded in D3, D4, D6, D11 and F7.
+
+- **27 November 2026 · Backend (F1 to F5).** Adding a route and reading the buses, with the smoke and the documents. Two calls made while building: the optional fields are left out of the JSON, never `null` (a `NON_NULL` mix-in, as Auth & Users does), and `SecurityIT`'s *a valid token is accepted* now expects the `404` of the access check instead of the `501`. Clean `mvn verify`: 238 unit and 260 integration tests, JaCoCo 845/848 lines and 344/348 branches, PIT 154/156 (the two survivors, boundaries of `Venue`, are now killed by `VenueTest`); every step of `ci.yml` passes locally.
