@@ -128,6 +128,35 @@ class TransportOptionDataIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-41 D6 a route changed later (US-37) keeps its place: the order is when it was added")
+  void orderSurvivesAChange() {
+    var eventId = event();
+    var at = Instant.parse("2027-05-08T22:00:00Z");
+    add(route(eventId, "500", at));
+    add(route(eventId, "502", at.plusSeconds(60)));
+
+    jdbc.sql("UPDATE transport_option SET last_updated_at = :later WHERE event_id = :e AND external_route = '500'")
+        .param("later", java.sql.Timestamp.from(at.plusSeconds(3600))).param("e", eventId).update();
+
+    assertThat(options.busRoutes(eventId)).extracting(BusRoute::externalRoute).containsExactly("500", "502");
+  }
+
+  @Test
+  @DisplayName("US-41 D3 the event's status is checked again under the lock: closed, suspended or gone stores nothing")
+  void statusUnderTheLock() {
+    var now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+    var closed = UUID.randomUUID();
+    copies.upsertIfNewer(new EventCopy(closed, EventStatus.Closed, 1));
+    var suspended = UUID.randomUUID();
+    copies.upsertIfNewer(new EventCopy(suspended, EventStatus.Suspended, 1));
+
+    assertThat(add(route(closed, "500", now))).isEqualTo(Added.CLOSED);
+    assertThat(add(route(suspended, "500", now))).isEqualTo(Added.GONE);
+    assertThat(add(route(UUID.randomUUID(), "500", now))).isEqualTo(Added.GONE);
+    assertThat(rows(closed) + rows(suspended)).isZero();
+  }
+
+  @Test
   @DisplayName("US-41 D6 the routes come back in the order they were added, with what was stored")
   void order() {
     var eventId = event();

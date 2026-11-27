@@ -116,6 +116,17 @@ class TransportOptionServiceTest {
     assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(BusRouteLimitException.class);
   }
 
+  @Test
+  @DisplayName("US-41 D3 an event closed or suspended between the access check and the lock stores nothing")
+  void changedBeforeTheLock() {
+    given(EventStatus.Published, Role.EventAdmin);
+
+    options.answer = Added.CLOSED;
+    assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(EventClosedException.class);
+    options.answer = Added.GONE;
+    assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(EventNotFoundException.class);
+  }
+
   private static final class FakeOptions implements TransportOptions {
     Added answer = Added.ADDED;
     final List<BusRoute> added = new ArrayList<>();

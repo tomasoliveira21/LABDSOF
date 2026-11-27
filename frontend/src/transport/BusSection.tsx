@@ -2,58 +2,64 @@ import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "../session/client";
 import { startVisiblePolling } from "../session/polling";
 import BusMap from "./BusMap";
-import { busLines, keepPolling, nextSection, sectionState } from "./busView";
-import type { BusObservations, SectionState, SectionView } from "./busView";
+import { busLines, initialSection, keepPolling, nextSection } from "./busView";
+import type { BusObservations, SectionView } from "./busView";
 import "./transport.css";
 
-const messages: Partial<Record<SectionState, string>> = {
+const messages: Partial<Record<SectionView["status"], string>> = {
+  preparing: "A preparar os autocarros…",
   noRoutes: "A organização ainda não indicou linhas de autocarro para este evento.",
   noData: "Ainda não há dados dos autocarros.",
   gone: "Este evento não está disponível.",
 };
 
 /**
- * US-41 D11, D12: the buses on the event's routes near the venue, polled while the page is visible. The last list
- * stays on screen while a poll fails, and the retry button waits while the gateway asks to (429, 503); a 404 after an answer (the member removed, the event suspended) stops the
- * polling, and one before any answer keeps it going (Transports' copies may still be arriving).
+ * US-41 D11, D12: the buses on the event's routes near the venue, polled while the page is visible (rules in
+ * nextSection). The last list stays on screen while a poll fails; while the gateway asks to wait (429, 503) the
+ * section says so and offers no retry; a 404 after an answer stops the polling, and before any answer it shows
+ * "A preparar…" for up to six polls, since Transports' copy of a member who has just joined may still be arriving.
  */
 export default function BusSection({ eventId }: { eventId: string }) {
-  const [state, setState] = useState<SectionView>({ status: "loading", retryNow: true });
+  const [state, setState] = useState<SectionView>(initialSection);
   const [attempt, setAttempt] = useState(0);
-  const answered = useRef(false);
+  // The page is mounted once per event, so a retry keeps the last list and whether an answer already came
+  const section = useRef(initialSection());
 
   useEffect(() => {
-    answered.current = false;
+    const advance = (status: number | "error", view?: BusObservations) => {
+      section.current = nextSection(section.current, status, view);
+      setState(section.current);
+    };
     let stop = () => {};
     stop = startVisiblePolling(async signal => {
       try {
         const response = await apiFetch(`/api/v1/events/${eventId}/bus-observations`, { signal });
         const view: BusObservations | undefined = response.status === 200 ? await response.json() : undefined;
-        const status = sectionState(response.status, view);
         if (signal.aborted) return response;
-        setState(previous => nextSection(previous, response.status, view));
-        if (!keepPolling(status, answered.current)) queueMicrotask(stop);
-        if (view) answered.current = true;
+        advance(response.status, view);
+        if (!keepPolling(section.current)) queueMicrotask(stop);
         return response;
       } catch (error) {
-        if (!signal.aborted) setState(previous => nextSection(previous, "error"));
+        if (!signal.aborted) advance("error");
         throw error;
       }
     });
     return () => stop();
   }, [eventId, attempt]);
 
-  const message = messages[state.status as SectionState];
+  const message = messages[state.status];
   return <section className="bus-section" aria-labelledby="buses-title">
     <h2 id="buses-title">Autocarros perto do recinto</h2>
     {state.status === "loading" && <p role="status">A carregar os autocarros…</p>}
     {message && <p role={state.status === "gone" ? "alert" : "status"}>{message}</p>}
-    {state.status === "error" && <div role="alert" className="bus-error">
-      <p>Não foi possível carregar os autocarros.</p>
-      {state.retryNow && <button type="button" className="member-primary" onClick={() => setAttempt(value => value + 1)}>
-        Tentar novamente
-      </button>}
-    </div>}
+    {state.status === "error" && (state.retryNow
+      ? <div role="alert" className="bus-error">
+        <p>Não foi possível carregar os autocarros.</p>
+        <button type="button" className="member-primary" onClick={() => setAttempt(value => value + 1)}>
+          Tentar novamente
+        </button>
+      </div>
+      : <p role="status">Muitos pedidos neste momento; voltamos a tentar dentro de momentos.</p>)}
     {state.view && (state.status === "list" || state.status === "error") &&
       <BusMap venue={state.view.venue} buses={state.view.buses}/>}
     {state.view && (state.status === "list" || state.status === "error") &&

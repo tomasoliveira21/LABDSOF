@@ -50,6 +50,8 @@ public class TransportOptionService {
     switch (options.addBusRoute(stored, NewBusRoute.MAX_PER_EVENT)) {
       case TAKEN -> throw new BusRouteTakenException();
       case FULL -> throw new BusRouteLimitException();
+      case CLOSED -> throw new EventClosedException();
+      case GONE -> throw new EventNotFoundException();
       case ADDED -> log.atInfo()
           .addKeyValue("eventId", eventId.toString())
           .addKeyValue("optionId", stored.optionId().toString())

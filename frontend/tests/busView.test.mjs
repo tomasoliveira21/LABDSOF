@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { busLines, formatDistance, formatTime, keepPolling, nextSection, sectionState } from "../src/transport/busView.ts";
+import { EARLY_NOT_FOUND_LIMIT, busLines, formatDistance, formatTime, initialSection, keepPolling, nextSection, sectionState }
+  from "../src/transport/busView.ts";
 
 const venue = { longitude: -8.6841, latitude: 41.1724 };
 const at = "2026-11-26T22:14:00Z";
@@ -61,18 +62,32 @@ test("US-41 D11 the section shows a list, or says why it cannot", () => {
   assert.equal(sectionState(200), "error");
 });
 
-test("US-41 D12 a 404 stops the polling only after the section has had an answer", () => {
-  // Before any answer, Transports' copy of a member who has just joined may still be on its way
-  assert.equal(keepPolling("gone", false), true);
-  assert.equal(keepPolling("gone", true), false);
-  for (const state of ["list", "noRoutes", "noData", "error"]) {
-    assert.equal(keepPolling(state, true), true, state);
-    assert.equal(keepPolling(state, false), true, state);
+test("US-41 D12 a 404 before any answer says it is preparing and keeps polling, then gives up after 6", () => {
+  assert.equal(EARLY_NOT_FOUND_LIMIT, 6);
+  let section = initialSection();
+  for (let attempt = 1; attempt < EARLY_NOT_FOUND_LIMIT; attempt++) {
+    section = nextSection(section, 404);
+    assert.equal(section.status, "preparing", `attempt ${attempt}`);
+    assert.equal(keepPolling(section), true, `attempt ${attempt}`);
+  }
+  section = nextSection(section, 404);
+  assert.equal(section.status, "gone");
+  assert.equal(keepPolling(section), false);
+});
+
+test("US-41 D12 an answer after 'preparing' shows it; a 404 after an answer stops at once", () => {
+  const ready = nextSection(nextSection(initialSection(), 404), 200, view([{ externalRoute: "500", busCount: 0 }], []));
+  assert.equal(ready.status, "list");
+  const gone = nextSection(ready, 404);
+  assert.equal(gone.status, "gone");
+  assert.equal(keepPolling(gone), false);
+  for (const status of [500, 429, "error"]) {
+    assert.equal(keepPolling(nextSection(ready, status)), true, String(status));
   }
 });
 
 const listed = view([{ externalRoute: "500", busCount: 1 }], [bus("a", "500", 350, "3412")]);
-const loading = { status: "loading", retryNow: true };
+const loading = initialSection();
 
 test("US-41 D11 a failed poll keeps the last list on screen, never a 'no routes' or 'no data' answer", () => {
   const afterList = nextSection(nextSection(loading, 200, listed), 500);

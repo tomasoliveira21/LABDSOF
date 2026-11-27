@@ -49,26 +49,49 @@ export function busLines(view: BusObservations): string[] {
   return [...buses, ...empty];
 }
 
+/** D12: how many 404s before any answer the section waits out (about a minute) before saying the event is gone. */
+export const EARLY_NOT_FOUND_LIMIT = 6;
+
 /**
- * D12: a 404 after an answer means the event is gone for this user (removed, suspended), so the polling stops. Before
- * any answer it may only mean that Transports' copy of a member who has just joined is still on its way: keep polling.
+ * What the section holds: what it shows, the last list it may keep showing, whether retrying at once is fair, whether
+ * it has had an answer, and how many 404s came before the first one.
  */
-export function keepPolling(state: SectionState, answeredBefore: boolean): boolean {
-  return state !== "gone" || !answeredBefore;
+export type SectionView = {
+  status: SectionState | "loading" | "preparing";
+  view?: BusObservations;
+  retryNow: boolean;
+  answered: boolean;
+  earlyNotFound: number;
+};
+
+export function initialSection(): SectionView {
+  return { status: "loading", retryNow: true, answered: false, earlyNotFound: 0 };
 }
 
-/** What the section holds: what it shows, the last list it may keep showing, and whether retrying at once is fair. */
-export type SectionView = { status: SectionState | "loading"; view?: BusObservations; retryNow: boolean };
-
 /**
- * D11, D12: the section after one answer. A failed poll keeps the last list on screen (never a "no routes" or "no
- * data" answer, which would show an empty map), and offers no immediate retry while the gateway asks to wait.
+ * D11, D12: the section after one answer.
+ * - A 404 after an answer means the event is gone for this user (removed, suspended). Before any answer it may only
+ *   mean that Transports' copy of a member who has just joined is on its way: "preparing", up to
+ *   {@link EARLY_NOT_FOUND_LIMIT} times, then "gone".
+ * - A failed poll keeps the last list on screen (never a "no routes" or "no data" answer, which would show an empty
+ *   map), and offers no immediate retry while the gateway asks to wait (429, 503).
  */
 export function nextSection(previous: SectionView, status: number | "error", view?: BusObservations): SectionView {
   const state = sectionState(status, view);
-  if (state !== "error") return { status: state, view, retryNow: true };
+  const base = { answered: previous.answered, earlyNotFound: previous.earlyNotFound, retryNow: true };
+  if (state === "gone") {
+    const earlyNotFound = previous.answered ? previous.earlyNotFound : previous.earlyNotFound + 1;
+    const waiting = !previous.answered && earlyNotFound < EARLY_NOT_FOUND_LIMIT;
+    return { ...base, status: waiting ? "preparing" : "gone", earlyNotFound };
+  }
+  if (state !== "error") return { ...base, status: state, view, answered: true };
   const kept = previous.status === "list" || previous.status === "error" ? previous.view : undefined;
-  return { status: state, view: kept, retryNow: status !== 429 && status !== 503 };
+  return { ...base, status: state, view: kept, retryNow: status !== 429 && status !== 503 };
+}
+
+/** D12: the polling goes on until the section says the event is gone. */
+export function keepPolling(section: SectionView): boolean {
+  return section.status !== "gone";
 }
 
 /** D11, D12: what one answer shows; a 404 is "gone" (the event is not, or no longer, there for this user). */

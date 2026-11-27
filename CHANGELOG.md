@@ -19,6 +19,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Notes
 - **The page is built in this story, by agreement with the web app's owner** (Tomás Oliveira, 26 November 2026), as an exception to decision 13 of 15 November 2026 and the specs README (*Workflow*).
+- After the review of PR #258: the event's status is read again under the lock, the routes are ordered by a new `created_at` (in `V2`), a `404` before the page's first answer waits up to six polls, and a `429`/`503` gets a calmer message.
 - Routes are added only through the API until a team form exists; a note proposes that US-37's form (#98) lists them too. Changing or removing a route is US-37.
 
 ## [Unreleased] · 2026-11-26 · Join an event by QR code or link (US-12, #63, Tiago Teixeira)
