@@ -1,0 +1,5 @@
+.bus-section { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #cfdae4; }
+.bus-section h2 { font-size: 1.25rem; }
+.bus-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .45rem; }
+.bus-list li { background: #f0f4f7; border-radius: .5rem; padding: .7rem .8rem; overflow-wrap: anywhere; }
+.bus-error p { color: #96292b; }

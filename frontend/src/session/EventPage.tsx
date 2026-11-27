@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import BusSection from "../transport/BusSection";
 import { apiFetch } from "./client";
 import { canOpen } from "./eventPath";
 import { eventStatuses } from "./MembershipList";
@@ -45,6 +46,7 @@ export default function EventPage({ eventId }: { eventId: string }) {
         {(state.event.eventStatus && eventStatuses[state.event.eventStatus]) ?? "Estado indisponível"}
         {" · "}{state.event.role === "EventAdmin" ? "Administração" : "Participação"}
       </p>
+      <BusSection eventId={eventId}/>
     </>}
   </section>;
 }
