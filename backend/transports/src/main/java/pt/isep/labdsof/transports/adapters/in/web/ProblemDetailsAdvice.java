@@ -10,6 +10,14 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import pt.isep.labdsof.transports.application.BusRouteLimitException;
+import pt.isep.labdsof.transports.application.BusRouteTakenException;
+import pt.isep.labdsof.transports.application.EventClosedException;
+import pt.isep.labdsof.transports.application.EventNotFoundException;
+import pt.isep.labdsof.transports.application.ForbiddenException;
+import pt.isep.labdsof.transports.application.ShuttleNotYetException;
+import pt.isep.labdsof.transports.domain.InvalidBusRouteException;
+import pt.isep.labdsof.transports.domain.NewBusRoute;
 
 /**
  * Problem Details for every error (spec D1, D10, API outline 1.7). The standard MVC exceptions, invalid bodies and path
@@ -31,6 +39,47 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
   @ExceptionHandler({AccessDeniedException.class, AuthenticationException.class})
   ResponseEntity<ProblemDetail> denied(RuntimeException e) {
     throw e;
+  }
+
+  /** US-41 AC-3: the same answer for an unknown event, a suspended one and a user who is not a member. */
+  @ExceptionHandler(EventNotFoundException.class)
+  ResponseEntity<ProblemDetail> eventNotFound() {
+    return problem(HttpStatus.NOT_FOUND, "Event not found.");
+  }
+
+  @ExceptionHandler(ForbiddenException.class)
+  ResponseEntity<ProblemDetail> forbidden() {
+    return problem(HttpStatus.FORBIDDEN, "No permission in this event.");
+  }
+
+  /** US-41 D2: the message is one of the fixed texts of {@code NewBusRoute}, never the request's content. */
+  @ExceptionHandler(InvalidBusRouteException.class)
+  ResponseEntity<ProblemDetail> invalidBusRoute(InvalidBusRouteException e) {
+    return problem(HttpStatus.BAD_REQUEST, e.getMessage());
+  }
+
+  @ExceptionHandler(ShuttleNotYetException.class)
+  ResponseEntity<ProblemDetail> shuttleNotYet() {
+    return problem(HttpStatus.NOT_IMPLEMENTED, "This operation arrives with US-37.");
+  }
+
+  @ExceptionHandler(EventClosedException.class)
+  ResponseEntity<ProblemDetail> eventClosed() {
+    return problem(HttpStatus.CONFLICT, "This event is closed.");
+  }
+
+  @ExceptionHandler(BusRouteTakenException.class)
+  ResponseEntity<ProblemDetail> busRouteTaken() {
+    return problem(HttpStatus.CONFLICT, "This route is already on the event.");
+  }
+
+  @ExceptionHandler(BusRouteLimitException.class)
+  ResponseEntity<ProblemDetail> busRouteLimit() {
+    return problem(HttpStatus.CONFLICT, "This event already has " + NewBusRoute.MAX_PER_EVENT + " routes.");
+  }
+
+  private static ResponseEntity<ProblemDetail> problem(HttpStatus status, String detail) {
+    return ResponseEntity.status(status).body(ProblemDetail.forStatusAndDetail(status, detail));
   }
 
   @ExceptionHandler(Exception.class)

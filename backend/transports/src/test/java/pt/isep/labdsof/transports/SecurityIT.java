@@ -33,9 +33,13 @@ class SecurityIT extends IntegrationTest {
         challenge -> assertThat(challenge).startsWith("Bearer"));
   }
 
-  /** The token passed the security layer and reached the operation, which answers the 501 of its story (D6). */
+  /**
+   * The token passed the security layer and reached the operation: since US-41 its access check answers the 404 of a
+   * user who is not a member of the event (before, the 501 of its story).
+   */
   static void assertAccepted(HttpResponse<String> response) {
-    ApiClient.assertProblem(response, 501);
+    ApiClient.assertProblem(response, 404);
+    assertThat(ApiClient.json(response).get("detail")).isEqualTo("Event not found.");
   }
 
   private static String busObservations() {

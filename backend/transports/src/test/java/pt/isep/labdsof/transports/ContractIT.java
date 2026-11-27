@@ -29,6 +29,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import org.yaml.snakeyaml.Yaml;
 import pt.isep.labdsof.transports.adapters.in.web.generated.model.BusObservation;
 import pt.isep.labdsof.transports.adapters.in.web.generated.model.BusObservations;
+import pt.isep.labdsof.transports.adapters.in.web.generated.model.BusRouteSummary;
 import pt.isep.labdsof.transports.adapters.in.web.generated.model.Departure;
 import pt.isep.labdsof.transports.adapters.in.web.generated.model.GeoPosition;
 import pt.isep.labdsof.transports.adapters.in.web.generated.model.NewDeparture;
@@ -88,7 +89,8 @@ class ContractIT extends IntegrationTest {
   }
 
   private static final GeoPosition POSITION = new GeoPosition(-8.6841, 41.1724);
-  private static final BusObservation BUS = new BusObservation("stcp:3301", "205", POSITION, AT);
+  private static final BusObservation BUS = new BusObservation("stcp:3301", "3301", "205", POSITION, AT, 350L);
+  private static final BusRouteSummary ROUTE = new BusRouteSummary("205", "Hospital S. João", 1);
   private static final Departure DEPARTURE = new Departure("Trindade", AT, AT.plusMinutes(5));
 
   private static Stream<Arguments> models() {
@@ -96,8 +98,10 @@ class ContractIT extends IntegrationTest {
         model(new ServiceStatus(ServiceStatus.ServiceEnum.TRANSPORTS, ServiceStatus.StatusEnum.OK),
             "service", "status"),
         model(POSITION, "longitude", "latitude"),
-        model(BUS, "vehicleId", "routeId", "position", "observedAt"),
-        model(new BusObservations(AT, false, List.of(BUS)), "dataAsOf", "stale", "buses"),
+        model(BUS, "vehicleId", "fleetVehicleId", "routeId", "position", "observedAt", "distanceMetres"),
+        model(ROUTE, "externalRoute", "name", "busCount"),
+        model(new BusObservations(POSITION, List.of(ROUTE), AT, false, List.of(BUS)),
+            "venue", "routes", "dataAsOf", "stale", "buses"),
         model(new TransportSourceStatus(true, AT), "available", "lastValidImportAt"),
         model(new NewDeparture("Trindade", AT), "destination", "scheduledAt"),
         model(DEPARTURE, "destination", "scheduledAt", "expectedAt"),
@@ -157,7 +161,8 @@ class ContractIT extends IntegrationTest {
   @Test
   @DisplayName("193 D1 a missing list is read as an empty list")
   void missingListIsEmpty() {
-    assertThat(new BusObservations(null, true, null).buses()).isEmpty();
+    assertThat(new BusObservations(POSITION, null, null, true, null).buses()).isEmpty();
+    assertThat(new BusObservations(POSITION, null, null, true, null).routes()).isEmpty();
     assertThat(new NewTransportOption(TransportMode.EXTERNAL_BUS, null, "205", null, null).stopPoiIds()).isEmpty();
     assertThat(new NewTransportOption(TransportMode.EXTERNAL_BUS, null, "205", null, null).departures()).isEmpty();
     assertThat(new TransportOption(ID, TransportMode.SHUTTLE, "A", null, null, null).stopPoiIds()).isEmpty();
@@ -226,13 +231,10 @@ class ContractIT extends IntegrationTest {
   private static final String JSON_TYPE = "application/json";
 
   private static final Map<String, String> STORIES = Map.of(
-      "GET /api/v1/events/{eventId}/bus-observations", "US-41",
-      "GET /api/v1/events/{eventId}/transport-source-status", "US-43",
-      "POST /api/v1/events/{eventId}/transport-options", "US-41");
+      "GET /api/v1/events/{eventId}/transport-source-status", "US-43");
 
   private static final Map<String, String> BODIES = Map.of(
-      "POST /api/v1/events/{eventId}/transport-options",
-      "{\"mode\":\"ExternalBus\",\"externalRoute\":\"205\",\"stopPoiIds\":[\"" + ID + "\"]}");
+      "POST /api/v1/events/{eventId}/transport-options", "{\"mode\":\"ExternalBus\",\"externalRoute\":\"205\"}");
 
   /** The sample request of an operation ("METHOD path" of the contract), with a fresh event id. */
   static SampleRequest sampleRequest(String operation) {
@@ -275,9 +277,9 @@ class ContractIT extends IntegrationTest {
   }
 
   @Test
-  @DisplayName("193 AC-4 three operations of the contract belong to later stories")
+  @DisplayName("193 AC-4 one operation of the contract belongs to a later story (US-41 serves the other two)")
   void laterStoriesAreTheContractOperationsButStatus() {
-    assertThat(laterStoryOperations().toList()).hasSize(3).doesNotContain("GET /api/v1/status");
+    assertThat(laterStoryOperations().toList()).containsExactly("GET /api/v1/events/{eventId}/transport-source-status");
   }
 
   @ParameterizedTest(name = "[{index}] {0} {1}")
