@@ -42,6 +42,21 @@ class NewBusRouteTest {
         .isInstanceOf(InvalidBusRouteException.class).hasMessage("The name is blank.");
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"50\u00000", "5\t0", "500\u007f"})
+  @DisplayName("US-41 D2 a route with a control character is refused, not stored (PostgreSQL refuses NUL)")
+  void controlCharacterInRoute(String route) {
+    assertThatThrownBy(() -> NewBusRoute.of(route, null, List.of(), false))
+        .isInstanceOf(InvalidBusRouteException.class).hasMessage("The route has a control character.");
+  }
+
+  @Test
+  @DisplayName("US-41 D2 a name with a control character is refused")
+  void controlCharacterInName() {
+    assertThatThrownBy(() -> NewBusRoute.of("500", "Hospital\u0000", List.of(), false))
+        .isInstanceOf(InvalidBusRouteException.class).hasMessage("The name has a control character.");
+  }
+
   @Test
   @DisplayName("US-41 D2 stops arrive with US-37")
   void stopsRefused() {

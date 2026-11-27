@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canOpen, eventIdFromPath } from "../src/session/eventPath.ts";
+import { canOpen, eventIdFromPath, isEventPath } from "../src/session/eventPath.ts";
 
 const id = "3f0c6b1e-5a3b-4f0e-9d0e-6a1b2c3d4e5f";
 
@@ -30,5 +30,14 @@ test("US-41 D5 an EventAdmin opens a draft, published or closed event", () => {
   }
   for (const eventStatus of ["Suspended", undefined]) {
     assert.equal(canOpen({ role: "EventAdmin", eventStatus }), false, String(eventStatus));
+  }
+});
+
+test("US-41 D9 a path under /events/ that is not an event's page is still shown as an event not found", () => {
+  for (const path of ["/events", "/events/", "/events/not-a-uuid", `/events/${id.toUpperCase()}`, `/events/${id}/x`]) {
+    assert.equal(isEventPath(path), true, path);
+  }
+  for (const path of ["/", "/staff", "/demo", "/eventsx", `/x/events/${id}`]) {
+    assert.equal(isEventPath(path), false, path);
   }
 });

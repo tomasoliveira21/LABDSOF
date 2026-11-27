@@ -10,7 +10,8 @@ public record NewBusRoute(String externalRoute, String name) {
   public static final int MAX_PER_EVENT = 20;
 
   /**
-   * The contract bounds the lengths; this adds what it cannot say: blank text, stops (US-37) and departures (shuttles).
+   * The contract bounds the lengths; this adds what it cannot say: blank text, control characters, stops (US-37) and
+   * departures (shuttles).
    *
    * @throws InvalidBusRouteException with the Problem's detail
    */
@@ -20,6 +21,13 @@ public record NewBusRoute(String externalRoute, String name) {
     }
     if (name != null && name.isBlank()) {
       throw new InvalidBusRouteException("The name is blank.");
+    }
+    // PostgreSQL cannot store NUL (a 500 otherwise), and no route number or name needs a control character
+    if (externalRoute.chars().anyMatch(Character::isISOControl)) {
+      throw new InvalidBusRouteException("The route has a control character.");
+    }
+    if (name != null && name.chars().anyMatch(Character::isISOControl)) {
+      throw new InvalidBusRouteException("The name has a control character.");
     }
     if (stopPoiIds != null && !stopPoiIds.isEmpty()) {
       throw new InvalidBusRouteException("Stops arrive with US-37.");

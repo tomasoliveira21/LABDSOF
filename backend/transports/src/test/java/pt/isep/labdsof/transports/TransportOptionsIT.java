@@ -170,6 +170,8 @@ class TransportOptionsIT extends IntegrationTest {
       blank route    | {"mode":"ExternalBus","externalRoute":"   "} | The route is blank.
       no route       | {"mode":"ExternalBus"} | The route is blank.
       blank name     | {"mode":"ExternalBus","externalRoute":"500","name":"  "} | The name is blank.
+      NUL in route   | {"mode":"ExternalBus","externalRoute":"50\\u00000"} | The route has a control character.
+      NUL in name    | {"mode":"ExternalBus","externalRoute":"500","name":"A\\u0000"} | The name has a control character.
       unknown field  | {"mode":"ExternalBus","externalRoute":"500","version":2} |
       21 characters  | {"mode":"ExternalBus","externalRoute":"123456789012345678901"} |
       """)

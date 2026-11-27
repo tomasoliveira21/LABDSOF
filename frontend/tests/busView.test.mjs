@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { busLines, formatDistance, formatTime, sectionState } from "../src/transport/busView.ts";
+import { busLines, formatDistance, formatTime, keepPolling, sectionState } from "../src/transport/busView.ts";
 
 const venue = { longitude: -8.6841, latitude: 41.1724 };
 const at = "2026-11-26T22:14:00Z";
@@ -59,4 +59,14 @@ test("US-41 D11 the section shows a list, or says why it cannot", () => {
   assert.equal(sectionState(429), "error");
   assert.equal(sectionState("error"), "error");
   assert.equal(sectionState(200), "error");
+});
+
+test("US-41 D12 a 404 stops the polling only after the section has had an answer", () => {
+  // Before any answer, Transports' copy of a member who has just joined may still be on its way
+  assert.equal(keepPolling("gone", false), true);
+  assert.equal(keepPolling("gone", true), false);
+  for (const state of ["list", "noRoutes", "noData", "error"]) {
+    assert.equal(keepPolling(state, true), true, state);
+    assert.equal(keepPolling(state, false), true, state);
+  }
 });

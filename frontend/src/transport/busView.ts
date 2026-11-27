@@ -49,7 +49,15 @@ export function busLines(view: BusObservations): string[] {
   return [...buses, ...empty];
 }
 
-/** D11, D12: a 404 means the event is gone for this user (removed, suspended), so the section stops polling. */
+/**
+ * D12: a 404 after an answer means the event is gone for this user (removed, suspended), so the polling stops. Before
+ * any answer it may only mean that Transports' copy of a member who has just joined is still on its way: keep polling.
+ */
+export function keepPolling(state: SectionState, answeredBefore: boolean): boolean {
+  return state !== "gone" || !answeredBefore;
+}
+
+/** D11, D12: what one answer shows; a 404 is "gone" (the event is not, or no longer, there for this user). */
 export function sectionState(status: number | "error", view?: BusObservations): SectionState {
   if (status === 404) return "gone";
   if (status !== 200 || !view) return "error";

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "../session/client";
 import { startVisiblePolling } from "../session/polling";
 import BusMap from "./BusMap";
-import { busLines, sectionState } from "./busView";
+import { busLines, keepPolling, sectionState } from "./busView";
 import type { BusObservations, SectionState } from "./busView";
 import "./transport.css";
 
@@ -16,13 +16,16 @@ const messages: Partial<Record<SectionState, string>> = {
 
 /**
  * US-41 D11, D12: the buses on the event's routes near the venue, polled while the page is visible. The last good
- * answer stays on screen while a poll fails; a 404 (the member removed, the event suspended) stops the polling.
+ * answer stays on screen while a poll fails; a 404 after an answer (the member removed, the event suspended) stops the
+ * polling, and one before any answer keeps it going (Transports' copies may still be arriving).
  */
 export default function BusSection({ eventId }: { eventId: string }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
+  const answered = useRef(false);
 
   useEffect(() => {
+    answered.current = false;
     let stop = () => {};
     stop = startVisiblePolling(async signal => {
       try {
@@ -31,7 +34,8 @@ export default function BusSection({ eventId }: { eventId: string }) {
         const status = sectionState(response.status, view);
         if (signal.aborted) return response;
         setState(previous => status === "error" ? { status, view: previous.view } : { status, view });
-        if (status === "gone") queueMicrotask(stop);
+        if (!keepPolling(status, answered.current)) queueMicrotask(stop);
+        if (view) answered.current = true;
         return response;
       } catch (error) {
         if (!signal.aborted) setState(previous => ({ status: "error", view: previous.view }));
