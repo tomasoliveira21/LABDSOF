@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,6 +49,8 @@ class RouteTableTest {
   private static final String ISSUER = "https://issuer.example/realms/farol";
   private static final String WEB_ORIGIN = "http://localhost:3000";
   private static final RSAKey SIGNING_KEY = signingKey();
+  private static final AtomicReference<String> INACTIVE = new AtomicReference<>();
+  private static final AtomicReference<String> UNAVAILABLE = new AtomicReference<>();
   private static final HttpServer JWKS = jwksServer();
 
   @LocalServerPort private int port;
@@ -55,6 +58,8 @@ class RouteTableTest {
   @DynamicPropertySource
   static void routeTargets(DynamicPropertyRegistry registry) {
     registry.add("FAROL_ISSUER_URI", () -> ISSUER);
+    registry.add("FAROL_INTROSPECTION_URI", () -> "http://127.0.0.1:" + JWKS.getAddress().getPort() + "/introspect");
+    registry.add("FAROL_GATEWAY_CLIENT_SECRET", () -> "test-only");
     registry.add("FAROL_JWKS_URI", () -> "http://127.0.0.1:" + JWKS.getAddress().getPort());
     for (int i = 0; i < SERVICES.size(); i++) {
       String uri = "http://127.0.0.1:" + UPSTREAMS.get(i).getAddress().getPort();
@@ -227,9 +232,63 @@ class RouteTableTest {
     }
   }
 
+  @Test
+  void accessTokenStopsWorkingAsSoonAsItsSessionEnds() throws Exception {
+    String bearer = token("logged-out-account");
+    assertThat(get("/api/v1/me", bearer).statusCode()).isEqualTo(200);
+    INACTIVE.set(bearer);
+    try {
+      var response = get("/api/v1/me", bearer);
+      assertThat(response.statusCode()).isEqualTo(401);
+      assertThat(response.headers().firstValue("WWW-Authenticate")).contains("Bearer error=\"invalid_token\"");
+      assertThat(get("/api/v1/me", token("other-active-account")).statusCode()).isEqualTo(200);
+    } finally {
+      INACTIVE.set(null);
+    }
+  }
+
+  @Test
+  void identityProviderFailureNeverPassesTheTokenUpstream() throws Exception {
+    String bearer = token("unavailable-idp-account");
+    UNAVAILABLE.set(bearer);
+    try {
+      var response = get("/api/v1/me", bearer);
+      assertThat(response.statusCode()).isEqualTo(503);
+      assertThat(response.headers().firstValue("Retry-After")).contains("5");
+      assertThat(get("/api/v1/status").statusCode()).isEqualTo(200);
+    } finally {
+      UNAVAILABLE.set(null);
+    }
+  }
+
+  private static void introspect(com.sun.net.httpserver.HttpExchange exchange) throws IOException {
+    try (exchange) {
+      var supplied = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+      var expectedAuth = "Basic " + java.util.Base64.getEncoder()
+          .encodeToString("farol-gateway:test-only".getBytes(StandardCharsets.UTF_8));
+      if (!"POST".equals(exchange.getRequestMethod()) || !supplied.contains("token_type_hint=access_token")
+          || !expectedAuth.equals(exchange.getRequestHeaders().getFirst("Authorization"))) {
+        exchange.sendResponseHeaders(400, -1);
+        return;
+      }
+      String unavailable = UNAVAILABLE.get();
+      if (unavailable != null && supplied.contains("token=" + unavailable)) {
+        exchange.sendResponseHeaders(503, -1);
+        return;
+      }
+      String inactive = INACTIVE.get();
+      boolean active = inactive == null || !supplied.contains("token=" + inactive);
+      byte[] body = ("{\"active\":" + active + "}").getBytes(StandardCharsets.UTF_8);
+      exchange.getResponseHeaders().set("Content-Type", "application/json");
+      exchange.sendResponseHeaders(200, body.length);
+      exchange.getResponseBody().write(body);
+    }
+  }
+
   private static HttpServer jwksServer() {
     try {
       var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+      server.createContext("/introspect", RouteTableTest::introspect);
       server.createContext("/", exchange -> {
         byte[] body = new JWKSet(SIGNING_KEY.toPublicJWK()).toString().getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json");

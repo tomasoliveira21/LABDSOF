@@ -39,6 +39,7 @@ class CorrelationIdTest {
 
   @DynamicPropertySource
   static void reportsRoute(DynamicPropertyRegistry registry) {
+    registry.add("FAROL_GATEWAY_CLIENT_SECRET", () -> "test-only");
     registry.add("FAROL_ROUTE_REPORTS_URI", () -> "http://127.0.0.1:" + REPORTS.getAddress().getPort());
   }
 

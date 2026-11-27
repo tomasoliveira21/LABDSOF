@@ -2,6 +2,11 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-27 · Immediate access-token refusal after logout (US-02, #60)
+
+- The gateway checks session activity in Keycloak for protected API calls. A token from an ended session gets `401`.
+- Compose smoke coverage checks the same access token before and after RP-initiated logout. See the [US-02 spec](Docs/specs/US-02-logout.md) for realm setup.
+
 ## [Unreleased] · 2026-11-26 · The next buses home (US-41, #85, António Guerra)
 
 **Why:** a participant leaving the venue wants to see the city buses on the routes that serve it, so that they don't walk home or drive (`features.md` US-41). The source gives live positions, not timetables (O6), so the story shows where the buses are now and how far they are from the venue. Spec: [`Docs/specs/US-41-see-next-buses-home.md`](Docs/specs/US-41-see-next-buses-home.md). Built on US-40 (#84).
