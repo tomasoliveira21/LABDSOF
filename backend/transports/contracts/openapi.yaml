@@ -321,12 +321,16 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-          description: Required for a shuttle
+          description: >-
+            Required for a shuttle, optional for an external bus route. The length limits apply to the
+            value as sent; it is then trimmed, and a blank one is refused (US-41 D2)
         externalRoute:
           type: string
           minLength: 1
           maxLength: 20
-          description: Required for an external bus route; the routeId of the source's vehicles
+          description: >-
+            Required for an external bus route; the routeId of the source's vehicles. The length limits
+            apply to the value as sent; it is then trimmed, and a blank one is refused (US-41 D2)
         stopPoiIds:
           type: array
           maxItems: 20

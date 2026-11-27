@@ -67,7 +67,7 @@ flowchart LR
 | TB6 | Reports → AI provider | Sanitised text of a help request (no category since 15 November 2026) | Disclosure to a third party, prompt injection (T12, T21) |
 | TB7 | Transports → Porto Digital | Bus positions coming in; nothing personal goes out | Invalid or hostile data (T20) |
 | TB8 | Operators → admin surfaces | Keycloak admin console, RabbitMQ management, WireMock admin API, Grafana, Actuator, PostgreSQL | Full control of the system (T16, §9) |
-| TB9 | Browser → OpenStreetMap tile server | The map tiles of the area around the venue, for the street map of the event's buses (US-41 D13). The tile server sees the viewer's IP address, browser and that area; never the viewer's position, a token or any Farol data. Its use is subject to the OpenStreetMap Foundation's tile policy and privacy policy | A third party learning who opened an event's map; tiles that fail or are blocked (the list of buses still works) |
+| TB9 | Browser → OpenStreetMap tile server | The map tiles of the area around the venue, for the street map of the event's buses (US-41 D13). The tile server sees the viewer's IP address, browser and that area; never the viewer's position, a token or any Farol data. Its use is subject to the OpenStreetMap Foundation's tile policy and privacy policy. The tile server must receive a `Referer` (its policy), and only the origin: the web container sends `Referrer-Policy: strict-origin-when-cross-origin` (action 11), so a page path such as `/events/{eventId}` never reaches it | A third party learning who opened an event's map; tiles that fail or are blocked (the list of buses still works) |
 
 ## 3. Sensitive data
 
@@ -304,7 +304,7 @@ The owners of each decision are in the [decisions guide](architecture-decisions-
 | 8 | Client secrets in the realm export (T17) | `${…}` placeholders | ADR-006 | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
 | 9 | RabbitMQ and PostgreSQL grants not specified (T8) | AC-8 | This assessment, with Compose (G5–G6) | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
 | 10 | Upload hardening (T9) | Content type, re-encoding, PDFBox limits | ADR-007: ✅ decided on 4 November 2026 (decision 2, #44) | US-19 |
-| 11 | Content Security Policy, no third-party scripts (T10, M-14) | Headers on the web container | The web container | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
+| 11 | Content Security Policy, no third-party scripts (T10, M-14); `Referrer-Policy: strict-origin-when-cross-origin`, so the tile server gets only the origin (TB9) | Headers on the web container | The web container | Sprint B slice (Keycloak, PostgreSQL and web, [skeleton plan §5](plans/local-walking-skeleton.md#5-sprint-b-handoff)) |
 | 12 | No dependency or image scanning (T18) | Checks in CI | ADR-010 | Sprint B |
 | 13 | Retention periods and clean-up jobs (§7) | The periods of §7 | Team (guide D5): ✅ decided as NFR-19 and NFR-13 (26 October 2026; telemetry simplified 27 October 2026) | Clean-up jobs in Sprint C |
 | 14 | Consent records and the help-request consent (§8.3, §8.4) | New fields; criteria in US-03 and US-12 | Domain model; stories | US-12, Sprint B |

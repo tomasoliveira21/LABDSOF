@@ -15,7 +15,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 ### Changed
 - `contracts/openapi.yaml`: the `POST` declares `409`, `501` and `Location`; the read adds `venue`, `routes` (`BusRouteSummary`), `fleetVehicleId` and `distanceMetres`. Optional fields are left out of the JSON, never `null`.
 - `transports_smoke.py`: both operations now reach the access check (`404` for an event Rita is not a member of, no longer `501`); no event can be created through the gateway before US-06, so the full path is in the integration tests.
-- The [security and privacy assessment](Docs/Technical/security-and-privacy-assessment.md) gets TB9 (the browser asks the OpenStreetMap tile server for the map tiles around the venue) and `img-src` for that server in the proposed CSP; [`assumptions-and-dependencies.md`](Docs/Deliverables/assumptions-and-dependencies.md) gets X7, the tile server; [`local-delivery.md`](Docs/Technical/local-delivery.md) describes both operations.
+- The [security and privacy assessment](Docs/Technical/security-and-privacy-assessment.md) gets TB9 (the browser asks the OpenStreetMap tile server for the map tiles around the venue), `img-src` for that server in the proposed CSP and `Referrer-Policy: strict-origin-when-cross-origin` in action 11, so only the origin reaches it; [`assumptions-and-dependencies.md`](Docs/Deliverables/assumptions-and-dependencies.md) gets X7, the tile server; [`local-delivery.md`](Docs/Technical/local-delivery.md) describes both operations.
 
 ### Notes
 - **The page is built in this story, by agreement with the web app's owner** (Tomás Oliveira, 26 November 2026), as an exception to decision 13 of 15 November 2026 and the specs README (*Workflow*).

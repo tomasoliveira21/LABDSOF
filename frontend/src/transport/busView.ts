@@ -57,6 +57,20 @@ export function keepPolling(state: SectionState, answeredBefore: boolean): boole
   return state !== "gone" || !answeredBefore;
 }
 
+/** What the section holds: what it shows, the last list it may keep showing, and whether retrying at once is fair. */
+export type SectionView = { status: SectionState | "loading"; view?: BusObservations; retryNow: boolean };
+
+/**
+ * D11, D12: the section after one answer. A failed poll keeps the last list on screen (never a "no routes" or "no
+ * data" answer, which would show an empty map), and offers no immediate retry while the gateway asks to wait.
+ */
+export function nextSection(previous: SectionView, status: number | "error", view?: BusObservations): SectionView {
+  const state = sectionState(status, view);
+  if (state !== "error") return { status: state, view, retryNow: true };
+  const kept = previous.status === "list" || previous.status === "error" ? previous.view : undefined;
+  return { status: state, view: kept, retryNow: status !== 429 && status !== 503 };
+}
+
 /** D11, D12: what one answer shows; a 404 is "gone" (the event is not, or no longer, there for this user). */
 export function sectionState(status: number | "error", view?: BusObservations): SectionState {
   if (status === 404) return "gone";

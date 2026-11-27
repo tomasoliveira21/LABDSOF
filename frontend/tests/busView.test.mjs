@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { busLines, formatDistance, formatTime, keepPolling, sectionState } from "../src/transport/busView.ts";
+import { busLines, formatDistance, formatTime, keepPolling, nextSection, sectionState } from "../src/transport/busView.ts";
 
 const venue = { longitude: -8.6841, latitude: 41.1724 };
 const at = "2026-11-26T22:14:00Z";
@@ -69,4 +69,28 @@ test("US-41 D12 a 404 stops the polling only after the section has had an answer
     assert.equal(keepPolling(state, true), true, state);
     assert.equal(keepPolling(state, false), true, state);
   }
+});
+
+const listed = view([{ externalRoute: "500", busCount: 1 }], [bus("a", "500", 350, "3412")]);
+const loading = { status: "loading", retryNow: true };
+
+test("US-41 D11 a failed poll keeps the last list on screen, never a 'no routes' or 'no data' answer", () => {
+  const afterList = nextSection(nextSection(loading, 200, listed), 500);
+  assert.equal(afterList.status, "error");
+  assert.equal(afterList.view, listed);
+  assert.equal(nextSection(afterList, "error").view, listed);
+
+  const noRoutes = nextSection(loading, 200, view([], []));
+  assert.equal(noRoutes.status, "noRoutes");
+  assert.equal(nextSection(noRoutes, 500).view, undefined);
+  assert.equal(nextSection(loading, "error").view, undefined);
+});
+
+test("US-41 D12 no 'Tentar novamente' while the gateway asks to wait (429, 503)", () => {
+  const shown = nextSection(loading, 200, listed);
+  assert.equal(nextSection(shown, 429).retryNow, false);
+  assert.equal(nextSection(shown, 503).retryNow, false);
+  assert.equal(nextSection(shown, 500).retryNow, true);
+  assert.equal(nextSection(shown, "error").retryNow, true);
+  assert.equal(nextSection(nextSection(shown, 429), 200, listed).retryNow, true);
 });
