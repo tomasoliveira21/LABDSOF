@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Icon } from "../farol/icon";
+import EventPage from "./EventPage";
 import MembershipList from "./MembershipList";
 import { apiFetch, initializeSession, login, logout, onSessionEnd } from "./client";
+import { eventIdFromPath } from "./eventPath";
 import type { Account } from "./client";
 import "./session.css";
 
@@ -13,6 +15,7 @@ export default function WebApp() {
   const [error, setError] = useState("");
   const [leaving, setLeaving] = useState(false);
   const staff = window.location.pathname === "/staff";
+  const eventId = eventIdFromPath(window.location.pathname);
 
   useEffect(() => {
     const request = new AbortController();
@@ -73,12 +76,12 @@ export default function WebApp() {
           <a href="/" aria-current={!staff ? "page" : undefined}>Participante</a>
           <a href="/staff" aria-current={staff ? "page" : undefined}>Equipa</a>
         </nav>
-        <section className="member-card">
+        {eventId ? <EventPage key={eventId} eventId={eventId}/> : <section className="member-card">
           <h1>{staff ? "Área da equipa" : "Área do participante"}</h1>
           <p>Sessão iniciada como <strong>{account.displayName}</strong>.</p>
           <MembershipList key={account.userId}/>
           {error && <p role="alert">{error}</p>}
-        </section>
+        </section>}
       </> : <section className="member-card">
         <h1>Entrar no Farol</h1>
         {loading ? <p role="status">A verificar a sessão…</p> : <>
