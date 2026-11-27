@@ -106,4 +106,27 @@ class EventAccessTest {
     assertThatThrownBy(() -> new Team(CONTROL_ROOM, EVENT, null, List.of(), Set.of(), false, 1))
         .isInstanceOf(IllegalArgumentException.class);
   }
+
+  @Test
+  @DisplayName("US-31 AC-2 only the member's own responding teams are listed")
+  void respondingTeams() {
+    var nursing = UUID.randomUUID();
+    var security = UUID.randomUUID();
+    var gone = UUID.randomUUID();
+    var elsewhere = UUID.randomUUID();
+    var notMine = UUID.randomUUID();
+    var teams = List.of(team(CONTROL_ROOM, EVENT, false, Permission.HELP_REQUESTS_TRIAGE),
+        team(nursing, EVENT, false, Permission.HELP_REQUESTS_RESPOND),
+        team(security, EVENT, false, Permission.HELP_REQUESTS_TRIAGE, Permission.HELP_REQUESTS_RESPOND),
+        team(gone, EVENT, true, Permission.HELP_REQUESTS_RESPOND),
+        team(elsewhere, UUID.randomUUID(), false, Permission.HELP_REQUESTS_RESPOND),
+        team(notMine, EVENT, false, Permission.HELP_REQUESTS_RESPOND));
+    var access = EventAccess.of(member(Role.RegularUser, Status.Active, CONTROL_ROOM, nursing, security, gone,
+        elsewhere), teams).orElseThrow();
+    assertThat(access.respondingTeamIds()).containsExactlyInAnyOrder(nursing, security);
+
+    var admin = EventAccess.of(member(Role.EventAdmin, Status.Active), teams).orElseThrow();
+    assertThat(admin.has(Permission.HELP_REQUESTS_RESPOND)).isTrue();
+    assertThat(admin.respondingTeamIds()).isEmpty();
+  }
 }

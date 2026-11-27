@@ -3,6 +3,7 @@ package pt.isep.labdsof.reports.domain;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * What one user may do in one event, decided from the local copies only (ADR-006 decision 4).
@@ -34,5 +35,10 @@ public final class EventAccess {
   public boolean has(Permission permission) {
     return membership.role() == Membership.Role.EventAdmin
         || teams.stream().anyMatch(team -> team.grants(permission));
+  }
+
+  /** The member's own teams that take routed requests; an EventAdmin's role adds none (spec US-31 D1). */
+  public List<UUID> respondingTeamIds() {
+    return teams.stream().filter(team -> team.grants(Permission.HELP_REQUESTS_RESPOND)).map(Team::teamId).toList();
   }
 }

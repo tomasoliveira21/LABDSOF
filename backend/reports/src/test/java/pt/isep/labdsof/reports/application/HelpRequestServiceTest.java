@@ -23,6 +23,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
+import pt.isep.labdsof.reports.domain.FieldTask;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
@@ -1106,5 +1107,72 @@ class HelpRequestServiceTest {
       assertThat(task.status()).isEqualTo("Cancelled");
       assertThat(task.at()).isEqualTo(DECIDED);
     });
+  }
+
+  /** A request of the event routed by the control room to {@code teamId}, at DECIDED. */
+  HelpRequest routed(HelpRequestService service, UUID teamId) {
+    var request = stored(SUGGESTED);
+    service.route(EVENT, actor("miguel"), request.id(), teamId);
+    return request;
+  }
+
+  @Test
+  @DisplayName("US-31 AC-1 a member of a responding team gets its live tasks")
+  void fieldTasksOfMyTeam() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    member("ines", Role.RegularUser, NURSING);
+    var first = routed(service, NURSING);
+    var second = routed(service, NURSING);
+
+    var tasks = service.fieldTasks(EVENT, "ines");
+
+    assertThat(tasks).extracting(t -> t.request().id()).containsExactly(first.id(), second.id());
+    assertThat(tasks.get(0)).satisfies(task -> {
+      assertThat(task.id()).isEqualTo(ports.tasks.get(0).id());
+      assertThat(task.teamId()).isEqualTo(NURSING);
+      assertThat(task.status()).isEqualTo(FieldTask.Status.Open);
+      assertThat(task.acceptedBy()).isNull();
+      assertThat(task.dispatchedAt()).isEqualTo(DECIDED);
+      assertThat(task.updatedAt()).isEqualTo(DECIDED);
+      assertThat(task.request()).isEqualTo(ports.find(EVENT, first.id()).orElseThrow());
+    });
+  }
+
+  @Test
+  @DisplayName("US-31 AC-2 tasks of other teams are not listed")
+  void fieldTasksOfOtherTeams() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    respondingTeam(SECURITY, Category.Safety);
+    member("ines", Role.RegularUser, NURSING, CONTROL_ROOM);
+    var mine = routed(service, NURSING);
+    routed(service, SECURITY);
+    var away = routed(service, NURSING);
+    service.route(EVENT, actor("miguel"), away.id(), SECURITY);
+    var closed = routed(service, NURSING);
+    service.close(EVENT, actor("miguel"), closed.id());
+
+    assertThat(service.fieldTasks(EVENT, "ines")).extracting(t -> t.request().id()).containsExactly(mine.id());
+  }
+
+  @Test
+  @DisplayName("US-31 AC-2 only members with HelpRequests.Respond list tasks")
+  void fieldTasksAccess() {
+    var service = operatorService();
+    respondingTeam(NURSING, Category.Health);
+    routed(service, NURSING);
+    member("ana", Role.RegularUser);
+    member("admin", Role.EventAdmin);
+    ports.upsertIfNewer(new Membership(EVENT, "gone", Role.RegularUser, Status.Removed, Set.of(NURSING), 1));
+
+    for (var user : List.of("ana", "miguel")) {
+      assertThatThrownBy(() -> service.fieldTasks(EVENT, user)).isInstanceOf(ForbiddenException.class);
+    }
+    assertThat(service.fieldTasks(EVENT, "admin")).isEmpty();
+    for (var user : List.of("nobody", "gone")) {
+      assertThatThrownBy(() -> service.fieldTasks(EVENT, user)).isInstanceOf(NotFoundException.class);
+    }
+    assertThatThrownBy(() -> service.fieldTasks(UUID.randomUUID(), "admin")).isInstanceOf(NotFoundException.class);
   }
 }

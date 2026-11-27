@@ -295,7 +295,8 @@ class JdbcHelpRequests implements HelpRequests {
         .list();
   }
 
-  private static HelpRequest map(ResultSet rs, int row) throws SQLException {
+  /** One request of a row with its triage columns; also read by JdbcFieldTasks (US-31). */
+  static HelpRequest map(ResultSet rs, int row) throws SQLException {
     var triage = new TriageSuggestion(
         TriageState.valueOf(rs.getString("state")),
         value(Category.class, rs.getString("suggested_category")),

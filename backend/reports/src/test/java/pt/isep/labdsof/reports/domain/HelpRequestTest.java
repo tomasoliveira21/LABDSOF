@@ -644,4 +644,13 @@ class HelpRequestTest {
       assertThat(request.returnFrom(nursing, LATER)).isSameAs(request);
     }
   }
+
+  @Test
+  @DisplayName("US-31 AC-1 the category is a member's, else the AI's")
+  void effectiveCategory() {
+    assertThat(submit("help").effectiveCategory()).isNull();
+    assertThat(withTriage(SUGGESTED).effectiveCategory()).isEqualTo(Category.Health);
+    var changed = withTriage(SUGGESTED).change(Category.Safety, null, LATER).request();
+    assertThat(changed.effectiveCategory()).isEqualTo(Category.Safety);
+  }
 }

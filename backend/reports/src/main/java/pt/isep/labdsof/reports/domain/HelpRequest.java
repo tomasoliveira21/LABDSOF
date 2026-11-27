@@ -217,11 +217,16 @@ public record HelpRequest(
    * by hand. Derived when read, never stored (D4).
    */
   public HelpRequest withDefaultTeam(List<Team> teams) {
-    var c = category != null ? category : triage.suggestedCategory();
+    var c = effectiveCategory();
     var eligible = c == null ? List.<UUID>of() : teams.stream()
         .filter(t -> t.eventId().equals(eventId) && t.canRespondTo(c)).map(Team::teamId).toList();
     return new HelpRequest(id, eventId, requesterId, clientRequestId, description, location, category, priority,
         status, eligible.size() == 1 ? eligible.get(0) : null, routedTeamId, triage, submittedAt, updatedAt, version);
+  }
+
+  /** The category a member set, else the AI's suggestion; null when neither (spec US-34 D1, US-31 D3). */
+  public Category effectiveCategory() {
+    return category != null ? category : triage.suggestedCategory();
   }
 
   /** This request as a reader sees it at {@code now} (NotTriaged derived from Pending). */

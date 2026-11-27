@@ -19,6 +19,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.EventAccess;
+import pt.isep.labdsof.reports.domain.FieldTask;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HistoryEntry;
 import pt.isep.labdsof.reports.domain.Location;
@@ -29,9 +30,9 @@ import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
  * Use cases on help requests: submit (persistence and outbox), read one (#194), the live list (US-26), the control
- * room's triage decisions (US-35), the acknowledge and the change history (US-28), the close (US-30). The control
- * room's reads and decisions answer the default team, derived from the current copy of the event's teams (spec US-34
- * AC-2, D4).
+ * room's triage decisions (US-35), the acknowledge and the change history (US-28), the close (US-30), the field
+ * team's tasks (US-31). The control room's reads and decisions answer the default team, derived from the current copy
+ * of the event's teams (spec US-34 AC-2, D4).
  */
 @Service
 public class HelpRequestService {
@@ -258,6 +259,19 @@ public class HelpRequestService {
       log.info("Request {} routed: {} -> {}", request.id(), request.routedTeamId(), teamId);
     }
     return routed.asSeenAt(now).withDefaultTeam(copies.teams(eventId));
+  }
+
+  /**
+   * The live tasks of the caller's responding teams, the whole list on every poll (US-31 D1, D2). Only
+   * HelpRequests.Respond (403); a non-member gets 404.
+   */
+  @Transactional(readOnly = true)
+  public List<FieldTask> fieldTasks(UUID eventId, String userId) {
+    var access = access(eventId, userId);
+    if (!access.has(Permission.HELP_REQUESTS_RESPOND)) {
+      throw new ForbiddenException();
+    }
+    return fieldTasks.live(eventId, access.respondingTeamIds());
   }
 
   /** Every recorded change of a request of the event, oldest first; only HelpRequests.Triage (US-28 D4, D7). */
