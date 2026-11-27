@@ -7,6 +7,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -15,13 +16,18 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import pt.isep.labdsof.events.application.AccessAudit.Refusal;
+import pt.isep.labdsof.events.application.InMemoryPorts.Created;
 import pt.isep.labdsof.events.application.InMemoryPorts.EventWrite;
+import pt.isep.labdsof.events.application.InMemoryPorts.PlatformRefused;
 import pt.isep.labdsof.events.application.InMemoryPorts.Published;
 import pt.isep.labdsof.events.application.InMemoryPorts.Refused;
 import pt.isep.labdsof.events.domain.DateRange;
 import pt.isep.labdsof.events.domain.Event;
 import pt.isep.labdsof.events.domain.EventNotDraftException;
 import pt.isep.labdsof.events.domain.EventStatus;
+import pt.isep.labdsof.events.domain.GlobalRole;
+import pt.isep.labdsof.events.domain.GlobalRoleGrant;
+import pt.isep.labdsof.events.domain.InvalidEventException;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Membership.Role;
 import pt.isep.labdsof.events.domain.Membership.Status;
@@ -36,7 +42,7 @@ class EventServiceTest {
   private final InMemoryPorts ports = new InMemoryPorts();
   private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
   private final EventService service = new EventService(new EventReader(ports, ports, ports, ports, clock), ports, ports,
-      ports, ports, clock);
+      ports, ports, ports, clock);
   private final UUID admin = UUID.randomUUID();
 
   private Event event(EventStatus status) {
@@ -60,6 +66,106 @@ class EventServiceTest {
     assertThat(ports.eventWrites).isEmpty();
     assertThat(ports.published).isEmpty();
     assertThat(ports.publishes).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-06 AC-1 the FarolAdmin creates a draft, with the first EventChanged, recorded and not joined")
+  void creatingADraftStoresPublishesAndRecords() {
+    var farolAdmin = UUID.randomUUID();
+    ports.farolAdmin(farolAdmin);
+
+    var created = service.create(farolAdmin, "Queima das Fitas 2027", "FAP", DATES.start(), DATES.end(), "Semana academica");
+
+    assertThat(created.status()).isEqualTo(EventStatus.Draft);
+    assertThat(created.joinCode()).isNull(); // only the publish generates one (US-11 D1)
+    assertThat(created.name()).isEqualTo("Queima das Fitas 2027");
+    assertThat(ports.inserted).singleElement()
+        .satisfies(event -> assertThat(event.version()).isEqualTo(1));
+    assertThat(ports.eventWrites).containsExactly(new EventWrite(created.eventId(), farolAdmin, NOW, 1));
+    assertThat(ports.published).singleElement()
+        .satisfies(event -> assertThat(event.type()).isEqualTo("EventChanged"));
+    assertThat(ports.creations).containsExactly(new Created(farolAdmin, created.eventId(), NOW));
+    // The creator is deliberately left out of the event (D3): no membership is written for them
+    assertThat(ports.memberships).isEmpty();
+    assertThat(ports.platformRefusals).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-06 AC-2 a caller the role copy does not hold creates nothing, and the refusal is recorded")
+  void aCallerWhoIsNotTheFarolAdminCreatesNothing() {
+    var user = UUID.randomUUID();
+
+    assertThatThrownBy(() -> service.create(user, "Queima", "FAP", DATES.start(), DATES.end(), null))
+        .isInstanceOf(NotPlatformAdminException.class).hasMessage("not the FarolAdmin");
+
+    assertThat(ports.inserted).isEmpty();
+    assertThat(ports.platformRefusals)
+        .containsExactly(new PlatformRefused(user, NOW, "createEvent"));
+    assertNothingHappened();
+  }
+
+  @Test
+  @DisplayName("US-06 AC-2 an EventAdmin of an event is still not the FarolAdmin, and a revoked one is not either")
+  void anEventAdminIsNotTheFarolAdminAndARevokeTakesTheRoleAway() {
+    var event = draftOfAdmin();
+    var revoked = UUID.randomUUID();
+    ports.farolAdmin(revoked);
+    ports.upsertIfNewer(new GlobalRoleGrant(revoked, GlobalRole.FarolAdmin, false, 2));
+
+    // The EventAdmin of the draft above holds no platform role: being an admin somewhere is not one
+    assertThatThrownBy(() -> service.create(admin, "Queima", "FAP", DATES.start(), DATES.end(), null))
+        .isInstanceOf(NotPlatformAdminException.class);
+    assertThatThrownBy(() -> service.create(revoked, "Queima", "FAP", DATES.start(), DATES.end(), null))
+        .isInstanceOf(NotPlatformAdminException.class);
+
+    assertThat(event.status()).isEqualTo(EventStatus.Draft);
+    assertThat(ports.inserted).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-06 AC-1 a range that ends before it starts, or a missing date, is the caller's mistake")
+  void anInvalidDateRangeIsTheCallersMistake() {
+    var farolAdmin = UUID.randomUUID();
+    ports.farolAdmin(farolAdmin);
+    var start = LocalDate.of(2027, 5, 9);
+    var end = LocalDate.of(2027, 5, 2);
+
+    // Not an IllegalArgumentException, which would leave the request a 500 (D8)
+    assertThatThrownBy(() -> service.create(farolAdmin, "Queima", "FAP", start, end, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("an event cannot end before it starts");
+    assertThatThrownBy(() -> service.create(farolAdmin, "Queima", "FAP", null, end, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("dates are required");
+    assertThatThrownBy(() -> service.create(farolAdmin, "Queima", "FAP", start, null, null))
+        .isInstanceOf(InvalidEventException.class).hasMessage("dates are required");
+
+    assertThat(service.create(farolAdmin, "Queima", "FAP", end, end, null).dates().start()).isEqualTo(end);
+    assertThat(ports.inserted).hasSize(1); // only the single-day event above
+  }
+
+  @Test
+  @DisplayName("US-07 AC-1 the FarolAdmin lists every event, and nobody else lists any")
+  void theFarolAdminListsEveryEvent() {
+    var farolAdmin = UUID.randomUUID();
+    ports.farolAdmin(farolAdmin);
+    var summary = new EventSummaryView(UUID.randomUUID(), "Queima das Fitas 2027", "FAP", DATES,
+        EventStatus.Draft, List.of());
+    ports.summaries.add(summary);
+
+    assertThat(service.list(farolAdmin)).containsExactly(summary);
+
+    var user = UUID.randomUUID();
+    assertThatThrownBy(() -> service.list(user)).isInstanceOf(NotPlatformAdminException.class);
+    assertThat(ports.platformRefusals)
+        .containsExactly(new PlatformRefused(user, NOW, "listEvents"));
+  }
+
+  @Test
+  @DisplayName("US-07 AC-1 an empty platform lists nothing rather than failing")
+  void anEmptyPlatformListsNothing() {
+    var farolAdmin = UUID.randomUUID();
+    ports.farolAdmin(farolAdmin);
+
+    assertThat(service.list(farolAdmin)).isEmpty();
   }
 
   @Test

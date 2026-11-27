@@ -16,6 +16,8 @@ import pt.isep.labdsof.authusers.application.AccountDisabledException;
 import pt.isep.labdsof.authusers.application.AccountUnavailableException;
 import pt.isep.labdsof.authusers.application.EventNotFoundException;
 import pt.isep.labdsof.authusers.application.MissingEmailException;
+import pt.isep.labdsof.authusers.application.AccountNotFoundException;
+import pt.isep.labdsof.authusers.application.NotAFarolAdminException;
 import pt.isep.labdsof.authusers.application.NotAnEventAdminException;
 
 /**
@@ -49,6 +51,19 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
   ResponseEntity<ProblemDetail> notFound(EventNotFoundException e) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Event not found."));
+  }
+
+  @ExceptionHandler(NotAFarolAdminException.class)
+  ResponseEntity<ProblemDetail> notAFarolAdmin(NotAFarolAdminException e) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Only the FarolAdmin may do this."));
+  }
+
+  /** No account holds the e-mail looked up (US-06 D7). The address is never echoed back in the detail. */
+  @ExceptionHandler(AccountNotFoundException.class)
+  ResponseEntity<ProblemDetail> accountNotFound(AccountNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Account not found."));
   }
 
   @ExceptionHandler(NotAnEventAdminException.class)

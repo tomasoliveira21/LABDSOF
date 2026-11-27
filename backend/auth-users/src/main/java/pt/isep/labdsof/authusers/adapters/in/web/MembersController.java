@@ -15,6 +15,7 @@ import pt.isep.labdsof.authusers.adapters.in.web.generated.model.Membership;
 import pt.isep.labdsof.authusers.adapters.in.web.generated.model.NameEventAdmin;
 import pt.isep.labdsof.authusers.application.JoinEventService;
 import pt.isep.labdsof.authusers.application.MemberQueryService;
+import pt.isep.labdsof.authusers.application.NameEventAdminService;
 import pt.isep.labdsof.authusers.application.TeamMemberService;
 
 @RestController
@@ -25,11 +26,14 @@ class MembersController implements MembersApi {
   private final MemberQueryService members;
   private final TeamMemberService teams;
   private final JoinEventService join;
+  private final NameEventAdminService name;
 
-  MembersController(MemberQueryService members, TeamMemberService teams, JoinEventService join) {
+  MembersController(MemberQueryService members, TeamMemberService teams, JoinEventService join,
+      NameEventAdminService name) {
     this.members = members;
     this.teams = teams;
     this.join = join;
+    this.name = name;
   }
 
   @Override
@@ -48,9 +52,18 @@ class MembersController implements MembersApi {
     return role == null ? null : pt.isep.labdsof.authusers.domain.EventRole.valueOf(role.getValue());
   }
 
+  /**
+   * US-06: {@code 201} whether the call changed the membership or not, because the contract declares one success
+   * code and a retried call must not read as an error (D6).
+   */
   @Override
   public ResponseEntity<Member> nameEventAdmin(UUID eventId, NameEventAdmin nameEventAdmin) {
-    throw new NotYetImplementedException("US-06");
+    var actor = TokenIdentity.current().userId();
+    log.info("POST /events/{}/members by userId={}", eventId, actor);
+    var named = name.name(actor, eventId, nameEventAdmin.userId());
+    var membership = named.membership();
+    return ResponseEntity.status(HttpStatus.CREATED).body(new Member(membership.userId(), named.displayName(),
+        EventRole.fromValue(membership.role().name()), membership.teamIds()));
   }
 
   /** US-12: {@code 201} when this call made the caller a member, {@code 200} when they already were (D3). */
