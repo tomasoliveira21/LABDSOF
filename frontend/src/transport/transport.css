@@ -3,3 +3,7 @@
 .bus-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .45rem; }
 .bus-list li { background: #f0f4f7; border-radius: .5rem; padding: .7rem .8rem; overflow-wrap: anywhere; }
 .bus-error p { color: #96292b; }
+.bus-map { height: clamp(16rem, 55vw, 24rem); margin-top: 1rem; border-radius: .75rem; border: 1px solid #cfdae4; background: #e8eef3; z-index: 0; }
+.bus-marker, .bus-venue { display: flex; align-items: center; justify-content: center; }
+.bus-marker-label { background: #122d49; color: white; font-weight: 700; font-size: .8rem; border-radius: .4rem; padding: .15rem .4rem; border: 2px solid white; white-space: nowrap; }
+.bus-venue-label { background: #f2b705; color: #12243b; font-weight: 700; font-size: .8rem; border-radius: .4rem; padding: .2rem .5rem; border: 2px solid #12243b; white-space: nowrap; }

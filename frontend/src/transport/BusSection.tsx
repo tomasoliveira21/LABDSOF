@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../session/client";
 import { startVisiblePolling } from "../session/polling";
+import BusMap from "./BusMap";
 import { busLines, sectionState } from "./busView";
 import type { BusObservations, SectionState } from "./busView";
 import "./transport.css";
@@ -51,6 +52,8 @@ export default function BusSection({ eventId }: { eventId: string }) {
         Tentar novamente
       </button>
     </div>}
+    {state.view && (state.status === "list" || state.status === "error") &&
+      <BusMap venue={state.view.venue} buses={state.view.buses}/>}
     {state.view && (state.status === "list" || state.status === "error") &&
       <ul className="bus-list">{busLines(state.view).map((line, index) => <li key={index}>{line}</li>)}</ul>}
   </section>;
