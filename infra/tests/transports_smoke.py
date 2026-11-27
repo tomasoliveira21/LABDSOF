@@ -1,8 +1,10 @@
 """Smoke test of Transports in the running stack (#193): run after `docker compose up --wait`.
 
 Checks, through the API gateway, that Transports validates real Keycloak tokens (ADR-006): no token and a tampered
-token get 401 Problem Details; Rita's real token is accepted and the Sprint B operation answers 501 naming US-41
-(spec D6); a malformed event id gets 400; the X-Correlation-Id comes back. Then it checks inside the stack that the
+token get 401 Problem Details; Rita's real token is accepted, and both operations of US-41 reach Transports' access
+check: reading the buses and adding a route answer 404 for an event Rita is not a member of (US-41 D14; this smoke
+writes nothing, so the full path is in the integration tests); a malformed event id gets
+400; the X-Correlation-Id comes back. Then it checks inside the stack that the
 `transports` schema comes from Flyway, that the scheduled job has read the recorded buses through WireMock and
 recorded a successful import (spec D5, D8), that the buses of that import are stored (US-40), and that
 Transports consumes both of its queues as the `transports` broker user (spec D3).
@@ -17,9 +19,12 @@ Exit code 0 when every check passes; each failure is printed.
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import time
+import urllib.error
+import urllib.request
 import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +34,7 @@ import identity_smoke as idp  # noqa: E402
 DEADLINE = 60  # seconds; the job reads at start-up and every 30 s, the listeners retry every 5 s
 RITA = "rita@farol.test"
 QUEUES = ("transports.auth-users-events", "transports.events-events")
-NOT_YET = "This operation arrives with US-41."
+NOT_FOUND = "Event not found."
 
 
 def psql(env_path: str, env: dict[str, str], project: str | None, sql: str) -> tuple[bool, str]:
@@ -37,6 +42,18 @@ def psql(env_path: str, env: dict[str, str], project: str | None, sql: str) -> t
     return smoke.exec_in(env_path, project, "-e", f"PGPASSWORD={env['TRANSPORTS_DB_PASSWORD']}", "postgres", "psql",
                          "-h", "postgres", "-U", "transports", "-d", "transports", "-v", "ON_ERROR_STOP=1", "-tAc",
                          sql)
+
+
+def post_json(gateway: str, path: str, token: str, payload: dict) -> tuple[int, dict[str, str], str]:
+    """A JSON POST through the gateway (the shared helper sends form data); nothing is stored past the 404."""
+    request = urllib.request.Request(gateway + path, data=json.dumps(payload).encode(), method="POST",
+                                     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    try:
+        response = urllib.request.build_opener(idp.NoRedirect).open(request, timeout=15)
+    except urllib.error.HTTPError as error:
+        response = error
+    with response:
+        return response.status, {k.lower(): v for k, v in response.headers.items()}, response.read().decode()
 
 
 def latest_import(env_path: str, env: dict[str, str], project: str | None) -> tuple[bool, str]:
@@ -109,11 +126,17 @@ def main(env_path: str, project: str | None = None) -> int:
 
     correlation = f"smoke-{uuid.uuid4()}"
     status, headers, body = smoke.call(gateway, buses, rita, correlation)
-    idp.check(smoke.is_problem(status, headers, body, 501) and smoke.problem(body).get("detail") == NOT_YET,
-              "GET /api/v1/events/{id}/bus-observations with Rita's Keycloak token gets 501 Problem Details naming "
-              "US-41 (token accepted)" + ("" if status == 501 else f" (got {status})"))
+    idp.check(smoke.is_problem(status, headers, body, 404) and smoke.problem(body).get("detail") == NOT_FOUND,
+              "GET /api/v1/events/{id}/bus-observations with Rita's Keycloak token reaches the access check: 404 for "
+              "an event she is not a member of (token accepted, US-41)" + ("" if status == 404 else f" (got {status})"))
     idp.check(headers.get("x-correlation-id") == correlation,
               "the X-Correlation-Id sent through the gateway comes back")
+
+    route = f"/api/v1/events/{uuid.uuid4()}/transport-options"
+    status, headers, body = post_json(gateway, route, rita, {"mode": "ExternalBus", "externalRoute": "500"})
+    idp.check(smoke.is_problem(status, headers, body, 404) and smoke.problem(body).get("detail") == NOT_FOUND,
+              "POST /api/v1/events/{id}/transport-options with Rita's Keycloak token reaches the access check: 404 "
+              "for an event she is not a member of (US-41)" + ("" if status == 404 else f" (got {status})"))
 
     status, headers, body = smoke.call(gateway, "/api/v1/events/not-a-uuid/bus-observations", rita)
     idp.check(smoke.is_problem(status, headers, body, 400),

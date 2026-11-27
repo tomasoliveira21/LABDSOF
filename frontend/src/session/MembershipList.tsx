@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "./client";
+import { canOpen } from "./eventPath";
 
-const eventStatuses = {
+export const eventStatuses = {
   Draft: "Rascunho",
   Published: "Publicado",
   Suspended: "Suspenso",
   Closed: "Encerrado",
 };
 
-type Membership = {
+export type Membership = {
   eventId: string;
   eventName?: string;
   eventStatus?: keyof typeof eventStatuses;
@@ -50,7 +51,9 @@ export default function MembershipList() {
     </>}
     {state.status === "ready" && (state.events.length === 0 ? <p>Ainda não pertences a nenhum evento.</p> :
       <ul className="member-event-list">{state.events.map(event => <li key={event.eventId}>
-        <strong>{event.eventName ?? "Evento sem detalhes disponíveis"}</strong>
+        {canOpen(event)
+          ? <a href={"/events/" + event.eventId}><strong>{event.eventName ?? "Evento sem detalhes disponíveis"}</strong></a>
+          : <strong>{event.eventName ?? "Evento sem detalhes disponíveis"}</strong>}
         <span>{(event.eventStatus && eventStatuses[event.eventStatus]) ?? "Estado indisponível"} · {event.role === "EventAdmin" ? "Administração" : "Participação"}</span>
       </li>)}</ul>)}
   </section>;

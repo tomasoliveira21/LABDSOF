@@ -32,6 +32,26 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - **US-08 (#90) and US-15 (#94) share `POST …/members`** with this story. What is served is naming an EventAdmin; the `422` that protects the *last* EventAdmin of an event belongs to US-15 and is deliberately not implemented here.
 - The back-office pages are the web app's (decision 13); what they need is on #61 and #89.
 
+## [Unreleased] · 2026-11-26 · The next buses home (US-41, #85, António Guerra)
+
+**Why:** a participant leaving the venue wants to see the city buses on the routes that serve it, so that they don't walk home or drive (`features.md` US-41). The source gives live positions, not timetables (O6), so the story shows where the buses are now and how far they are from the venue. Spec: [`Docs/specs/US-41-see-next-buses-home.md`](Docs/specs/US-41-see-next-buses-home.md). Built on US-40 (#84).
+
+### Added
+- `POST /api/v1/events/{eventId}/transport-options` in Transports, for an external bus route: an EventAdmin or a member of a team with `Transport.Edit` adds the source's route number (trimmed, at most 20 characters) with an optional name. The same route twice and a 21st route get `409`, also for requests at the same time (Flyway `V2`, a unique index; the event's copy is locked); a closed event `409`; stops (US-37) and departures `400`; a shuttle `501` naming US-37. Each route added is logged with the correlation id.
+- `GET /api/v1/events/{eventId}/bus-observations` in Transports: the buses in use on the event's routes, nearest first, each with its distance to the venue and the time of its position; the event's routes with how many of their buses are shown; the venue, to centre a map; `dataAsOf` and `stale` (no valid import in the last 5 min; the warning on the page is US-42). An EventAdmin reads a draft, published or closed event, a RegularUser a published or closed one.
+- Anyone who is not a member, a removed member, an unknown event and a suspended event get the same `404` on both operations.
+- The web app's first event page: each event of "Os meus eventos" the user may open links to `/events/{eventId}`, whose section *Autocarros perto do recinto* shows the buses on a street map centred on the venue (Leaflet 1.9.4, OpenStreetMap tiles with their attribution, one marker per bus labelled with its route) and in a list below it, nearest first, with the distance and the Lisbon time of each position; it polls every 10 s while visible and stops when the event is no longer there for the user. The participant's own location is not used.
+
+### Changed
+- `contracts/openapi.yaml`: the `POST` declares `409`, `501` and `Location`; the read adds `venue`, `routes` (`BusRouteSummary`), `fleetVehicleId` and `distanceMetres`. Optional fields are left out of the JSON, never `null`.
+- `transports_smoke.py`: both operations now reach the access check (`404` for an event Rita is not a member of, no longer `501`); no event can be created through the gateway before US-06, so the full path is in the integration tests.
+- The [security and privacy assessment](Docs/Technical/security-and-privacy-assessment.md) gets TB9 (the browser asks the OpenStreetMap tile server for the map tiles around the venue), `img-src` for that server in the proposed CSP and `Referrer-Policy: strict-origin-when-cross-origin` in action 11, so only the origin reaches it; [`assumptions-and-dependencies.md`](Docs/Deliverables/assumptions-and-dependencies.md) gets X7, the tile server; [`local-delivery.md`](Docs/Technical/local-delivery.md) describes both operations.
+
+### Notes
+- **The page is built in this story, by agreement with the web app's owner** (Tomás Oliveira, 26 November 2026), as an exception to decision 13 of 15 November 2026 and the specs README (*Workflow*).
+- After the review of PR #258: the event's status is read again under the lock, the routes are ordered by a new `created_at` (in `V2`), a `404` before the page's first answer waits up to six polls, and a `429`/`503` gets a calmer message.
+- Routes are added only through the API until a team form exists; a note proposes that US-37's form (#98) lists them too. Changing or removing a route is US-37.
+
 ## [Unreleased] · 2026-11-26 · Join an event by QR code or link (US-12, #63, Tiago Teixeira)
 
 **Why:** a participant's first contact with Farol is the QR code on a poster or the link a friend sends; until this story there was no way to become a member of an event at all (`features.md` US-12). Spec: [`Docs/specs/US-12-join-event.md`](Docs/specs/US-12-join-event.md). Built on US-18 (#67), whose `MembershipChanged` and audit port it reuses.
