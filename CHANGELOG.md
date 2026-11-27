@@ -22,6 +22,11 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 - After the review of PR #258: the event's status is read again under the lock, the routes are ordered by a new `created_at` (in `V2`), a `404` before the page's first answer waits up to six polls, and a `429`/`503` gets a calmer message.
 - Routes are added only through the API until a team form exists; a note proposes that US-37's form (#98) lists them too. Changing or removing a route is US-37.
 
+## [Unreleased] · 2026-11-27 · Event access isolation and refusal audits (US-14, #64)
+
+- Reports and Transports record authorization refusals with the target event, account and time. Integration tests verify cross-event reads and writes and event-specific administrator permissions.
+- The [US-14 spec](Docs/specs/US-14-event-data-isolation.md) records coverage across services, including Badges account isolation.
+
 ## [Unreleased] · 2026-11-26 · Join an event by QR code or link (US-12, #63, Tiago Teixeira)
 
 **Why:** a participant's first contact with Farol is the QR code on a poster or the link a friend sends; until this story there was no way to become a member of an event at all (`features.md` US-12). Spec: [`Docs/specs/US-12-join-event.md`](Docs/specs/US-12-join-event.md). Built on US-18 (#67), whose `MembershipChanged` and audit port it reuses.

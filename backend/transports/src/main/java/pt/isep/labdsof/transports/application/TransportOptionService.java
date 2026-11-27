@@ -80,8 +80,14 @@ public class TransportOptionService {
         .map(m -> m.teamIds().stream().map(copies::team).flatMap(Optional::stream).toList())
         .orElse(List.of());
     return switch (EventAccess.canEditTransport(membership, event, teams)) {
-      case NOT_FOUND -> throw new EventNotFoundException();
-      case FORBIDDEN -> throw new ForbiddenException();
+      case NOT_FOUND -> {
+        EventRefusals.record(eventId, userId, clock.instant(), "EVENT_NOT_VISIBLE");
+        throw new EventNotFoundException();
+      }
+      case FORBIDDEN -> {
+        EventRefusals.record(eventId, userId, clock.instant(), "MISSING_TRANSPORT_PERMISSION");
+        throw new ForbiddenException();
+      }
       case ALLOWED -> event.orElseThrow();
     };
   }

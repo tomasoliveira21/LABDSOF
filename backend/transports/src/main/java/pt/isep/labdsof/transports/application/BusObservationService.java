@@ -38,6 +38,7 @@ public class BusObservationService {
   @Transactional(readOnly = true)
   public BusView view(UUID eventId, UUID userId) {
     if (!EventAccess.canRead(copies.membership(eventId, userId), copies.event(eventId))) {
+      EventRefusals.record(eventId, userId, clock.instant(), "EVENT_NOT_VISIBLE");
       throw new EventNotFoundException();
     }
     return BusView.of(venue, options.busRoutes(eventId), buses.inUse(), imports.lastSucceededAt(), clock.instant(),

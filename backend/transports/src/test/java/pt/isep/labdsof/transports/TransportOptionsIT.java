@@ -106,6 +106,23 @@ class TransportOptionsIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-14 AC-2 transport edit permissions do not cross event boundaries")
+  void auditCrossEventWrite(CapturedOutput output) {
+    var first = event(EventStatus.Published);
+    var second = event(EventStatus.Published);
+    var admin = member(first, Role.EventAdmin, Status.Active);
+    ApiClient.assertProblem(post(second, admin, ROUTE_500), 404);
+    copies.upsertIfNewer(new Membership(second, admin, Role.RegularUser, Status.Active, Set.of(), 1));
+    ApiClient.assertProblem(post(second, admin, ROUTE_500), 403);
+    assertThat(jdbc.sql("SELECT count(*) FROM transport_option WHERE event_id = :id")
+        .param("id", second).query(Long.class).single()).isZero();
+    assertThat(output.getAll().lines().filter(line -> line.contains("Transport event access refused"))
+        .filter(line -> line.contains(admin.toString())).toList())
+        .hasSize(2).allSatisfy(line -> assertThat(line).contains(second.toString(), "\"at\""));
+    assertThat(output.getAll()).contains("EVENT_NOT_VISIBLE", "MISSING_TRANSPORT_PERMISSION");
+  }
+
+  @Test
   @DisplayName("US-41 AC-3 an outsider, a removed member, an unknown event and a suspended event get the same 404")
   void sameNotFound() {
     var eventId = event(EventStatus.Published);

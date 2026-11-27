@@ -13,6 +13,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -183,6 +186,19 @@ class BusObservationsIT extends IntegrationTest {
 
     answers.forEach(response -> ApiClient.assertProblem(response, 404));
     assertThat(answers.stream().map(BusObservationsIT::problem).distinct()).hasSize(1);
+  }
+
+  @Test
+  @ExtendWith(OutputCaptureExtension.class)
+  @DisplayName("US-14 AC-1 transport reads refuse and audit an administrator from a different event")
+  void auditCrossEventRead(CapturedOutput output) {
+    var first = event(EventStatus.Published);
+    var second = event(EventStatus.Published);
+    var admin = member(first, Role.EventAdmin, Status.Active);
+    ApiClient.assertProblem(get(second, admin), 404);
+    assertThat(output.getAll().lines().filter(line -> line.contains("Transport event access refused"))
+        .filter(line -> line.contains(admin.toString())).toList())
+        .singleElement().satisfies(line -> assertThat(line).contains(second.toString(), "EVENT_NOT_VISIBLE", "\"at\""));
   }
 
   @Test

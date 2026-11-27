@@ -7,14 +7,20 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.test.context.TestPropertySource;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.Membership.Role;
 import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Team;
 
 /** AC-4: the JWT matrix and per-event isolation on every implemented endpoint (spec §5). */
+@ExtendWith(OutputCaptureExtension.class)
+@TestPropertySource(properties = "logging.structured.format.console=logstash")
 class SecurityIT extends IntegrationTest {
 
   final UUID event = UUID.randomUUID();
@@ -128,6 +134,47 @@ class SecurityIT extends IntegrationTest {
     assertThat(post(path(), JWKS.valid(user), submitBody(UUID.randomUUID(), "help")).statusCode())
         .isEqualTo(404);
     assertThat(get(path() + "/" + UUID.randomUUID(), JWKS.valid(user)).statusCode()).isEqualTo(404);
+  }
+
+  @Test
+  @DisplayName("US-14 AC-1 Reports refuses cross-event reads and writes and records the attempted access")
+  void refusesAndAuditsCrossEventAccess(CapturedOutput output) throws Exception {
+    var other = "outsider-" + UUID.randomUUID();
+    member(UUID.randomUUID(), other, Role.EventAdmin);
+    member(event, user, Role.RegularUser);
+    var created = post(path(), JWKS.valid(user), submitBody(UUID.randomUUID(), "private-request"));
+    assertThat(created.statusCode()).isEqualTo(201);
+    var resource = created.headers().firstValue("Location").orElseThrow();
+    var token = JWKS.valid(other);
+    var read = get(resource, token);
+    var write = post(resource + "/close", token, "");
+    assertThat(read.statusCode()).isEqualTo(404);
+    assertThat(write.statusCode()).isEqualTo(404);
+    assertThat(read.body()).doesNotContain("private-request");
+    assertThat(get(resource, JWKS.valid(user)).body()).contains("Submitted");
+    assertAudit(output, other, "NO_ACTIVE_MEMBERSHIP");
+  }
+
+  @Test
+  @DisplayName("US-14 AC-2 a Reports administrator in X has no triage permission as a regular member of Y")
+  void adminRoleDoesNotCrossEvents(CapturedOutput output) throws Exception {
+    var admin = "admin-" + UUID.randomUUID();
+    member(UUID.randomUUID(), admin, Role.EventAdmin);
+    member(event, admin, Role.RegularUser);
+    member(event, user, Role.RegularUser);
+    var created = post(path(), JWKS.valid(user), submitBody(UUID.randomUUID(), "private-request"));
+    assertThat(created.statusCode()).isEqualTo(201);
+    var resource = created.headers().firstValue("Location").orElseThrow();
+    assertThat(post(resource + "/close", JWKS.valid(admin), "").statusCode()).isEqualTo(403);
+    assertThat(get(resource, JWKS.valid(user)).body()).contains("Submitted");
+    assertAudit(output, admin, "MISSING_TRIAGE_PERMISSION");
+  }
+
+  private void assertAudit(CapturedOutput output, String subject, String reason) {
+    assertThat(output.getAll().lines().filter(line -> line.contains("Reports event access refused"))
+        .filter(line -> line.contains(subject)).toList()).isNotEmpty().allSatisfy(line -> assertThat(line)
+        .contains(event.toString(), reason, "\"at\"", "\"correlationId\"")
+        .doesNotContain("private-request"));
   }
 
   @Test

@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -87,6 +88,7 @@ class BadgesIT {
   }
 
   @Test
+  @DisplayName("US-14 AC-3 an account cannot read another account's event badges")
   void aNewAccountGetsAnEmptyListAndCannotSeeSomeoneElsesBadges() throws Exception {
     var owner = UUID.randomUUID();
     var event = UUID.randomUUID();
