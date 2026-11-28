@@ -67,4 +67,23 @@ D3's description and D5's scope were decided by the story's owner on 27 November
 
 ## 6. Handoff
 
-_Filled as the work goes._
+**28 November 2026.**
+
+- Baseline on `main` (`6bb71f7`): `mvn -B -ntp -f backend/reports/pom.xml verify` green: 178 unit tests, 258 integration tests, JaCoCo 98.2 % lines and 96.4 % branches, PIT 257 of 257 mutations killed.
+- D3 (the description in the task) and D5 (only the field-task list, the other two *planned US-31* entries settled in the contract) were asked before the work and answered by the story's owner on 27 November 2026; D7 was asked after the G8 review and answered on 28 November 2026.
+- Built test first, feature by feature (§4). Red before green: the domain and service tests did not compile before `FieldTask`, `respondingTeamIds`, `effectiveCategory`, `fieldTasks` and `FieldTasks.live` existed; `FieldTasksIT` failed on 8 of its 14 tests with the adapter but without the endpoint (the six `401` cases already passed, as the security filter runs first); `ContractIT` failed until `listFieldTasks` was marked implemented; `DocumentationIT` failed until the changelog had the story.
+- **G8 independent review** (`code-review` at `high` on `6bb71f7...HEAD`), 6 findings:
+  - (1) *important, fixed test first:* a team that loses `HelpRequests.Respond` kept its tasks (US-29 D6), but no phone listed them any more. Asked and decided (D7): such a team is treated as deleted. `LocalCopyServiceTest` failed on the old code (the request stayed routed); the old `US-29 AC-2` test asserted the replaced rule for a team without permissions and now uses a responding team.
+  - (2) *important, fixed:* the security and privacy assessment (AC-3) said a routed team sees only the category and the point; its row now names the description, the live task and the reason (D3).
+  - (3) *nit, fixed:* the task list filters on `purpose = 'Assist'`, so a Verify or Fix task (US-52) is never shown as a help request.
+  - (4) *nit, fixed:* `JdbcFieldTasks.live` builds on `JdbcHelpRequests.COLUMNS`, the columns `map` reads, instead of a copy.
+  - (5) *nit, kept:* D3, D5 and D7 have no meeting record. They are the story owner's decisions inside the owner's area (decision 13 of 15 November 2026), recorded in this spec, the CHANGELOG and the API outline, as US-29's were; a meeting record follows if the team changes them.
+  - (6) *nit, fixed:* `FieldTask.Status` lost `Answered`, which the contract does not list until US-52.
+- **G6** guard: no blocking finding; one warning, the `@SuppressWarnings("java:S115")` on `FieldTask.Status`, the pattern of `Membership` (the constants are the contract values), with its reason in the comment above it. Test census 1379 → 1395.
+- **G1** (after the G8 fixes) `mvn -B -ntp -f backend/reports/pom.xml verify`: 184 unit tests, 273 integration tests, JaCoCo 98.2 % lines and 96.4 % branches (≥ 90 %), PIT 263 of 263 mutations killed on `domain` and `application` (≥ 80 %).
+- **G5** smoke on a fresh stack (`down --volumes`, every image rebuilt, `up -d --wait`, every check step of the `ci` job, the observability profile included, `down --volumes`) on `4e6ee2c`: 14 of 14 steps pass, with the two new field-task checks through the gateway (`401` without a token, `404` for a non-member). `smoke.sh` matched `ci.yml`.
+- **G2** `FieldTasksIT`: real PostgreSQL and RabbitMQ (the Compose images, the production migrations, `setup.sh`); tasks are dispatched by real routes over HTTP, closed over HTTP, and the team deleted through `LocalCopyService`. No database or broker mock.
+- **G3** `FieldTasksIT`: every bad token → 401; a participant and a control-room member → 403; an EventAdmin in no responding team → 200 with an empty list; a non-member, a removed member, a member of another event and a valid token without `sub` → 404 with the same body as an unknown event; a malformed event ID → 400.
+- **G4** `contracts/openapi.yaml`: `listFieldTasks` implemented, without `updatedSince` and `serverTime`; the target's `description`; the help-requests list and the read of one request point the field team to it, and the ignored `teamId` filter is gone. `ContractIT` passes. No event schema changes.
+- **G7** `CHANGELOG.md`, the API outline (§4 tables, the §4.1 example and a dated note), the security and privacy assessment (AC-3), a dated note on US-29 D6, this spec; `DocumentationIT` checks that every test named here exists (at least 14 names, both ACs covered).
+- Not done, and not claimed: accepting and resolving a task (US-32, US-33), the phone page (what it needs is on #78).
