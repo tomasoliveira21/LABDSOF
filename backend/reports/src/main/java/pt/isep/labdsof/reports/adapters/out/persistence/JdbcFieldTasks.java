@@ -55,14 +55,14 @@ class JdbcFieldTasks implements FieldTasks {
     if (teamIds.isEmpty()) {
       return List.of(); // IN () is not SQL
     }
-    return jdbc.sql("""
-        SELECT r.*, t.state, t.suggested_category, t.suggested_priority, t.suggested_reason, t.not_triaged_reason,
-               f.id AS task_id, f.team_id AS task_team_id, f.status AS task_status, f.accepted_by AS task_accepted_by,
+    return jdbc.sql("SELECT " + JdbcHelpRequests.COLUMNS + """
+             , f.id AS task_id, f.team_id AS task_team_id, f.status AS task_status, f.accepted_by AS task_accepted_by,
                f.dispatched_at AS task_dispatched_at, f.updated_at AS task_updated_at
         FROM field_task f
         JOIN help_request r ON r.id = f.help_request_id AND r.event_id = f.event_id
         JOIN triage_suggestion t ON t.request_id = r.id
         WHERE f.event_id = :eventId AND f.team_id IN (:teamIds) AND f.status IN ('Open', 'Accepted')
+          AND f.purpose = 'Assist'
         ORDER BY f.dispatched_at, f.id
         """)
         .param("eventId", eventId)

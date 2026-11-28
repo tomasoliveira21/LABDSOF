@@ -18,6 +18,7 @@ import pt.isep.labdsof.reports.domain.Membership.Status;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
 import pt.isep.labdsof.reports.domain.Location;
+import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Team;
 
 class LocalCopyServiceTest {
@@ -159,8 +160,41 @@ class LocalCopyServiceTest {
         .isEqualTo(Outcome.STALE);
     assertThat(ports.requests).containsEntry(routedAgain.id(), routedAgain).containsAllEntriesOf(after);
     assertThat(ports.tasks).containsAll(tasks);
-    // A team that is not deleted keeps its requests
-    assertThat(service.apply(UUID.randomUUID(), team("Nursing", 3))).isEqualTo(Outcome.APPLIED);
+    // A team that is not deleted and still responds keeps its requests (one that stops responding: US-31 G8 review)
+    assertThat(service.apply(UUID.randomUUID(), responding("Nursing", 3, Permission.HELP_REQUESTS_RESPOND)))
+        .isEqualTo(Outcome.APPLIED);
     assertThat(ports.requests).containsEntry(routedAgain.id(), routedAgain);
+  }
+
+  static Team responding(String name, long version, Permission... permissions) {
+    return new Team(TEAM, EVENT, name,
+        java.util.Arrays.stream(permissions).map(p -> new Team.TeamPermission(p, Set.of())).toList(), Set.of(), false,
+        version);
+  }
+
+  @Test
+  @DisplayName("US-31 AC-2 a team that stops responding sends its requests back to the queue and its tasks are cancelled")
+  void stoppedResponding() {
+    service.apply(UUID.randomUUID(), responding("Nursing", 1, Permission.HELP_REQUESTS_RESPOND));
+    var seen = routed(TEAM, HelpRequestStatus.Seen);
+    var onTheWay = routed(TEAM, HelpRequestStatus.OnTheWay);
+
+    // A change that keeps the permission leaves the team's requests and tasks as they are
+    assertThat(service.apply(UUID.randomUUID(), responding("Nurses", 2, Permission.HELP_REQUESTS_RESPOND)))
+        .isEqualTo(Outcome.APPLIED);
+    assertThat(ports.requests.get(seen.id())).isEqualTo(seen);
+    assertThat(ports.tasks).extracting(InMemoryPorts.Task::status).containsExactly("Open", "Accepted");
+
+    assertThat(service.apply(UUID.randomUUID(), responding("Nurses", 3, Permission.HELP_REQUESTS_TRIAGE)))
+        .isEqualTo(Outcome.APPLIED);
+
+    for (var request : List.of(seen, onTheWay)) {
+      var returned = ports.requests.get(request.id());
+      assertThat(returned.routedTeamId()).isNull();
+      assertThat(returned.status()).isEqualTo(HelpRequestStatus.Seen);
+      assertThat(returned.updatedAt()).isEqualTo(NOW);
+    }
+    assertThat(ports.tasks).extracting(InMemoryPorts.Task::status).containsExactly("Cancelled", "Cancelled");
+    assertThat(ports.decisions).allSatisfy(d -> assertThat(d.changes()).isEmpty());
   }
 }

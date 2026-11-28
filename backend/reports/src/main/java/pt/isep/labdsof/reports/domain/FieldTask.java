@@ -9,5 +9,5 @@ public record FieldTask(UUID id, UUID teamId, Status status, String acceptedBy, 
 
   /** The constants are the contract values (API, database), so they keep its PascalCase. */
   @SuppressWarnings("java:S115")
-  public enum Status { Open, Accepted, Answered, Resolved, Cancelled }
+  public enum Status { Open, Accepted, Resolved, Cancelled }
 }

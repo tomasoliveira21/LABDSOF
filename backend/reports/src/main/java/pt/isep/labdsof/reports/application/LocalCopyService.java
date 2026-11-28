@@ -6,11 +6,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.isep.labdsof.reports.domain.Membership;
+import pt.isep.labdsof.reports.domain.Permission;
 import pt.isep.labdsof.reports.domain.Team;
 
 /**
- * Applies MembershipChanged and TeamChanged to the local copies: idempotent and by version (ADR-004). A team's deletion
- * also sends the requests routed to it back to the control room's queue and cancels their tasks (US-29 D6, US-16).
+ * Applies MembershipChanged and TeamChanged to the local copies: idempotent and by version (ADR-004). A team that is
+ * deleted, or no longer has HelpRequests.Respond, sends the requests routed to it back to the control room's queue and
+ * cancels their tasks (US-29 D6, US-16; US-31 G8 review: no phone would list them).
  */
 @Service
 public class LocalCopyService {
@@ -48,7 +50,8 @@ public class LocalCopyService {
     if (!copies.upsertIfNewer(team)) {
       return Outcome.STALE;
     }
-    if (team.deleted()) {
+    // A deleted team grants nothing, so this covers the deletion too
+    if (!team.grants(Permission.HELP_REQUESTS_RESPOND)) {
       returnToQueue(team);
     }
     return Outcome.APPLIED;
