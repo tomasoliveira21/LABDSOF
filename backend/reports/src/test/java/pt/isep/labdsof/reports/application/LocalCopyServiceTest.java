@@ -182,7 +182,7 @@ class LocalCopyServiceTest {
     // A change that keeps the permission leaves the team's requests and tasks as they are
     assertThat(service.apply(UUID.randomUUID(), responding("Nurses", 2, Permission.HELP_REQUESTS_RESPOND)))
         .isEqualTo(Outcome.APPLIED);
-    assertThat(ports.requests.get(seen.id())).isEqualTo(seen);
+    assertThat(ports.requests).containsEntry(seen.id(), seen);
     assertThat(ports.tasks).extracting(InMemoryPorts.Task::status).containsExactly("Open", "Accepted");
 
     assertThat(service.apply(UUID.randomUUID(), responding("Nurses", 3, Permission.HELP_REQUESTS_TRIAGE)))

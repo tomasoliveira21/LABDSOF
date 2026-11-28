@@ -1173,6 +1173,7 @@ class HelpRequestServiceTest {
     for (var user : List.of("nobody", "gone")) {
       assertThatThrownBy(() -> service.fieldTasks(EVENT, user)).isInstanceOf(NotFoundException.class);
     }
-    assertThatThrownBy(() -> service.fieldTasks(UUID.randomUUID(), "admin")).isInstanceOf(NotFoundException.class);
+    var otherEvent = UUID.randomUUID();
+    assertThatThrownBy(() -> service.fieldTasks(otherEvent, "admin")).isInstanceOf(NotFoundException.class);
   }
 }

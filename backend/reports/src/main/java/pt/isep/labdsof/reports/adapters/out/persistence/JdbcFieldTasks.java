@@ -17,6 +17,8 @@ import pt.isep.labdsof.reports.domain.FieldTask;
 @Repository
 class JdbcFieldTasks implements FieldTasks {
 
+  private static final String EVENT_ID = "eventId";
+
   private final JdbcClient jdbc;
 
   JdbcFieldTasks(JdbcClient jdbc) {
@@ -31,7 +33,7 @@ class JdbcFieldTasks implements FieldTasks {
         VALUES (:id, :eventId, :requestId, :teamId, 'Assist', 'Open', :at, :at, 1)
         """)
         .param("id", taskId)
-        .param("eventId", eventId)
+        .param(EVENT_ID, eventId)
         .param("requestId", requestId)
         .param("teamId", teamId)
         .param("at", Timestamp.from(at))
@@ -44,7 +46,7 @@ class JdbcFieldTasks implements FieldTasks {
         UPDATE field_task SET status = 'Cancelled', updated_at = :at, version = version + 1
         WHERE event_id = :eventId AND help_request_id = :requestId AND status IN ('Open', 'Accepted')
         """)
-        .param("eventId", eventId)
+        .param(EVENT_ID, eventId)
         .param("requestId", requestId)
         .param("at", Timestamp.from(at))
         .update();
@@ -65,7 +67,7 @@ class JdbcFieldTasks implements FieldTasks {
           AND f.purpose = 'Assist'
         ORDER BY f.dispatched_at, f.id
         """)
-        .param("eventId", eventId)
+        .param(EVENT_ID, eventId)
         .param("teamIds", teamIds)
         .query((rs, row) -> new FieldTask(
             rs.getObject("task_id", UUID.class),

@@ -118,7 +118,7 @@ class FieldTasksIT extends IntegrationTest {
         .containsEntry("acceptedBy", null);
     assertThat(Instant.parse((String) first.get("dispatchedAt")))
         .isEqualTo(((java.sql.Timestamp) task.get("dispatched_at")).toInstant());
-    assertThat(first.get("updatedAt")).isEqualTo(first.get("dispatchedAt"));
+    assertThat(first).containsEntry("updatedAt", first.get("dispatchedAt"));
     assertThat(JsonPath.<Map<String, Object>>read(response.body(), "$.items[0].target")).isEqualTo(Map.of(
         "kind", "HelpRequest", "id", triaged, "category", "Health",
         "location", Map.of("mapVersion", 3, "x", 0.42, "y", 0.77), "description", "Friend fainted near the bar"));
