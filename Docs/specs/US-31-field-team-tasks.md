@@ -13,7 +13,7 @@
 | # | Acceptance criterion (#78) | Tests (name starts with `US-31 AC-<n>`) |
 |---|---|---|
 | AC-1 | Given a request is routed to my team, then it appears on my phone within 5 s **[PROPOSED]**, with its category and its point on the venue map | `FieldTasksIT`, `HelpRequestServiceTest` |
-| AC-2 | Given a request is routed to another team, then I do not see it | `FieldTasksIT`, `HelpRequestServiceTest`, `EventAccessTest` |
+| AC-2 | Given a request is routed to another team, then I do not see it | `FieldTasksIT`, `HelpRequestServiceTest`, `EventAccessTest`, `LocalCopyServiceTest` |
 
 AC-1's *within 5 s* is the phone's polling interval plus one answer: the list is read from the database on every poll, with no cache, so a route committed before a poll is in that poll's answer (D4).
 
@@ -23,7 +23,7 @@ The gates of [#194](194-reports-postgres-outbox.md) §2 for `backend/reports`, u
 
 ## 3. Decisions
 
-D3's description and D5's scope were decided by the story's owner on 27 November 2026, before the work started.
+D3's description and D5's scope were decided by the story's owner on 27 November 2026, before the work started; D7 on 28 November 2026, after the G8 review found the gap it closes.
 
 | # | Decision | Options weighed and why |
 |---|---|---|
@@ -33,6 +33,7 @@ D3's description and D5's scope were decided by the story's owner on 27 November
 | D4 | **The phone polls every 2 s while the screen is visible**, as the control room (US-26 D7), so a route is on the phone within one interval plus one answer, under the ≤ 5 s target. Read in a read-only transaction, no lock, no cache | features.md: *a refresh every 2–3 s on the open screen*; guide C5 (polling) |
 | D5 | **The other two entries the contract marks *planned US-31* are not built:** the help-requests list *routed to the caller's teams* (with its `teamId` filter) and the routed team's read of one request. The field-task list carries what they would give the phone; the contract says so, and the `teamId` parameter, ignored until now, is removed | Decided by the story's owner on 27 November 2026. *Build all three:* two lists of the same requests for the same phone, and a third view of a request that no document defines |
 | D6 | **No log line per poll**, as the other live lists (US-24, US-26); the correlation-ID filter tags the request, and the access log has the call | A poll every 2 s from each phone would flood the log with lines that say nothing new |
+| D7 | **A team that no longer has `HelpRequests.Respond` is treated as deleted:** when its `TeamChanged` is applied, its routed requests go back to the control room's queue and its live tasks are cancelled, the path of US-29 D6. This replaces the last sentence of US-29 D6 (*a team that only loses the permission keeps its tasks*) | D1 lists only responding teams, so those tasks would reach no phone while the control room still saw the requests as routed (G8 review). *Keep listing a non-responding team's tasks:* a member with no other responding team gets `403`, so they would still be lost. *Leave it as a known limit:* the control room would have to notice by itself. A route already refuses a non-responding team (US-29 D1) |
 
 ## 4. Features (build order)
 
@@ -41,6 +42,7 @@ D3's description and D5's scope were decided by the story's owner on 27 November
 | F1 | Domain: `EventAccess.respondingTeamIds` (D1), `HelpRequest.effectiveCategory` (D3), the `FieldTask` read model | `EventAccessTest`, `HelpRequestTest` |
 | F2 | Application: `HelpRequestService.fieldTasks` with `FieldTasks.live` (D1, D2) | `HelpRequestServiceTest` |
 | F3 | Out adapter: `JdbcFieldTasks.live`, the task joined to its request (D2, D3) | `FieldTasksIT` |
+| F3b | Application: `LocalCopyService` returns the requests of a team that stops responding (D7) | `LocalCopyServiceTest` |
 | F4 | In adapter: the endpoint, the contract marked implemented, the two *planned US-31* entries settled (D1, D3, D5); a smoke check through the gateway | `FieldTasksIT`, `ContractIT` |
 | F5 | Documentation | `DocumentationIT` |
 
@@ -54,6 +56,7 @@ D3's description and D5's scope were decided by the story's owner on 27 November
 | Several tasks | Oldest dispatch first | `FieldTasksIT` · `US-31 AC-1 a routed request appears in the team's list with its category, point and description` |
 | A request routed to another team | Not in my list | `HelpRequestServiceTest` · `US-31 AC-2 tasks of other teams are not listed`; `FieldTasksIT` · `US-31 AC-2 a request routed to another team is not listed` |
 | A request routed away from my team, closed, or my team deleted | Gone from the next poll | `FieldTasksIT` · `US-31 AC-2 a request routed away, closed or of a deleted team leaves the list` |
+| My team loses `HelpRequests.Respond` (`TeamChanged`, not deleted) | Its routed requests back to the queue (`routedTeamId` null, `OnTheWay` → `Seen`), its live tasks `Cancelled`, no history entry; a change that keeps the permission leaves them | `LocalCopyServiceTest` · `US-31 AC-2 a team that stops responding sends its requests back to the queue and its tasks are cancelled` |
 | I leave the team | Its tasks are no longer listed (`403` when no other team of mine responds) | `FieldTasksIT` · `US-31 AC-2 a member who leaves the team no longer sees its tasks` |
 | My teams: one responding, one without `HelpRequests.Respond`, one deleted, one of another event | Only the responding team's tasks | `EventAccessTest` · `US-31 AC-2 only the member's own responding teams are listed`; `HelpRequestServiceTest` · `US-31 AC-2 tasks of other teams are not listed` |
 | An EventAdmin in no responding team | `200`, empty list | `EventAccessTest` · `US-31 AC-2 only the member's own responding teams are listed`; `HelpRequestServiceTest` · `US-31 AC-2 only members with HelpRequests.Respond list tasks` |

@@ -12,6 +12,7 @@ All notable changes to the repository documentation. Format based on [Keep a Cha
 
 ### Changed
 - `contracts/openapi.yaml`: `listFieldTasks` implemented, without `updatedSince` and `serverTime`; the task's target gains the `description`. The two other entries marked *planned US-31* are covered by it and not built (spec D5, decided by the story's owner): the help-requests list says the field team uses `listFieldTasks`, and its ignored `teamId` filter is removed. Dated note in the API outline §4.1.
+- A team that loses `HelpRequests.Respond` (`TeamChanged`, not deleted) is now treated as deleted: its routed requests go back to the control room's queue and its live tasks are cancelled, since no phone would list them (spec D7, which changes US-29 D6). The routed team's access row of the security and privacy assessment (AC-3) now names the description and the live task.
 
 ## [Unreleased] · 2026-11-26 · Create an event, name its first EventAdmin, and list events (US-06 and US-07, #61 and #89, Tiago Teixeira)
 
