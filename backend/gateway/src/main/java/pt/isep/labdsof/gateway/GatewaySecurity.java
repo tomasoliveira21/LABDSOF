@@ -1,5 +1,7 @@
 package pt.isep.labdsof.gateway;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -8,6 +10,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -19,6 +22,7 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthen
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tools.jackson.databind.json.JsonMapper;
@@ -28,9 +32,12 @@ class GatewaySecurity {
 
   @Bean
   SecurityFilterChain gatewayFilterChain(
-      HttpSecurity http, JsonMapper json,
+      HttpSecurity http, JsonMapper json, RestClient.Builder restClientBuilder,
       @Value("${farol.gateway.allowed-origins}") List<String> allowedOrigins,
-      @Value("${farol.gateway.requests-per-minute}") int requestsPerMinute) throws Exception {
+      @Value("${farol.gateway.requests-per-minute}") int requestsPerMinute,
+      @Value("${farol.gateway.introspection-uri}") String introspectionUri,
+      @Value("${farol.gateway.introspection-client-id}") String introspectionClientId,
+      @Value("${farol.gateway.introspection-secret}") String introspectionSecret) throws Exception {
     var unauthorized = unauthorizedProblem(json);
     return http
         .cors(cors -> cors.configurationSource(corsSource(allowedOrigins)))
@@ -47,6 +54,18 @@ class GatewaySecurity {
         .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults())
             .authenticationEntryPoint(unauthorized))
         .addFilterAfter(new AccountRateLimitFilter(requestsPerMinute), BearerTokenAuthenticationFilter.class)
+        .addFilterAfter(new SessionActivityFilter(
+            introspectionClient(restClientBuilder, introspectionUri, introspectionClientId, introspectionSecret), json),
+            AccountRateLimitFilter.class)
+        .build();
+  }
+
+  private static RestClient introspectionClient(RestClient.Builder builder, String uri, String clientId, String secret) {
+    var factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(2)).build());
+    factory.setReadTimeout(Duration.ofSeconds(2));
+    return builder.baseUrl(uri).requestFactory(factory)
+        .defaultHeaders(headers -> headers.setBasicAuth(clientId, secret))
         .build();
   }
 

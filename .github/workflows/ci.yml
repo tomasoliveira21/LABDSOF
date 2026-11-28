@@ -122,6 +122,8 @@ jobs:
           RABBITMQ_ADMIN_USER: farol-admin
       - name: Check the identity set-up through Keycloak (ADR-006)
         run: python3 -I infra/tests/identity_smoke.py infra/.env.example
+      - name: Check that logout invalidates the old access token (US-02)
+        run: python3 -I infra/tests/logout_smoke.py infra/.env.example
       # What every service (#190 to #194) relies on: from inside the network, the issuer is still the public URL
       # and the keys are on the internal address (spec #189, D4).
       - name: Check the issuer and the keys a service sees

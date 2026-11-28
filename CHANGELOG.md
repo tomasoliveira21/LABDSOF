@@ -2,6 +2,12 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-27 · Immediate access-token refusal after logout (US-02, #60)
+
+- The gateway checks session activity in Keycloak for protected API calls. A token from an ended session gets `401`.
+- Introspection failures record their type, identity-provider status when available, and the request correlation ID.
+- Compose smoke coverage checks the same access token before and after RP-initiated logout. See the [US-02 spec](Docs/specs/US-02-logout.md) for realm setup.
+
 ## [Unreleased] · 2026-11-26 · Create an event, name its first EventAdmin, and list events (US-06 and US-07, #61 and #89, Tiago Teixeira)
 
 **Why:** until this story no event could be created through the API at all, which is what every other Events and Auth & Users story has been noting as its one known limit since #192. US-07 comes with it because US-06 alone ships unusable: the FarolAdmin is not made a member of what they create, so the list is the only way they ever see it again. Specs: [`Docs/specs/US-06-create-event.md`](Docs/specs/US-06-create-event.md). The first story that spans **two services**, and the one that takes both of them to **zero `501`** for Sprint B except the map reads of US-20 (#69) and US-21 (#70).

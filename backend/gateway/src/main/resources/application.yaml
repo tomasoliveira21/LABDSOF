@@ -71,5 +71,8 @@ spring:
 
 farol:
   gateway:
+    introspection-uri: ${FAROL_INTROSPECTION_URI:http://localhost:8180/realms/farol/protocol/openid-connect/token/introspect}
+    introspection-client-id: ${FAROL_GATEWAY_CLIENT_ID:farol-gateway}
+    introspection-secret: ${FAROL_GATEWAY_CLIENT_SECRET}
     allowed-origins: ${FAROL_GATEWAY_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
     requests-per-minute: ${FAROL_GATEWAY_REQUESTS_PER_MINUTE:120}
