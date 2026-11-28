@@ -35,6 +35,7 @@ import pt.isep.labdsof.reports.application.NotFoundException;
 import pt.isep.labdsof.reports.application.TriageService;
 import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
+import pt.isep.labdsof.reports.domain.FieldTask;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
 import pt.isep.labdsof.reports.domain.HistoryEntry;
@@ -47,8 +48,8 @@ import pt.isep.labdsof.reports.domain.RequestConflictException;
 import pt.isep.labdsof.reports.domain.TriageState;
 
 /**
- * Help requests, the control room's triage decisions, acknowledge, route, close and history, and the triage status
- * (API outline §4, contracts/openapi.yaml). The caller is always the token's sub.
+ * Help requests, the control room's triage decisions, acknowledge, route, close and history, the field team's tasks and
+ * the triage status (API outline §4, contracts/openapi.yaml). The caller is always the token's sub.
  */
 @RestController
 @RequestMapping("/api/v1/events/{eventId}")
@@ -201,6 +202,30 @@ class HelpRequestController {
       throw new NotFoundException();
     }
     return new Actor(subject, jwt.getClaimAsString("name"));
+  }
+
+  /** The whole list of a field team's live tasks, on every poll (US-31 D2). */
+  record FieldTasksView(List<FieldTaskView> items) {}
+
+  /** A field task as its team reads it (API outline §4.1, spec US-31 D3). */
+  record FieldTaskView(UUID id, String purpose, FieldTask.Status status, UUID teamId, TargetView target,
+      String acceptedBy, Instant dispatchedAt, Instant updatedAt) {}
+
+  record TargetView(String kind, UUID id, Category category, LocationBody location, String description) {}
+
+  @GetMapping(value = "/field-tasks", produces = "application/json")
+  FieldTasksView fieldTasks(@PathVariable UUID eventId, @AuthenticationPrincipal Jwt jwt) {
+    return new FieldTasksView(service.fieldTasks(eventId, jwt.getSubject()).stream()
+        .map(HelpRequestController::fieldTask).toList());
+  }
+
+  private static FieldTaskView fieldTask(FieldTask task) {
+    var r = task.request();
+    // Assist is the only purpose until community reports bring Verify and Fix (US-52)
+    return new FieldTaskView(task.id(), "Assist", task.status(), task.teamId(),
+        new TargetView("HelpRequest", r.id(), r.effectiveCategory(),
+            new LocationBody(r.location().mapVersion(), r.location().x(), r.location().y()), r.description()),
+        task.acceptedBy(), task.dispatchedAt(), task.updatedAt());
   }
 
   /** Whether a new request would be sent to the AI, for the web app's banner (US-36 AC-2, spec D4, D5). */

@@ -27,9 +27,12 @@ import pt.isep.labdsof.reports.domain.TriageSuggestion;
 @Repository
 class JdbcHelpRequests implements HelpRequests {
 
-  private static final String SELECT = """
-      SELECT r.*, t.state, t.suggested_category, t.suggested_priority, t.suggested_reason,
-             t.not_triaged_reason
+  /** The columns {@link #map} reads, of help_request r joined to triage_suggestion t; also read by JdbcFieldTasks. */
+  static final String COLUMNS = """
+      r.*, t.state, t.suggested_category, t.suggested_priority, t.suggested_reason, t.not_triaged_reason
+      """;
+
+  private static final String SELECT = "SELECT " + COLUMNS + """
       FROM help_request r JOIN triage_suggestion t ON t.request_id = r.id
       """;
 
@@ -295,7 +298,8 @@ class JdbcHelpRequests implements HelpRequests {
         .list();
   }
 
-  private static HelpRequest map(ResultSet rs, int row) throws SQLException {
+  /** One request of a row with its triage columns; also read by JdbcFieldTasks (US-31). */
+  static HelpRequest map(ResultSet rs, int row) throws SQLException {
     var triage = new TriageSuggestion(
         TriageState.valueOf(rs.getString("state")),
         value(Category.class, rs.getString("suggested_category")),

@@ -102,7 +102,7 @@ paths:
     get:
       tags: [Help requests]
       operationId: listHelpRequests
-      summary: Live list of the requests the caller may see (US-24, US-26, US-27, US-31)
+      summary: Live list of the requests the caller may see (US-24, US-26, US-27)
       description: >-
         Implemented (US-26): a member with HelpRequests.Triage gets every request of the event in the
         control-room view; a member without it gets 403. Without updatedSince, every request that is not
@@ -115,8 +115,8 @@ paths:
         participant view, whatever their permissions (spec US-24 D1). Without updatedSince, every own
         request, Closed ones included; with it, every own request changed after it. Same serverTime
         overlap. Poll every 3 s while the request screen is open (spec US-24 D5).
-        Planned: the requests routed to the caller's teams with HelpRequests.Respond (US-31); the filters
-        status and teamId (US-27, US-31). Until then those parameters are ignored.
+        A field team lists the requests routed to it through listFieldTasks, not here (spec US-31 D5).
+        Planned: the status filter (US-27); until then it is ignored.
       x-farol-status: implemented
       parameters:
         - $ref: '#/components/parameters/UpdatedSince'
@@ -130,15 +130,9 @@ paths:
             default: false
         - name: status
           in: query
-          description: Planned (US-27, US-31); ignored for now.
+          description: Planned (US-27); ignored for now.
           schema:
             $ref: '#/components/schemas/HelpRequestStatus'
-        - name: teamId
-          in: query
-          description: Planned (US-31); ignored for now.
-          schema:
-            type: string
-            format: uuid
       responses:
         '200':
           description: The requests changed since updatedSince, and the serverTime to send next time.
@@ -181,7 +175,8 @@ paths:
       description: >-
         The owner gets the participant view. A member with HelpRequests.Triage gets the control-room view,
         where triage.state reads NotTriaged when the request is still Pending 30 s after submission
-        (decision 6 of 15 November 2026). Planned: members of the team the request is routed to (US-31).
+        (decision 6 of 15 November 2026). Anybody else gets 404: the team a request is routed to reads it in its
+        field tasks (listFieldTasks, spec US-31 D5).
       x-farol-status: implemented
       responses:
         '200':
@@ -473,27 +468,28 @@ paths:
       tags: [Field tasks]
       operationId: listFieldTasks
       summary: Live list of the tasks of my teams (US-31)
-      description: Requires HelpRequests.Respond in at least one team of the event.
-      x-farol-status: planned
-      parameters:
-        - $ref: '#/components/parameters/UpdatedSince'
+      description: >-
+        Implemented (US-31): requires HelpRequests.Respond in the event (403 without it; an EventAdmin has
+        it). Every answer is the whole list: the Open and Accepted tasks of the caller's own teams that are not
+        deleted and have HelpRequests.Respond, oldest dispatch first; an EventAdmin in no such team gets an
+        empty list. A task that ends (the request routed elsewhere or closed, the team deleted) is not in the
+        next answer, so the page replaces its list with each answer; there is no updatedSince. Poll every 2 s
+        while the screen is visible, so a routed request is on the phone within 5 s (spec US-31 D2, D4).
+      x-farol-status: implemented
       responses:
         '200':
-          description: The tasks changed since updatedSince, and the serverTime to send next time.
+          description: The caller's teams' live tasks.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: false
-                required: [items, serverTime]
+                required: [items]
                 properties:
                   items:
                     type: array
                     items:
                       $ref: '#/components/schemas/FieldTask'
-                  serverTime:
-                    type: string
-                    format: date-time
         '400':
           $ref: '#/components/responses/Invalid'
         '401':
@@ -813,7 +809,7 @@ components:
         target:
           type: object
           additionalProperties: false
-          required: [kind, id, category, location]
+          required: [kind, id, category, location, description]
           properties:
             kind:
               type: string
@@ -824,8 +820,12 @@ components:
             category:
               allOf: [{$ref: '#/components/schemas/Category'}]
               nullable: true
+              description: A member's category, else the AI's suggestion; null when neither (spec US-31 D3).
             location:
               $ref: '#/components/schemas/Location'
+            description:
+              type: string
+              description: The participant's description, so the responder knows what is wrong (spec US-31 D3).
         acceptedBy:
           type: string
           nullable: true

@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import pt.isep.labdsof.reports.domain.Actor;
+import pt.isep.labdsof.reports.domain.FieldTask;
 import pt.isep.labdsof.reports.domain.HelpRequest;
 import pt.isep.labdsof.reports.domain.HelpRequestChange;
 import pt.isep.labdsof.reports.domain.HelpRequestStatus;
@@ -145,6 +146,15 @@ class InMemoryPorts implements HelpRequests, FieldTasks, LocalCopies, Outbox, Pr
   public void cancelLive(UUID eventId, UUID requestId, Instant at) {
     tasks.replaceAll(t -> t.eventId().equals(eventId) && t.requestId().equals(requestId) && live(t)
         ? new Task(t.id(), t.eventId(), t.requestId(), t.teamId(), "Cancelled", at) : t);
+  }
+
+  /** In the order dispatched; an Open task's last change is its dispatch (US-31 D2). */
+  @Override
+  public List<FieldTask> live(UUID eventId, Collection<UUID> teamIds) {
+    return tasks.stream().filter(t -> t.eventId().equals(eventId) && teamIds.contains(t.teamId()) && live(t))
+        .map(t -> new FieldTask(t.id(), t.teamId(), FieldTask.Status.valueOf(t.status()), null, t.at(), t.at(),
+            requests.get(t.requestId())))
+        .toList();
   }
 
   private static boolean live(Task task) {

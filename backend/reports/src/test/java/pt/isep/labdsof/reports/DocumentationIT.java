@@ -133,6 +133,16 @@ class DocumentationIT {
     specNamesRealTests(ROOT.resolve("Docs/specs/US-30-close-help-request.md"), "US-30", 15, 1);
   }
 
+  @Test
+  @DisplayName("US-31 AC-1 the changelog and the API outline have the story, and every test its spec names exists")
+  void us31SpecNamesRealTests() throws Exception {
+    assertThat(Files.readString(ROOT.resolve("CHANGELOG.md")))
+        .contains("Field team sees routed requests (US-31, #78, Bruno de Abreu Lopes)");
+    assertThat(Files.readString(ROOT.resolve("Docs/Technical/api-outline.md")))
+        .contains("28 November 2026 (#78, US-31)");
+    specNamesRealTests(ROOT.resolve("Docs/specs/US-31-field-team-tasks.md"), "US-31", 14, 2);
+  }
+
   static void specNamesRealTests(Path spec, String prefix, int atLeast, int criteria) throws Exception {
     String tests;
     try (var files = Files.walk(Path.of("src/test/java"))) {
