@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import pt.isep.labdsof.reports.application.AccessAudit.Refusal;
 import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.EventAccess;
@@ -43,11 +44,12 @@ public class HelpRequestService {
   private final LocalCopies copies;
   private final Outbox outbox;
   private final TriageMetrics metrics;
+  private final AccessAudit audit;
   private final SubmitLimit limit;
   private final Clock clock;
 
   public HelpRequestService(HelpRequests helpRequests, FieldTasks fieldTasks, LocalCopies copies, Outbox outbox,
-      TriageMetrics metrics, SubmitLimit limit, Clock clock) {
+      TriageMetrics metrics, SubmitLimit limit, Clock clock, AccessAudit audit) {
     this.helpRequests = helpRequests;
     this.fieldTasks = fieldTasks;
     this.copies = copies;
@@ -55,6 +57,7 @@ public class HelpRequestService {
     this.metrics = metrics;
     this.limit = limit;
     this.clock = clock;
+    this.audit = audit;
   }
 
   /** The request, and whether this call created it (false: a retry with the same clientRequestId). */
@@ -115,8 +118,7 @@ public class HelpRequestService {
   @Transactional(readOnly = true)
   public Read get(UUID eventId, String userId, UUID requestId) {
     var access = access(eventId, userId);
-    var request = helpRequests.find(eventId, requestId)
-        .orElseThrow(() -> notVisible(eventId, userId, "REQUEST_NOT_VISIBLE"))
+    var request = helpRequests.find(eventId, requestId).orElseThrow(NotFoundException::new)
         .asSeenAt(clock.instant());
     if (access.has(Permission.HELP_REQUESTS_TRIAGE)) {
       return new Read(request.withDefaultTeam(copies.teams(eventId)), true);
@@ -124,7 +126,8 @@ public class HelpRequestService {
     if (request.requesterId().equals(userId)) {
       return new Read(request, false);
     }
-    throw notVisible(eventId, userId, "REQUEST_NOT_VISIBLE");
+    audit.refused(userId, eventId, clock.instant(), Refusal.NOT_VISIBLE);
+    throw new NotFoundException();
   }
 
   /**
@@ -187,7 +190,7 @@ public class HelpRequestService {
   /** The check of {@link #requireTriage}, for the use cases here, which already run in their own transaction. */
   private void triageAccess(UUID eventId, String userId) {
     if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
-      auditRefusal(eventId, userId, "MISSING_TRIAGE_PERMISSION");
+      audit.refused(userId, eventId, clock.instant(), Refusal.MISSING_PERMISSION);
       throw new ForbiddenException();
     }
   }
@@ -196,8 +199,7 @@ public class HelpRequestService {
   @Transactional
   public HelpRequest acceptSuggestion(UUID eventId, Actor actor, UUID requestId) {
     triageAccess(eventId, actor.userId());
-    var request = helpRequests.findForUpdate(eventId, requestId)
-        .orElseThrow(() -> notVisible(eventId, actor.userId(), "REQUEST_NOT_VISIBLE"));
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
     return decided(request, request.acceptSuggestion(now), actor, now);
   }
@@ -206,8 +208,7 @@ public class HelpRequestService {
   @Transactional
   public HelpRequest change(UUID eventId, Actor actor, UUID requestId, Category category, Priority priority) {
     triageAccess(eventId, actor.userId());
-    var request = helpRequests.findForUpdate(eventId, requestId)
-        .orElseThrow(() -> notVisible(eventId, actor.userId(), "REQUEST_NOT_VISIBLE"));
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
     return decided(request, request.change(category, priority, now), actor, now);
   }
@@ -233,8 +234,7 @@ public class HelpRequestService {
   private HelpRequest moveStatus(UUID eventId, Actor actor, UUID requestId,
       BiFunction<HelpRequest, Instant, HelpRequest.Decision> action) {
     triageAccess(eventId, actor.userId());
-    var request = helpRequests.findForUpdate(eventId, requestId)
-        .orElseThrow(() -> notVisible(eventId, actor.userId(), "REQUEST_NOT_VISIBLE"));
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
     var decision = action.apply(request, now);
     helpRequests.saveDecision(decision.request(), actor, decision.changes());
@@ -252,8 +252,7 @@ public class HelpRequestService {
   public HelpRequest route(UUID eventId, Actor actor, UUID requestId, UUID teamId) {
     triageAccess(eventId, actor.userId());
     var team = copies.teamForShare(eventId, teamId).orElse(null);
-    var request = helpRequests.findForUpdate(eventId, requestId)
-        .orElseThrow(() -> notVisible(eventId, actor.userId(), "REQUEST_NOT_VISIBLE"));
+    var request = helpRequests.findForUpdate(eventId, requestId).orElseThrow(NotFoundException::new);
     var now = clock.instant();
     var decision = request.route(team, now);
     var routed = decision.request();
@@ -270,7 +269,7 @@ public class HelpRequestService {
   @Transactional(readOnly = true)
   public List<HistoryEntry> history(UUID eventId, String userId, UUID requestId) {
     triageAccess(eventId, userId);
-    helpRequests.find(eventId, requestId).orElseThrow(() -> notVisible(eventId, userId, "REQUEST_NOT_VISIBLE"));
+    helpRequests.find(eventId, requestId).orElseThrow(NotFoundException::new);
     return helpRequests.history(eventId, requestId);
   }
 
@@ -309,20 +308,9 @@ public class HelpRequestService {
     var membership = copies.membership(eventId, userId);
     var teams = membership.map(m -> copies.teams(eventId, m.teamIds())).orElse(List.of());
     return EventAccess.of(membership.orElse(null), teams)
-        .orElseThrow(() -> notVisible(eventId, userId, "NO_ACTIVE_MEMBERSHIP"));
-  }
-
-  private NotFoundException notVisible(UUID eventId, String userId, String reason) {
-    auditRefusal(eventId, userId, reason);
-    return new NotFoundException();
-  }
-
-  private void auditRefusal(UUID eventId, String userId, String reason) {
-    log.atWarn()
-        .addKeyValue("eventId", eventId.toString())
-        .addKeyValue("userId", userId)
-        .addKeyValue("at", clock.instant().toString())
-        .addKeyValue("reason", reason)
-        .log("Reports event access refused");
+        .orElseThrow(() -> {
+          audit.refused(userId, eventId, clock.instant(), Refusal.NOT_A_MEMBER);
+          return new NotFoundException();
+        });
   }
 }

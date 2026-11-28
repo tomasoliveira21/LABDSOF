@@ -202,15 +202,6 @@ class ContractIT extends IntegrationTest {
 
   private static final String NAME_ADMIN_BODY = "{\"userId\":\"" + ID + "\",\"role\":\"EventAdmin\"}";
 
-  private record LaterStory(String method, String path, String body, String story) {}
-
-  private static Stream<Arguments> laterStories() {
-    // US-18 (#67) and US-12 (#63) are served now: they answer 404 on an event the caller cannot reach
-    return Stream.of(
-        new LaterStory("GET", "/api/v1/accounts?email=ana@farol.test", null, "US-06"),
-        new LaterStory("POST", eventPath("/members"), NAME_ADMIN_BODY, "US-06")).map(Arguments::of);
-  }
-
   @Test
   @DisplayName("191 AC-4 the service serves exactly the operations of openapi.yaml")
   void servesExactlyTheContractOperations() {
@@ -240,15 +231,23 @@ class ContractIT extends IntegrationTest {
         "DELETE /api/v1/events/{eventId}/members/{userId}/teams/{teamId}");
   }
 
-  @ParameterizedTest(name = "[{index}] {0}")
-  @MethodSource("laterStories")
-  @DisplayName("191 AC-4 every operation of a later story answers 501 Problem Details naming its story")
-  void laterStoriesAnswer501(LaterStory operation) {
-    var response = new ApiClient(port).send(operation.method(), operation.path(),
-        "Bearer " + JWKS.valid(UUID.randomUUID().toString()), operation.body());
+  @Test
+  @DisplayName("191 AC-4 no operation of this contract answers 501 any more: Auth & Users serves all of it")
+  void nothingAnswers501() {
+    // US-06 (#61) was the last one. A caller with no role and no membership is refused by the operation's own
+    // rule - 403 where the platform role is needed, 404 where a membership is - never by a missing use case.
+    var token = "Bearer " + JWKS.valid(UUID.randomUUID().toString());
+    var calls = List.of(
+        new String[] {"GET", "/api/v1/accounts?email=ana@farol.test", null},
+        new String[] {"POST", eventPath("/members"), NAME_ADMIN_BODY},
+        new String[] {"GET", eventPath("/members"), null},
+        new String[] {"POST", eventPath("/members/me"), null},
+        new String[] {"GET", "/api/v1/me/memberships", null});
 
-    ApiClient.assertProblem(response, 501);
-    assertThat(ApiClient.json(response).get("detail")).asString().contains(operation.story());
+    for (var call : calls) {
+      var response = new ApiClient(port).send(call[0], call[1], token, call[2]);
+      assertThat(response.statusCode()).as(call[0] + " " + call[1]).isNotEqualTo(501);
+    }
   }
 
   @ParameterizedTest(name = "[{index}] role={0}")

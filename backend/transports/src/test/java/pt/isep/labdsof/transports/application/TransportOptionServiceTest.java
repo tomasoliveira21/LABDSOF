@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import pt.isep.labdsof.transports.application.AccessAudit.Refusal;
+import pt.isep.labdsof.transports.application.FakeAccessAudit.Entry;
 import pt.isep.labdsof.transports.application.TransportOptions.Added;
 import pt.isep.labdsof.transports.domain.BusRoute;
 import pt.isep.labdsof.transports.domain.EventCopy;
@@ -32,10 +34,11 @@ class TransportOptionServiceTest {
   private static final UUID TEAM = UUID.fromString("16fd2706-8baf-433b-82eb-8c7fada847da");
   private static final NewBusRoute ROUTE = new NewBusRoute("500", "Hospital S. João");
 
+  private final FakeAccessAudit audit = new FakeAccessAudit();
   private final FakeLocalCopies copies = new FakeLocalCopies();
   private final FakeOptions options = new FakeOptions();
   private final TransportOptionService service =
-      new TransportOptionService(copies, options, Clock.fixed(NOW, ZoneOffset.UTC));
+      new TransportOptionService(copies, options, Clock.fixed(NOW, ZoneOffset.UTC), audit);
 
   private void given(EventStatus status, Role role, UUID... teams) {
     copies.event = Optional.of(new EventCopy(EVENT, status, 1));
@@ -76,6 +79,24 @@ class TransportOptionServiceTest {
     assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(EventNotFoundException.class);
     assertThatThrownBy(() -> service.refuseShuttle(EVENT, USER)).isInstanceOf(EventNotFoundException.class);
     assertThat(options.added).isEmpty();
+    var refusal = new Entry(USER, EVENT, NOW, Refusal.NOT_A_MEMBER);
+    assertThat(audit.refusals).containsExactly(refusal, refusal);
+  }
+
+  @Test
+  @DisplayName("US-14 an unknown event has no authorization refusal to audit")
+  void unknownEvent() {
+    assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(EventNotFoundException.class);
+    assertThat(audit.refusals).isEmpty();
+    assertThat(options.added).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-14 a suspended event is concealed and audited for its active administrator")
+  void suspendedEvent() {
+    given(EventStatus.Suspended, Role.EventAdmin);
+    assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(EventNotFoundException.class);
+    assertThat(audit.refusals).containsExactly(new Entry(USER, EVENT, NOW, Refusal.NOT_VISIBLE));
   }
 
   @Test
@@ -86,6 +107,8 @@ class TransportOptionServiceTest {
 
     assertThatThrownBy(() -> service.addBusRoute(EVENT, USER, ROUTE)).isInstanceOf(ForbiddenException.class);
     assertThatThrownBy(() -> service.refuseShuttle(EVENT, USER)).isInstanceOf(ForbiddenException.class);
+    var refusal = new Entry(USER, EVENT, NOW, Refusal.MISSING_PERMISSION);
+    assertThat(audit.refusals).containsExactly(refusal, refusal);
   }
 
   @Test

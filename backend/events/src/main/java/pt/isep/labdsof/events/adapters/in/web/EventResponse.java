@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.DateRange;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.Event;
 import pt.isep.labdsof.events.adapters.in.web.generated.model.EventStatus;
+import pt.isep.labdsof.events.adapters.in.web.generated.model.EventSummary;
+import pt.isep.labdsof.events.application.EventSummaryView;
 import pt.isep.labdsof.events.application.EventView;
 
 /** Maps the use case's {@link EventView} to the contract's Event. No business rule here. */
@@ -21,5 +23,15 @@ final class EventResponse {
         EventStatus.fromValue(view.status().name()),
         view.joinCode() == null ? null : JOIN_LINK.formatted(view.eventId(),
             URLEncoder.encode(view.joinCode(), StandardCharsets.UTF_8)));
+  }
+
+  /**
+   * The FarolAdmin's view of one event (US-07). Deliberately not {@link #of}: no description and no join link
+   * reach this body, because {@code features.md} §4.1 allows the role five fields and no more.
+   */
+  static EventSummary summaryOf(EventSummaryView view) {
+    return new EventSummary(view.eventId(), view.name(), view.organiserName(),
+        new DateRange(view.dates().start(), view.dates().end()),
+        EventStatus.fromValue(view.status().name()), view.eventAdmins());
   }
 }

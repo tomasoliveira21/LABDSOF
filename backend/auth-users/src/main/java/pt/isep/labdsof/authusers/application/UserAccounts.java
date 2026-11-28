@@ -9,6 +9,13 @@ public interface UserAccounts {
 
   Optional<UserAccount> findById(UUID userId);
 
+  /**
+   * The one account holding this e-mail, matched <em>exactly</em> but case-insensitively, as
+   * {@link #releaseVerifiedEmail} already treats an address (US-06 D7). Exactness is the point: a prefix or
+   * fuzzy search would turn the lookup into a directory of every account on the platform.
+   */
+  Optional<UserAccount> findByEmail(String email);
+
   /** False when a uniqueness conflict prevents the insert. */
   boolean insertIfAbsent(UserAccount account);
 

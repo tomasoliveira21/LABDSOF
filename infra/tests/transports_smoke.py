@@ -2,8 +2,8 @@
 
 Checks, through the API gateway, that Transports validates real Keycloak tokens (ADR-006): no token and a tampered
 token get 401 Problem Details; Rita's real token is accepted, and both operations of US-41 reach Transports' access
-check: reading the buses and adding a route answer 404 for an event Rita is not a member of (US-41 D14; no event can be
-created through the gateway before US-06, so the full path is in the integration tests); a malformed event id gets
+check: reading the buses and adding a route answer 404 for an event Rita is not a member of (US-41 D14; this smoke
+writes nothing, so the full path is in the integration tests); a malformed event id gets
 400; the X-Correlation-Id comes back. Then it checks inside the stack that the
 `transports` schema comes from Flyway, that the scheduled job has read the recorded buses through WireMock and
 recorded a successful import (spec D5, D8), that the buses of that import are stored (US-40), and that

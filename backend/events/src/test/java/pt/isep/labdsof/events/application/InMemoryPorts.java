@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.UUID;
 import pt.isep.labdsof.events.domain.Event;
 import pt.isep.labdsof.events.domain.EventStatus;
+import pt.isep.labdsof.events.domain.GlobalRole;
+import pt.isep.labdsof.events.domain.GlobalRoleGrant;
 import pt.isep.labdsof.events.domain.MapSourceType;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.PointOfInterest;
@@ -26,7 +28,7 @@ import pt.isep.labdsof.events.domain.VenueMapVersion;
 
 /** Fakes of the ports, so the use cases are tested without a database. */
 class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAudit, Teams, Outbox,
-    TeamAudit, JoinCodes, EventAudit, VenueMaps, MapImages, MapFiles, MapAudit {
+    TeamAudit, JoinCodes, EventAudit, VenueMaps, MapImages, MapFiles, MapAudit, GlobalRoles {
 
   record Refused(UUID userId, UUID eventId, Instant at, Refusal refusal) {}
 
@@ -93,6 +95,62 @@ class InMemoryPorts implements Events, LocalCopies, ProcessedMessages, AccessAud
    * sequential request, which is why the real outcomes live in {@code JdbcEventsIT} (US-11 D4).
    */
   Events.Write publishOutcome;
+
+  /** US-06: the FarolAdmins the local copy of GlobalRoleChanged holds, and what it was asked to store. */
+  final Map<UUID, GlobalRoleGrant> grants = new HashMap<>();
+  final List<Event> inserted = new ArrayList<>();
+  final List<Created> creations = new ArrayList<>();
+  final List<PlatformRefused> platformRefusals = new ArrayList<>();
+
+  /** What {@link #summaries()} answers (US-07), whoever asks. */
+  final List<EventSummaryView> summaries = new ArrayList<>();
+
+  /** A create as US-06 D7 records it, and a platform refusal as AC-2 does. */
+  record Created(UUID userId, UUID eventId, Instant at) {}
+
+  record PlatformRefused(UUID userId, Instant at, String operation) {}
+
+  void farolAdmin(UUID userId) {
+    grants.put(userId, new GlobalRoleGrant(userId, GlobalRole.FarolAdmin, true, 1));
+  }
+
+  @Override
+  public boolean isFarolAdmin(UUID userId) {
+    var grant = grants.get(userId);
+    return grant != null && grant.granted();
+  }
+
+  @Override
+  public boolean upsertIfNewer(GlobalRoleGrant grant) {
+    var held = grants.get(grant.userId());
+    if (held != null && held.version() >= grant.version()) {
+      return false;
+    }
+    grants.put(grant.userId(), grant);
+    return true;
+  }
+
+  @Override
+  public void insert(Event event, UUID actor, Instant at) {
+    inserted.add(event);
+    events.put(event.eventId(), event);
+    eventWrites.add(new EventWrite(event.eventId(), actor, at, event.version()));
+  }
+
+  @Override
+  public List<EventSummaryView> summaries() {
+    return List.copyOf(summaries);
+  }
+
+  @Override
+  public void created(UUID userId, UUID eventId, Instant at) {
+    creations.add(new Created(userId, eventId, at));
+  }
+
+  @Override
+  public void notPlatformAdmin(UUID userId, Instant at, String operation) {
+    platformRefusals.add(new PlatformRefused(userId, at, operation));
+  }
 
   @Override
   public Optional<Event> findById(UUID eventId) {

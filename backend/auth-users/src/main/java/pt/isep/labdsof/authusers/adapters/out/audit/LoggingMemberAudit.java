@@ -27,6 +27,27 @@ class LoggingMemberAudit implements MemberAudit {
   }
 
   @Override
+  public void accountLookedUp(UUID actorUserId, String emailHash, boolean found, Instant at) {
+    // The hash, never the address: this is the one operation whose input is personal data (US-06 D7, M-10)
+    log.atInfo()
+        .addKeyValue("actorUserId", actorUserId.toString())
+        .addKeyValue("emailHash", emailHash)
+        .addKeyValue("found", found)
+        .addKeyValue("at", at.toString())
+        .log("Looked an account up by e-mail (US-06)");
+  }
+
+  @Override
+  public void namedEventAdmin(UUID actorUserId, UUID eventId, UUID userId, Instant at) {
+    log.atInfo()
+        .addKeyValue("actorUserId", actorUserId.toString())
+        .addKeyValue("eventId", eventId.toString())
+        .addKeyValue("userId", userId.toString())
+        .addKeyValue("at", at.toString())
+        .log("Named an EventAdmin of an event (US-06)");
+  }
+
+  @Override
   public void teamAssigned(UUID actorUserId, UUID eventId, UUID userId, UUID teamId, Instant at) {
     assignment(actorUserId, eventId, userId, teamId, at).log("Added a member to a team (US-18)");
   }

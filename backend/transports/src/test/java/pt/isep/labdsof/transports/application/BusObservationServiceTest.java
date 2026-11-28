@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import pt.isep.labdsof.transports.application.AccessAudit.Refusal;
+import pt.isep.labdsof.transports.application.FakeAccessAudit.Entry;
 import pt.isep.labdsof.transports.domain.BusRoute;
 import pt.isep.labdsof.transports.domain.BusView.RouteSummary;
 import pt.isep.labdsof.transports.domain.EventCopy;
@@ -33,6 +35,7 @@ class BusObservationServiceTest {
   private static final ObservedBus BUS =
       new ObservedBus("stcp:3412", "STCP", "3412", "500", -8.6841, 41.1734, NOW.minusSeconds(57));
 
+  private final FakeAccessAudit audit = new FakeAccessAudit();
   private final FakeLocalCopies copies = new FakeLocalCopies();
   private final BusObservationService service = new BusObservationService(copies,
       new TransportOptions() {
@@ -68,7 +71,7 @@ class BusObservationServiceTest {
           return Optional.of(NOW.minusSeconds(20));
         }
       },
-      Clock.fixed(NOW, ZoneOffset.UTC), "41.1724,-8.6841", Duration.ofMinutes(5));
+      Clock.fixed(NOW, ZoneOffset.UTC), audit, "41.1724,-8.6841", Duration.ofMinutes(5));
 
   private void given(EventStatus status, Role role, Status membership) {
     copies.event = Optional.of(new EventCopy(EVENT, status, 1));
@@ -97,6 +100,8 @@ class BusObservationServiceTest {
   void notFound() {
     assertThatThrownBy(() -> service.view(EVENT, USER)).isInstanceOf(EventNotFoundException.class);
 
+    assertThat(audit.refusals).isEmpty();
+
     given(EventStatus.Published, Role.EventAdmin, Status.Removed);
     assertThatThrownBy(() -> service.view(EVENT, USER)).isInstanceOf(EventNotFoundException.class);
 
@@ -105,5 +110,8 @@ class BusObservationServiceTest {
 
     given(EventStatus.Draft, Role.RegularUser, Status.Active);
     assertThatThrownBy(() -> service.view(EVENT, USER)).isInstanceOf(EventNotFoundException.class);
+    var notVisible = new Entry(USER, EVENT, NOW, Refusal.NOT_VISIBLE);
+    assertThat(audit.refusals).containsExactly(new Entry(USER, EVENT, NOW, Refusal.NOT_A_MEMBER),
+        notVisible, notVisible);
   }
 }
