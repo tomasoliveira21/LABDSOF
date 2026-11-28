@@ -131,6 +131,38 @@ class SecurityIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-14 AC-1 Reports refuses cross-event reads and writes")
+  void refusesCrossEventAccess() throws Exception {
+    var other = "outsider-" + UUID.randomUUID();
+    member(UUID.randomUUID(), other, Role.EventAdmin);
+    member(event, user, Role.RegularUser);
+    var created = post(path(), JWKS.valid(user), submitBody(UUID.randomUUID(), "private-request"));
+    assertThat(created.statusCode()).isEqualTo(201);
+    var resource = created.headers().firstValue("Location").orElseThrow();
+    var token = JWKS.valid(other);
+    var read = get(resource, token);
+    var write = post(resource + "/close", token, "");
+    assertThat(read.statusCode()).isEqualTo(404);
+    assertThat(write.statusCode()).isEqualTo(404);
+    assertThat(read.body()).doesNotContain("private-request");
+    assertThat(get(resource, JWKS.valid(user)).body()).contains("Submitted");
+  }
+
+  @Test
+  @DisplayName("US-14 AC-2 a Reports administrator in X has no triage permission as a regular member of Y")
+  void adminRoleDoesNotCrossEvents() throws Exception {
+    var admin = "admin-" + UUID.randomUUID();
+    member(UUID.randomUUID(), admin, Role.EventAdmin);
+    member(event, admin, Role.RegularUser);
+    member(event, user, Role.RegularUser);
+    var created = post(path(), JWKS.valid(user), submitBody(UUID.randomUUID(), "private-request"));
+    assertThat(created.statusCode()).isEqualTo(201);
+    var resource = created.headers().firstValue("Location").orElseThrow();
+    assertThat(post(resource + "/close", JWKS.valid(admin), "").statusCode()).isEqualTo(403);
+    assertThat(get(resource, JWKS.valid(user)).body()).contains("Submitted");
+  }
+
+  @Test
   @DisplayName("194 AC-4 a removed member gets 404")
   void removedMember() throws Exception {
     copies.upsertIfNewer(new pt.isep.labdsof.reports.domain.Membership(event, user, Role.RegularUser,

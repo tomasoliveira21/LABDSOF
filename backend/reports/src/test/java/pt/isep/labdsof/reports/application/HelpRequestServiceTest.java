@@ -11,6 +11,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import pt.isep.labdsof.reports.application.AccessAudit.Refusal;
 import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.HelpRequest;
@@ -49,11 +51,15 @@ class HelpRequestServiceTest {
   static final SubmitLimit LIMIT = new SubmitLimit(5, Duration.ofMinutes(10));
 
   final InMemoryPorts ports = new InMemoryPorts();
+  record RefusedAccess(String userId, UUID eventId, Instant at, Refusal refusal) {}
+
+  final List<RefusedAccess> refusals = new ArrayList<>();
+  final AccessAudit audit = (user, event, at, refusal) -> refusals.add(new RefusedAccess(user, event, at, refusal));
   final TriageServiceTest.FakeMetrics metrics = new TriageServiceTest.FakeMetrics();
   Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
   HelpRequestService service() {
-    return new HelpRequestService(ports, ports, ports, ports, metrics, LIMIT, clock);
+    return new HelpRequestService(ports, ports, ports, ports, metrics, LIMIT, clock, audit);
   }
 
   void member(String user, Role role, UUID... teams) {
@@ -194,7 +200,7 @@ class HelpRequestServiceTest {
         return List.of();
       }
     };
-    var service = new HelpRequestService(refusing, ports, ports, ports, metrics, LIMIT, clock);
+    var service = new HelpRequestService(refusing, ports, ports, ports, metrics, LIMIT, clock, audit);
     var clientRequestId = UUID.randomUUID();
     assertThatThrownBy(() -> service.submit(EVENT, "ana", clientRequestId, "help", POINT))
         .isInstanceOf(IllegalStateException.class);
@@ -249,6 +255,7 @@ class HelpRequestServiceTest {
 
     assertThatThrownBy(() -> service.get(EVENT, "rui", requestId))
         .isInstanceOf(NotFoundException.class);
+    assertThat(refusals).containsExactly(new RefusedAccess("rui", EVENT, NOW, Refusal.NOT_VISIBLE));
   }
 
   HelpRequest submitAt(Instant at, String description) {
@@ -323,6 +330,9 @@ class HelpRequestServiceTest {
     assertThatThrownBy(() -> service.list(EVENT, "ana", null)).isInstanceOf(ForbiddenException.class);
     assertThatThrownBy(() -> service.list(EVENT, "nobody", null))
         .isInstanceOf(NotFoundException.class);
+    assertThat(refusals).containsExactly(
+        new RefusedAccess("ana", EVENT, NOW, Refusal.MISSING_PERMISSION),
+        new RefusedAccess("nobody", EVENT, NOW, Refusal.NOT_A_MEMBER));
   }
 
   @Test
@@ -691,7 +701,7 @@ class HelpRequestServiceTest {
     // The lock is held by another submission of the account for 7 s
     ports.onLock = () -> time.set(NOW.plusSeconds(7));
 
-    var saved = new HelpRequestService(ports, ports, ports, ports, metrics, LIMIT, moving)
+    var saved = new HelpRequestService(ports, ports, ports, ports, metrics, LIMIT, moving, audit)
         .submit(EVENT, "ana", UUID.randomUUID(), "help", POINT).request();
 
     assertThat(saved.submittedAt()).isEqualTo(NOW.plusSeconds(7));
@@ -916,6 +926,20 @@ class HelpRequestServiceTest {
     assertThatThrownBy(() -> service.close(EVENT, miguel, unknown)).isInstanceOf(NotFoundException.class);
     assertThat(ports.find(EVENT, id).orElseThrow().status()).isEqualTo(HelpRequestStatus.Submitted);
     assertThat(ports.decisions).isEmpty();
+  }
+
+  @Test
+  @DisplayName("US-14 ordinary help-request misses after authorization are not audited")
+  void missingRequestDoesNotTriggerAudit() {
+    var service = operatorService();
+    member("ana", Role.RegularUser);
+    var unknown = UUID.randomUUID();
+
+    assertThatThrownBy(() -> service.get(EVENT, "ana", unknown)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.get(EVENT, "miguel", unknown)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.close(EVENT, actor("miguel"), unknown)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.history(EVENT, "miguel", unknown)).isInstanceOf(NotFoundException.class);
+    assertThat(refusals).isEmpty();
   }
 
   @Test

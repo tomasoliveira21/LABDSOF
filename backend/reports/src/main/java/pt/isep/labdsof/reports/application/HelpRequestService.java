@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import pt.isep.labdsof.reports.application.AccessAudit.Refusal;
 import pt.isep.labdsof.reports.domain.Actor;
 import pt.isep.labdsof.reports.domain.Category;
 import pt.isep.labdsof.reports.domain.EventAccess;
@@ -43,11 +44,12 @@ public class HelpRequestService {
   private final LocalCopies copies;
   private final Outbox outbox;
   private final TriageMetrics metrics;
+  private final AccessAudit audit;
   private final SubmitLimit limit;
   private final Clock clock;
 
   public HelpRequestService(HelpRequests helpRequests, FieldTasks fieldTasks, LocalCopies copies, Outbox outbox,
-      TriageMetrics metrics, SubmitLimit limit, Clock clock) {
+      TriageMetrics metrics, SubmitLimit limit, Clock clock, AccessAudit audit) {
     this.helpRequests = helpRequests;
     this.fieldTasks = fieldTasks;
     this.copies = copies;
@@ -55,6 +57,7 @@ public class HelpRequestService {
     this.metrics = metrics;
     this.limit = limit;
     this.clock = clock;
+    this.audit = audit;
   }
 
   /** The request, and whether this call created it (false: a retry with the same clientRequestId). */
@@ -123,6 +126,7 @@ public class HelpRequestService {
     if (request.requesterId().equals(userId)) {
       return new Read(request, false);
     }
+    audit.refused(userId, eventId, clock.instant(), Refusal.NOT_VISIBLE);
     throw new NotFoundException();
   }
 
@@ -186,6 +190,7 @@ public class HelpRequestService {
   /** The check of {@link #requireTriage}, for the use cases here, which already run in their own transaction. */
   private void triageAccess(UUID eventId, String userId) {
     if (!access(eventId, userId).has(Permission.HELP_REQUESTS_TRIAGE)) {
+      audit.refused(userId, eventId, clock.instant(), Refusal.MISSING_PERMISSION);
       throw new ForbiddenException();
     }
   }
@@ -302,6 +307,10 @@ public class HelpRequestService {
   private EventAccess access(UUID eventId, String userId) {
     var membership = copies.membership(eventId, userId);
     var teams = membership.map(m -> copies.teams(eventId, m.teamIds())).orElse(List.of());
-    return EventAccess.of(membership.orElse(null), teams).orElseThrow(NotFoundException::new);
+    return EventAccess.of(membership.orElse(null), teams)
+        .orElseThrow(() -> {
+          audit.refused(userId, eventId, clock.instant(), Refusal.NOT_A_MEMBER);
+          return new NotFoundException();
+        });
   }
 }

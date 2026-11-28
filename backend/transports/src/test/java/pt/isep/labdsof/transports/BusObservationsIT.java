@@ -186,6 +186,15 @@ class BusObservationsIT extends IntegrationTest {
   }
 
   @Test
+  @DisplayName("US-14 AC-1 transport reads refuse an administrator from a different event")
+  void refusesCrossEventRead() {
+    var first = event(EventStatus.Published);
+    var second = event(EventStatus.Published);
+    var admin = member(first, Role.EventAdmin, Status.Active);
+    ApiClient.assertProblem(get(second, admin), 404);
+  }
+
+  @Test
   @DisplayName("US-41 D6 the next import replaces the buses shown")
   void nextImportReplaces() {
     var eventId = event(EventStatus.Published);

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.isep.labdsof.transports.application.AccessAudit.Refusal;
 import pt.isep.labdsof.transports.domain.BusRoute;
 import pt.isep.labdsof.transports.domain.EventAccess;
 import pt.isep.labdsof.transports.domain.EventCopy;
@@ -28,11 +29,13 @@ public class TransportOptionService {
   private final LocalCopies copies;
   private final TransportOptions options;
   private final Clock clock;
+  private final AccessAudit audit;
 
-  public TransportOptionService(LocalCopies copies, TransportOptions options, Clock clock) {
+  public TransportOptionService(LocalCopies copies, TransportOptions options, Clock clock, AccessAudit audit) {
     this.copies = copies;
     this.options = options;
     this.clock = clock;
+    this.audit = audit;
   }
 
   /**
@@ -80,8 +83,17 @@ public class TransportOptionService {
         .map(m -> m.teamIds().stream().map(copies::team).flatMap(Optional::stream).toList())
         .orElse(List.of());
     return switch (EventAccess.canEditTransport(membership, event, teams)) {
-      case NOT_FOUND -> throw new EventNotFoundException();
-      case FORBIDDEN -> throw new ForbiddenException();
+      case NOT_FOUND -> {
+        if (event.isPresent()) {
+          var refusal = EventAccess.isActiveMemberOf(eventId, membership) ? Refusal.NOT_VISIBLE : Refusal.NOT_A_MEMBER;
+          audit.refused(userId, eventId, clock.instant(), refusal);
+        }
+        throw new EventNotFoundException();
+      }
+      case FORBIDDEN -> {
+        audit.refused(userId, eventId, clock.instant(), Refusal.MISSING_PERMISSION);
+        throw new ForbiddenException();
+      }
       case ALLOWED -> event.orElseThrow();
     };
   }
