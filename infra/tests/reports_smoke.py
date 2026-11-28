@@ -96,6 +96,11 @@ def main(env_path: str) -> int:
     idp.check(call(gateway, f"{request}/close", None, {}) == 401, "closing a request needs a token (401)")
     idp.check(call(gateway, f"{request}/close", token, {}) == 404,
               "closing a request answers 404 to a user who is not a member of the event")
+    # US-31 (#78): the field team's list goes through the gateway
+    tasks = path.replace("/help-requests", "/field-tasks")
+    idp.check(call(gateway, tasks, None) == 401, "the field team's tasks need a token (401)")
+    idp.check(call(gateway, tasks, token) == 404,
+              "the field team's tasks answer 404 to a user who is not a member of the event")
 
     for failure in idp.failures:
         print(f"::error::{failure}")
