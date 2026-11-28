@@ -161,8 +161,8 @@ See [RequestStatus](domain-model.md#requeststatus) and [#177](https://github.com
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
 | `POST` | `/events/{eventId}/help-requests` | Ask for help with a short description and a point on the map (§4.1); `422` if the event is closed or suspended. Sending the same `clientRequestId` again returns the request already saved, so the app can retry safely. After 5 in 10 minutes per account, in any event, Reports answers `429` with `Retry-After`; only saved requests count, so a retry is never limited (ADR-013 L-2, moved to Reports on 24 November 2026, [record](../Meetings/2026-11-24-help-request-rate-limit.md)) | Member | US-23, US-25 |
-| `GET` | `/events/{eventId}/help-requests?updatedSince=` | Live list. Each caller sees only what they may: their own requests (`mine=true`), all of the event's (`HelpRequests.Triage`), or those routed to their teams (`HelpRequests.Respond`). Filters `status`, `teamId` | Member | US-24, US-26, US-27, US-31 |
-| `GET` | `/events/{eventId}/help-requests/{requestId}` | One request. The participant sees only its description, status and the time of the last change; the control room also sees the category, priority, triage suggestion and the default team | Owner, `HelpRequests.Triage`, routed team | US-24, US-29, US-34 |
+| `GET` | `/events/{eventId}/help-requests?updatedSince=` | Live list. Each caller sees only what they may: their own requests (`mine=true`) or all of the event's (`HelpRequests.Triage`); a field team gets its requests from `GET …/field-tasks` (US-31). Filter `status` | Member | US-24, US-26, US-27 |
+| `GET` | `/events/{eventId}/help-requests/{requestId}` | One request. The participant sees only its description, status and the time of the last change; the control room also sees the category, priority, triage suggestion and the default team | Owner, `HelpRequests.Triage` | US-24, US-29, US-34 |
 | `PATCH` | `/events/{eventId}/help-requests/{requestId}` | Set the category and the priority (`{ category, priority }`, either or both); recorded with who, when, old and new value | `HelpRequests.Triage` | US-28 |
 | `POST` | `/events/{eventId}/help-requests/{requestId}/acknowledge` | Mark it *Seen* | `HelpRequests.Triage` | US-28 |
 | `POST` | `/events/{eventId}/help-requests/{requestId}/route` | Route it to a team (`{ teamId }`); creates a field task; `422` if the team has no `HelpRequests.Respond` | `HelpRequests.Triage` | US-29 |
@@ -192,7 +192,7 @@ See [FieldTaskStatus](domain-model.md#fieldtaskstatus) for valid transitions by 
 
 | Method | Path | Purpose | Requires | Story |
 |---|---|---|---|---|
-| `GET` | `/events/{eventId}/field-tasks?updatedSince=` | Live list of the tasks of my teams, each with its request or report and its point on the map | `HelpRequests.Respond`, `Reports.Respond` | US-31, US-52 |
+| `GET` | `/events/{eventId}/field-tasks` | Live list of the tasks of my teams, each with its request or report and its point on the map; the whole list on every poll | `HelpRequests.Respond`, `Reports.Respond` | US-31, US-52 |
 | `POST` | `/events/{eventId}/field-tasks/{taskId}/accept` | Accept an open task. For Assist, the help request becomes *On the way*. Return `409` if another member already accepted it | Member of the task's team | US-32, US-52, US-53 |
 | `POST` | `/events/{eventId}/field-tasks/{taskId}/answer` | Answer an accepted Verify task (`{ found: true \| false }`). The task becomes `Answered` and the reviewer receives the answer | Member who accepted it | US-52 |
 | `POST` | `/events/{eventId}/field-tasks/{taskId}/resolve` | Resolve an accepted Assist or Fix task and its target | Member who accepted it | US-33, US-53 |
@@ -246,7 +246,7 @@ See [FieldTaskStatus](domain-model.md#fieldtaskstatus) for valid transitions by 
 - *25 November 2026 (#76, US-29):* `route` is served: `{ teamId }`, a team of the event, not deleted, with `HelpRequests.Respond` (the default team or any other: routing by hand); an unknown, other event's, deleted or non-responding team is the same `422`. It sets `routedTeamId`, keeps the status, records a `routedTeamId` history entry and dispatches an `Assist` field task, `Open`; `409` once the task is accepted (`OnTheWay`), `Resolved` or `Closed`. Proposed, for the team's review ([spec US-29](../specs/US-29-route-help-request.md) D2, D7): routing again while the task is `Open` cancels it and dispatches a new one, and closing a request cancels its live task (built once US-30 was in `main`). A deleted team's requests go back to the queue and its tasks are cancelled, as §4.1 and US-16 say.
 - The status set is the one above for every document (#177, decided on 15 November 2026): `Submitted → Seen → OnTheWay → Resolved → Closed`; the triage has its own state, so there is no *Triaged* or *Dispatched* status. Routing (US-29) creates a field task and keeps the status.
 
-**A field task:** `GET /events/{eventId}/field-tasks?updatedSince=`
+**A field task:** `GET /events/{eventId}/field-tasks`
 
 ```json
 {
@@ -257,16 +257,17 @@ See [FieldTaskStatus](domain-model.md#fieldtaskstatus) for valid transitions by 
       "status": "Open",                // Open | Accepted | Answered | Resolved | Cancelled
       "teamId": "tm-03…",
       "target": { "kind": "HelpRequest", "id": "hr-81…", "category": "Health",
-                  "location": { "mapVersion": 3, "x": 0.42, "y": 0.77 } },
+                  "location": { "mapVersion": 3, "x": 0.42, "y": 0.77 },
+                  "description": "My friend fainted near the main stage bar" },
       "acceptedBy": null,
       "dispatchedAt": "2027-05-08T23:15:10Z",
       "updatedAt": "2027-05-08T23:15:10Z"
     }
-  ],
-  "serverTime": "2027-05-08T23:15:12Z"
+  ]
 }
 ```
 
+- *28 November 2026 (#78, US-31):* `GET …/field-tasks` is served for help requests: `HelpRequests.Respond` in the event (`403` without it); the `Open` and `Accepted` tasks of the caller's own teams that are not deleted and respond, oldest dispatch first, each with the request's category (a member's, else the AI's), point and description. Every answer is the whole list, with no `updatedSince` or `serverTime`: a task that ends, or a team the member leaves, is simply not in the next answer. The phone polls every 2 s while the screen is visible (≤ 5 s). The field team reads its requests only here: the help-requests list and the read of one request have no routed-team view ([spec US-31](../specs/US-31-field-team-tasks.md) D2, D3, D5).
 - A field task targets exactly one help request or report. A team deletion cancels its open or accepted tasks and returns routed help requests to the control-room queue (US-16). Account deletion also cancels the requester’s open tasks (§7.4).
 
 ## 5. Transports
@@ -417,7 +418,7 @@ Every Must and Should story (US-01 to US-58, except the Could US-46) has at leas
 | US-28 | `PATCH …/help-requests/{requestId}`, `POST …/help-requests/{requestId}/acknowledge`, `GET …/help-requests/{requestId}/history` | — |
 | US-29 | `GET …/teams`, `GET …/help-requests/{requestId}`, `POST …/help-requests/{requestId}/route` | `TeamChanged` |
 | US-30 | `POST …/help-requests/{requestId}/close` | — |
-| US-31 | `GET …/help-requests`, `GET …/field-tasks` | — |
+| US-31 | `GET …/field-tasks` | — |
 | US-32 | `POST …/field-tasks/{taskId}/accept` | — |
 | US-33 | `POST …/field-tasks/{taskId}/resolve` | — |
 | US-34 | `GET …/help-requests/{requestId}` | `TeamChanged`, `HelpRequestSubmitted` |

@@ -2,6 +2,17 @@
 
 All notable changes to the repository documentation. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] · 2026-11-28 · Field team sees routed requests (US-31, #78, Bruno de Abreu Lopes)
+
+**Why:** a request routed to a team (US-29) must reach the phones of that team's members (US-31, ≤ 5 s). Spec: [`Docs/specs/US-31-field-team-tasks.md`](Docs/specs/US-31-field-team-tasks.md).
+
+### Added
+- `GET /api/v1/events/{eventId}/field-tasks` (`HelpRequests.Respond`): the `Open` and `Accepted` tasks of the caller's own responding teams, oldest dispatch first, each with its request's category (a member's, else the AI's), point on the map and description. Every answer is the whole list, so a task routed elsewhere, closed or of a deleted team, and the tasks of a team the member left, are gone from the next poll; no `updatedSince`. An EventAdmin in no responding team gets an empty list.
+- `FieldTasksIT`, and two smoke checks of the list through the gateway.
+
+### Changed
+- `contracts/openapi.yaml`: `listFieldTasks` implemented, without `updatedSince` and `serverTime`; the task's target gains the `description`. The two other entries marked *planned US-31* are covered by it and not built (spec D5, decided by the story's owner): the help-requests list says the field team uses `listFieldTasks`, and its ignored `teamId` filter is removed. Dated note in the API outline §4.1.
+
 ## [Unreleased] · 2026-11-26 · Create an event, name its first EventAdmin, and list events (US-06 and US-07, #61 and #89, Tiago Teixeira)
 
 **Why:** until this story no event could be created through the API at all, which is what every other Events and Auth & Users story has been noting as its one known limit since #192. US-07 comes with it because US-06 alone ships unusable: the FarolAdmin is not made a member of what they create, so the list is the only way they ever see it again. Specs: [`Docs/specs/US-06-create-event.md`](Docs/specs/US-06-create-event.md). The first story that spans **two services**, and the one that takes both of them to **zero `501`** for Sprint B except the map reads of US-20 (#69) and US-21 (#70).
