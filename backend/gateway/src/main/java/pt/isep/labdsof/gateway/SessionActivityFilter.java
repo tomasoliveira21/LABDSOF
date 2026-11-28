@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,11 +17,14 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.filter.OncePerRequestFilter;
 import tools.jackson.databind.json.JsonMapper;
 
 /** Check Keycloak session activity after local JWT validation and account rate limiting. */
 final class SessionActivityFilter extends OncePerRequestFilter {
+
+  private static final Logger log = LoggerFactory.getLogger(SessionActivityFilter.class);
 
   private static final PathPatternRequestMatcher API =
       PathPatternRequestMatcher.withDefaults().matcher("/api/v1/**");
@@ -55,12 +60,19 @@ final class SessionActivityFilter extends OncePerRequestFilter {
       activity = identity.post().contentType(MediaType.APPLICATION_FORM_URLENCODED)
           .accept(MediaType.APPLICATION_JSON)
           .body(form).retrieve().body(TokenActivity.class);
-    } catch (RestClientException ignored) {
+    } catch (RestClientException failure) {
+      // The exception message can include an identity-provider response body. Log only safe diagnostics.
+      var warning = log.atWarn().addKeyValue("failureType", failure.getClass().getSimpleName());
+      if (failure instanceof RestClientResponseException upstream) {
+        warning.addKeyValue("identityStatus", upstream.getStatusCode().value());
+      }
+      warning.log("Keycloak token introspection failed");
       unavailable(response);
       return;
     }
 
     if (activity == null || activity.active() == null) {
+      log.atWarn().addKeyValue("failureType", "MISSING_ACTIVE").log("Keycloak token introspection failed");
       unavailable(response);
     } else if (Boolean.FALSE.equals(activity.active())) {
       response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer error=\"invalid_token\"");

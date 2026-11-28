@@ -28,4 +28,22 @@ class LoggingEventAudit implements EventAudit {
         .addKeyValue("version", version)
         .log("Published an event (US-11)");
   }
+
+  @Override
+  public void created(UUID userId, UUID eventId, Instant at) {
+    log.atInfo()
+        .addKeyValue("userId", userId.toString())
+        .addKeyValue("eventId", eventId.toString())
+        .addKeyValue("at", at.toString())
+        .log("Created an event as a draft (US-06)");
+  }
+
+  @Override
+  public void notPlatformAdmin(UUID userId, Instant at, String operation) {
+    log.atWarn()
+        .addKeyValue("userId", userId.toString())
+        .addKeyValue("at", at.toString())
+        .addKeyValue("operation", operation)
+        .log("Refused a platform operation to a caller who is not the FarolAdmin (US-06, US-07)");
+  }
 }

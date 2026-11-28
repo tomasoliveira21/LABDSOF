@@ -32,10 +32,11 @@ class GatewaySecurity {
 
   @Bean
   SecurityFilterChain gatewayFilterChain(
-      HttpSecurity http, JsonMapper json,
+      HttpSecurity http, JsonMapper json, RestClient.Builder restClientBuilder,
       @Value("${farol.gateway.allowed-origins}") List<String> allowedOrigins,
       @Value("${farol.gateway.requests-per-minute}") int requestsPerMinute,
       @Value("${farol.gateway.introspection-uri}") String introspectionUri,
+      @Value("${farol.gateway.introspection-client-id}") String introspectionClientId,
       @Value("${farol.gateway.introspection-secret}") String introspectionSecret) throws Exception {
     var unauthorized = unauthorizedProblem(json);
     return http
@@ -53,17 +54,18 @@ class GatewaySecurity {
         .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults())
             .authenticationEntryPoint(unauthorized))
         .addFilterAfter(new AccountRateLimitFilter(requestsPerMinute), BearerTokenAuthenticationFilter.class)
-        .addFilterAfter(new SessionActivityFilter(introspectionClient(introspectionUri, introspectionSecret), json),
+        .addFilterAfter(new SessionActivityFilter(
+            introspectionClient(restClientBuilder, introspectionUri, introspectionClientId, introspectionSecret), json),
             AccountRateLimitFilter.class)
         .build();
   }
 
-  private static RestClient introspectionClient(String uri, String secret) {
+  private static RestClient introspectionClient(RestClient.Builder builder, String uri, String clientId, String secret) {
     var factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(2)).build());
     factory.setReadTimeout(Duration.ofSeconds(2));
-    return RestClient.builder().baseUrl(uri).requestFactory(factory)
-        .defaultHeaders(headers -> headers.setBasicAuth("farol-gateway", secret))
+    return builder.baseUrl(uri).requestFactory(factory)
+        .defaultHeaders(headers -> headers.setBasicAuth(clientId, secret))
         .build();
   }
 

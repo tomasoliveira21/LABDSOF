@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import pt.isep.labdsof.events.application.LocalCopyService.Outcome;
+import pt.isep.labdsof.events.domain.GlobalRole;
+import pt.isep.labdsof.events.domain.GlobalRoleGrant;
 import pt.isep.labdsof.events.domain.Membership;
 import pt.isep.labdsof.events.domain.Membership.Role;
 import pt.isep.labdsof.events.domain.Membership.Status;
@@ -17,7 +19,7 @@ class LocalCopyServiceTest {
   private static final UUID USER = UUID.randomUUID();
 
   private final InMemoryPorts ports = new InMemoryPorts();
-  private final LocalCopyService service = new LocalCopyService(ports, ports);
+  private final LocalCopyService service = new LocalCopyService(ports, ports, ports);
 
   private static Membership membership(Role role, Status status, Set<UUID> teams, long version) {
     return new Membership(EVENT, USER, role, status, teams, version);
@@ -77,5 +79,43 @@ class LocalCopyServiceTest {
 
     assertThat(outcome).isEqualTo(Outcome.APPLIED);
     assertThat(stored()).isEqualTo(membership(Role.EventAdmin, Status.Removed, Set.of(team), 2));
+  }
+
+  @Test
+  @DisplayName("US-06 AC-2 a GlobalRoleChanged makes the caller a FarolAdmin, and a duplicate changes nothing")
+  void aGlobalRoleChangedGrantsTheRole() {
+    var message = UUID.randomUUID();
+
+    assertThat(service.apply(message, grant(true, 1))).isEqualTo(Outcome.APPLIED);
+    assertThat(ports.isFarolAdmin(USER)).isTrue();
+
+    // The same messageId again: processed_message decides, so the revoke in it is never applied
+    assertThat(service.apply(message, grant(false, 2))).isEqualTo(Outcome.DUPLICATE);
+    assertThat(ports.isFarolAdmin(USER)).isTrue();
+  }
+
+  @Test
+  @DisplayName("US-06 AC-2 a revoke takes the role away, and an older grant arriving late does not give it back")
+  void aRevokeTakesTheRoleAwayAndAnOlderGrantDoesNotGiveItBack() {
+    service.apply(UUID.randomUUID(), grant(true, 1));
+
+    assertThat(service.apply(UUID.randomUUID(), grant(false, 2))).isEqualTo(Outcome.APPLIED);
+    assertThat(ports.isFarolAdmin(USER)).isFalse();
+
+    // The row is kept on a revoke (D2), which is what lets the version reject this late grant
+    assertThat(service.apply(UUID.randomUUID(), grant(true, 1))).isEqualTo(Outcome.STALE);
+    assertThat(service.apply(UUID.randomUUID(), grant(true, 2))).isEqualTo(Outcome.STALE);
+    assertThat(ports.isFarolAdmin(USER)).isFalse();
+  }
+
+  @Test
+  @DisplayName("US-06 AC-2 a user no GlobalRoleChanged ever mentioned is not a FarolAdmin")
+  void aUserWithNoGrantIsNotAFarolAdmin() {
+    assertThat(ports.isFarolAdmin(USER)).isFalse();
+    assertThat(ports.isFarolAdmin(UUID.randomUUID())).isFalse();
+  }
+
+  private static GlobalRoleGrant grant(boolean granted, long version) {
+    return new GlobalRoleGrant(USER, GlobalRole.FarolAdmin, granted, version);
   }
 }

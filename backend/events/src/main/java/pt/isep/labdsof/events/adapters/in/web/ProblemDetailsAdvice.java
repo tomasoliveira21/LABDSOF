@@ -17,11 +17,13 @@ import pt.isep.labdsof.events.application.EventChangedConcurrentlyException;
 import pt.isep.labdsof.events.application.EventNotFoundException;
 import pt.isep.labdsof.events.application.EventNotOpenException;
 import pt.isep.labdsof.events.application.ForbiddenException;
+import pt.isep.labdsof.events.application.NotPlatformAdminException;
 import pt.isep.labdsof.events.domain.EventNotDraftException;
 import pt.isep.labdsof.events.application.TeamChangedConcurrentlyException;
 import pt.isep.labdsof.events.application.TeamNameTakenException;
 import pt.isep.labdsof.events.application.TeamNotFoundException;
 import pt.isep.labdsof.events.domain.InvalidMapFileException;
+import pt.isep.labdsof.events.domain.InvalidEventException;
 import pt.isep.labdsof.events.domain.InvalidTeamException;
 import pt.isep.labdsof.events.domain.MapFileTooLargeException;
 
@@ -91,6 +93,18 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
   }
 
   /** A team the caller described wrongly; the reason is the domain's, never shown. */
+  @ExceptionHandler(NotPlatformAdminException.class)
+  ResponseEntity<ProblemDetail> notPlatformAdmin(NotPlatformAdminException e) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Only the FarolAdmin may do this."));
+  }
+
+  @ExceptionHandler(InvalidEventException.class)
+  ResponseEntity<ProblemDetail> invalidEvent(InvalidEventException e) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Invalid event."));
+  }
+
   @ExceptionHandler(InvalidTeamException.class)
   ResponseEntity<ProblemDetail> invalidTeam(InvalidTeamException e) {
     return ResponseEntity.badRequest()

@@ -35,6 +35,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ServiceStatus'
   /api/v1/events:
+    get:
+      tags: [Events]
+      operationId: listEvents
+      summary: Every event with its basic details only (US-07); FarolAdmin only
+      description: >-
+        The five fields features.md 4.1 allows the role: name, dates, organisation,
+        EventAdmins and status. Never a description, a join code, a team, a map or a
+        participant. Opening one of these events still needs a membership (US-14), so
+        this list is the FarolAdmin's whole view of an event. Newest first.
+        eventAdmins is empty for an event whose first EventAdmin has not been named
+        yet (US-06), which is the state US-08 exists to fix.
+      responses:
+        '200':
+          description: Every event, newest first; an empty array when there is none
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
       tags: [Events]
       operationId: createEvent
@@ -564,6 +588,36 @@ components:
         description:
           type: string
           maxLength: 2000
+    EventSummary:
+      type: object
+      additionalProperties: false
+      description: >-
+        What the FarolAdmin sees of an event (US-07). Deliberately not an Event: no
+        description, no joinLink.
+      required: [eventId, name, organiserName, dates, status, eventAdmins]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        organiserName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        dates:
+          $ref: '#/components/schemas/DateRange'
+        status:
+          $ref: '#/components/schemas/EventStatus'
+        eventAdmins:
+          type: array
+          description: >-
+            The event's active EventAdmins; empty while it has none (US-06, US-08)
+          items:
+            type: string
+            format: uuid
     Event:
       type: object
       additionalProperties: false

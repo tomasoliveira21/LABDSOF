@@ -1,5 +1,7 @@
 package pt.isep.labdsof.authusers.adapters.out.persistence;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Optional;
@@ -19,6 +21,18 @@ class JdbcUserAccounts implements UserAccounts {
     this.jdbc = jdbc;
   }
 
+  /** Exact but case-insensitive, the same way {@link #releaseVerifiedEmail} treats an address (US-06 D7). */
+  @Override
+  public Optional<UserAccount> findByEmail(String email) {
+    return jdbc.sql("""
+        SELECT user_id, email, email_verified, display_name, status, version, created_at, updated_at
+        FROM user_account WHERE lower(email) = lower(:email)
+        """)
+        .param("email", email)
+        .query(JdbcUserAccounts::account)
+        .optional();
+  }
+
   @Override
   public Optional<UserAccount> findById(UUID userId) {
     return jdbc.sql("""
@@ -26,11 +40,15 @@ class JdbcUserAccounts implements UserAccounts {
         FROM user_account WHERE user_id = :userId
         """)
         .param("userId", userId)
-        .query((rs, row) -> new UserAccount(rs.getObject("user_id", UUID.class), rs.getString("email"),
-            rs.getBoolean("email_verified"), rs.getString("display_name"),
-            AccountStatus.valueOf(rs.getString("status")), rs.getLong("version"),
-            rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant()))
+        .query(JdbcUserAccounts::account)
         .optional();
+  }
+
+  private static UserAccount account(ResultSet rs, int row) throws SQLException {
+    return new UserAccount(rs.getObject("user_id", UUID.class), rs.getString("email"),
+        rs.getBoolean("email_verified"), rs.getString("display_name"),
+        AccountStatus.valueOf(rs.getString("status")), rs.getLong("version"),
+        rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant());
   }
 
   @Override

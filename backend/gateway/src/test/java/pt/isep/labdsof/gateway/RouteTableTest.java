@@ -23,22 +23,29 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 /** HTTP coverage for the gateway with a local key set and stub upstreams. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = "logging.structured.format.console=logstash")
+@ExtendWith(OutputCaptureExtension.class)
 class RouteTableTest {
 
   private static final List<String> SERVICES =
@@ -49,8 +56,10 @@ class RouteTableTest {
   private static final String ISSUER = "https://issuer.example/realms/farol";
   private static final String WEB_ORIGIN = "http://localhost:3000";
   private static final RSAKey SIGNING_KEY = signingKey();
-  private static final AtomicReference<String> INACTIVE = new AtomicReference<>();
-  private static final AtomicReference<String> UNAVAILABLE = new AtomicReference<>();
+  private static final Set<String> INTROSPECTED = ConcurrentHashMap.newKeySet();
+  private static final ConcurrentHashMap<String, IntrospectionReply> REPLIES = new ConcurrentHashMap<>();
+
+  private record IntrospectionReply(int status, String body) {}
   private static final HttpServer JWKS = jwksServer();
 
   @LocalServerPort private int port;
@@ -153,13 +162,15 @@ class RouteTableTest {
       }
     }
 
-    var rejected = get("/api/v1/events", token("rate-limited-account"));
+    var rejectedToken = token("rate-limited-account");
+    var rejected = get("/api/v1/events", rejectedToken);
     assertThat(rejected.statusCode()).isEqualTo(429);
     assertThat(rejected.headers().firstValue("Retry-After")).hasValueSatisfying(value ->
         assertThat(Long.parseLong(value)).isBetween(1L, 60L));
     assertThat(rejected.headers().firstValue("Content-Type")).hasValueSatisfying(value ->
         assertThat(value).startsWith("application/problem+json"));
     assertThat(rejected.body()).contains("\"status\":429");
+    assertThat(INTROSPECTED).contains(accountToken).doesNotContain(rejectedToken);
     assertThat(get("/api/v1/events", token("another-account")).statusCode()).isEqualTo(200);
   }
 
@@ -236,28 +247,42 @@ class RouteTableTest {
   void accessTokenStopsWorkingAsSoonAsItsSessionEnds() throws Exception {
     String bearer = token("logged-out-account");
     assertThat(get("/api/v1/me", bearer).statusCode()).isEqualTo(200);
-    INACTIVE.set(bearer);
+    REPLIES.put(bearer, new IntrospectionReply(200, "{\"active\":false}"));
     try {
       var response = get("/api/v1/me", bearer);
       assertThat(response.statusCode()).isEqualTo(401);
       assertThat(response.headers().firstValue("WWW-Authenticate")).contains("Bearer error=\"invalid_token\"");
       assertThat(get("/api/v1/me", token("other-active-account")).statusCode()).isEqualTo(200);
     } finally {
-      INACTIVE.set(null);
+      REPLIES.remove(bearer);
     }
   }
 
-  @Test
-  void identityProviderFailureNeverPassesTheTokenUpstream() throws Exception {
-    String bearer = token("unavailable-idp-account");
-    UNAVAILABLE.set(bearer);
+  @ParameterizedTest
+  @CsvSource({"401, upstream-secret-marker, Unauthorized", "503, upstream-secret-marker, ServiceUnavailable",
+      "200, {}, MISSING_ACTIVE"})
+  void identityProviderFailureNeverPassesTheTokenUpstream(
+      int status, String body, String failureType, CapturedOutput output) throws Exception {
+    String bearer = token("unavailable-idp-account-" + status);
+    var correlation = "introspection-" + UUID.randomUUID();
+    REPLIES.put(bearer, new IntrospectionReply(status, body));
     try {
-      var response = get("/api/v1/me", bearer);
+      var response = send(request("/api/v1/me").header("Authorization", "Bearer " + bearer)
+          .header("X-Correlation-Id", correlation).GET().build());
       assertThat(response.statusCode()).isEqualTo(503);
       assertThat(response.headers().firstValue("Retry-After")).contains("5");
       assertThat(get("/api/v1/status").statusCode()).isEqualTo(200);
+      assertThat(output.getAll().lines()
+          .filter(line -> line.contains(correlation) && line.contains("Keycloak token introspection failed")))
+          .singleElement().satisfies(line -> {
+            assertThat(line).contains("\"failureType\":\"" + failureType + "\"")
+                .doesNotContain(bearer, "test-only", "upstream-secret-marker");
+            if (status != 200) {
+              assertThat(line).contains("\"identityStatus\":" + status);
+            }
+          });
     } finally {
-      UNAVAILABLE.set(null);
+      REPLIES.remove(bearer);
     }
   }
 
@@ -266,21 +291,18 @@ class RouteTableTest {
       var supplied = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
       var expectedAuth = "Basic " + java.util.Base64.getEncoder()
           .encodeToString("farol-gateway:test-only".getBytes(StandardCharsets.UTF_8));
+      var token = Arrays.stream(supplied.split("&")).filter(value -> value.startsWith("token="))
+          .map(value -> value.substring("token=".length())).findFirst().orElse("");
       if (!"POST".equals(exchange.getRequestMethod()) || !supplied.contains("token_type_hint=access_token")
-          || !expectedAuth.equals(exchange.getRequestHeaders().getFirst("Authorization"))) {
+          || token.isEmpty() || !expectedAuth.equals(exchange.getRequestHeaders().getFirst("Authorization"))) {
         exchange.sendResponseHeaders(400, -1);
         return;
       }
-      String unavailable = UNAVAILABLE.get();
-      if (unavailable != null && supplied.contains("token=" + unavailable)) {
-        exchange.sendResponseHeaders(503, -1);
-        return;
-      }
-      String inactive = INACTIVE.get();
-      boolean active = inactive == null || !supplied.contains("token=" + inactive);
-      byte[] body = ("{\"active\":" + active + "}").getBytes(StandardCharsets.UTF_8);
+      INTROSPECTED.add(token);
+      var reply = REPLIES.getOrDefault(token, new IntrospectionReply(200, "{\"active\":true}"));
+      byte[] body = reply.body().getBytes(StandardCharsets.UTF_8);
       exchange.getResponseHeaders().set("Content-Type", "application/json");
-      exchange.sendResponseHeaders(200, body.length);
+      exchange.sendResponseHeaders(reply.status(), body.length);
       exchange.getResponseBody().write(body);
     }
   }

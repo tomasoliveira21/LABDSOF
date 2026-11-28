@@ -146,6 +146,8 @@ See [EventStatus](domain-model.md#eventstatus) for transition guards and who can
 - The venue QR code is not the join link: it carries a code shown only at the venue, so nobody checks in from home.
 - Publishes `EventChanged`, `TeamChanged`, `VenueMapVersionPublished`, `PointOfInterestChanged` and `CheckInRecorded` (§7).
 
+- *26 November 2026 (#61 and #89, US-06 and US-07):* `POST /events` and `GET /events` are served. **`GET /events` was missing from `openapi.yaml`** — this outline specified it but the contract never declared it, because US-07 sat in Sprint C — and the contract now carries it with an `EventSummary` of exactly the five fields `features.md` §4.1 allows the FarolAdmin: `eventId`, `name`, `organiserName`, `dates`, `status`, `eventAdmins`. Deliberately not an `Event`: no description and no join link can reach that body. `eventAdmins` comes from the membership copy, active EventAdmins only, and is **empty** for an event whose first one has not been named yet, which is the state US-08 reads it for. The role itself is read from a local copy of `GlobalRoleChanged` (`global_role_copy`, Flyway `V2`), never from the token (ADR-006), and it still gives **no access to an event's data**: the FarolAdmin who lists an event gets the same `404` as a stranger on the event, its teams and its map (§4.1, confirmed 15 November 2026; US-07 AC-2; US-14). The new draft publishes the first `EventChanged` an event ever gets, which is what D3 of §2 needs before the name call there can succeed ([spec US-06](../specs/US-06-create-event.md)).
+
 ## 4. Reports
 
 Stories: US-23 to US-36, US-47 to US-53.
